@@ -1,5 +1,5 @@
 /* BENUTZERVERWALTUNG / LOKALE ANORDNUNG
- * Nur AdminView lädt diese Datei. Farben werden aus cosmos-tokens.css übernommen.
+ * AdminView und die gemeinsame CosmosPagination laden diese Datei. Farben werden aus cosmos-tokens.css übernommen.
  * Erst die gemeinsame Komponente ändern, wenn tatsächlich alle Views betroffen sein sollen. */
 
 /* 1. SUCHE, FILTERPANEL UND AKTIVE FILTER */
@@ -37,77 +37,7 @@
     flex: 0 0 auto;
 }
 
-.admin-user-filter-button[aria-expanded="true"] .admin-user-filter-toggle {
-    transform: rotate(180deg);
-}
-
-.admin-user-active-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--cosmos-space-l);
-    margin-top: var(--cosmos-space-l);
-    width: 100%;
-}
-
-.admin-user-active-filters[hidden] {
-    display: none;
-}
-
-.admin-user-active-filter-chips {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--cosmos-space-s);
-}
-
-.admin-user-active-filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--cosmos-space-xs);
-    max-width: 100%;
-}
-
-.admin-user-active-filter-chip > span {
-    overflow-wrap: anywhere;
-}
-
-.cosmos-admin vaadin-button.admin-user-filter-chip-remove {
-    min-width: 16px;
-    min-height: 16px;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    margin: 0;
-    flex-shrink: 0;
-}
-
-.cosmos-admin vaadin-button.admin-user-filter-chip-remove > vaadin-icon {
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
-    padding: 0;
-}
-
-.admin-user-filter-details {
-    margin: 0;
-}
-
-.admin-user-filter-details[opened] {
-    margin-top: var(--cosmos-space-l);
-}
-
 /* Der normale Secondary-Button in der Werkzeugleiste steuert das Details. */
-
-.admin-user-filter-details > vaadin-details-summary {
-    display: none;
-}
-
-.admin-user-filter-details[opened]::part(content) {
-    background: var(--cosmos-filter-panel-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-contrast-20pct);
-    border-radius: var(--cosmos-control-radius);
-    padding: var(--cosmos-space-l);
-}
 
 .cosmos-admin vaadin-button.admin-user-filter-reset {
     font-size: var(--cosmos-font-size-s);
@@ -117,41 +47,8 @@
     font-size: var(--cosmos-font-size-l);
 }
 
-.admin-user-filter-panel-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--cosmos-space-l);
-    margin-bottom: var(--cosmos-space-l);
-}
-
-.admin-user-filter-panel-heading {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--cosmos-space-s);
-    font-size: var(--cosmos-font-size-s);
-}
-
-.admin-user-filter-panel-heading > span {
-    font-weight: var(--cosmos-font-weight-bold);
-}
-
 .cosmos-admin .admin-user-active-filter-count {
     border: var(--cosmos-border-width) solid var(--cosmos-primary-color-50pct);
-}
-
-.admin-user-filter-panel-heading > vaadin-icon {
-    width: 12px;
-    height: 12px;
-    color: var(--cosmos-primary-text-color);
-}
-
-.cosmos-panel-footer.admin-user-filter-footer {
-    margin-top: var(--cosmos-space-l);
-    padding-top: var(--cosmos-space-l);
-    gap: var(--cosmos-space-4xl);
 }
 
 .admin-user-filters {
@@ -201,12 +98,10 @@
     box-shadow: none;
 }
 
-vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(header),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(header) {
     color: var(--cosmos-primary-contrast-color);
 }
 
-vaadin-dialog.admin-user-delete-dialog::part(header-content),
 vaadin-dialog.admin-user-dialog::part(header-content) {
     width: 100%;
     min-width: 0;
@@ -397,13 +292,6 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     font-weight: var(--cosmos-font-weight-regular);
 }
 
-.admin-user-dialog-separator {
-    width: 100%;
-    margin: 0;
-    border: 0;
-    border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-
 .admin-user-dialog vaadin-checkbox-group::part(label) {
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-label);
@@ -466,8 +354,7 @@ vaadin-dialog.admin-user-dialog::part(content) {
 
 /* Lokale Textfarbe für Rollen und aktive Filter; Schrift zentral in cosmos-theme.css. */
 
-.admin-users-grid .cosmos-admin-role-chip,
-.cosmos-admin .admin-user-active-filter-chip {
+.admin-users-grid .cosmos-admin-role-chip {
     color: var(--cosmos-text-secondary-color);
     text-transform: none;
 }
@@ -548,11 +435,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
 
 /* 6. LÖSCHDIALOG / Warnung und ausgewähltes Konto */
 
-vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
-    box-sizing: border-box;
-    width: min(var(--cosmos-dialog-width-confirm), calc(100vw - 32px));
-}
-
 .admin-user-delete-warning,
 .admin-user-delete-identity {
     display: flex;
@@ -585,6 +467,1029 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
     background: var(--cosmos-dialog-header-background);
 }
 
-vaadin-dialog.admin-user-delete-dialog::part(content) {
-    padding-block: var(--cosmos-space-2xl);
+/* BENUTZERVERWALTUNG IM PORTAL / Werkzeugleiste, Tabelle, Pagination, Filterpanel,
+ * Benutzerformular und Löschbestätigung innerhalb von .cosmos-reference-admin. */
+vaadin-app-layout.cosmos-reference-admin .admin-user-filter-bar {
+    margin: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--cosmos-border-color);
+    background: var(--cosmos-page-background);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-toolbar-actions {
+    display: flex;
+    gap: 8px;
+}
+vaadin-app-layout.cosmos-reference-admin .cosmos-admin-users-content > .cosmos-panel-header {
+    padding: 22px 24px;
+}
+/* Konten-Karte: gemeinsame native Card, bisherige kompakte Adminmaße und Metadatenpalette. */
+vaadin-app-layout.cosmos-reference-admin .cosmos-admin-users-content vaadin-card.admin-accounts-metric {
+    width: auto;
+    min-width: 96px;
+    height: auto;
+    padding: 8px 12px;
+    border-radius: 9px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-accounts-metric::part(content) {
+    transform: none;
+}
+vaadin-app-layout.cosmos-reference-admin
+    .admin-accounts-metric
+    :is(.cosmos-metric-card-label, .cosmos-metric-card-value) {
+    align-self: stretch;
+    color: var(--cosmos-primary-text-color);
+    letter-spacing: inherit;
+    text-align: center;
+}
+/* Lokale Tabellenpalette und einmalige Zellabstände aus der freigegebenen Referenz. */
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--cosmos-page-background);
+    --vaadin-grid-cell-padding: 0;
+    --vaadin-grid-cell-background: var(--cosmos-page-background);
+    --cosmos-table-row-background: var(--cosmos-color-space);
+    --cosmos-table-alternate-row-background: color-mix(in srgb, var(--cosmos-color-input) 50%, transparent);
+    --cosmos-table-highlight-background: var(--cosmos-color-hover);
+    --cosmos-table-body-color: var(--cosmos-color-label);
+    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(cell) {
+    border-inline: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(header-cell) {
+    box-sizing: border-box;
+    min-height: 43px;
+    padding: 0 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--cosmos-color-slate-800);
+    font: 700 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    color: var(--cosmos-color-muted);
+    text-transform: uppercase;
+    background: var(--cosmos-color-raised);
+}
+/* Ganze Zeilenflächen vermeiden dunkle Skalierungsfugen zwischen einzelnen Zellflächen. */
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-row) {
+    background: var(--cosmos-table-row-background);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(odd-row) {
+    background:
+        linear-gradient(var(--cosmos-table-alternate-row-background), var(--cosmos-table-alternate-row-background)),
+        var(--cosmos-table-row-background);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(selected-row) {
+    background: var(--cosmos-table-highlight-background);
+}
+@media (any-hover: hover) {
+    vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-row):hover {
+        background: var(--cosmos-hover-background);
+    }
+    vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(selected-row):hover {
+        background: var(--cosmos-table-highlight-background);
+    }
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-cell) {
+    min-height: 0;
+    padding: 14px 12px;
+    border-top: 0;
+    border-bottom: 1px solid var(--cosmos-border-color);
+    background: transparent;
+}
+/* Den Abschluss zeichnet allein die Pagination, nicht zusätzlich die letzte Gridzeile. */
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(last-row-cell) {
+    border-bottom: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .cosmos-admin-users-content > .cosmos-panel-footer {
+    border-top: 1px solid var(--cosmos-border-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(first-column-cell) {
+    padding-left: 24px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(last-column-cell) {
+    border-right: 0;
+    padding-right: 24px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-grid-sorter {
+    min-width: 0;
+    color: var(--cosmos-color-muted);
+    font: 700 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    letter-spacing: 0.6px;
+    gap: 4px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-grid-sorter:is(:hover, [direction]) {
+    color: var(--cosmos-color-white);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-grid-sorter::part(indicators) {
+    flex: none;
+    color: var(--cosmos-color-slate-600);
+    margin: 0 0 0 auto;
+    transform: none;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-grid-sorter[direction]::part(indicators) {
+    color: var(--cosmos-primary-text-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-actions-header {
+    color: var(--cosmos-color-muted);
+    font: 700 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    letter-spacing: 0.6px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-button {
+    box-sizing: border-box;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 30px;
+    padding: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-actions {
+    gap: 6px;
+    width: 100%;
+    align-items: center;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-identity {
+    gap: 10px;
+    min-width: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-name {
+    color: var(--cosmos-text-color);
+    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid :is(.admin-user-table-enabled, .admin-user-table-status) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    white-space: nowrap;
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-status[has-icon]::part(icon) {
+    display: flex;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-status > vaadin-icon {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 12px;
+    margin: 0;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid [theme~="success"] {
+    color: var(--cosmos-success-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid [theme~="error"] {
+    color: var(--cosmos-error-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid [theme~="warning"] {
+    color: var(--cosmos-warning-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-users-grid [theme~="contrast"] {
+    color: var(--cosmos-text-secondary-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-self {
+    display: flex;
+    width: max-content;
+    height: auto;
+    margin: 3px 0 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--cosmos-success-color);
+    font: 400 var(--cosmos-font-size-2xs)/14px var(--cosmos-font-family);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-table-roles {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+vaadin-app-layout.cosmos-reference-admin .cosmos-admin-role-chip {
+    height: auto;
+    margin: 0;
+    padding: 3px 6px;
+    border: 1px solid color-mix(in srgb, var(--cosmos-color-sky) 19%, transparent);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--cosmos-color-sky) 3%, transparent);
+    color: var(--cosmos-color-sky-light);
+    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+}
+@media (max-width: 600px) {
+    vaadin-app-layout.cosmos-reference-admin .admin-user-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px 20px;
+    }
+    vaadin-app-layout.cosmos-reference-admin .admin-user-toolbar-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    margin: 0;
+    background: var(--cosmos-card-background);
+    box-sizing: border-box;
+    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    color: var(--cosmos-text-secondary-color);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination-summary {
+    gap: 8px;
+    align-items: center;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination-nav {
+    justify-self: end;
+    gap: 4px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination-numbers {
+    gap: 4px;
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination vaadin-button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 5px;
+    font-size: var(--cosmos-font-size-xs);
+}
+vaadin-app-layout.cosmos-reference-admin .admin-user-pagination vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+/* !important: CosmosPagination setzt 56 px als Inline-Breite. */
+vaadin-app-layout.cosmos-reference-admin .portal-pagination-size {
+    width: 64px !important;
+    --vaadin-input-field-height: 32px;
+}
+vaadin-app-layout.cosmos-reference-admin .portal-pagination-size::part(input-field) {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 10px;
+}
+vaadin-app-layout.cosmos-reference-admin .portal-pagination-size input {
+    font: 600 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+}
+/* Benutzerfilter: Maße des Seitenpanels. */
+vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(overlay) {
+    width: 380px !important;
+}
+/* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
+vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(header) {
+    padding: 0 !important;
+    border-bottom: 1px solid var(--cosmos-border-color);
+    background: var(--cosmos-card-background);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading {
+    padding: 20px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading .cosmos-panel-title {
+    margin: 0;
+    font: 600 var(--cosmos-font-size-title)/28px var(--cosmos-font-family);
+    letter-spacing: -0.025em;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading .cosmos-panel-description {
+    margin: 2px 0 0;
+    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    color: var(--cosmos-text-secondary-color);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading .cosmos-panel-icon {
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 12px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close {
+    box-sizing: border-box;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 9px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close vaadin-icon {
+    width: 18px;
+    height: 18px;
+}
+/* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
+vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(content) {
+    padding: 20px !important;
+    background: var(--cosmos-page-background);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-tools {
+    gap: 8px;
+    margin: 0 0 20px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-user-active-filter-count {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    background: var(--cosmos-selection-background);
+    color: var(--cosmos-primary-text-color);
+    border: 1px solid color-mix(in srgb, var(--cosmos-color-sky) 25%, transparent);
+    border-radius: 9px;
+    font: 600 var(--cosmos-font-size-s)/1 var(--cosmos-font-family);
+    white-space: nowrap;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-user-filter-reset {
+    height: 36px;
+    padding: 0 13px;
+    white-space: nowrap;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-user-filters {
+    gap: 18px;
+}
+.admin-reference-drawer.admin-user-filter-drawer
+    :is(
+        vaadin-text-field,
+        vaadin-date-picker,
+        vaadin-time-picker,
+        vaadin-custom-field,
+        vaadin-radio-group,
+        vaadin-checkbox-group
+    ) {
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+.admin-reference-drawer.admin-user-filter-drawer
+    :is(vaadin-text-field, vaadin-date-picker, vaadin-time-picker, vaadin-radio-group, vaadin-checkbox-group)::part(
+        label
+    ) {
+    margin: 0 0 6px;
+    padding: 0;
+    color: var(--cosmos-label-color);
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+.admin-reference-drawer.admin-user-filter-drawer
+    :is(vaadin-text-field, vaadin-date-picker, vaadin-time-picker)::part(input-field) {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+    border: 1px solid var(--cosmos-border-color);
+    border-radius: 9px;
+    padding: 0 12px;
+    background: var(--cosmos-base-color);
+}
+.admin-reference-drawer.admin-user-filter-drawer input[slot="input"] {
+    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+}
+.admin-reference-drawer.admin-user-filter-drawer vaadin-text-field vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+.admin-reference-drawer.admin-user-filter-drawer vaadin-text-field > [slot="prefix"] {
+    margin-inline-end: 8px;
+    flex-shrink: 0;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices::part(group-field) {
+    gap: 8px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox {
+    --filter-choice-color: var(--cosmos-primary-text-color);
+    --filter-choice-border: color-mix(in srgb, var(--cosmos-color-sky) 40%, transparent);
+    --filter-choice-background: var(--cosmos-selection-background);
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status="available"]) {
+    --filter-choice-color: var(--cosmos-success-color);
+    --filter-choice-border: color-mix(in srgb, var(--cosmos-color-success) 40%, transparent);
+    --filter-choice-background: color-mix(in srgb, var(--cosmos-color-success) 8%, transparent);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status="employed"]) {
+    --filter-choice-color: var(--cosmos-error-color);
+    --filter-choice-border: color-mix(in srgb, var(--cosmos-color-danger) 40%, transparent);
+    --filter-choice-background: color-mix(in srgb, var(--cosmos-color-danger) 8%, transparent);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status="absent"]) {
+    --filter-choice-color: var(--cosmos-warning-color);
+    --filter-choice-border: color-mix(in srgb, var(--cosmos-color-warning) 40%, transparent);
+    --filter-choice-background: color-mix(in srgb, var(--cosmos-color-warning) 8%, transparent);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status="offline"]) {
+    --filter-choice-color: var(--cosmos-text-secondary-color);
+    --filter-choice-border: color-mix(in srgb, var(--cosmos-color-secondary) 40%, transparent);
+    --filter-choice-background: color-mix(in srgb, var(--cosmos-color-secondary) 8%, transparent);
+}
+/* Die native Beschriftung aktiviert das Badge auch außerhalb des Textes. */
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox::part(label) {
+    position: static;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox > label[slot="label"] {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: auto;
+    padding: 8px 28px 8px 10px;
+    font: 500 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    color: var(--cosmos-text-secondary-color);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices .admin-filter-status-label[data-status] {
+    min-width: 0;
+    gap: 6px;
+    color: inherit;
+    font: inherit;
+}
+/* !important: UserStatus setzt Maße und Farben des Symbols als Inline-Style. */
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-status-label > div:first-child {
+    width: 14px !important;
+    height: 14px !important;
+    flex: 0 0 14px;
+    background: transparent !important;
+    color: var(--filter-choice-color) !important;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox::after {
+    content: "";
+    position: absolute;
+    right: 10px;
+    top: calc(50% - 7px);
+    width: 14px;
+    height: 14px;
+    background: var(--filter-choice-color);
+    mask: url("../icons/lucide/check.svg") center/contain no-repeat;
+    visibility: hidden;
+    pointer-events: none;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox[checked] {
+    border-color: var(--filter-choice-border);
+    background: var(--filter-choice-background);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox[checked] > label[slot="label"] {
+    color: var(--cosmos-text-color);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox[checked]::after {
+    visibility: visible;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:hover {
+    border-color: var(--filter-choice-border);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox[focus-ring] {
+    outline: 2px solid var(--cosmos-primary-text-color);
+    outline-offset: 2px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-user-activity-filter {
+    width: 100%;
+    max-width: none;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-user-activity-inputs {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 12px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-hint {
+    box-sizing: border-box;
+    margin: 18px 0 0;
+    border-color: color-mix(in srgb, var(--cosmos-color-primary) 20%, transparent);
+    font: 400 var(--cosmos-font-size-xs)/19.8px var(--cosmos-font-family);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-filter-hint > vaadin-icon {
+    color: var(--cosmos-primary-text-color);
+}
+/* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
+vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(footer) {
+    padding: 16px 20px !important;
+    border-top: 1px solid var(--cosmos-border-color);
+    background: var(--cosmos-card-background);
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-drawer-actions {
+    gap: 8px;
+}
+.admin-reference-drawer.admin-user-filter-drawer .admin-drawer-actions > vaadin-button {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    padding: 0;
+    white-space: nowrap;
+}
+@media (max-width: 479px) {
+    /* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
+    vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(overlay) {
+        width: 100vw !important;
+    }
+}
+@media (orientation: landscape) {
+    /* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
+    vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(overlay) {
+        width: min(380px, 90vw) !important;
+    }
+}
+/* Auch die Löschbestätigung (vaadin-confirm-dialog) behält die Formularbreite; die Elementangabe
+ * hebt die Regel unabhängig von der Ladereihenfolge über die allgemeine Bestätigungsbreite. */
+:is(vaadin-dialog, vaadin-confirm-dialog).admin-reference-dialog::part(overlay) {
+    width: min(660px, calc(100vw - 32px));
+}
+.admin-reference-dialog .admin-user-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.admin-reference-dialog .cosmos-panel-heading {
+    flex: 1;
+    min-width: 0;
+}
+.admin-reference-dialog .cosmos-dialog-form {
+    padding: 24px;
+    gap: 20px;
+}
+.admin-reference-dialog .cosmos-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.admin-reference-dialog vaadin-checkbox-group::part(label) {
+    margin-bottom: 8px;
+}
+.admin-reference-dialog vaadin-checkbox-group::part(helper-text) {
+    padding-top: 4px;
+    font-size: var(--cosmos-font-size-xs);
+}
+.admin-reference-dialog .cosmos-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.admin-reference-dialog .cosmos-dialog-cancel {
+    margin-left: auto;
+}
+.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+    width: auto;
+}
+.admin-reference-dialog .cosmos-panel-hint {
+    align-items: center;
+    padding: 0;
+    font: 400 var(--cosmos-font-size-xs)/19px var(--cosmos-font-family);
+}
+.admin-reference-dialog .admin-user-delete-warning {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+.admin-reference-dialog .admin-user-delete-identity {
+    padding: 16px;
+    border: 1px solid var(--cosmos-border-color);
+    border-radius: 10px;
+    background: var(--cosmos-base-color);
+}
+.admin-reference-dialog .admin-user-table-avatar .cosmos-avatar-circle {
+    border: 2px solid var(--cosmos-border-color);
+    background: var(--cosmos-base-color);
+    color: var(--cosmos-text-color);
+    box-shadow: none;
+}
+/* Benutzerformular: Referenzabstände lokal übernehmen, native Eingaben beibehalten. */
+vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"]::part(overlay) {
+    width: min(660px, calc(100vw - 32px));
+}
+vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"]::part(content) {
+    padding: 0;
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-dialog-header {
+    padding: 24px;
+    gap: 12px;
+}
+.admin-user-dialog .admin-user-dialog-header > .cosmos-panel-icon {
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+}
+.admin-user-dialog .admin-user-dialog-header .cosmos-panel-title {
+    font: 600 var(--cosmos-font-size-title)/28px var(--cosmos-font-family);
+    letter-spacing: -0.025em;
+}
+.admin-user-dialog .admin-user-dialog-header .cosmos-panel-description {
+    margin: 2px 0 0;
+    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-dialog-form {
+    gap: 18px;
+    padding: 24px;
+    font: 400 var(--cosmos-font-size-m)/1.7 var(--cosmos-font-family);
+}
+.admin-user-dialog .admin-user-password-column {
+    min-width: 0;
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-password-fields {
+    display: block;
+}
+.admin-user-dialog .admin-user-password-column > .admin-user-password-hint {
+    display: block;
+    margin: 6px 0 0;
+    font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family);
+    color: var(--cosmos-text-secondary-color);
+}
+.admin-user-dialog.admin-reference-dialog
+    :is(
+        vaadin-text-field,
+        vaadin-email-field,
+        vaadin-password-field,
+        vaadin-combo-box,
+        vaadin-multi-select-combo-box,
+        vaadin-date-picker
+    ) {
+    padding: 0;
+    --vaadin-input-field-height: 40px;
+}
+.admin-user-dialog.admin-reference-dialog
+    :is(
+        vaadin-text-field,
+        vaadin-email-field,
+        vaadin-password-field,
+        vaadin-combo-box,
+        vaadin-multi-select-combo-box,
+        vaadin-date-picker
+    )::part(label) {
+    margin: 0 0 6px;
+    padding: 0;
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+.admin-user-dialog.admin-reference-dialog
+    :is(
+        vaadin-text-field,
+        vaadin-email-field,
+        vaadin-password-field,
+        vaadin-combo-box,
+        vaadin-multi-select-combo-box,
+        vaadin-date-picker
+    )::part(input-field) {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+}
+.admin-user-dialog.admin-reference-dialog input[slot="input"] {
+    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-reference-choice {
+    --vaadin-item-overlay-padding: 0;
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-reference-choice::part(overlay) {
+    border: 1px solid var(--cosmos-border-color);
+    border-radius: 10px;
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-reference-choice::part(content) {
+    box-sizing: border-box;
+    padding: 4px 4px 0;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled]::part(label) {
+    -webkit-text-fill-color: currentColor;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input[slot="input"] {
+    opacity: 1;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input::placeholder {
+    color: var(--cosmos-text-tertiary-color);
+    -webkit-text-fill-color: var(--cosmos-text-tertiary-color);
+    opacity: 1;
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-option-checkbox {
+    padding: 2px 0 0;
+    margin: 0;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-checkbox::part(checkbox) {
+    box-sizing: border-box;
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    align-self: center;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-checkbox > label {
+    padding: 0 0 0 9px;
+}
+.admin-user-dialog .admin-user-option-label > span:first-child {
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+.admin-user-dialog .admin-user-option-label > .admin-user-option-hint {
+    margin: 0;
+    font: 400 var(--cosmos-font-size-xs)/1.7 var(--cosmos-font-family);
+}
+.admin-user-dialog vaadin-form-layout.cosmos-dialog-form {
+    box-sizing: border-box;
+    --admin-user-group-spacing: 18px;
+    --vaadin-form-layout-row-spacing: var(--admin-user-group-spacing);
+}
+/* Verschachtelte Feldpaare dürfen den Außenabstand ihrer Formulargruppe nicht verkürzen. */
+.admin-user-dialog.admin-reference-dialog vaadin-form-layout.cosmos-dialog-form > * {
+    margin-block: calc(0.5 * var(--admin-user-group-spacing));
+}
+.admin-user-dialog vaadin-form-layout.admin-user-paired-form {
+    --vaadin-form-layout-column-spacing: 16px;
+    --vaadin-form-layout-row-spacing: 16px;
+    --admin-user-two-column-min-width: 0px;
+}
+.admin-user-dialog vaadin-form-layout > * {
+    min-width: 0;
+    align-self: flex-start;
+}
+.admin-user-dialog .admin-user-permissions {
+    width: 100%;
+}
+.admin-user-dialog.admin-reference-dialog vaadin-form-layout > .admin-user-option-checkbox {
+    margin: 0;
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-permissions > .admin-user-enabled-checkbox {
+    margin-top: 24px;
+}
+.admin-user-dialog .admin-user-role-field {
+    position: relative;
+    min-width: 0;
+}
+.admin-user-dialog .admin-user-roles::part(input-field) {
+    padding: 0 14px;
+    border: 1px solid var(--cosmos-border-color);
+    border-radius: 8px;
+    background: var(--cosmos-base-color);
+}
+.admin-user-dialog .admin-user-roles[focused]::part(input-field) {
+    border-color: var(--cosmos-primary-text-color);
+    box-shadow: 0 0 0 1px var(--cosmos-primary-text-color);
+}
+.admin-user-dialog .admin-user-roles[invalid]::part(input-field) {
+    border-color: var(--cosmos-error-color);
+}
+.admin-user-dialog .admin-user-roles::part(chips),
+.admin-user-dialog .admin-user-roles > [slot="overflow"] {
+    display: none;
+}
+/* !important: blendet den Platzhalter gegenüber der Aura-Platzhalterfarbe sicher aus. */
+.admin-user-dialog .admin-user-roles input::placeholder {
+    color: transparent !important;
+}
+.admin-user-dialog .admin-user-role-summary {
+    position: absolute;
+    inset-inline-start: 14px;
+    inset-block-start: 24px;
+    height: 40px;
+    max-width: calc(100% - 55px);
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--cosmos-text-tertiary-color);
+    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+}
+.admin-user-dialog .admin-user-role-field:has(.admin-user-roles[has-value]) > .admin-user-role-summary {
+    color: var(--cosmos-text-color);
+    font-weight: 600;
+}
+.admin-user-dialog .admin-user-role-field:has(input:not(:placeholder-shown)) > .admin-user-role-summary {
+    visibility: hidden;
+}
+.admin-user-dialog .admin-user-roles::part(helper-text) {
+    margin: 0;
+    padding: 6px 0 0;
+    color: var(--cosmos-text-secondary-color);
+    font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family);
+}
+.admin-user-dialog .admin-user-roles::part(helper-text)::before {
+    display: none;
+}
+.admin-user-dialog .admin-user-roles::part(overlay) {
+    margin: 4px 0;
+    border: 1px solid var(--cosmos-control-border-color);
+    border-radius: 9px;
+}
+.admin-user-dialog .admin-user-roles::part(content) {
+    padding: 0;
+    overflow: hidden;
+}
+.admin-user-dialog .admin-user-roles vaadin-multi-select-combo-box-scroller {
+    box-sizing: border-box;
+    padding: 7px;
+}
+.admin-user-role-option {
+    min-height: 36px;
+    padding: 8px 11px;
+    color: var(--cosmos-text-color);
+    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"]::part(footer) {
+    padding: 0;
+}
+.admin-user-dialog .admin-user-editor-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-security-note {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 16px 24px;
+    border: 0;
+    border-bottom: 1px solid var(--cosmos-border-color);
+    border-radius: 0;
+    background: transparent;
+    font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family);
+}
+.admin-user-dialog.admin-reference-dialog .admin-user-security-note > vaadin-icon {
+    width: 16px;
+    height: 16px;
+}
+.admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
+    box-sizing: border-box;
+    padding: 16px 24px;
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+.admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+    width: auto;
+    min-width: 110px;
+    flex: none;
+}
+@media (max-width: 767px) {
+    vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"]::part(overlay) {
+        width: min(660px, calc(100vw - 20px));
+        max-height: calc(100dvh - 20px);
+    }
+    .admin-user-dialog.admin-reference-dialog .admin-user-dialog-header {
+        padding: 18px;
+    }
+    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-form {
+        padding: 20px;
+    }
+    .admin-user-dialog.admin-reference-dialog .cosmos-form-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .admin-user-dialog vaadin-form-layout.admin-user-paired-form {
+        --admin-user-two-column-min-width: 100vw;
+    }
+    .admin-user-dialog.admin-reference-dialog .admin-user-permissions > .admin-user-enabled-checkbox {
+        margin-top: 0;
+    }
+    .admin-user-dialog.admin-reference-dialog .admin-user-security-note,
+    .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
+        padding: 16px 20px;
+    }
+    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions {
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+        flex: 1;
+        min-width: 0;
+    }
+    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > .cosmos-delete-button {
+        flex-basis: 100%;
+        order: 2;
+    }
+}
+/* Benutzerbestätigung: dieselben Maße und Textabstände wie im festen HTML-Dialog. */
+.admin-user-delete-dialog.admin-reference-dialog .admin-user-dialog-header {
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 24px;
+}
+.admin-user-delete-dialog .admin-user-dialog-header > .cosmos-panel-icon {
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+}
+.admin-user-delete-dialog .cosmos-panel-icon.cosmos-delete-accent {
+    color: var(--cosmos-error-color);
+    border-color: var(--cosmos-danger-border);
+    background: var(--cosmos-danger-surface);
+}
+.admin-user-delete-dialog .admin-user-table-avatar vaadin-avatar.cosmos-avatar-circle {
+    --cosmos-avatar-initial-font-size: 10px;
+    --cosmos-avatar-initial-offset: -1px;
+}
+.admin-user-delete-dialog .cosmos-panel-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.admin-user-delete-dialog .admin-user-dialog-header .cosmos-panel-description {
+    margin: 2px 0 0;
+    font: 400 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+}
+.admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-form {
+    gap: 16px;
+    padding: 24px;
+}
+.admin-user-delete-dialog .admin-user-delete-warning-title {
+    font: 600 var(--cosmos-font-size-xl)/21px var(--cosmos-font-family);
+}
+.admin-user-delete-dialog .admin-user-delete-warning .cosmos-panel-description {
+    margin: 6px 0 0;
+    font: 400 var(--cosmos-font-size-m)/21px var(--cosmos-font-family);
+}
+.admin-user-delete-dialog.admin-reference-dialog .admin-user-delete-identity {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 8px;
+}
+.admin-user-delete-dialog .admin-user-delete-name {
+    font: 500 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+}
+.admin-user-delete-dialog .admin-user-delete-identity > .cosmos-panel-heading {
+    min-width: 0;
+    flex: 1;
+}
+.admin-user-delete-dialog .admin-user-delete-identity :is(.admin-user-delete-name, .cosmos-panel-description) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-user-delete-dialog .admin-user-delete-identity .cosmos-panel-description {
+    margin: 2px 0 0;
+    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+}
+.admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+    width: 112px;
+    min-width: 0;
+}
+@media (max-width: 639px) {
+    .admin-user-delete-dialog .admin-user-delete-identity :is(.admin-user-delete-name, .cosmos-panel-description) {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+    .admin-user-delete-dialog.admin-reference-dialog .admin-user-dialog-header {
+        padding: 20px;
+        gap: 12px;
+    }
+    .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-form {
+        padding: 20px;
+    }
+    .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+        flex: 1;
+        width: 0;
+    }
+}
+@media (max-width: 359px) {
+    .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions {
+        flex-direction: column;
+    }
+    .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
+        flex: none;
+        width: 100%;
+    }
+}
+.admin-reference-dialog .cosmos-delete-accent {
+    color: var(--cosmos-error-color);
+    border-color: var(--cosmos-danger-border);
+    background: var(--cosmos-danger-surface);
+}
+vaadin-dialog.admin-reference-dialog::part(overlay) {
+    width: min(660px, calc(100vw - 32px));
+}
+.admin-reference-dialog vaadin-checkbox::part(checkbox) {
+    width: 16px;
+    height: 16px;
+    box-sizing: border-box;
+    border: 1px solid var(--cosmos-control-border-color);
+    border-radius: 5px;
+    background: var(--cosmos-base-color);
+}
+.admin-reference-dialog vaadin-checkbox[checked]::part(checkbox) {
+    border-color: var(--cosmos-primary-background);
+    background: var(--cosmos-primary-background);
 }

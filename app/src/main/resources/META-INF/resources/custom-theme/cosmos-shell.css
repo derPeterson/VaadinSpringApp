@@ -676,6 +676,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 .cosmos-reference-overlay .portal-menu-avatar {
     --cosmos-avatar-status-anchor: calc(14.64466% + 0.707107px);
 }
+/* !important: UserStatus setzt Position und Maße des Statuspunkts als Inline-Style. */
 .cosmos-reference-portal .cosmos-avatar-status > div {
     transform: translate(50%, 50%) !important;
     bottom: var(--cosmos-avatar-status-anchor) !important;
@@ -773,6 +774,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     color: var(--cosmos-text-secondary-color);
 }
 
+/* !important: überschreibt Inline-Maße und -Farbe aus UserStatus. */
 .cosmos-reference-portal .cosmos-user-avatar .cosmos-avatar-status > div {
     background: var(--cosmos-avatar-presence-color, var(--cosmos-text-secondary-color)) !important;
     border-radius: 50%;
@@ -782,6 +784,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     border: 0;
     box-shadow: 0 0 0 2px var(--cosmos-page-background);
 }
+/* !important: überschreibt Inline-Maße aus UserStatus. */
 .cosmos-reference-portal .account-summary-avatar .cosmos-avatar-status > div {
     width: 16px !important;
     height: 16px !important;
@@ -860,9 +863,6 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     padding: 0 12px;
     white-space: nowrap;
     font-size: var(--cosmos-font-size-s);
-}
-.portal-home-actions .portal-button[aria-current] {
-    background: var(--action-primary) !important;
 }
 .portal-home-art {
     min-width: 0;
@@ -943,6 +943,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     }
 }
 @media (prefers-reduced-motion: reduce) {
+    /* !important: reduzierte Bewegung schaltet jede Animation der Startseite ab. */
     .portal-home-page * {
         animation: none !important;
     }
@@ -1203,6 +1204,7 @@ vaadin-popover[theme~="cosmos-reference"]::part(content) {
 .portal-user-menu-body > * {
     min-width: 0;
 }
+/* !important: OverlayUserIcon setzt --cosmos-avatar-size als Inline-Style. */
 .portal-user-menu-body .portal-menu-avatar {
     margin: 0;
     width: 48px;
@@ -1297,6 +1299,7 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
     box-shadow: none;
     color: var(--cosmos-text-color);
 }
+/* !important: überschreibt Inline-Maße, -Position und -Farbe aus UserStatus. */
 .cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status > div {
     box-sizing: border-box;
     width: 16px !important;
@@ -1466,6 +1469,7 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
     flex-shrink: 0;
 }
 
+/* !important: UserStatus setzt die Symbolgröße als Inline-Style. */
 .cosmos-reference-overlay .portal-status-option-content > :first-child {
     width: 20px !important;
     height: 20px !important;
@@ -1695,6 +1699,7 @@ vaadin-popover.portal-user-menu-popover[theme~="cosmos-reference"]::part(overlay
     }
 }
 
+/* !important: UserStatus setzt die Symbolgröße als Inline-Style. */
 vaadin-select[theme~="cosmos-reference"][theme~="cosmos-status"]
     vaadin-select-item
     .portal-status-option-content

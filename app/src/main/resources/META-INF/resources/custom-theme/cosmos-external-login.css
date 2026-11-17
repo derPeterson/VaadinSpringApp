@@ -1,3 +1,6 @@
+/* EXTERNE ANMELDUNG / Google-/Microsoft-Buttons, verknüpfte Konten und öffentliche Anmeldepanels.
+ * Einzige Fachdatei mit eigenen Farbwerten: Google-Markenvorgaben. */
+
 @font-face {
     font-family: "Google Sans Signin";
     src: url("../icons/external-login/GoogleSans-latin.woff2") format("woff2");
@@ -39,19 +42,6 @@
     height: 20px;
     object-fit: contain;
     flex-shrink: 0;
-}
-.external-login-alternative {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--cosmos-text-secondary-color);
-    font-size: var(--cosmos-font-size-xs);
-}
-.external-login-alternative::before,
-.external-login-alternative::after {
-    content: "";
-    flex: 1;
-    border-top: 1px solid var(--cosmos-border-color);
 }
 .external-connections-overview {
     display: grid;
@@ -186,6 +176,7 @@
     align-items: center;
     max-width: 1048px;
 }
+/* !important: hidden muss die Rasteranzeige der Panels schlagen. */
 .cosmos-reference-public .public-auth-panels[hidden] {
     display: none !important;
 }

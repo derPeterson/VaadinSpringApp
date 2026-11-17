@@ -74,7 +74,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @StyleSheet("custom-theme/admin-users.css")
-@StyleSheet("custom-theme/cosmos-admin-reference.css")
 @Route(AppRouteConstants.ADMIN_ROUTE)
 @UIScope
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)

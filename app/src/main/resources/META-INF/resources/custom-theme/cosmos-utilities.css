@@ -1,0 +1,81 @@
+/* SILENT COSMOS / ALLGEMEINE COSMOS-KLASSEN
+ * Ersatz für frühere Lumo-Varianten und -Utilities; Java-Konstanten in CosmosCssClasses.
+ * Direkt nach cosmos-theme.css geladen, damit diese Klassen die gemeinsamen Komponentenregeln
+ * gleicher Spezifität ergänzen. */
+
+/* Textartiger Button: keine eigene Fläche, kein Innenabstand, Schrift des Umfelds. */
+vaadin-button.cosmos-inline-button {
+    --vaadin-button-background: transparent;
+    --vaadin-button-border-width: 0;
+    --vaadin-button-padding: 0;
+    --vaadin-button-height: auto;
+    min-width: 0;
+    margin: 0;
+    color: var(--cosmos-primary-text-color);
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/* Quadratischer Icon-Button in Controlhöhe. */
+vaadin-button.cosmos-icon-button {
+    --vaadin-button-padding: 0;
+    width: var(--cosmos-control-height);
+    min-width: var(--cosmos-control-height);
+}
+
+/* Reiter teilen sich die verfügbare Breite gleichmäßig. */
+vaadin-tabs.cosmos-equal-width-tabs > vaadin-tab {
+    flex: 1 0 0%;
+}
+
+.cosmos-text-primary {
+    color: var(--cosmos-primary-text-color);
+}
+
+.cosmos-text-secondary {
+    color: var(--cosmos-text-secondary-color);
+}
+
+.cosmos-text-success {
+    color: var(--cosmos-success-text-color);
+}
+
+.cosmos-text-warning {
+    color: var(--cosmos-warning-text-color);
+}
+
+.cosmos-text-error {
+    color: var(--cosmos-error-text-color);
+}
+
+/* Systemmeldungen: Abstände und Hervorhebung wie zuvor über Utilities gesetzt. */
+.cosmos-toast-title,
+.cosmos-toast-highlight {
+    font-weight: var(--cosmos-font-weight-semibold);
+}
+
+.cosmos-toast-content {
+    gap: var(--cosmos-space-2xl);
+}
+
+.cosmos-toast-text {
+    padding: var(--cosmos-space-s);
+}
+
+.cosmos-notification-message {
+    margin: 0;
+}
+
+/* Konfigurationsfelder und Statusbeschreibung im Benutzermenü. */
+.cosmos-config-field {
+    gap: var(--cosmos-space-xs);
+}
+
+.cosmos-config-label {
+    font-size: var(--cosmos-font-size-l);
+    font-weight: var(--cosmos-font-weight-medium);
+}
+
+.user-popover-status-description {
+    font-size: var(--cosmos-font-size-s);
+}

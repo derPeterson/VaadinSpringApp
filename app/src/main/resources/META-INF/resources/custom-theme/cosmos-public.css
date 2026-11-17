@@ -288,6 +288,7 @@
     background: var(--cosmos-card-background);
     border-top: 1px solid var(--cosmos-border-color);
 }
+/* !important: hält Footeraktionen in natürlicher Breite statt der gestreckten Layoutbreite (per Vergleich geprüft). */
 .cosmos-reference-public .public-panel-footer > vaadin-button {
     width: auto !important;
     flex-shrink: 0;
@@ -304,6 +305,7 @@
     min-width: 156px;
     margin: 0;
 }
+/* !important: wie die Footeraktionen natürliche Breite (per Vergleich geprüft). */
 .cosmos-reference-public .public-panel-footer > .cosmos-intro {
     width: auto !important;
     margin: 0 auto 0 0;
@@ -393,6 +395,7 @@
     border-color: color-mix(in srgb, var(--cosmos-color-danger) 27%, transparent);
     background: color-mix(in srgb, var(--cosmos-color-danger) 8%, transparent);
 }
+/* !important: Statussymbole behalten ihre Statusfarbe gegenüber den allgemeinen Iconfarben. */
 .cosmos-reference-public .public-panel .cosmos-status-icon.cosmos-text-error {
     color: var(--cosmos-error-color) !important;
 }

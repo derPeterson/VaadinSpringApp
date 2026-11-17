@@ -181,13 +181,6 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     border-color: var(--cosmos-primary-color-50pct);
 }
 
-.cosmos-notification-preview-title {
-    display: flex;
-    min-width: 0;
-    align-items: baseline;
-    gap: var(--cosmos-space-s);
-}
-
 #notifications-preview .cosmos-notification-title {
     min-height: 0;
     margin: 0;
@@ -199,51 +192,9 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     overflow-wrap: anywhere;
 }
 
-.cosmos-notification-preview-title > .cosmos-notification-title {
-    flex: 1;
-    min-width: 0;
-    justify-content: flex-start;
-    text-align: start;
-    white-space: nowrap;
-}
-
-#notifications-preview .cosmos-notification-preview-title > .cosmos-notification-title::part(label) {
-    display: block;
-    min-width: 0;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.cosmos-notification-preview-title > .cosmos-notification-preview-dismiss,
-.cosmos-notification-inbox-title > .cosmos-notification-preview-dismiss {
-    flex-shrink: 0;
-    width: var(--cosmos-pagination-size);
-    min-width: var(--cosmos-pagination-size);
-    height: var(--cosmos-pagination-size);
-    min-height: var(--cosmos-pagination-size);
-    padding: 0;
-    margin: 0;
-    color: var(--cosmos-text-secondary-color);
-}
-
 .cosmos-notification-preview-dismiss > vaadin-icon {
     width: var(--cosmos-icon-size-m);
     height: var(--cosmos-icon-size-m);
-}
-
-.cosmos-notification-preview-dot {
-    flex-shrink: 0;
-    width: var(--cosmos-space-s);
-    height: var(--cosmos-space-s);
-    border-radius: 50%;
-    background: var(--cosmos-primary-color);
-    box-shadow: 0 0 0 var(--cosmos-space-xs) var(--cosmos-primary-color-10pct);
-}
-
-.cosmos-notification-preview-dot[hidden] {
-    display: none;
 }
 
 .cosmos-notification-preview-meta {
@@ -277,10 +228,6 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
-}
-
-.cosmos-notification-preview-row-footer {
-    margin-top: var(--cosmos-space-s);
 }
 
 .cosmos-notification-preview-actions {
@@ -498,13 +445,6 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     min-width: 0;
 }
 
-.cosmos-notification-inbox-title {
-    display: flex;
-    align-items: center;
-    gap: var(--cosmos-space-s);
-    min-width: 0;
-}
-
 #notifications-inbox .cosmos-notification-title {
     flex: 1;
     min-width: 0;
@@ -538,15 +478,6 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     overflow: hidden;
-}
-
-.cosmos-notification-inbox-row-footer,
-.cosmos-notification-preview-row-footer {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    min-width: 0;
-    gap: var(--cosmos-space-s) var(--cosmos-space-l);
 }
 
 .cosmos-notification-inbox-meta {
@@ -725,10 +656,6 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     gap: var(--cosmos-space-s);
     color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
-}
-
-.cosmos-notification-detail-source {
-    font-weight: var(--cosmos-font-weight-bold);
 }
 
 .cosmos-notification-detail-state {
@@ -942,6 +869,7 @@ vaadin-app-layout.cosmos-reference-admin
     display: none;
 }
 
+/* !important: blendet den Platzhalter gegenüber der Aura-Platzhalterfarbe sicher aus. */
 .cosmos-notification-compose-recipient-field vaadin-multi-select-combo-box > input::placeholder {
     color: transparent !important;
 }
@@ -1105,21 +1033,6 @@ vaadin-app-layout.cosmos-reference-admin
 .cosmos-notification-compose-avatar-group vaadin-avatar-group-menu-item vaadin-avatar {
     --cosmos-avatar-size: 24px;
     --vaadin-avatar-size: var(--cosmos-avatar-size);
-}
-
-.cosmos-notification-compose-preview-title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--cosmos-space-s);
-    font-size: var(--cosmos-font-size-s);
-    font-weight: var(--cosmos-font-weight-bold);
-}
-
-.cosmos-notification-compose-preview-title > vaadin-icon {
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
-    flex-shrink: 0;
-    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-notification-compose-status {
@@ -1336,16 +1249,7 @@ vaadin-app-layout.cosmos-reference-admin
     padding: var(--cosmos-space-l);
 }
 
-.cosmos-notification-sent-detail-title {
-    margin: 0;
-    color: var(--cosmos-text-secondary-color);
-    font-size: var(--cosmos-font-size-s);
-    font-weight: var(--cosmos-font-weight-bold);
-    overflow-wrap: anywhere;
-}
-
-.cosmos-notification-sent-body,
-.cosmos-notification-sent-detail-meta {
+.cosmos-notification-sent-body {
     color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
 }

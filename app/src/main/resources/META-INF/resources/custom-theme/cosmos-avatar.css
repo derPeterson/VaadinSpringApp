@@ -50,3 +50,13 @@ vaadin-avatar.cosmos-avatar-circle::part(icon) {
 vaadin-avatar.cosmos-avatar-circle::part(icon)::before {
     content: none;
 }
+
+/* Avataranzeigen bleiben bei jedem Status gefüllte Punkte; Auswahlzeilen behalten ihre Symbole. */
+.cosmos-avatar-status > div > vaadin-icon {
+    display: block;
+}
+
+.cosmos-reference-portal .cosmos-user-avatar .cosmos-avatar-status vaadin-icon,
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status vaadin-icon {
+    display: none;
+}

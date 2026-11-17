@@ -1,14 +1,12 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.dependency.StyleSheet;
 import de.derpeterson.app.model.enums.IconSize;
 import java.text.BreakIterator;
 import java.util.Locale;
 import java.util.Objects;
 
 /** Nativer Bild-/Initialenkern; Status, Tooltip und Bildberechtigung bleiben beim Aufrufer. */
-@StyleSheet("custom-theme/cosmos-avatar.css")
 public class CosmosAvatar extends Avatar {
   public CosmosAvatar() {
     addClassName("cosmos-avatar-circle");

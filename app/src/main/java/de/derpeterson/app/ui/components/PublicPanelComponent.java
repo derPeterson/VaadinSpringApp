@@ -10,7 +10,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.card.Card;
-import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -20,7 +19,6 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import java.util.function.Supplier;
 
 /** Öffentliches Standardpanel mit nativem Card-Kopf, Inhalt und Aktionsfooter im Cosmos-Stil. */
-@StyleSheet("custom-theme/cosmos-public-card.css")
 public class PublicPanelComponent extends Card {
   public PublicPanelComponent(
       Component panelIconComponent,

@@ -21,16 +21,24 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EntityScan(basePackages = {"de.derpeterson.app.model"})
 @PWA(name = "VaadinSpringApp", shortName = "App", iconPath = "icons/service-logo.png")
 @StyleSheet(Aura.STYLESHEET)
+// Reihenfolge: Aura, Palette, Typografie, Tokens, Aura-Abgleich, gemeinsame Bausteine,
+// App-Rahmen, Fachbereiche. Fachliche Einzeldateien laden die zuständigen Views selbst.
 @StyleSheet("custom-theme/cosmos-palette.css")
 @StyleSheet("custom-theme/typography.css")
-// Reihenfolge: Designwerte vor Komponenten, danach App-/Admin-Bausteine und Dekoration.
 @StyleSheet("custom-theme/cosmos-tokens.css")
+@StyleSheet("custom-theme/cosmos-aura.css")
+@StyleSheet("custom-theme/cosmos-scrollbars.css")
+@StyleSheet("custom-theme/cosmos-duration-field.css")
+@StyleSheet("custom-theme/cosmos-breadcrumbs.css")
+@StyleSheet("custom-theme/cosmos-segmented-tabs.css")
 @StyleSheet("custom-theme/cosmos-theme.css")
+@StyleSheet("custom-theme/cosmos-utilities.css")
+@StyleSheet("custom-theme/cosmos-cards.css")
+@StyleSheet("custom-theme/cosmos-avatar.css")
 @StyleSheet("custom-theme/cosmos-shell.css")
+@StyleSheet(CosmosBackgroundComponent.STYLESHEET)
 @StyleSheet("custom-theme/cosmos-admin.css")
 @StyleSheet("custom-theme/cosmos-notifications.css")
-@StyleSheet(CosmosBackgroundComponent.STYLESHEET)
-@StyleSheet("custom-theme/cosmos-icons.css")
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {
 

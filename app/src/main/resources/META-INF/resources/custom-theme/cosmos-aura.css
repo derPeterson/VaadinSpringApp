@@ -1,0 +1,43 @@
+/* SILENT COSMOS / AURA-ABGLEICH
+ * Direkt nach den Tokens geladen: setzt Aura-Standards zurück, die von der Cosmos-Gestaltung
+ * abweichen. Spätere Bausteine und Fachbereiche dürfen diese Grundwerte gezielt überschreiben. */
+
+/* Reiter: Aura zeichnet eine gefüllte Segmentleiste; Cosmos verwendet freistehende Reiter. */
+.cosmos-theme vaadin-tabs,
+vaadin-tabs.cosmos-theme {
+    --vaadin-tabs-background: transparent;
+    --vaadin-tabs-padding: 0;
+    --vaadin-tabs-gap: 0;
+}
+
+.cosmos-theme vaadin-tabs::part(tabs) {
+    margin: 0;
+    padding: 0;
+}
+
+.cosmos-theme vaadin-tab,
+.cosmos-theme vaadin-tab[selected] {
+    --vaadin-tab-border-width: 0;
+    box-shadow: none;
+}
+
+/* Aufklapppfeil der Seitennavigation in der bisherigen, kleineren Größe. */
+.cosmos-theme vaadin-side-nav-item::part(toggle-button) {
+    --vaadin-icon-visual-size: 0.55lh;
+}
+
+/* Pflichtfeldpunkt steht wie bisher direkt hinter dem Label statt absolut davor. */
+:is(.cosmos-theme, .cosmos-reference-overlay) ::part(required-indicator) {
+    position: static;
+    width: auto;
+}
+
+/* Feldsymbole (Auge, Auswahlpfeil, Kalender, Löschen) in der bisherigen Größe von ca. 16 px. */
+:is(.cosmos-theme, .cosmos-reference-overlay) ::part(field-button) {
+    --vaadin-icon-visual-size: 80%;
+}
+
+/* Aufklappbereiche: Inhalt bündig unter der Überschrift statt um die Pfeilbreite eingerückt. */
+:is(.cosmos-theme, .cosmos-reference-overlay, vaadin-popover[theme~="cosmos"]) vaadin-details::part(content) {
+    margin-inline-start: 0;
+}

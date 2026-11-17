@@ -303,6 +303,7 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
+    /* !important: reduzierte Bewegung schaltet jede Animation der Szene ab. */
     .cosmos-page-frame .cosmos-sky--advanced *,
     .cosmos-page-frame .cosmos-sky--advanced *::before {
         animation: none !important;

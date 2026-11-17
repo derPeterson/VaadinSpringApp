@@ -161,8 +161,21 @@ stehen in der [Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatie
       Hintergrunddateien verschoben, 31 doppelte Selektoren kaskadensicher zusammengeführt,
       `100vh`-Ersatzwerte neben `100dvh` entfernt. Vergleich vorher/nachher (46 Aufnahmen
       inkl. Passwortdialog und Benachrichtigungsvorschau): pixelgleich.
-- [ ] Paket 2 – Dateistruktur nach Zielstruktur neu gliedern, Duplikate über Dateien hinweg
-      und ungenutzte Regeln entfernen, `!important` abbauen (Schritte siehe Wiedereinstieg).
+- [x] Paket 2 – Dateistruktur neu gegliedert: `cosmos-aura.css` (Aura-Abgleich, direkt nach den
+      Tokens), `cosmos-utilities.css` (Ersatzklassen, direkt nach `cosmos-theme.css`, weil sie
+      Komponentenregeln gleicher Spezifität ergänzen müssen), `cosmos-cards.css` (bisher drei
+      Card-Dateien), Iconregel in `cosmos-theme.css`, Avatarstatus in `cosmos-avatar.css`;
+      `cosmos-admin-reference.css` auf `cosmos-admin.css`/`admin-users.css` verteilt; `@import`s
+      durch sichtbare `@StyleSheet`-Einträge ersetzt (`CosmosThemeStylesheetsTest`). Ungenutzte
+      Regeln entfernt (Klassen ohne Java-Vorkommen, `vaadin-dialog`-Selektoren für den als
+      `vaadin-confirm-dialog` umgesetzten Löschdialog). `!important` von 65 auf 61: übrige sind
+      kommentiert und per Vergleich als nötig belegt (Inline-Styles aus Java, Dialog-Overlay,
+      `[hidden]`, reduzierte Bewegung). `cosmos-mfa-otp.css` bleibt getrennt, weil sie in die
+      Schattenwurzel des OTP-Felds geladen wird. Befund: Komponenten-Stylesheets verloren bisher
+      Gleichstände gegen die globalen Dateien; zwei so verdeckte Regeln (Hilfebuttonmaße,
+      Breite der Löschbestätigung) sind jetzt reihenfolgeunabhängig. Vergleich vorher/nachher
+      (46 Aufnahmen mit berechneten Styles aller sichtbaren Elemente): gleich; Pixelabweichung
+      nur durch zufällige Ersatzcodes/QR-Code.
 - [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte).
 - [ ] Paket 5 – Abschlussvergleich Desktop/Smartphone, `docs/theme.md` auf den neuen Stand
       bringen, Plan entfernen bzw. Restpunkte übernehmen.
@@ -170,24 +183,15 @@ stehen in der [Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatie
 
 ## Wiedereinstieg
 
-**Nächster Schritt: Paket 2 (Neugliedern).** Reihenfolge:
-
-1. Aura-Anpassungen (Abschnitte 9/10 am Ende von `cosmos-theme.css`) in eine eigene
-   Datei `cosmos-aura.css` direkt nach den Tokens verschieben.
-2. Fachdateien zusammenfassen, wo nur kleine Fragmente existieren (`cosmos-native-card`,
-   `cosmos-public-card`, `cosmos-content-card`, `cosmos-icons`, `cosmos-mfa-otp`), und
-   `cosmos-admin-reference.css` (Einzeilerstil) in `cosmos-admin.css`/`admin-users.css`
-   aufteilen. Versteckte `@import`s in `cosmos-theme.css` durch `@StyleSheet` ersetzen.
-3. Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen:
-   Alle sichtbaren Seiten tragen `cosmos-reference-portal` bzw. `-overlay`; die Grundregeln
-   davor sind daher teils überschrieben oder ungenutzt.
-4. Nach jedem Schritt `npm run format:css`, `npm run lint:css` im Modul `app` und
-   Vergleichsaufnahmen gegen den Stand davor.
+**Nächster Schritt: Paket 5 (Dokumentation), danach Paket 6 (Browsertests).**
+Offene Prüfung zu Paket 2: Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen,
+sind nicht systematisch auf Nutzung geprüft (nur Klassen ohne Java-Vorkommen entfernt).
 
 **Werkzeuge (temporär, im Scratchpad der Sitzung; bei Verlust neu anlegen):**
 `Shots.java` (Playwright-Aufnahmen inkl. 2FA-Ersteinrichtung und acht Overlays; die
 Ersteinrichtung braucht eine frische H2-Datei, also vor jeder Aufnahmerunde neu starten),
-`Diff.java` (Pixelvergleich mit Vergleichsbildern vorher|nachher|Differenz),
+`Diff.java` (Pixelvergleich mit Vergleichsbildern vorher|nachher|Differenz; `Shots.java`
+schreibt zusätzlich berechnete Styles je Aufnahme, `sgroup.py` vergleicht sie gruppiert),
 `restart.ps1` (isolierter Neustart, siehe unten), Referenz von `main` aus einem
 temporären Worktree auf Port 8091.
 
