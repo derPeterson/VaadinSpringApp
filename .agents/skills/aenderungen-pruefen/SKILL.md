@@ -60,6 +60,9 @@ hat Vorrang. Beim Anlegen oder Erklären dieses Skills keine rekursive Prüfung 
 - Bereits erfolgreiche Prüfungen am unveränderten Stand berücksichtigen. Nach
   eigenen Korrekturen vorgeschriebene Formatierungs-/Stilschritte und erforderliche
   gezielte Regressionen ausführen. Keine vollständige QA nach jeder Commit-Anfrage.
+- Bei geändertem CSS die Prettier-/Stylelint-Nachweise gemäß den
+  [zentralen Prüfvorgaben](../../../AGENTS.md#5-lesbarkeit-und-codestil) prüfen;
+  nach eigenen CSS-Korrekturen erneut ausführen.
 - Stand der Testbelege prüfen: getestet wurde der tatsächlich ausgeführte Quellstand,
   nicht automatisch ein nur teilweise gestagter Index. Liegt eine Korrektur noch
   ungestagt oder außerhalb des gewählten Umfangs, dies ausdrücklich sagen; nichts

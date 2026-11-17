@@ -81,8 +81,10 @@ keinen zweiten Testrunner und keine OpenCode-Portierung aufbauen.
 - Änderungen auf überflüssigen Code und Ressourcen prüfen; DE-/EN-Kataloge,
   dynamische Textverwendungen und Dokumentationsverweise berücksichtigen.
   Nur nachweislich unbenutzte Teile entfernen. Keine zusätzliche Großbereinigung.
-- Nach Java-/Pythonänderungen die vorgeschriebenen Formatierungs-/Stilprüfungen
-  vor Tests ausführen. Die jeweils gültigen Befehle stehen in `AGENTS.md`.
+- Nach Java-/Python-/CSS-Änderungen die vorgeschriebenen Formatierungs-/Stilprüfungen
+  vor Tests ausführen; für CSS sind Prettier und Stylelint verbindlich. Die jeweils
+  gültigen Befehle stehen in den
+  [zentralen Prüfvorgaben](../../../AGENTS.md#5-lesbarkeit-und-codestil).
 
 ## 4. Vollständige Prüfung und Fehlerkorrektur
 

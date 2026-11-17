@@ -91,6 +91,11 @@
 - Python: Ruff aus der Projektumgebung. Nach jeder eigenen Python-Änderungsrunde vor
   Tests und Abschluss `ruff format` und `ruff format --check` für die eigenen Dateien
   ausführen; nach Korrekturen wiederholen. Befehle und Grenzen stehen in der Anleitung.
+- CSS: Prettier formatiert, Stylelint prüft die Theme-Dateien. Nach jeder eigenen
+  CSS-Änderungsrunde vor Tests und Abschluss im Verzeichnis `app` verbindlich
+  `npm.cmd run format:css`, `npm.cmd run format:css:check` und `npm.cmd run lint:css`
+  ausführen; nach Korrekturen wiederholen. Konfiguration, Geltungsbereich und Grenzen:
+  [CSS prüfen und formatieren](docs/entwicklung.md#css-prüfen-und-formatieren).
 - Fremde Änderungen erhalten. Formatierung auf eigene Dateien begrenzen, wenn fremde
   Änderungen vorliegen; kein Abschalten des Spotless-Ratchets und keine ungefragte
   projektweite Umformatierung.

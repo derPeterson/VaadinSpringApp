@@ -78,6 +78,8 @@ mit passenden Regressionen, nicht das Hinzufügen neuer Fachfunktionen.
 - Sinnvolle JUnit-Regressionen ergänzen. Nicht bereits im Auftrag erfolgreich geprüften
   Browser-/anderen Testbedarf in `docs/testbedarf.md` zusammenführen: Funktion, Szenario,
   Erwartung, Testart und gegebenenfalls Wartegrund. Nicht nur im temporären Bericht nennen.
+- Bei CSS-Korrekturen Prettier und Stylelint gemäß den
+  [zentralen Prüfvorgaben](../../../AGENTS.md#5-lesbarkeit-und-codestil) ausführen.
 - Die vereinbarte Kontingent-/Fortsetzungsregel steht unter „Kontingent und Wiederaufnahme“
   im [QA-Skill](../grosse-testrunde/SKILL.md). Nur diesen Abschnitt dafür lesen: gelegentlich
   prüfen, bei Erschöpfung sichern/stoppen und nötigen Folgeauftrag nach Reset vorbereiten.

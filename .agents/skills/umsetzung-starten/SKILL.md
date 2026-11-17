@@ -75,6 +75,8 @@ beim Erstellen dieses Skills sind keine tatsächlichen Umsetzungsaufträge.
 - Sinnvolle JUnit-/isolierte Regressionstests für das geänderte Verhalten ergänzen
   und passende vorhandene Tests ausführen. Vorgeschriebene Stil-/Formatierungsschritte
   gemäß `AGENTS.md` vor Tests und Abschluss beachten. Keine Implementationskopien als Tests.
+- Bei CSS-Änderungen Prettier und Stylelint gemäß den
+  [zentralen Prüfvorgaben](../../../AGENTS.md#5-lesbarkeit-und-codestil) ausführen.
 - Noch nicht erfolgreich geprüften Browser-/anderen Testbedarf zentral in
   `docs/testbedarf.md` pflegen: Funktion, Szenario, Erwartung, Testart und Grund.
   Vorhandene Aufgaben zusammenführen; eine Lücke nicht nur im Feature-Plan ablegen.

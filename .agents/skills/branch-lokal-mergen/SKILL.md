@@ -45,6 +45,8 @@ Ein Trocken-/Nur-Prüfauftrag und die Erstellung dieses Skills verändern keine 
   Nach Benutzercommit und entsprechendem Weiterauftrag erneut den sauberen Stand prüfen.
 - Größere fachliche Änderungen abstimmen. Erfolgreiche unveränderte Belege berücksichtigen;
   die vor dem Merge nötige Prüfung nicht zu einer ungefragten großen QA ausweiten.
+- Bei CSS-Änderungen die Prettier-/Stylelint-Prüfung gemäß den
+  [zentralen Prüfvorgaben](../../../AGENTS.md#5-lesbarkeit-und-codestil) berücksichtigen.
 
 ## 3. Lokal integrieren
 
