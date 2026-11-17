@@ -29,6 +29,12 @@
   `--cosmos-hover-background`, Jahreszahlen 11 px, „Heute“/„Abbrechen“ ohne Füllung; Monat
   wechseln und Tag wählen; Desktop und 390 px (Ansicht von unten), DE und EN.
 
+- **Einheitlicher Deaktiviert-Zustand – wartend:** Auf Benutzerwunsch in der gemeinsamen
+  Browserrunde am Schluss. Benutzerdialog „Passwort bestätigen“ ohne Passwort, Zeitauswahl
+  im Benutzerfilter ohne Datum und eine Testanordnung aller Feldtypen: Label mit halber
+  Deckkraft, Wert und Platzhalter in `--cosmos-text-disabled-color`; Checkbox, Schalter und
+  Buttons gedämpft. Passenden Fall in `cosmos-components` ergänzen, DE und EN.
+
 - **Zeitauswahl zeigt die gewählte Uhrzeit – wartend:** Auf Benutzerwunsch in der
   gemeinsamen Browserrunde am Schluss. Benutzerfilter „Letzte Aktivität ab“: Datum setzen,
   Uhrzeit 07:30 wählen, Liste über das Uhrsymbol erneut öffnen; 07:30 ist sichtbar und

@@ -1385,6 +1385,12 @@ behalten ihr Grid-Layout (`grid`/`inline-grid`, nicht `flex`), sonst erhält das
 (Zeiteinheit im Dauerfeld) blenden das Baseline-Pseudoelement `::before` aus, sonst
 reserviert es eine Labelzeile und schiebt die Auswahl aus dem Feld.
 
+Einheitlicher Deaktiviert-Zustand (vom Benutzer am 17.11.2026 freigegeben): Deaktivierte
+Bausteine sind auf einen Blick erkennbar. Felder übernehmen Auras gedämpftes Label (halbe
+Deckkraft) und Eingabefeld; Wert und Platzhalter erhalten `--cosmos-text-disabled-color`
+(Regel neben der Eingabegrundfarbe in `cosmos-theme.css`). Checkboxen, Schalter, Radio-
+Buttons und alle Button-Arten behalten Auras gedämpfte Darstellung. Lokale Ausnahmen, die
+deaktivierte Felder wie aktive aussehen lassen, sind nicht vorgesehen.
 Vom Benutzer akzeptierte Abweichungen durch Aura (kein pixelgenauer Nachbau):
 
 - Eingabefelder sind teils 2 px niedriger.

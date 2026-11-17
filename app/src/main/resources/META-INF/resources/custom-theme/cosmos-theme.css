@@ -821,6 +821,13 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
     opacity: 1;
     font-weight: 400;
 }
+/* Einheitlicher Deaktiviert-Zustand: Aura dämpft Label und Feld; Wert und Platzhalter folgen,
+ * statt durch die Grundfarbe oben voll sichtbar zu bleiben. */
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [disabled] > input[slot="input"],
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) [disabled] > input::placeholder {
+    color: var(--cosmos-text-disabled-color);
+    -webkit-text-fill-color: var(--cosmos-text-disabled-color);
+}
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) [required]::part(required-indicator) {
     visibility: visible;
     display: inline-flex;

@@ -9,17 +9,11 @@ einschließlich akzeptierter Abweichungen; Werkzeuge in der
 [Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatieren).
 
 Grenzen bleiben: Die Anwendung sieht wie bisher aus; Änderungen, die das Aussehen spürbar
-ändern würden, werden nur unten gesammelt. Ein Light-Modus ist nicht Teil des Auftrags.
-Commits nur auf ausdrücklichen Auftrag.
+ändern würden, werden vorher mit dem Benutzer abgestimmt. Ein Light-Modus ist nicht Teil
+des Auftrags. Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Offene Fehler aus [BUGS](../../BUGS.md): Hover in Auswahllisten, Fehlertextgröße
-      und Datumsauswahl sind behoben (manuell geprüft, Browserfälle im Testbedarf). Für das Dauerfeld sind nur die
-      Browserprüfungen angepasst; ihr Nachtest läuft mit der gemeinsamen Runde. Die
-      Zeitauswahl zeigt wieder die gewählte Uhrzeit (manuell geprüft, Browserfall im
-      [Testbedarf](../testbedarf.md)). Vollständige Läufe DE/EN vom 17.11.2026:
-      372/380 bzw. 373/380 bestanden.
 - [ ] Überdeckte Regeln weiter abbauen. Eine Kaskadenauswertung über alle aufgenommenen
       Seiten, Overlays und Smartphone-Aufnahmen fand 88 passende, aber nie gewinnende Regeln;
       58 eindeutig überdeckte sind entfernt (Aufnahmen pixelgleich). Bewusst noch erhalten:
@@ -27,13 +21,8 @@ Commits nur auf ausdrücklichen Auftrag.
       breit wirkende Grundregeln für Buttons, Felder, Panelsymbole und Avatare (Hover-,
       Deaktiviert- und nicht aufgenommene Zustände) sowie Utility-Klassen. Für sie zuerst die
       Abdeckung erweitern (Smartphone aller Seiten, Zustände), dann einzeln prüfen.
-- [ ] Abschlussvergleich gegen `main` (Lumo) vom 17.11.2026 abschließen: Schaltergriff,
-      Anwesenheitsliste im Benutzermenü und Position der Supernova sind angeglichen;
-      Primärfarbe, Chips, Sortierpfeile, Schließen-Symbol und schreibgeschützter Rahmen sind
-      als Abweichungen akzeptiert (Theme-Anleitung). Offen: einheitlicher Deaktiviert-Zustand
-      nach dem Vorbild der Aura-Felder (abgedunkeltes Feld samt Label), einschließlich
-      deaktiviertem Primärbutton; vom Benutzer am 17.11.2026 freigegeben.
-      Danach Restpunkte übernehmen und diesen Plan entfernen.
+- [ ] Gemeinsame Browserrunde DE/EN am Schluss (Benutzerwunsch: vorher keine Browsersuites);
+      offene Fälle im [Testbedarf](../testbedarf.md). Danach diesen Plan entfernen.
 
 ## Wiedereinstieg
 
@@ -64,10 +53,3 @@ temporären Worktree auf Port 8091.
   `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` setzen. Das Skript meldet den Superadmin an,
   durchläuft die 2FA-Ersteinrichtung und fotografiert Portal, Konto und alle Adminbereiche.
 - Vorher-Stand bei Bedarf aus einem temporären Worktree von `main` neu erzeugen.
-
-## Spätere Verbesserungsvorschläge
-
-Hier sammeln, was beim Umbau auffällt, aber das Aussehen spürbar ändern würde.
-
-- Seitenbeschreibung rechts oben läuft unter den Mond-Dekor (z. B. „Melden Sie sich …“);
-  Text wird verdeckt.

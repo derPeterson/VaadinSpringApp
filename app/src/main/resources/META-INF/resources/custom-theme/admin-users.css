@@ -1118,17 +1118,6 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     box-sizing: border-box;
     padding: 4px 4px 0;
 }
-.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled]::part(label) {
-    -webkit-text-fill-color: currentColor;
-}
-.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input[slot="input"] {
-    opacity: 1;
-}
-.admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input::placeholder {
-    color: var(--cosmos-text-tertiary-color);
-    -webkit-text-fill-color: var(--cosmos-text-tertiary-color);
-    opacity: 1;
-}
 .admin-user-dialog.admin-reference-dialog .admin-user-option-checkbox {
     padding: 2px 0 0;
     margin: 0;
