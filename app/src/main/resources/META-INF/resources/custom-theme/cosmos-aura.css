@@ -32,6 +32,11 @@ vaadin-tabs.cosmos-theme {
     width: auto;
 }
 
+/* Schalter: runder Griff wie bisher statt Auras abgerundetem Quadrat. */
+vaadin-switch {
+    --vaadin-switch-marker-border-radius: 50%;
+}
+
 /* Feldfehler wie bisher in der kleinen Feldschrift und ohne Auras Warnsymbol. Aura setzt die
  * Fehlerfarbe auch direkt an Elementen mit theme-Attribut; daher dort ebenfalls zuweisen. */
 :is(.cosmos-theme, .cosmos-reference-overlay),

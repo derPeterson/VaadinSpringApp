@@ -1356,7 +1356,7 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
-kleinerer Aufklapppfeil der Seitennavigation, Pflichtfeldpunkt direkt hinter dem Label,
+kleinerer Aufklapppfeil der Seitennavigation, runder Schaltergriff, Pflichtfeldpunkt direkt hinter dem Label,
 Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
 ohne Einrückung um die Pfeilbreite, Kalender (Datumsauswahl) im Cosmos-Stil mit
 dunkler Fläche ohne Auras Zwischenflächen, 36-px-Tagen, „heute“ als Akzentschrift ohne
