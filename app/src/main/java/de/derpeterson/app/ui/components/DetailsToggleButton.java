@@ -11,7 +11,8 @@ public final class DetailsToggleButton extends Button {
     super(messageProperties.getBaseDetailsButton());
     setIconAfterText(true);
     addClassName("two-factor-details-toggle");
-    addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    addThemeVariants(ButtonVariant.TERTIARY);
+    addClassName(CosmosCssClasses.INLINE_BUTTON);
     getElement().setAttribute("aria-controls", details.getId().orElseThrow());
     setAriaLabel(topic + ": " + messageProperties.getBaseDetailsButton());
     refreshDetailsToggleState(details.isOpened());

@@ -4,7 +4,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.shared.Tooltip;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import java.util.function.Supplier;
 
 /** Gemeinsamer Info-Button: Klick-Tooltip, Außenklick und aktuelle Übersetzung. */
@@ -54,9 +53,10 @@ public class ConfigInfoButton extends Button {
     this.helpTextSupplier = helpTextSupplier;
 
     SvgIcon helpSvgIcon = AppIcon.INFO_CIRCLE.create();
-    helpSvgIcon.addClassName(LumoUtility.TextColor.PRIMARY);
+    helpSvgIcon.addClassName(CosmosCssClasses.TEXT_PRIMARY);
     setIcon(helpSvgIcon);
-    addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    addThemeVariants(ButtonVariant.TERTIARY);
+    addClassName(CosmosCssClasses.INLINE_BUTTON);
     addClassName("cosmos-config-info");
     getElement().setAttribute(ARIA_EXPANDED, ARIA_COLLAPSED);
 

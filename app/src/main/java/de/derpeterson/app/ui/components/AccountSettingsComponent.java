@@ -218,7 +218,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     Button accountActionButton = withTextOnRefresh(new Button(), actionLabelSupplier);
     accountActionButton.setPrefixComponent(actionAppIcon.create());
     if (primaryAction) {
-      accountActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      accountActionButton.addThemeVariants(ButtonVariant.PRIMARY);
     }
 
     return accountActionButton;

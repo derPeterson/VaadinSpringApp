@@ -323,7 +323,7 @@ public class SecurityConfig {
             "/HILLA/**",
             "/themes/**",
             "/custom-theme/**",
-            "/lumo/**",
+            "/aura/**",
             "/frontend/**",
             "/favicon.ico",
             "/manifest.webmanifest",

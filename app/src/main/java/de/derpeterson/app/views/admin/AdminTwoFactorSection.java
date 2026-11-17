@@ -281,7 +281,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
     savePolicyButton.setId("two-factor-save");
     savePolicyButton.setPrefixComponent(AppIcon.CHECK.create());
-    savePolicyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    savePolicyButton.addThemeVariants(ButtonVariant.PRIMARY);
     savePolicyButton.addClickListener(_ -> requestTwoFactorPolicySave());
 
     Div policyActionsDiv = new Div(reloadPolicyButton, savePolicyButton);

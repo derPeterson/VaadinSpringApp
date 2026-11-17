@@ -135,7 +135,7 @@ public final class MaintenanceHttpFilter implements Filter {
             "/VAADIN/",
             "/themes/",
             "/custom-theme/",
-            "/lumo/",
+            "/aura/",
             "/frontend/",
             "/icons/",
             "/images/",

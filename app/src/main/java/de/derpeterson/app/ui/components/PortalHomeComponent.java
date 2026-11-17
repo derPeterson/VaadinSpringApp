@@ -37,7 +37,7 @@ public class PortalHomeComponent extends Div {
     portalDescriptionParagraph.addClassName("portal-home-description");
     openNotificationsButton.setPrefixComponent(AppIcon.BELL.create());
     openNotificationsButton.setId("portal-home-notifications");
-    openNotificationsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    openNotificationsButton.addThemeVariants(ButtonVariant.PRIMARY);
     openNotificationsButton.addClickListener(
         event -> UI.getCurrent().navigate(UserNotificationsView.class));
     unreadNotificationCountBadge.addClassName("portal-home-unread");

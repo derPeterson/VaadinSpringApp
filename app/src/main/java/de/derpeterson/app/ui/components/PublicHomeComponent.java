@@ -30,7 +30,7 @@ public class PublicHomeComponent extends Div {
     Button loginButton =
         new Button(
             "", AppIcon.SIGN_IN.create(), event -> UI.getCurrent().navigate(LoginView.class));
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loginButton.addThemeVariants(ButtonVariant.PRIMARY);
 
     Button registerButton =
         new Button(

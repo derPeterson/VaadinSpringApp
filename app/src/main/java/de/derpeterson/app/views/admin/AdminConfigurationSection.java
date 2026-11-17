@@ -30,7 +30,6 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableConsumer;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.config.TokenDurationPolicy;
@@ -173,7 +172,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     configurationTitleSpan = new Span();
 
     configurationDescriptionSpan = new Span();
-    configurationDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
+    configurationDescriptionSpan.addClassNames(CosmosCssClasses.TEXT_SECONDARY);
 
     currentGroupTitle = new H2();
     currentGroupTitle.addClassName("cosmos-config-group-title");
@@ -207,7 +206,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     saveConfigButton = new Button();
     saveConfigButton.setPrefixComponent(AppIcon.CHECK.create());
-    saveConfigButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveConfigButton.addThemeVariants(ButtonVariant.PRIMARY);
     saveConfigButton.addClickListener(clickEvent -> saveConfigValues());
     // Enter in der Navigation oder an einem Info-Button darf keine Werte speichern.
     saveConfigButton
@@ -734,12 +733,12 @@ public class AdminConfigurationSection extends VerticalLayout {
     configFieldLayout.setPadding(false);
     configFieldLayout.setSpacing(false);
     configFieldLayout.setWidthFull();
-    configFieldLayout.addClassNames(LumoUtility.Gap.XSMALL, "cosmos-config-field");
+    configFieldLayout.addClassName("cosmos-config-field");
     configFieldLayout.setClassName("admin-config-switch", configInputComponent instanceof Switch);
 
     Span configLabelSpan = new Span(messageProperties.getAdminConfigEntryLabel(configEntry));
     configLabelSpan.setId("config-label-" + configEntry.name().toLowerCase(Locale.ROOT));
-    configLabelSpan.addClassNames(LumoUtility.FontWeight.MEDIUM, LumoUtility.FontSize.SMALL);
+    configLabelSpan.addClassName("cosmos-config-label");
     configLabelSpan.setClassName(
         "admin-config-required",
         !(configInputComponent instanceof Switch)

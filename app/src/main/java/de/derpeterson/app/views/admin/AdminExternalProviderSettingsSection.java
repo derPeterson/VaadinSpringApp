@@ -338,7 +338,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       reloadProviderSettingsButton.addClickListener(_ -> requestProviderSettingsReload());
 
       saveProviderSettingsButton.setPrefixComponent(AppIcon.CHECK.create());
-      saveProviderSettingsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      saveProviderSettingsButton.addThemeVariants(ButtonVariant.PRIMARY);
       saveProviderSettingsButton.setId(PROVIDER_PREFIX + providerId + "-save");
       saveProviderSettingsButton.addClickListener(_ -> saveProviderSettings());
       Div providerActionsDiv = new Div(reloadProviderSettingsButton, saveProviderSettingsButton);

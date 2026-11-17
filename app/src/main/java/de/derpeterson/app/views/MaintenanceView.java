@@ -69,7 +69,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
         securityService.getAuthenticatedUser(httpServletRequest).isPresent();
     maintenanceLoginButton.setVisible(!isAuthenticatedUser);
     maintenanceLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    maintenanceLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    maintenanceLoginButton.addThemeVariants(ButtonVariant.PRIMARY);
     maintenanceLoginButton.setWidthFull();
 
     Button retryHomeButton =

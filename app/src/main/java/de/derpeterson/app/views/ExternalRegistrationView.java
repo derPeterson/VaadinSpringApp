@@ -91,7 +91,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     registrationEmailField.setWidthFull();
 
     completeRegistrationButton.setId("external-register-submit");
-    completeRegistrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    completeRegistrationButton.addThemeVariants(ButtonVariant.PRIMARY);
     completeRegistrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
     completeRegistrationButton.addClickListener(_ -> completeExternalRegistration());
 

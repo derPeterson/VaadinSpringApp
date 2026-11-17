@@ -282,9 +282,9 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     proofWarningText.setText(messageProperties.getExternalDisconnectHint());
     proofNoticeContainer.setVisible(destructive);
     confirmIdentityButton.setClassName(DELETE_BUTTON, destructive);
-    confirmIdentityButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmIdentityButton.removeThemeVariants(ButtonVariant.PRIMARY);
     if (!destructive) {
-      confirmIdentityButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      confirmIdentityButton.addThemeVariants(ButtonVariant.PRIMARY);
     }
     confirmIdentityButton.setPrefixComponent(
         (destructive ? AppIcon.SIGN_OUT : AppIcon.CHECK).create());

@@ -151,7 +151,7 @@ public final class PendingAccountReactivationView extends VerticalLayout
   private HorizontalLayout createReactivationActions() {
     resendLinkButton.setId("resend-reactivation-email");
     resendLinkButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
-    resendLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resendLinkButton.addThemeVariants(ButtonVariant.PRIMARY);
     resendLinkButton.addClickListener(event -> resendReactivationLink());
     cancelReactivationButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     cancelReactivationButton.addClassName("cosmos-delete-button");

@@ -21,7 +21,6 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableConsumer;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -75,8 +74,9 @@ public class AccountEmailChangeDialog extends Dialog {
     dialogIconDiv.addClassName(PANEL_ICON);
     closeDialogButton.setId("account-email-close");
     closeDialogButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
-    closeDialogButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    closeDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeDialogButton.addClassNames("cosmos-overlay-close", CosmosCssClasses.TEXT_PRIMARY);
+    closeDialogButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeDialogButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
 
     Div dialogHeaderDiv = new Div(dialogIconDiv, dialogHeadingDiv, closeDialogButton);
     dialogHeaderDiv.addClassName("account-change-dialog-header");
@@ -120,7 +120,7 @@ public class AccountEmailChangeDialog extends Dialog {
     cancelEmailChangeButton.setPrefixComponent(AppIcon.CLOSE.create());
     requestEmailChangeButton.setId("account-email-request");
     requestEmailChangeButton.setPrefixComponent(AppIcon.CHECK.create());
-    requestEmailChangeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    requestEmailChangeButton.addThemeVariants(ButtonVariant.PRIMARY);
     requestEmailChangeButton.addClickListener(event -> submitEmailChangeRequest());
 
     Div dialogActionsDiv = new Div(cancelEmailChangeButton, requestEmailChangeButton);

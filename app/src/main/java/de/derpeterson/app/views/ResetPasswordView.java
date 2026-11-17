@@ -23,7 +23,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -36,6 +35,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.service.PasswordResetService.LinkState;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -202,7 +202,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             messageProperties.getPublicSavePasswordAction(),
             _ -> submitPasswordReset(passwordResetToken));
     saveNewPasswordButton.setPrefixComponent(AppIcon.CHECK.create());
-    saveNewPasswordButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveNewPasswordButton.addThemeVariants(ButtonVariant.PRIMARY);
     saveNewPasswordButton.setWidthFull();
 
     this.goToLoginButton =
@@ -284,7 +284,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     clearResetPasswordFormReferences();
 
     SvgIcon resetSuccessSvgIcon = AppIcon.CHECK_CIRCLE.create();
-    resetSuccessSvgIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.SUCCESS);
+    resetSuccessSvgIcon.addClassNames(STATUS_ICON, CosmosCssClasses.TEXT_SUCCESS);
 
     this.resetSuccessTitleH1 = new H1(messageProperties.getBaseSuccessTitle());
     resetSuccessTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
@@ -303,7 +303,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             messageProperties.getBaseHomeButton(), _ -> UI.getCurrent().navigate(HomeView.class));
     returnHomeButton.setPrefixComponent(AppIcon.ARROW_FORWARD.create());
     returnHomeButton.setWidthFull();
-    returnHomeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    returnHomeButton.addThemeVariants(ButtonVariant.PRIMARY);
 
     resetPageContentLayout.add(
         new PublicPanelComponent(
@@ -323,7 +323,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         STATUS_ICON,
         !hasResetLinkInspectionFailure && resetLinkState == LinkState.EXPIRED
             ? "cosmos-status-icon--warning"
-            : LumoUtility.TextColor.ERROR);
+            : CosmosCssClasses.TEXT_ERROR);
 
     this.resetLinkProblemTitleH1 = new H1(resolveResetLinkProblemTitleText());
     resetLinkProblemTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
@@ -347,7 +347,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
       requestNewResetLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
       resetLinkProblemActionButton = requestNewResetLinkButton;
     }
-    resetLinkProblemActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resetLinkProblemActionButton.addThemeVariants(ButtonVariant.PRIMARY);
 
     PublicPanelComponent resetLinkProblemPanelComponent =
         new PublicPanelComponent(

@@ -243,7 +243,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     inboxDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div previewTitlesDiv = new Div(inboxHeading, inboxDescription);
     previewTitlesDiv.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    closeInboxButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeInboxButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeInboxButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     closeInboxButton.addClassName("cosmos-overlay-close");
     closeInboxButton.addClickListener(e -> closeAction.run());
     Div previewHeaderDiv = new Div(previewIconDiv, previewTitlesDiv, closeInboxButton);
@@ -264,7 +265,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     Div previewContentDiv = new Div(previewToolbarDiv, previewHint, notificationRows);
     previewContentDiv.addClassName("cosmos-notification-preview-content");
     openHistoryButton.setIcon(AppIcon.EYE.create());
-    openHistoryButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    openHistoryButton.addThemeVariants(ButtonVariant.PRIMARY);
     Div previewHintDiv = new Div(AppIcon.INFO_CIRCLE.create(), notificationRetentionSpan);
     previewHintDiv.addClassName("cosmos-notification-preview-retention");
     Div previewFooterDiv = new Div(openHistoryButton, previewHintDiv);
@@ -621,7 +622,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
               });
       pageNumberButton.setAriaLabel(messageProperties.getAdminUsersPaginationPage(pageIndex + 1));
       if (pageIndex == page) {
-        pageNumberButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        pageNumberButton.addThemeVariants(ButtonVariant.PRIMARY);
         pageNumberButton.getElement().setAttribute("aria-current", "page");
       }
       pageNumbers.add(pageNumberButton);
@@ -634,7 +635,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
         new Button(
             UserNotificationTexts.getNotificationTitleText(messageProperties, item),
             e -> runNotificationAction(() -> openNotificationDetails(item)));
-    notificationTitleButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    notificationTitleButton.addThemeVariants(ButtonVariant.TERTIARY);
+    notificationTitleButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     notificationTitleButton.addClassName("cosmos-notification-title");
 
     if (compact) {
@@ -691,7 +693,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
 
   private Button dismissButton(Item item) {
     Button dismiss = new Button(AppIcon.TRASH.create(), e -> confirmDismiss(item));
-    dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    dismiss.addThemeVariants(ButtonVariant.TERTIARY);
+    dismiss.addClassName(CosmosCssClasses.INLINE_BUTTON);
     dismiss.addClassNames("cosmos-notification-preview-dismiss", DELETE_BUTTON);
     dismiss.setTooltipText(messageProperties.getNotificationsDismiss());
     dismiss.setAriaLabel(
@@ -970,7 +973,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
 
     Button closeDetailButton =
         new Button(AppIcon.CLOSE_CIRCLE.create(), e -> notificationDetailDialog.close());
-    closeDetailButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeDetailButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeDetailButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     closeDetailButton.addClassName("cosmos-overlay-close");
     closeDetailButton.setAriaLabel(messageProperties.getNotificationsClose());
     closeDetailButton.setTooltipText(messageProperties.getNotificationsClose());
@@ -1032,7 +1036,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
             AppIcon.CHECK.create(),
             e -> confirmMarkRead(openedNotification));
     markNotificationReadButton.addClassName("cosmos-notification-detail-mark-read");
-    markNotificationReadButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    markNotificationReadButton.addThemeVariants(ButtonVariant.TERTIARY);
+    markNotificationReadButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     markNotificationReadButton.setVisible(openedNotification.unread());
 
     HorizontalLayout readActionsLayout = new HorizontalLayout(markNotificationReadButton);
@@ -1095,7 +1100,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     if (notificationDestinationButton != null) {
       notificationDestinationButton.setAriaLabel(notificationDestinationButton.getText());
       notificationDestinationButton.setTooltipText(notificationDestinationButton.getText());
-      notificationDestinationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      notificationDestinationButton.addThemeVariants(ButtonVariant.PRIMARY);
       notificationDestinationButton.addClassName("cosmos-notification-detail-destination");
       primaryActionsLayout.add(notificationDestinationButton);
     }

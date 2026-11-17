@@ -1,12 +1,12 @@
 package de.derpeterson.app.ui.base;
 
-import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
@@ -31,6 +31,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountHeaderActions;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.PageContentLayout;
 import de.derpeterson.app.ui.components.PageFrameComponent;
@@ -185,7 +186,8 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
             : new HorizontalLayout(serviceLogoImage, serviceNameSpan);
     accountNavigationToggle.setId("account-navigation-toggle");
     accountNavigationToggle.addClassName("account-navigation-toggle");
-    accountNavigationToggle.addThemeVariants(LUMO_TERTIARY_INLINE);
+    accountNavigationToggle.addThemeVariants(ButtonVariant.TERTIARY);
+    accountNavigationToggle.addClassName(CosmosCssClasses.INLINE_BUTTON);
     accountNavigationToggle.setVisible(usesReferenceAccountStyle);
     if (usesReferenceAccountStyle) {
       brandLayout.addComponentAsFirst(accountNavigationToggle);
@@ -235,7 +237,8 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     ((OverlayUserIcon) userIconButton.getIcon()).configureAvatar(userAvatarService, null);
     refreshHeaderIdentity();
     userIconButton.addClassNames("tracked-user-button");
-    userIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+    userIconButton.addThemeVariants(ButtonVariant.TERTIARY);
+    userIconButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
 
     return userIconButton;
   }

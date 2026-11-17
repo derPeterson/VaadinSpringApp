@@ -91,7 +91,7 @@ vaadin-app-layout.cosmos-app-shell {
 .cosmos-topbar-service-name {
     min-width: 0;
     color: var(--cosmos-topbar-text-color);
-    font-size: 21px;
+    font-size: var(--cosmos-font-size-heading-s);
     font-weight: var(--cosmos-font-weight-bold);
     letter-spacing: -.6px;
     overflow-wrap: anywhere;
@@ -111,7 +111,7 @@ vaadin-app-layout.cosmos-app-shell {
 
 .cosmos-topbar-shortcuts {
     align-items: center;
-    gap: var(--lumo-space-s);
+    gap: var(--cosmos-space-s);
 }
 
 .cosmos-topbar .cosmos-topbar-shortcut {
@@ -196,7 +196,7 @@ vaadin-avatar {
 }
 
 .cosmos-avatar-status > :is(vaadin-icon, div) {
-    box-shadow: 0 0 0 2px var(--lumo-base-color);
+    box-shadow: 0 0 0 2px var(--cosmos-base-color);
 }
 
 .cosmos-app-main {
@@ -223,7 +223,7 @@ vaadin-avatar {
     width: 100%;
     max-width: var(--cosmos-page-content-width);
     min-width: 0;
-    gap: var(--lumo-space-l);
+    gap: var(--cosmos-space-2xl);
 }
 
 .cosmos-dashboard-introduction,
@@ -235,7 +235,7 @@ vaadin-avatar {
 .cosmos-dashboard-kicker {
     display: block;
     margin-bottom: 10px;
-    color: var(--lumo-primary-text-color);
+    color: var(--cosmos-primary-text-color);
     font-size: var(--cosmos-font-size-xs);
     font-weight: var(--cosmos-font-weight-semibold);
     letter-spacing: .2em;
@@ -245,7 +245,7 @@ vaadin-avatar {
 .cosmos-dashboard-introduction h1,
 .cosmos-section-title {
     margin: 0 0 6px;
-    color: var(--lumo-header-text-color);
+    color: var(--cosmos-heading-color);
     font-size: clamp(28px, 4vw, 36px);
     font-weight: var(--cosmos-font-weight-strong);
     letter-spacing: -.04em;
@@ -254,12 +254,12 @@ vaadin-avatar {
 }
 
 .cosmos-dashboard-accent {
-    color: var(--lumo-primary-text-color);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-dashboard-description {
     display: block;
-    color: var(--lumo-secondary-text-color);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     line-height: 1.65;
     overflow-wrap: anywhere;
@@ -274,7 +274,7 @@ vaadin-avatar {
     width: min(380px, calc(100vw - 32px));
     min-width: 0;
     padding: 18px 22px 22px;
-    color: var(--lumo-body-text-color);
+    color: var(--cosmos-text-color);
     font-size: var(--cosmos-font-size-m);
 }
 
@@ -287,8 +287,8 @@ vaadin-avatar {
 }
 
 .cosmos-theme vaadin-button.cosmos-overlay-close > vaadin-icon {
-    width: var(--lumo-icon-size-m);
-    height: var(--lumo-icon-size-m);
+    width: var(--cosmos-icon-size-em-m);
+    height: var(--cosmos-icon-size-em-m);
 }
 
 .cosmos-user-menu .user-popover-body {
@@ -335,7 +335,6 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
 
 .cosmos-notification-compose vaadin-multi-select-combo-box::part(content),
 .cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
-    --lumo-font-size-m: var(--cosmos-font-size-m);
     font-size: var(--cosmos-font-size-m);
 }
 
@@ -343,9 +342,6 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
  * Die explizite Wochentaggröße wird auch für die Scroller-Höhenberechnung verwendet. */
 
 .cosmos-theme vaadin-date-picker::part(content) {
-    --lumo-primary-color-10pct: var(--cosmos-hover-background);
-    --lumo-font-size-m: var(--cosmos-font-size-m);
-    --lumo-font-size-s: var(--cosmos-font-size-xs);
     --vaadin-date-picker-month-header-font-size: var(--cosmos-font-size-xl);
     --vaadin-date-picker-weekday-font-size: 10px;
     --vaadin-date-picker-week-number-font-size: 10px;
@@ -368,16 +364,16 @@ vaadin-popover[theme~="cosmos"]::part(content) {
 }
 
 vaadin-popover[theme~="cosmos"]::part(arrow) {
-    background: var(--lumo-base-color);
+    background: var(--cosmos-base-color);
 }
 
 vaadin-select[theme~="cosmos"]::part(content) {
-    padding: var(--lumo-space-xs);
+    padding: var(--cosmos-space-xs);
 }
 
 vaadin-select[theme~="cosmos"] vaadin-select-item {
-    color: var(--lumo-body-text-color);
-    border-radius: var(--lumo-border-radius-m);
+    color: var(--cosmos-text-color);
+    border-radius: var(--cosmos-radius-xs);
 }
 
 /* Der geschlossene Select hat genau eine Fläche: den äußeren input-field-Part.
@@ -413,7 +409,7 @@ vaadin-select[theme~="cosmos"] vaadin-select-item {
     }
 
     .cosmos-topbar-service-name {
-        font-size: 17px;
+        font-size: var(--cosmos-font-size-title);
     }
 }
 
@@ -432,7 +428,7 @@ vaadin-select[theme~="cosmos"] vaadin-select-item {
     vaadin-select[theme~="cosmos"]::part(overlay),
     vaadin-dialog[theme~="cosmos"]::part(overlay),
     vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay) {
-        background: var(--lumo-base-color);
+        background: var(--cosmos-base-color);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
@@ -447,11 +443,11 @@ vaadin-select[theme~="cosmos"] vaadin-select-item {
 /* Haupttexte der Cosmos-Statusliste: Lumo S; andere Menüs behalten Lumo M. */
 
 vaadin-select[theme~="cosmos"] {
-    --user-status-label-font-size: var(--lumo-font-size-s);
+    --user-status-label-font-size: var(--cosmos-font-size-l);
 }
 
 .user-popover-status-label {
-    font-size: var(--user-status-label-font-size, var(--lumo-font-size-m));
+    font-size: var(--user-status-label-font-size, var(--cosmos-font-size-2xl));
 }
 
 /* Mittelpunkt bei 45 Grad auf der Rahmenmitte: (1 - 1/sqrt(2))/2 der
@@ -499,7 +495,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 .cosmos-reference-portal .cosmos-topbar { height: 64px; min-height: 64px; width: 100%; max-width: 1240px; margin: auto; padding: 0 32px; border: 0; box-shadow: none; background: var(--cosmos-reference-page); gap: 16px; }
 .cosmos-reference-portal .cosmos-topbar-home { gap: 10px; }
 .cosmos-reference-portal .cosmos-topbar-logo { width: 28px; height: 28px; transform: scale(1.428571); }
-.cosmos-reference-portal .cosmos-topbar-service-name { color: var(--cosmos-reference-white); font: 600 16px Inter, sans-serif; letter-spacing: 0; }
+.cosmos-reference-portal .cosmos-topbar-service-name { color: var(--cosmos-reference-white); font: 600 var(--cosmos-font-size-2xl) var(--cosmos-font-family); letter-spacing: 0; }
 .cosmos-reference-portal .cosmos-topbar-account-menu, .cosmos-reference-portal .cosmos-topbar-shortcuts { gap: 16px; }
 .cosmos-reference-portal .cosmos-topbar-shortcut { margin: 0; padding: 0; width: 36px; min-width: 36px; height: 36px; color: var(--cosmos-reference-secondary); }
 .cosmos-reference-portal .cosmos-topbar-shortcut vaadin-icon { width: 20px; height: 20px; }
@@ -508,9 +504,9 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 .cosmos-reference-portal .tracked-user-button::part(prefix) { margin-right: 12px; }
 .cosmos-reference-portal .tracked-user-button::before { display: none; }
 .cosmos-reference-portal .tracked-user-button vaadin-icon { width: 16px; height: 16px; color: var(--cosmos-reference-secondary); }
-.cosmos-header-identity { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; max-width: min(220px, 22vw); text-align: left; gap: 3px; font: 500 12px/16px Inter, sans-serif; color: var(--cosmos-reference-text); }
+.cosmos-header-identity { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; max-width: min(220px, 22vw); text-align: left; gap: 3px; font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family); color: var(--cosmos-reference-text); }
 .cosmos-header-identity > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cosmos-header-identity span:last-child { color: var(--cosmos-reference-secondary); font: 400 11px/14px Inter, sans-serif; }
+.cosmos-header-identity span:last-child { color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-xs)/14px var(--cosmos-font-family); }
 /* 45-Grad-Punkt auf der Mitte des zwei Pixel breiten Avatarrahmens. */
 .cosmos-reference-portal .cosmos-user-avatar,
 .cosmos-reference-overlay .portal-menu-avatar {
@@ -518,12 +514,12 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 }
 .cosmos-reference-portal .cosmos-avatar-status > div { transform: translate(50%, 50%) !important; bottom: var(--cosmos-avatar-status-anchor) !important; right: var(--cosmos-avatar-status-anchor) !important; box-shadow: 0 0 0 2px var(--cosmos-reference-panel); }
 .cosmos-reference-portal .cosmos-avatar-circle { border: 2px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); box-shadow: none; }
-.cosmos-reference-portal :is(.cosmos-notification-count, .account-nav-count, .portal-home-unread) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 20px; margin: 0; padding: 0 6px; background: var(--cosmos-reference-badge); border: 1px solid var(--cosmos-reference-badge-border); border-radius: 999px; color: var(--cosmos-reference-white); font: 700 11px/1 Inter, sans-serif; }
+.cosmos-reference-portal :is(.cosmos-notification-count, .account-nav-count, .portal-home-unread) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 20px; margin: 0; padding: 0 6px; background: var(--cosmos-reference-badge); border: 1px solid var(--cosmos-reference-badge-border); border-radius: 999px; color: var(--cosmos-reference-white); font: 700 var(--cosmos-font-size-xs)/1 var(--cosmos-font-family); }
 .cosmos-reference-portal .cosmos-notification-count { top: 0; right: -4px; box-shadow: 0 0 0 2px var(--cosmos-reference-page); }
 @media (max-width: 1023px) and (min-width: 640px) { .cosmos-reference-portal .cosmos-topbar { padding-inline: 24px; } }
 @media (max-width: 639px) {
     .cosmos-reference-portal .cosmos-topbar { padding-inline: 12px; gap: 8px; }
-    .cosmos-reference-portal .cosmos-topbar-service-name { font-size: 13px; }
+    .cosmos-reference-portal .cosmos-topbar-service-name { font-size: var(--cosmos-font-size-m); }
     .cosmos-reference-portal .cosmos-topbar-logo { width: 24px; height: 24px; }
     .cosmos-reference-portal .cosmos-topbar-account-menu, .cosmos-reference-portal .cosmos-topbar-shortcuts { gap: 8px; }
     .cosmos-reference-portal .tracked-user-button { padding: 0; border: 0; min-width: 32px; }
@@ -549,20 +545,20 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 /* Angemeldete Startseite: dieselbe Illustration und Anordnung wie in der festen Referenz. */
 /* Startseitenversuch: Inhalt aus Stitch, ausschließlich im eigenen Bereich. */
 
-.portal-home-card{position:relative;isolation:isolate;overflow:hidden;min-width:0;border:1px solid var(--cosmos-reference-border);border-radius:16px;background:var(--cosmos-reference-panel);box-shadow:0 18px 45px #0003}
-.portal-home-card::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 92% 42%,#122342cc,transparent 70%)}
+.portal-home-card{position:relative;isolation:isolate;overflow:hidden;min-width:0;border:1px solid var(--cosmos-reference-border);border-radius:16px;background:var(--cosmos-reference-panel);box-shadow:0 18px 45px color-mix(in srgb, var(--cosmos-color-black) 20%, transparent)}
+.portal-home-card::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 92% 42%,color-mix(in srgb, var(--cosmos-color-selection) 80%, transparent),transparent 70%)}
 .portal-home-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,1fr);align-items:center;gap:16px;padding:38px 32px;min-height:380px}
-.portal-home-copy{min-width:0}.portal-home-kicker{margin:0 0 18px;color:var(--cosmos-reference-accent);font:600 10px/1.5 Inter,system-ui;letter-spacing:.16em}
-.portal-home-copy h2{margin:0 0 18px;color:var(--cosmos-reference-white);font:700 clamp(26px,3vw,38px)/1.17 Inter,system-ui;letter-spacing:-.04em;max-width:13ch}.portal-home-dot{color:#0088cc}
-.portal-home-description{margin:0;color:var(--cosmos-reference-secondary);font:400 13px/1.85 Inter,system-ui;max-width:40ch}.portal-home-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:26px}.portal-home-actions .portal-button{height:36px;min-height:36px;padding:0 12px;white-space:nowrap;font-size:12px}.portal-home-actions .portal-button[aria-current]{background:var(--action-primary)!important}
-.portal-home-art{min-width:0;display:flex;align-items:center;justify-content:center;aspect-ratio:1;filter:drop-shadow(0 12px 30px #0088cc22)}.portal-home-planet{display:block;width:100%;max-width:320px;height:auto}
-.portal-home-note{display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 24px;border-top:1px solid var(--cosmos-reference-border);color:var(--cosmos-reference-secondary);font:400 11px/1.7 Inter,system-ui;text-align:center}.portal-home-note>span:first-child{color:var(--cosmos-reference-accent)}
+.portal-home-copy{min-width:0}.portal-home-kicker{margin:0 0 18px;color:var(--cosmos-reference-accent);font:600 var(--cosmos-font-size-2xs)/1.5 var(--cosmos-font-family);letter-spacing:.16em}
+.portal-home-copy h2{margin:0 0 18px;color:var(--cosmos-reference-white);font:700 clamp(26px,3vw,38px)/1.17 var(--cosmos-font-family);letter-spacing:-.04em;max-width:13ch}.portal-home-dot{color:var(--cosmos-color-primary)}
+.portal-home-description{margin:0;color:var(--cosmos-reference-secondary);font:400 var(--cosmos-font-size-m)/1.85 var(--cosmos-font-family);max-width:40ch}.portal-home-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:26px}.portal-home-actions .portal-button{height:36px;min-height:36px;padding:0 12px;white-space:nowrap;font-size:var(--cosmos-font-size-s)}.portal-home-actions .portal-button[aria-current]{background:var(--action-primary)!important}
+.portal-home-art{min-width:0;display:flex;align-items:center;justify-content:center;aspect-ratio:1;filter:drop-shadow(0 12px 30px color-mix(in srgb, var(--cosmos-color-primary) 13%, transparent))}.portal-home-planet{display:block;width:100%;max-width:320px;height:auto}
+.portal-home-note{display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 24px;border-top:1px solid var(--cosmos-reference-border);color:var(--cosmos-reference-secondary);font:400 var(--cosmos-font-size-xs)/1.7 var(--cosmos-font-family);text-align:center}.portal-home-note>span:first-child{color:var(--cosmos-reference-accent)}
 @media(max-width:1050px) and (min-width:640px){.portal-home-layout{grid-template-columns:minmax(0,1fr);gap:0;padding:28px}.portal-home-art{max-width:280px;width:100%;justify-self:center}.portal-home-copy h2{max-width:20ch}}
-@media(max-width:639px){.portal-home-layout{grid-template-columns:minmax(0,1fr);padding:26px 22px 12px;gap:0;min-height:0}.portal-home-copy h2{font-size:30px;max-width:14ch}.portal-home-description{font-size:12px}.portal-home-kicker{font-size:9px;margin-bottom:16px}.portal-home-actions{gap:8px;margin-top:22px}.portal-home-actions .portal-button{font-size:11px}.portal-home-art{width:100%;max-width:250px;justify-self:center}.portal-home-note{padding:14px 18px;font-size:10px}}
+@media(max-width:639px){.portal-home-layout{grid-template-columns:minmax(0,1fr);padding:26px 22px 12px;gap:0;min-height:0}.portal-home-copy h2{font-size:var(--cosmos-font-size-heading-l);max-width:14ch}.portal-home-description{font-size:var(--cosmos-font-size-s)}.portal-home-kicker{font-size:var(--cosmos-font-size-2xs);margin-bottom:16px}.portal-home-actions{gap:8px;margin-top:22px}.portal-home-actions .portal-button{font-size:var(--cosmos-font-size-xs)}.portal-home-art{width:100%;max-width:250px;justify-self:center}.portal-home-note{padding:14px 18px;font-size:var(--cosmos-font-size-2xs)}}
 @media(prefers-reduced-motion:reduce){.portal-home-page *{animation:none!important}}
 
 /* Gemeinsamer Dialograhmen des angemeldeten Portals; native Modalität und Scrollen bleiben erhalten. */
-vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(overlay) { width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; border: 1px solid var(--cosmos-reference-control-border); border-radius: 16px; overflow: hidden; background: var(--cosmos-reference-dialog); box-shadow: 0 24px 80px #0009; }
+vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(overlay) { width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; border: 1px solid var(--cosmos-reference-control-border); border-radius: 16px; overflow: hidden; background: var(--cosmos-reference-dialog); box-shadow: 0 24px 80px color-mix(in srgb, var(--cosmos-color-black) 60%, transparent); }
 vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header),
 vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header-content) { padding: 0; background: var(--cosmos-reference-dialog); }
 vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(header) { border-bottom: 1px solid var(--cosmos-reference-border); }
@@ -573,13 +569,13 @@ vaadin-dialog[theme~=cosmos][theme~=cosmos-reference]::part(backdrop) { backgrou
 .cosmos-reference-overlay :is(.account-change-dialog-header, .cosmos-notification-detail-header) > .cosmos-panel-heading { flex: 1; min-width: 0; }
 .cosmos-reference-overlay .cosmos-panel-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border: 1px solid var(--cosmos-reference-icon-border); border-radius: 12px; background: var(--cosmos-reference-selection); color: var(--cosmos-reference-accent); }
 .cosmos-reference-overlay .cosmos-panel-icon > vaadin-icon { width: 20px; height: 20px; }
-.cosmos-reference-overlay .cosmos-panel-title { margin: 0; color: var(--cosmos-reference-text); font: 600 16px/22px Inter, sans-serif; letter-spacing: -.025em; }
-.cosmos-reference-overlay .cosmos-panel-description { margin: 4px 0 0; color: var(--cosmos-reference-secondary); font: 400 11px/1.7 Inter, sans-serif; }
+.cosmos-reference-overlay .cosmos-panel-title { margin: 0; color: var(--cosmos-reference-text); font: 600 var(--cosmos-font-size-2xl)/22px var(--cosmos-font-family); letter-spacing: -.025em; }
+.cosmos-reference-overlay .cosmos-panel-description { margin: 4px 0 0; color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-xs)/1.7 var(--cosmos-font-family); }
 .cosmos-reference-overlay .account-change-dialog-form { display: grid; box-sizing: border-box; padding: 24px; gap: 18px; }
-.cosmos-reference-overlay .account-change-dialog-form input[slot=input] { font-size: 12px; }
+.cosmos-reference-overlay .account-change-dialog-form input[slot=input] { font-size: var(--cosmos-font-size-s); }
 .cosmos-reference-overlay .cosmos-dialog-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; width:100%; gap:8px; }
 .cosmos-reference-overlay .cosmos-dialog-actions > vaadin-button { width:auto; min-width:0; flex:none; }
-.cosmos-reference-overlay .cosmos-panel-hint { display: flex; align-items: center; gap: var(--cosmos-info-box-gap); margin: 4px 0 0; padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-hint-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 11px/1.8 Inter, sans-serif; }
+.cosmos-reference-overlay .cosmos-panel-hint { display: flex; align-items: center; gap: var(--cosmos-info-box-gap); margin: 4px 0 0; padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-hint-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family); }
 .cosmos-reference-overlay .cosmos-panel-hint > vaadin-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--cosmos-reference-accent); }
 vaadin-dialog.account-avatar-dialog[theme~=cosmos-reference]::part(overlay) { width: min(600px, calc(100vw - 32px)); }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer { gap: 12px; }
@@ -589,28 +585,28 @@ vaadin-dialog.portal-confirmation-dialog[theme~=cosmos-reference]::part(overlay)
 .portal-confirm-destructive.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon { color: var(--cosmos-reference-invalid); border-color: var(--cosmos-reference-danger-border); background: var(--cosmos-reference-danger-surface); }
 .portal-confirm-body { display: grid; gap: 16px; padding: 24px; }
 .portal-confirm-lead { display: grid; gap: 6px; }
-.portal-confirm-question { color: var(--cosmos-reference-text); font: 600 15px/21px Inter, sans-serif; }
-.portal-confirm-explanation { color: var(--cosmos-reference-secondary); font: 400 13px/21px Inter, sans-serif; }
-.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint { display: flex; align-items: center; padding: 0; margin: 0; border: 0; background: transparent; font: 400 12px/20px Inter, sans-serif; }
+.portal-confirm-question { color: var(--cosmos-reference-text); font: 600 var(--cosmos-font-size-xl)/21px var(--cosmos-font-family); }
+.portal-confirm-explanation { color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-m)/21px var(--cosmos-font-family); }
+.portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint { display: flex; align-items: center; padding: 0; margin: 0; border: 0; background: transparent; font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family); }
 .portal-confirmation-dialog.cosmos-reference-overlay .portal-confirm-body > .cosmos-panel-hint > vaadin-icon { width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
 #sessions-confirmation .cosmos-dialog-actions { width: max-content; max-width: 100%; margin-inline-start: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #sessions-confirmation .cosmos-dialog-actions > vaadin-button { min-width: max-content; }
 #sessions-confirmation .cosmos-dialog-actions > vaadin-button::part(label) { white-space: nowrap; overflow: visible; text-overflow: clip; line-height: 1.4; }
 .portal-session-confirmation .account-change-dialog-header { align-items: flex-start; gap: 14px; }
-.portal-session-confirmation .cosmos-panel-description { margin-top: 2px; font: 400 12px/16px Inter, sans-serif; }
+.portal-session-confirmation .cosmos-panel-description { margin-top: 2px; font: 400 var(--cosmos-font-size-s)/16px var(--cosmos-font-family); }
 .portal-session-confirmation .portal-context-list { gap: 10px; }
 .portal-session-confirmation .portal-context-card { box-sizing: border-box; width: 100%; }
 .portal-context-list { display: grid; gap: 8px; }
 .portal-context-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 8px; background: var(--cosmos-reference-input); }
 .portal-confirmation-dialog.cosmos-reference-overlay .portal-context-card > .cosmos-panel-icon { box-sizing: border-box; width: 36px; height: 36px; }
 .portal-context-copy { min-width: 0; overflow-wrap: anywhere; }
-.portal-context-title { display: block; color: var(--cosmos-reference-text); font: 500 14px/20px Inter, sans-serif; }
-.portal-context-detail { display: block; margin-top: 2px; color: var(--cosmos-reference-secondary); font: 400 12px/18px Inter, sans-serif; }
+.portal-context-title { display: block; color: var(--cosmos-reference-text); font: 500 var(--cosmos-font-size-l)/20px var(--cosmos-font-family); }
+.portal-context-detail { display: block; margin-top: 2px; color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family); }
 
 /* Benutzermenü und native Statusauswahl, außerhalb des Seitenrasters. */
 .cosmos-reference-portal .portal-home-page,
 .cosmos-reference-portal .portal-home-page * { box-sizing: border-box; }
-vaadin-popover[theme~=cosmos-reference]::part(overlay) { box-sizing: border-box; width: min(330px, calc(100vw - 24px)); background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 14px; box-shadow: 0 24px 60px #0009; }
+vaadin-popover[theme~=cosmos-reference]::part(overlay) { box-sizing: border-box; width: min(330px, calc(100vw - 24px)); background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 14px; box-shadow: 0 24px 60px color-mix(in srgb, var(--cosmos-color-black) 60%, transparent); }
 vaadin-popover[theme~=cosmos-reference]::part(content) { padding: 0; }
 .cosmos-reference-overlay.cosmos-user-menu { width: 100%; padding: 16px; }
 .portal-user-menu-body > * { min-width: 0; }
@@ -625,22 +621,22 @@ vaadin-badge:is(.account-summary-presence, .portal-menu-presence) {
     padding: 2px 6px;
     border-radius: 4px;
     color: var(--account-presence-color);
-    font: 500 10px/15px Inter, sans-serif;
+    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
 }
 
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action { display: flex; justify-content: center; width: calc(100% - 24px); margin: 0 12px 12px; border: 1px solid var(--cosmos-reference-control-border); background: var(--cosmos-reference-input); color: var(--cosmos-reference-white); padding: 0 13px; font-weight: 600; }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action::part(label) { flex: initial; justify-content: center; text-align: center; }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action > vaadin-icon { color: var(--cosmos-reference-accent); }
-.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action:hover { color: var(--cosmos-reference-white); background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+.cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action:hover { color: var(--cosmos-reference-white); background: var(--cosmos-reference-button-hover); border-color: color-mix(in srgb, var(--cosmos-color-white) 22%, transparent); }
 .cosmos-reference-overlay .portal-menu-logout > vaadin-icon { color: inherit; }
-.portal-menu-section { color: var(--cosmos-reference-accent); font: 600 10px/15px Inter, sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+.portal-menu-section { color: var(--cosmos-reference-accent); font: 600 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family); letter-spacing: .5px; text-transform: uppercase; }
 .portal-menu-section { display: block; margin: 18px 0 8px; }
 .portal-language-switch { display: flex; width: 100%; gap: 4px; }
 .cosmos-reference-overlay .portal-language-switch > vaadin-button { flex: 1; border: 1px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); }
 .cosmos-reference-overlay .portal-language-switch > vaadin-button::part(prefix) { display: none; }
 .cosmos-reference-overlay .portal-language-switch > vaadin-button.portal-language-active { color: var(--cosmos-reference-accent); background: var(--cosmos-reference-selection); border-color: var(--cosmos-reference-primary); }
 vaadin-select[theme~=cosmos-reference]::part(overlay) { background: var(--cosmos-reference-dialog); border: 1px solid var(--cosmos-reference-control-border); border-radius: 10px; }
-vaadin-select[theme~=cosmos-reference] vaadin-select-item { min-height: 40px; font-size: 12px; }
+vaadin-select[theme~=cosmos-reference] vaadin-select-item { min-height: 40px; font-size: var(--cosmos-font-size-s); }
 vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var(--cosmos-reference-accent); background: var(--cosmos-reference-selection); }
 .cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-circle { background: var(--cosmos-reference-input); border: 2px solid var(--cosmos-reference-border); box-shadow: none; }
 .cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-status > div { box-sizing: border-box; width: 16px !important; height: 16px !important; right: var(--cosmos-avatar-status-anchor) !important; bottom: var(--cosmos-avatar-status-anchor) !important; transform: translate(50%, 50%) !important; border: 2px solid var(--cosmos-reference-dialog); box-shadow: none; }
@@ -690,7 +686,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--cosmos-reference-white);
-    font: 600 14px/20px Inter, sans-serif;
+    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
 }
 
 .portal-menu-identity-copy .portal-menu-email {
@@ -699,7 +695,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--cosmos-reference-secondary);
-    font: 400 12px/18px Inter, sans-serif;
+    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
 }
 
 
@@ -768,7 +764,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
 .portal-status-label {
     display: block;
     color: var(--cosmos-reference-text);
-    font: 500 12px/18px Inter, sans-serif;
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
 }
 
 .portal-status-option[aria-pressed=true] .portal-status-label {
@@ -780,7 +776,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     display: block;
     margin-top: 2px;
     color: var(--cosmos-reference-secondary);
-    font: 400 11px/15.125px Inter, sans-serif;
+    font: 400 var(--cosmos-font-size-xs)/15.125px var(--cosmos-font-family);
 }
 
 :is(.cosmos-reference-overlay, vaadin-select[theme~=cosmos-reference][theme~=cosmos-status]) .portal-status-symbol {
@@ -812,7 +808,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
 .portal-menu-language-row .portal-menu-section {
     margin: 0;
     color: var(--cosmos-reference-secondary);
-    font: 400 12px/18px Inter, sans-serif;
+    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
     text-transform: none;
 }
 
@@ -835,7 +831,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     padding: 0 8px;
     border-color: transparent;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: var(--cosmos-font-size-xs);
     background: transparent;
 }
 
@@ -877,7 +873,7 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-list-
     display: block;
     margin: 2px 4px 10px;
     color: var(--cosmos-reference-accent);
-    font: 600 11px/16px Inter, sans-serif;
+    font: 600 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
     letter-spacing: .08em;
     text-transform: uppercase;
 }
@@ -908,14 +904,14 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .portal-status-copy
 }
 
 vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .user-popover-status-label {
-    font: 500 12px/18px Inter, sans-serif;
+    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
     color: var(--cosmos-reference-text);
 }
 
 vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] .portal-status-copy > span:last-child {
     margin-top: 2px;
     color: var(--cosmos-reference-secondary);
-    font: 400 11px/15.125px Inter, sans-serif;
+    font: 400 var(--cosmos-font-size-xs)/15.125px var(--cosmos-font-family);
     white-space: normal;
 }
 
@@ -1000,19 +996,19 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item 
 /* Native Navigation fuer Portal und Administration, einschliesslich Unterpunkten. */
 .cosmos-reference-portal .cosmos-side-navigation { width:100%; padding:0; margin:0; border:0; background:transparent; }
 .cosmos-reference-portal .cosmos-side-navigation::part(children) { display:flex; flex-direction:column; gap:4px; margin:0; padding:0; }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item { gap:0; --vaadin-side-nav-child-indent:0px; --lumo-space-s:0px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item { gap:0; --vaadin-side-nav-child-indent:0px;}
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(content) { background:transparent; box-shadow:none; box-sizing:border-box; height:34px; min-height:34px; gap:0; padding:0; border-radius:8px; border:1px solid transparent; }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(link) { box-sizing:border-box; height:32px; min-height:0; padding:8px 12px; gap:8px; color:var(--cosmos-reference-text); font:500 12px/16px Inter,sans-serif; justify-content:flex-start; text-align:left; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(link) { box-sizing:border-box; height:32px; min-height:0; padding:8px 12px; gap:8px; color:var(--cosmos-reference-text); font:500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family); justify-content:flex-start; text-align:left; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item > vaadin-icon { color:var(--cosmos-reference-accent); width:16px; height:16px; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--active::part(content) { border-color:var(--cosmos-reference-primary); background:var(--cosmos-reference-selection); }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--active:not(.cosmos-nav-item--sub)::part(link) { font-weight:600; }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(link) { height:30.5px; padding:7px 9px; font:400 11px/16.5px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(link) { height:30.5px; padding:7px 9px; font:400 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family); color:var(--cosmos-reference-secondary); }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(content) { height:30.5px; min-height:30.5px; margin-inline-start:0; border:0; border-radius:7px; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(content)::before { display:none; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button) { width:24px; height:32px; --vaadin-icon-size:16px; color:var(--cosmos-reference-accent); }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button)::before { font-size:16px; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button)::before { font-size:var(--cosmos-font-size-2xl); }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub>vaadin-icon { width:14px; height:14px; }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) { background:#008ecc1a; }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) { background:color-mix(in srgb, var(--cosmos-color-primary) 10%, transparent); }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(link) { color:var(--cosmos-reference-accent); font-weight:500; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(children) { display:flex; flex-direction:column; gap:2px; margin:4px 0 0; padding:0 0 0 28px; border:0; }
 .cosmos-reference-portal .cosmos-side-navigation+.admin-portal-label { margin-top:16px; }
@@ -1025,10 +1021,10 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item 
 
 /* Bereichsueberschrift: eine Anordnung in Portal und Administration. */
 .cosmos-reference-portal .cosmos-section-header.cosmos-dashboard-introduction { margin: 0; position: relative; display: block; width: 100%; max-width: none; }
-.cosmos-reference-portal .cosmos-dashboard-kicker { margin: 0; font: 600 12px/16px Inter, sans-serif; letter-spacing: .6px; }
-.cosmos-reference-portal .cosmos-section-title { margin: 8px 0 0; font: 700 30px/36px Inter, sans-serif; letter-spacing: -.75px; }
-.cosmos-reference-portal .cosmos-dashboard-description { position: absolute; right: 0; bottom: 2px; font: 400 14px/20px Inter, sans-serif; }
+.cosmos-reference-portal .cosmos-dashboard-kicker { margin: 0; font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family); letter-spacing: .6px; }
+.cosmos-reference-portal .cosmos-section-title { margin: 8px 0 0; font: 700 var(--cosmos-font-size-heading-l)/36px var(--cosmos-font-family); letter-spacing: -.75px; }
+.cosmos-reference-portal .cosmos-dashboard-description { position: absolute; right: 0; bottom: 2px; font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family); }
 @media (max-width:639px) {
-    .cosmos-reference-portal .cosmos-section-title { font-size: 24px; line-height: 32px; }
-    .cosmos-reference-portal .cosmos-dashboard-description { position: static; display: block; margin-top: 4px; font-size: 12px; line-height: 16px; }
+    .cosmos-reference-portal .cosmos-section-title { font-size: var(--cosmos-font-size-heading-m); line-height: 32px; }
+    .cosmos-reference-portal .cosmos-dashboard-description { position: static; display: block; margin-top: 4px; font-size: var(--cosmos-font-size-s); line-height: 16px; }
 }

@@ -43,7 +43,7 @@
 .pending-email-verification-view #pending-reactivation-email {
     max-width: 100%;
     color: var(--cosmos-reference-text);
-    font-family: 'Space Mono', ui-monospace, Consolas, monospace;
+    font-family: var(--cosmos-font-family-mono);
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-semibold);
     line-height: var(--cosmos-line-height-copy);

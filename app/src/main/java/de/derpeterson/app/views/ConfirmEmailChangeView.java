@@ -19,7 +19,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -29,6 +28,7 @@ import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.AccountSecurityService.Confirmation;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import java.util.function.Supplier;
@@ -73,7 +73,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
 
     confirmEmailChangeButton.setId("account-email-confirm-action");
     confirmEmailChangeButton.setPrefixComponent(AppIcon.CHECK.create());
-    confirmEmailChangeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmEmailChangeButton.addThemeVariants(ButtonVariant.PRIMARY);
     confirmEmailChangeButton.addClickListener(_ -> confirmEmailChange());
 
     goToLoginButton.setId("account-email-confirm-login");
@@ -189,20 +189,20 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
             };
     String confirmationColorCssClass =
         hasConfirmationTechnicalFailure
-            ? LumoUtility.TextColor.ERROR
+            ? CosmosCssClasses.TEXT_ERROR
             : switch (confirmationState) {
-              case READY -> LumoUtility.TextColor.PRIMARY;
-              case SUCCESS -> LumoUtility.TextColor.SUCCESS;
-              case EXPIRED -> LumoUtility.TextColor.WARNING;
-              case INVALID, CONFLICT -> LumoUtility.TextColor.ERROR;
+              case READY -> CosmosCssClasses.TEXT_PRIMARY;
+              case SUCCESS -> CosmosCssClasses.TEXT_SUCCESS;
+              case EXPIRED -> CosmosCssClasses.TEXT_WARNING;
+              case INVALID, CONFLICT -> CosmosCssClasses.TEXT_ERROR;
             };
 
     confirmationStatusSvgIcon.setSrc(confirmationAppIcon.getSource());
     confirmationStatusSvgIcon.removeClassNames(
-        LumoUtility.TextColor.PRIMARY,
-        LumoUtility.TextColor.SUCCESS,
-        LumoUtility.TextColor.WARNING,
-        LumoUtility.TextColor.ERROR);
+        CosmosCssClasses.TEXT_PRIMARY,
+        CosmosCssClasses.TEXT_SUCCESS,
+        CosmosCssClasses.TEXT_WARNING,
+        CosmosCssClasses.TEXT_ERROR);
     confirmationStatusSvgIcon.addClassName(confirmationColorCssClass);
     confirmationStatusSvgIcon.setClassName(
         "cosmos-status-icon--warning",
@@ -238,9 +238,9 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     confirmEmailChangeButton.setVisible(canConfirmEmailChange);
     goToLoginButton.setText(messageProperties.getBaseLoginButton());
     if (canConfirmEmailChange) {
-      goToLoginButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      goToLoginButton.removeThemeVariants(ButtonVariant.PRIMARY);
     } else {
-      goToLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      goToLoginButton.addThemeVariants(ButtonVariant.PRIMARY);
     }
   }
 }

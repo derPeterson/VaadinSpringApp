@@ -30,7 +30,6 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.AppRoute;
@@ -42,6 +41,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.FieldHelpRowLayout;
 import de.derpeterson.app.validation.UserInputRules;
@@ -117,7 +117,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailSendHintSpan = new Span();
 
     mailTestDescriptionSpan = new Span();
-    mailTestDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
+    mailTestDescriptionSpan.addClassNames(CosmosCssClasses.TEXT_SECONDARY);
 
     testRecipientField = new EmailField();
     testRecipientField.setPattern(UserInputRules.EMAIL_REGEX);
@@ -166,7 +166,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     sendTestMailButton = new Button();
     sendTestMailButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
-    sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sendTestMailButton.addThemeVariants(ButtonVariant.PRIMARY);
     sendTestMailButton.addClickListener(_ -> sendTestMail());
 
     // Enter im Nachrichtentext bleibt ein Zeilenumbruch. Navigation und Info-Buttons

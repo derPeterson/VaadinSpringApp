@@ -138,7 +138,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
             messageProperties.getPublicRequestLink(),
             requestClickEvent -> requestPasswordResetLink());
     requestPasswordResetButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    requestPasswordResetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    requestPasswordResetButton.addThemeVariants(ButtonVariant.PRIMARY);
     requestPasswordResetButton.setWidthFull();
 
     this.returnToLoginButton =

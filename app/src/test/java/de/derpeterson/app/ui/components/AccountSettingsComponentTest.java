@@ -29,7 +29,6 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -385,7 +384,7 @@ class AccountSettingsComponentTest {
 
     assertTrue(
         titleSpan.hasClassName(
-            isErrorNotification ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
+            isErrorNotification ? CosmosCssClasses.TEXT_ERROR : CosmosCssClasses.TEXT_SUCCESS));
     assertTrue(
         streamComponentTree(notification)
             .anyMatch(candidateComponent ->

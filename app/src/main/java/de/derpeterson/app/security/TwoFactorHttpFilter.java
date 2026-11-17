@@ -144,7 +144,7 @@ public final class TwoFactorHttpFilter implements Filter {
                 "/VAADIN/",
                 "/themes/",
                 "/custom-theme/",
-                "/lumo/",
+                "/aura/",
                 "/frontend/",
                 "/icons/",
                 "/images/",

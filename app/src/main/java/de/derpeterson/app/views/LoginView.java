@@ -28,7 +28,6 @@ import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -178,8 +177,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     createAccountLinkLayout.setPadding(false);
     createAccountLinkLayout.setSpacing(false);
     createAccountLinkLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    createAccountLinkLayout.addClassNames(
-        LumoUtility.Gap.SMALL, "cosmos-form-links", COSMOS_FORM_TEXT_CLASS);
+    createAccountLinkLayout.addClassNames("cosmos-form-links", COSMOS_FORM_TEXT_CLASS);
     createAccountLinkLayout.add(createAccountQuestionSpan);
     createAccountLinkLayout.add(createAccountRouterLink);
 
@@ -192,7 +190,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     loginPasswordField.setRequiredIndicatorVisible(true);
 
     loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    loginButton.addThemeVariants(ButtonVariant.PRIMARY);
     loginButton.setWidthFull();
 
     loginEmailField.addKeyPressListener(Key.ENTER, _ -> loginButton.click());
@@ -266,7 +264,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     continueLoginButton.setId("session-recovery-continue");
     continueLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    continueLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    continueLoginButton.addThemeVariants(ButtonVariant.PRIMARY);
     continueLoginButton.addClickListener(_ -> completeSessionRecovery());
 
     cancelSessionRecoveryButton = new Button();

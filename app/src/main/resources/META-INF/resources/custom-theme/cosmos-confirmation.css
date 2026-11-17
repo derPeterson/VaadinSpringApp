@@ -13,7 +13,7 @@
     border: 1px solid var(--cosmos-reference-control-border);
     border-radius: 16px;
     background: var(--cosmos-reference-dialog);
-    box-shadow: 0 24px 80px #0009;
+    box-shadow: 0 24px 80px color-mix(in srgb, var(--cosmos-color-black) 60%, transparent);
 }
 
 .cosmos-native-confirmation::part(backdrop) {
@@ -26,9 +26,9 @@
     padding: 0;
     border-bottom: 1px solid var(--cosmos-reference-border);
     background: var(--cosmos-reference-dialog);
-    font-size: var(--lumo-font-size-m);
+    font-size: var(--cosmos-font-size-2xl);
     font-weight: 400;
-    line-height: var(--lumo-line-height-s);
+    line-height: var(--cosmos-line-height-tight);
 }
 
 .cosmos-native-confirmation::part(content),

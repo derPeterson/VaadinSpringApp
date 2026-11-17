@@ -21,7 +21,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
-import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -55,6 +54,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.ui.components.AccountPanelComponent;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
@@ -238,7 +238,7 @@ public final class TwoFactorView extends VerticalLayout
 
     continueTwoFactorButton.setId("two-factor-submit");
     continueTwoFactorButton.setPrefixComponent(AppIcon.CHECK.create());
-    continueTwoFactorButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    continueTwoFactorButton.addThemeVariants(ButtonVariant.PRIMARY);
     continueTwoFactorButton.addClickListener(_ -> submitTwoFactorForm());
 
     HorizontalLayout stepActionsLayout =
@@ -453,7 +453,8 @@ public final class TwoFactorView extends VerticalLayout
     Button recoverAuthenticatorButton =
         new Button(messageProperties.getTwoFactorRecoverAction(), AppIcon.OPEN_SECTION.create());
     recoverAuthenticatorButton.setIconAfterText(true);
-    recoverAuthenticatorButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    recoverAuthenticatorButton.addThemeVariants(ButtonVariant.TERTIARY);
+    recoverAuthenticatorButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     recoverAuthenticatorButton.setId("two-factor-recover");
     recoverAuthenticatorButton.addClickListener(_ ->
         navigateToTwoFactorFlow(
@@ -472,7 +473,8 @@ public final class TwoFactorView extends VerticalLayout
     recoveryHelpButton.setId("two-factor-help");
     recoveryHelpButton.setIcon(AppIcon.OPEN_SECTION.create());
     recoveryHelpButton.setIconAfterText(true);
-    recoveryHelpButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    recoveryHelpButton.addThemeVariants(ButtonVariant.TERTIARY);
+    recoveryHelpButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
 
     Span loginHelpTopicSpan =
         new Span(
@@ -550,7 +552,7 @@ public final class TwoFactorView extends VerticalLayout
     Tabs loginMethodTabs = new Tabs(authenticatorCodeTab, recoveryCodeTab);
     loginMethodTabs.setWidthFull();
     loginMethodTabs.addClassName("cosmos-segmented-tabs");
-    loginMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    loginMethodTabs.addClassName(CosmosCssClasses.EQUAL_WIDTH_TABS);
     loginMethodTabs.setSelectedTab(
         isRecoveryCodeLoginSelected ? recoveryCodeTab : authenticatorCodeTab);
     loginMethodTabs.addSelectedChangeListener(loginMethodChangeEvent -> {
@@ -628,7 +630,8 @@ public final class TwoFactorView extends VerticalLayout
 
     Button returnToCodeButton =
         new Button(messageProperties.getTwoFactorReturnToCode(), AppIcon.ANGLE_LEFT.create());
-    returnToCodeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    returnToCodeButton.addThemeVariants(ButtonVariant.TERTIARY);
+    returnToCodeButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     returnToCodeButton.setId("two-factor-recovery-back");
     returnToCodeButton.addClickListener(_ ->
         navigateToTwoFactorFlow(
@@ -811,7 +814,8 @@ public final class TwoFactorView extends VerticalLayout
     copyManualKeyButton.setAriaLabel(messageProperties.getProviderSettingsCopy());
     copyManualKeyButton.setTooltipText(messageProperties.getProviderSettingsCopy());
     copyManualKeyButton.setEnabled(false);
-    copyManualKeyButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    copyManualKeyButton.addThemeVariants(ButtonVariant.TERTIARY);
+    copyManualKeyButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     copyManualKeyButton.addClickListener(_ ->
         copyManualKeyButton
             .getElement()
@@ -860,7 +864,7 @@ public final class TwoFactorView extends VerticalLayout
     qrSetupLayout.setVisible(!isManualSetupTabSelected);
 
     Tabs setupMethodTabs = new Tabs(qrSetupTab, manualKeyTab);
-    setupMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    setupMethodTabs.addClassName(CosmosCssClasses.EQUAL_WIDTH_TABS);
     setupMethodTabs.addClassName("cosmos-segmented-tabs");
     setupMethodTabs.setWidthFull();
     setupMethodTabs.setSelectedTab(isManualSetupTabSelected ? manualKeyTab : qrSetupTab);
@@ -1134,7 +1138,8 @@ public final class TwoFactorView extends VerticalLayout
             + ": "
             + recoveryCodeTextField.getAriaLabel().orElseThrow());
     copyCodeButton.setTooltipText(messageProperties.getProviderSettingsCopy());
-    copyCodeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    copyCodeButton.addThemeVariants(ButtonVariant.TERTIARY);
+    copyCodeButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     copyCodeButton.addClassName("two-factor-recovery-copy");
     copyCodeButton.setEnabled(false);
     copyCodeButton.addClickListener(_ ->

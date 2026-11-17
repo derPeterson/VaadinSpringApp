@@ -10,7 +10,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
-import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableRunnable;
@@ -64,7 +63,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
     }
     codeMethodTabs.setWidthFull();
     codeMethodTabs.addClassName("cosmos-segmented-tabs");
-    codeMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    codeMethodTabs.addClassName(CosmosCssClasses.EQUAL_WIDTH_TABS);
     codeMethodTabs.addSelectedChangeListener(event -> {
       resetFields();
       refreshSelectedCodeInput();
@@ -81,7 +80,8 @@ final class TwoFactorCodeInput extends VerticalLayout {
     openRecoveryHelpButton.setId(methodPrefix + "-help");
     openRecoveryHelpButton.setIcon(AppIcon.OPEN_SECTION.create());
     openRecoveryHelpButton.setIconAfterText(true);
-    openRecoveryHelpButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    openRecoveryHelpButton.addThemeVariants(ButtonVariant.TERTIARY);
+    openRecoveryHelpButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     openRecoveryHelpButton.addClickListener(event -> {
       closeAction.run();
       TwoFactorFlow.ACCOUNT_HELP.enter(request);

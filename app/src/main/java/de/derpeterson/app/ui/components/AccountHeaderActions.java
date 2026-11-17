@@ -1,12 +1,10 @@
 package de.derpeterson.app.ui.components;
 
-import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
-
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.function.SerializableConsumer;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.views.AccountView;
 
@@ -26,8 +24,9 @@ public class AccountHeaderActions extends HorizontalLayout {
     openAccountSettingsButton.setId("account-header-settings");
     for (Button accountActionButton :
         new Button[] {openNotificationsButton, openAccountSettingsButton}) {
-      accountActionButton.addThemeVariants(LUMO_TERTIARY_INLINE);
-      accountActionButton.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
+      accountActionButton.addThemeVariants(ButtonVariant.TERTIARY);
+      accountActionButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
+      accountActionButton.addClassNames("cosmos-topbar-shortcut", CosmosCssClasses.TEXT_PRIMARY);
     }
 
     if (authenticated) {

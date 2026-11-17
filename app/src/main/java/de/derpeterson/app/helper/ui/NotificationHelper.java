@@ -1,6 +1,5 @@
 package de.derpeterson.app.helper.ui;
 
-import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
@@ -8,6 +7,7 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -17,10 +17,10 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
@@ -185,7 +185,7 @@ public class NotificationHelper implements Serializable {
     this.titleText = null;
     if (StringUtils.isNotEmpty(notificationTitle)) {
       titleText = new Span(notificationTitle);
-      titleText.addClassNames("cosmos-toast-title", LumoUtility.FontWeight.SEMIBOLD);
+      titleText.addClassName("cosmos-toast-title");
       currentNotification.add(titleText);
     }
 
@@ -194,12 +194,12 @@ public class NotificationHelper implements Serializable {
     notificationContentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     notificationContentLayout.setWidthFull();
     notificationContentLayout.setSpacing(false);
-    notificationContentLayout.addClassNames(LumoUtility.Gap.LARGE);
+    notificationContentLayout.addClassName("cosmos-toast-content");
 
     addStatusIcon(notificationContentLayout, notificationType, usesReferenceTheme);
 
     this.textLayout = new VerticalLayout();
-    textLayout.addClassNames(LumoUtility.Padding.SMALL);
+    textLayout.addClassName("cosmos-toast-text");
     textLayout.setSpacing(false);
     textLayout.setWidth(null);
 
@@ -223,21 +223,21 @@ public class NotificationHelper implements Serializable {
     SvgIcon statusSvgIcon = null;
     if (notificationType == NotificationType.ERROR) {
       statusSvgIcon = AppIcon.ERROR.create();
-      statusSvgIcon.addClassNames(LumoUtility.TextColor.ERROR);
+      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_ERROR);
       if (titleText != null) {
-        titleText.addClassNames(LumoUtility.TextColor.ERROR);
+        titleText.addClassNames(CosmosCssClasses.TEXT_ERROR);
       }
     } else if (notificationType == NotificationType.SUCCESS) {
       statusSvgIcon = AppIcon.CHECK_CIRCLE.create();
-      statusSvgIcon.addClassNames(LumoUtility.TextColor.SUCCESS);
+      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_SUCCESS);
       if (titleText != null) {
-        titleText.addClassNames(LumoUtility.TextColor.SUCCESS);
+        titleText.addClassNames(CosmosCssClasses.TEXT_SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
       statusSvgIcon = AppIcon.WARNING.create();
-      statusSvgIcon.addClassNames(LumoUtility.TextColor.WARNING);
+      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_WARNING);
       if (titleText != null) {
-        titleText.addClassNames(LumoUtility.TextColor.WARNING);
+        titleText.addClassNames(CosmosCssClasses.TEXT_WARNING);
       }
     }
 
@@ -277,8 +277,9 @@ public class NotificationHelper implements Serializable {
   private static Button createNotificationCloseButton(Notification targetNotification) {
     Button closeButton =
         new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> targetNotification.close());
-    closeButton.addClassNames(LumoUtility.TextColor.PRIMARY);
-    closeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+    closeButton.addClassNames(CosmosCssClasses.TEXT_PRIMARY);
+    closeButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
 
     return closeButton;
   }
@@ -291,7 +292,7 @@ public class NotificationHelper implements Serializable {
     messageText = null;
     if (StringUtils.isNotBlank(notificationMessage)) {
       messageText = createMessageParagraph(notificationMessage);
-      messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
+      messageText.addClassName("cosmos-notification-message");
       messageText.getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
@@ -316,7 +317,7 @@ public class NotificationHelper implements Serializable {
     }
 
     Span highlightedSpan = new Span(highlightedText);
-    highlightedSpan.addClassNames("text-primary", LumoUtility.FontWeight.SEMIBOLD);
+    highlightedSpan.addClassNames(CosmosCssClasses.TEXT_PRIMARY, "cosmos-toast-highlight");
     return new Paragraph(
         new Text(notificationMessage.substring(0, highlightStartIndex)),
         highlightedSpan,

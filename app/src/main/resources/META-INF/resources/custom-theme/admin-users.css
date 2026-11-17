@@ -6,13 +6,13 @@
 
 .admin-user-filter-bar {
     gap: 0;
-    margin-block-start: var(--lumo-space-m);
+    margin-block-start: var(--cosmos-space-l);
 }
 
 .admin-user-toolbar {
     display: flex;
     align-items: center;
-    gap: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
     width: 100%;
 }
 
@@ -24,7 +24,7 @@
 .admin-user-toolbar-actions {
     display: flex;
     align-items: center;
-    gap: var(--lumo-space-s);
+    gap: var(--cosmos-space-s);
     margin-inline-start: auto;
     flex: 0 0 auto;
 }
@@ -45,8 +45,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--lumo-space-m);
-    margin-top: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
+    margin-top: var(--cosmos-space-l);
     width: 100%;
 }
 
@@ -58,13 +58,13 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--lumo-space-s);
+    gap: var(--cosmos-space-s);
 }
 
 .admin-user-active-filter-chip {
     display: inline-flex;
     align-items: center;
-    gap: var(--lumo-space-xs);
+    gap: var(--cosmos-space-xs);
     max-width: 100%;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .admin-user-filter-details[opened] {
-    margin-top: var(--lumo-space-m);
+    margin-top: var(--cosmos-space-l);
 }
 
 /* Der normale Secondary-Button in der Werkzeugleiste steuert das Details. */
@@ -104,9 +104,9 @@
 
 .admin-user-filter-details[opened]::part(content) {
     background: var(--cosmos-filter-panel-background);
-    border: var(--cosmos-border-width) solid var(--lumo-contrast-20pct);
-    border-radius: var(--lumo-border-radius-l);
-    padding: var(--lumo-space-m);
+    border: var(--cosmos-border-width) solid var(--cosmos-contrast-20pct);
+    border-radius: var(--cosmos-control-radius);
+    padding: var(--cosmos-space-l);
 }
 
 .cosmos-admin vaadin-button.admin-user-filter-reset {
@@ -122,15 +122,15 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--lumo-space-m);
-    margin-bottom: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
+    margin-bottom: var(--cosmos-space-l);
 }
 
 .admin-user-filter-panel-heading {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--lumo-space-s);
+    gap: var(--cosmos-space-s);
     font-size: var(--cosmos-font-size-s);
 }
 
@@ -139,26 +139,26 @@
 }
 
 .cosmos-admin .admin-user-active-filter-count {
-    border: var(--cosmos-border-width) solid var(--lumo-primary-color-50pct);
+    border: var(--cosmos-border-width) solid var(--cosmos-primary-color-50pct);
 }
 
 .admin-user-filter-panel-heading > vaadin-icon {
     width: 12px;
     height: 12px;
-    color: var(--lumo-primary-text-color);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-panel-footer.admin-user-filter-footer {
-    margin-top: var(--lumo-space-m);
-    padding-top: var(--lumo-space-m);
-    gap: var(--lumo-space-xl);
+    margin-top: var(--cosmos-space-l);
+    padding-top: var(--cosmos-space-l);
+    gap: var(--cosmos-space-4xl);
 }
 
 .admin-user-filters {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
     width: 100%;
 }
 
@@ -180,7 +180,7 @@
 }
 
 .admin-user-activity-inputs {
-    gap: var(--lumo-space-xs);
+    gap: var(--cosmos-space-xs);
 }
 
 .admin-user-activity-inputs > vaadin-date-picker,
@@ -203,7 +203,7 @@
 
 vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(header),
 vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(header) {
-    color: var(--lumo-primary-contrast-color);
+    color: var(--cosmos-primary-contrast-color);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(header-content),
@@ -215,7 +215,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog-header {
     display: flex;
     align-items: center;
-    gap: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
     width: 100%;
     min-width: 0;
 }
@@ -236,7 +236,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog vaadin-checkbox-group vaadin-checkbox::part(label) {
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-bold);
-    color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
+    color: var(--vaadin-input-field-value-color, var(--cosmos-text-color));
 }
 
 .admin-user-dialog .cosmos-panel-hint.admin-user-sign-in {
@@ -322,13 +322,13 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     gap: 6px;
     min-width: 0;
     color: var(--cosmos-reference-text);
-    font: 400 13px/20px Inter, sans-serif;
+    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
     overflow-wrap: anywhere;
 }
 
 .admin-user-dialog .cosmos-panel-title.admin-user-sign-in-title {
     color: var(--cosmos-reference-accent);
-    font-size: 13px;
+    font-size: var(--cosmos-font-size-m);
     line-height: 18px;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -339,7 +339,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog .admin-user-verification-label,
 .admin-user-dialog .admin-user-account-type-label {
     color: var(--cosmos-reference-label);
-    font: 500 12px/16px Inter, sans-serif;
+    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
 }
 
 .admin-user-dialog #admin-user-sign-in-methods {
@@ -356,7 +356,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 10px/15px Inter, sans-serif;
+    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
 }
 
 .admin-user-dialog #admin-user-registered-via,
@@ -391,8 +391,8 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-option-hint {
-    margin-top: var(--lumo-space-xs);
-    color: var(--lumo-secondary-text-color);
+    margin-top: var(--cosmos-space-xs);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-xs);
     font-weight: var(--cosmos-font-weight-regular);
 }
@@ -407,13 +407,13 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog vaadin-checkbox-group::part(label) {
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-label);
-    color: var(--lumo-secondary-text-color);
+    color: var(--cosmos-text-secondary-color);
 }
 
 .admin-user-dialog .admin-user-password-fields {
     display: flex;
     flex-direction: column;
-    gap: var(--lumo-space-xs);
+    gap: var(--cosmos-space-xs);
     width: 100%;
     min-width: 0;
 }
@@ -426,27 +426,27 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog vaadin-password-field::part(helper-text),
 .admin-user-dialog vaadin-checkbox-group::part(helper-text) {
     font-size: var(--cosmos-font-size-xs);
-    color: var(--lumo-secondary-text-color);
+    color: var(--cosmos-text-secondary-color);
 }
 
 .admin-user-dialog .admin-user-security-note {
     flex: 0 0 auto;
     width: 100%;
     box-sizing: border-box;
-    padding: var(--lumo-space-s) var(--lumo-space-m);
+    padding: var(--cosmos-space-s) var(--cosmos-space-l);
     border: var(--cosmos-border-width) solid var(--cosmos-table-border-color);
-    border-radius: var(--lumo-border-radius-l);
-    background: var(--lumo-contrast-5pct);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-contrast-5pct);
 }
 
 vaadin-dialog.admin-user-dialog::part(content) {
-    padding-block: var(--lumo-space-l);
+    padding-block: var(--cosmos-space-2xl);
 }
 
 /* 4. TABELLENINHALTE / Name, Rollen, Avatar und Sortierindikatoren */
 
 .admin-users-grid {
-    --vaadin-grid-cell-padding: var(--lumo-space-s) var(--lumo-space-s);
+    --vaadin-grid-cell-padding: var(--cosmos-space-s) var(--cosmos-space-s);
 }
 
 .admin-users-grid::part(body-cell) {
@@ -461,14 +461,14 @@ vaadin-dialog.admin-user-dialog::part(content) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--lumo-space-xs);
+    gap: var(--cosmos-space-xs);
 }
 
 /* Lokale Textfarbe für Rollen und aktive Filter; Schrift zentral in cosmos-theme.css. */
 
 .admin-users-grid .cosmos-admin-role-chip,
 .cosmos-admin .admin-user-active-filter-chip {
-    color: var(--lumo-secondary-text-color);
+    color: var(--cosmos-text-secondary-color);
     text-transform: none;
 }
 
@@ -507,17 +507,17 @@ vaadin-dialog.admin-user-dialog::part(content) {
 
 .admin-user-pagination {
     flex-wrap: wrap;
-    gap: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
 }
 
 .admin-user-pagination-summary {
     flex-wrap: wrap;
-    gap: var(--lumo-space-s);
+    gap: var(--cosmos-space-s);
 }
 
 .admin-user-pagination-nav {
     margin-inline-start: auto;
-    gap: var(--lumo-space-xs);
+    gap: var(--cosmos-space-xs);
     flex-wrap: wrap;
 }
 
@@ -527,13 +527,13 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 .admin-user-pagination-ellipsis {
-    padding-inline: var(--lumo-space-xs);
+    padding-inline: var(--cosmos-space-xs);
 }
 
 @media (max-width: 600px) {
 
     .admin-user-toolbar {
-        gap: var(--lumo-space-xs);
+        gap: var(--cosmos-space-xs);
     }
 
     .admin-user-activity-filter {
@@ -557,7 +557,7 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
 .admin-user-delete-warning,
 .admin-user-delete-identity {
     display: flex;
-    gap: var(--lumo-space-m);
+    gap: var(--cosmos-space-l);
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
@@ -573,19 +573,19 @@ vaadin-dialog[theme~="cosmos"].admin-user-delete-dialog::part(overlay) {
 
 .admin-user-delete-warning-title,
 .admin-user-delete-name {
-    color: var(--lumo-body-text-color);
+    color: var(--cosmos-text-color);
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-bold);
 }
 
 .admin-user-delete-identity {
     align-items: center;
-    padding: var(--lumo-space-m);
-    border: var(--cosmos-border-width) solid var(--lumo-contrast-20pct);
-    border-radius: var(--lumo-border-radius-l);
+    padding: var(--cosmos-space-l);
+    border: var(--cosmos-border-width) solid var(--cosmos-contrast-20pct);
+    border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-dialog-header-background);
 }
 
 vaadin-dialog.admin-user-delete-dialog::part(content) {
-    padding-block: var(--lumo-space-l);
+    padding-block: var(--cosmos-space-2xl);
 }

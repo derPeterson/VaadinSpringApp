@@ -60,7 +60,7 @@ public final class ReactivateAccountView extends IsNotAuthenticatedBaseView<Hori
     reactivationTitleH2.addClassName("cosmos-panel-title");
     reactivationMessageSpan.addClassName("cosmos-panel-description");
     reactivationButton.setId("account-reactivation-submit");
-    reactivationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    reactivationButton.addThemeVariants(ButtonVariant.PRIMARY);
     reactivationButton.addClickListener(clickEvent -> submitReactivationStep());
 
     PublicPanelComponent reactivationPanel =

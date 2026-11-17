@@ -1,0 +1,45 @@
+/* COSMOS-PALETTE
+ * Einzige Stelle für Farbwerte der Oberfläche. Alle übrigen Dateien verwenden diese
+ * Farben über semantische Tokens (cosmos-tokens.css) oder direkt als var(--cosmos-color-*).
+ * Transparente Varianten entstehen per color-mix(), nicht als eigene RGBA-Werte.
+ * Ausnahmen mit eigenen Werten: dekorative Hintergrundszene (Sterne, Horizont, Mond) und
+ * die vorgegebenen Markenfarben des Google-Buttons.
+ * Kontraste nach WCAG 2.x sind in docs/theme.md dokumentiert. */
+
+:root {
+    /* Flächen, von dunkel nach hell */
+    --cosmos-color-space: #050811;
+    --cosmos-color-panel: #080e1b;
+    --cosmos-color-input: #091120;
+    --cosmos-color-raised: #0e1726;
+    --cosmos-color-selection: #122342;
+    --cosmos-color-hover: #152238;
+    --cosmos-color-slate-800: #1e293b;
+    --cosmos-color-slate-700: #334155;
+    --cosmos-color-slate-600: #475569;
+
+    /* Text, von hell nach gedämpft */
+    --cosmos-color-white: #ffffff;
+    --cosmos-color-text: #e2e8f0;
+    --cosmos-color-label: #cbd5e1;
+    --cosmos-color-secondary: #94a3b8;
+    --cosmos-color-muted: #7c8aa0;
+
+    /* Akzent: Himmelblau für Text, Symbole und Fokus; Primary für gefüllte Aktionen */
+    --cosmos-color-sky: #38bdf8;
+    --cosmos-color-sky-light: #7dd3fc;
+    --cosmos-color-primary: #0077b6;
+    --cosmos-color-primary-hover: #00679e;
+
+    /* Status */
+    --cosmos-color-success: #34d399;
+    --cosmos-color-warning: #fbbf24;
+    --cosmos-color-danger: #f87171;
+    --cosmos-color-danger-light: #fca5a5;
+    --cosmos-color-danger-strong: #b4233b;
+    --cosmos-color-violet: #a855f7;
+    --cosmos-color-violet-light: #d8b4fe;
+
+    /* Schatten und Abdunklung */
+    --cosmos-color-black: #000000;
+}

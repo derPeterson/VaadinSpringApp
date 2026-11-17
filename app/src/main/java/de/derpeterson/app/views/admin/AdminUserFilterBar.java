@@ -104,7 +104,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     cancelFilterChangesButton.addClickListener(_ -> filterSidePanel.close());
 
     applyFiltersButton.setPrefixComponent(AppIcon.CHECK.create());
-    applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    applyFiltersButton.addThemeVariants(ButtonVariant.PRIMARY);
     applyFiltersButton.addClickListener(_ -> {
       if (filterControls.activity().isInvalid()) {
         return;

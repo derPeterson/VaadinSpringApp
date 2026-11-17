@@ -18,7 +18,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PageFrameComponent;
 import java.util.ArrayList;
 import java.util.List;
@@ -360,8 +360,8 @@ class NotificationHelperIsolationTest {
             .findFirst()
             .orElseThrow();
     assertEquals(highlighted.get(), emphasis.getText());
-    assertTrue(emphasis.hasClassName("text-primary"));
-    assertTrue(emphasis.hasClassName(LumoUtility.FontWeight.SEMIBOLD));
+    assertTrue(emphasis.hasClassName(CosmosCssClasses.TEXT_PRIMARY));
+    assertTrue(emphasis.hasClassName("cosmos-toast-highlight"));
     highlighted.set("<Updated & Chris>");
     message.set("Sent to <Updated & Chris>.");
     helper.updateText();

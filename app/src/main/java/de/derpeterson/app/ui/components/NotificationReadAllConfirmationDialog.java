@@ -101,7 +101,7 @@ public final class NotificationReadAllConfirmationDialog extends ConfirmDialog {
     confirmReadAllButton.setId(dialogId + "-submit");
     cancelConfirmationButton.addClassName("notification-read-all-action");
     confirmReadAllButton.addClassName("notification-read-all-action");
-    confirmReadAllButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmReadAllButton.addThemeVariants(ButtonVariant.PRIMARY);
 
     setCancelButton(cancelConfirmationButton);
     setConfirmButton(confirmReadAllButton);

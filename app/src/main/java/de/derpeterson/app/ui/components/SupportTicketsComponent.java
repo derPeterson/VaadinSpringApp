@@ -307,8 +307,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userTicketFormLayout.addClassName("support-user-form");
     ticketWorkspacePanel.getBody().add(userTicketFormLayout);
 
-    createRequestButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sendReplyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    createRequestButton.addThemeVariants(ButtonVariant.PRIMARY);
+    sendReplyButton.addThemeVariants(ButtonVariant.PRIMARY);
     userFooterActions.add(sendReplyButton, createRequestButton);
     userFooterActions.setPadding(false);
     userFooterActions.setSpacing(false);
@@ -456,7 +456,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     sendInstructionsButton.setPrefixComponent(AppIcon.ENVELOPE.create());
     sendInstructionsButton.addClickListener(event -> previewInstructions());
     reloadTicketsButton.setPrefixComponent(AppIcon.REFRESH.create());
-    reloadTicketsButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    reloadTicketsButton.addClassName(CosmosCssClasses.ICON_BUTTON);
     reloadTicketsButton.setId("support-reload");
     reloadTicketsButton.addClickListener(event -> refreshTicketWorkspace(true));
   }
@@ -609,7 +609,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketIconLayout.setSpacing(false);
     ticketIconLayout.addClassName(CosmosCssClasses.PANEL_ICON);
     toggleTicketFocusButton.setId("support-focus-toggle");
-    toggleTicketFocusButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+    toggleTicketFocusButton.addClassName(CosmosCssClasses.ICON_BUTTON);
     toggleTicketFocusButton
         .getElement()
         .setAttribute("aria-controls", "support-queue-panel support-ticket-panel");
@@ -672,7 +672,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationHeader.setSpacing(false);
     userConversationHeader.addClassName(SECTION_HEADER_CLASS);
     ticketConversationLayout.add(userConversationHeader, userMessageScroll, adminStatusNoteSpan);
-    sendReplyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sendReplyButton.addThemeVariants(ButtonVariant.PRIMARY);
     HorizontalLayout ticketActionsLayout = new HorizontalLayout(closeTicketButton, sendReplyButton);
     ticketActionsLayout.setPadding(false);
     ticketActionsLayout.setSpacing(false);
@@ -740,9 +740,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     toggleTicketFocusButton.setAriaLabel(ticketFocusLabelText);
     toggleTicketFocusButton.setTooltipText(ticketFocusLabelText);
     if (ticketFocused) {
-      toggleTicketFocusButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      toggleTicketFocusButton.addThemeVariants(ButtonVariant.PRIMARY);
     } else {
-      toggleTicketFocusButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      toggleTicketFocusButton.removeThemeVariants(ButtonVariant.PRIMARY);
     }
   }
 
@@ -1275,9 +1275,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     createRequestButton.setVisible(!administration && !hasOpenRequest);
     claimTicketButton.setVisible(administration && active && unassigned);
     if (selectedTicket != null && selectedTicket.status() == Status.OPEN) {
-      claimTicketButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      claimTicketButton.addThemeVariants(ButtonVariant.PRIMARY);
     } else {
-      claimTicketButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      claimTicketButton.removeThemeVariants(ButtonVariant.PRIMARY);
     }
     sendReplyButton.setVisible(canReply);
     closeTicketButton.setVisible(

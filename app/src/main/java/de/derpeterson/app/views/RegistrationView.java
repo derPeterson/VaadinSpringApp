@@ -26,7 +26,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.CompactDateInput;
@@ -148,7 +147,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     existingAccountLinkLayout.setSpacing(false);
     existingAccountLinkLayout.setPadding(false);
     existingAccountLinkLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    existingAccountLinkLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-form-links");
+    existingAccountLinkLayout.addClassName("cosmos-form-links");
     existingAccountLinkLayout.add(existingAccountQuestionSpan);
     existingAccountLinkLayout.add(formComponents.loginLink);
 
@@ -274,7 +273,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private Button buildRegistrationButton() {
     this.registrationButton = new Button(messageProperties.getBaseRegistrationButton());
     registrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
-    registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    registrationButton.addThemeVariants(ButtonVariant.PRIMARY);
     registrationButton.setWidthFull();
     registrationButton.addClassName("cosmos-submit");
     registrationButton.addClickListener(_ -> submitRegistrationForm());

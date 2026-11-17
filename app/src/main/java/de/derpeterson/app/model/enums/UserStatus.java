@@ -11,12 +11,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum UserStatus {
-  AVAILABLE("var(--lumo-success-color)", UserStatus.BACKGROUND_COLOR),
-  EMPLOYED("var(--lumo-error-color)", UserStatus.BACKGROUND_COLOR),
-  ABSENT("var(--lumo-warning-color)", UserStatus.BACKGROUND_COLOR),
-  OFFLINE("var(--lumo-secondary-text-color)", UserStatus.BACKGROUND_COLOR);
+  AVAILABLE("var(--cosmos-success-color)", UserStatus.BACKGROUND_COLOR),
+  EMPLOYED("var(--cosmos-error-color)", UserStatus.BACKGROUND_COLOR),
+  ABSENT("var(--cosmos-warning-color)", UserStatus.BACKGROUND_COLOR),
+  OFFLINE("var(--cosmos-text-secondary-color)", UserStatus.BACKGROUND_COLOR);
 
-  private static final String BACKGROUND_COLOR = "var(--lumo-base-color)";
+  private static final String BACKGROUND_COLOR = "var(--cosmos-base-color)";
 
   private final String color;
   private final String backgroundColor;

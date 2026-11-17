@@ -6,7 +6,7 @@ import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
-import com.vaadin.flow.theme.lumo.Lumo;
+import com.vaadin.flow.theme.aura.Aura;
 import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,8 +20,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(basePackages = "de.derpeterson.app")
 @EntityScan(basePackages = {"de.derpeterson.app.model"})
 @PWA(name = "VaadinSpringApp", shortName = "App", iconPath = "icons/service-logo.png")
-@StyleSheet(Lumo.STYLESHEET)
-@StyleSheet(Lumo.UTILITY_STYLESHEET)
+@StyleSheet(Aura.STYLESHEET)
+@StyleSheet("custom-theme/cosmos-palette.css")
 @StyleSheet("custom-theme/typography.css")
 // Reihenfolge: Designwerte vor Komponenten, danach App-/Admin-Bausteine und Dekoration.
 @StyleSheet("custom-theme/cosmos-tokens.css")

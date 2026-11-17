@@ -29,6 +29,9 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 ## Offene Arbeiten
 
+Die [Umstellung auf Vaadin Aura](planung/aura-umstellung.md) mit neu gegliedertem
+Cosmos-Theme läuft auf dem Branch `design/aura-theme`.
+
 Die geplante [Versionierung mit Release-Ablauf](planung/releases.md) und der
 darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind durchgelesen;
 ihre Umsetzung ist zurückgestellt. Ob am Ende der laufenden Gesamtumsetzung ein

@@ -49,7 +49,6 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
@@ -76,6 +75,7 @@ import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosMetricCard;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
@@ -228,11 +228,11 @@ public class AdminUserManagementSection extends VerticalLayout {
     accountCountMetricCard.addClassNames("cosmos-panel-meta", "admin-accounts-metric");
 
     userManagementDescriptionSpan = new Span();
-    userManagementDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
+    userManagementDescriptionSpan.addClassNames(CosmosCssClasses.TEXT_SECONDARY);
 
     addUserButton = new Button();
     addUserButton.setPrefixComponent(AppIcon.USER_PLUS.create());
-    addUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    addUserButton.addThemeVariants(ButtonVariant.PRIMARY);
     addUserButton.addClickListener(clickEvent -> openDialog(new UserEntity()));
 
     // Die Suche gehört zum Filterentwurf. Erst Anwenden verändert die Tabelle.
@@ -683,8 +683,9 @@ public class AdminUserManagementSection extends VerticalLayout {
               deleteUserDialog.close();
             });
     closeDeleteUserDialogButton.addClassNames(
-        "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    closeDeleteUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        "cosmos-overlay-close", CosmosCssClasses.TEXT_PRIMARY);
+    closeDeleteUserDialogButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeDeleteUserDialogButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     closeDeleteUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     Div deleteIconBadgeDiv = new Div(AppIcon.TRASH.create());
     deleteIconBadgeDiv.addClassNames(PANEL_ICON, "cosmos-delete-accent");
@@ -927,8 +928,9 @@ public class AdminUserManagementSection extends VerticalLayout {
       closeEditUserDialogButton =
           new Button(AppIcon.CLOSE_CIRCLE.create(), event -> requestCloseUserEditor());
       closeEditUserDialogButton.addClassNames(
-          "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-      closeEditUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+          "cosmos-overlay-close", CosmosCssClasses.TEXT_PRIMARY);
+      closeEditUserDialogButton.addThemeVariants(ButtonVariant.TERTIARY);
+      closeEditUserDialogButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
       closeEditUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
 
       Div editorHeaderDiv = new Div(userIconBadgeDiv, editorHeadingDiv, closeEditUserDialogButton);
@@ -1039,7 +1041,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               editMode
                   ? messageProperties.getAdminUsersTechnicalInfoEdit()
                   : messageProperties.getAdminUsersTechnicalInfoCreate());
-      technicalInfoSpan.addClassName(LumoUtility.TextColor.SECONDARY);
+      technicalInfoSpan.addClassName(CosmosCssClasses.TEXT_SECONDARY);
       SvgIcon securitySvgIcon = AppIcon.SHIELD_CHECK.create();
       securitySvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       securityNoteDiv = new Div(securitySvgIcon, technicalInfoSpan);
@@ -1250,7 +1252,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private void configureEditorButtons() {
       saveUserButton = new Button(messageProperties.getAdminUsersSave());
       saveUserButton.setPrefixComponent(AppIcon.CHECK.create());
-      saveUserButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      saveUserButton.addThemeVariants(ButtonVariant.PRIMARY);
       saveUserButton.setEnabled(userFormBinder.isValid());
 
       userFormBinder.addStatusChangeListener(
@@ -1308,7 +1310,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 messageProperties.getAdminUsersDelete(),
                 AppIcon.TRASH.create(),
                 event -> deleteUser(editedUserEntity, editUserDialog::close));
-        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        deleteButton.addThemeVariants(ButtonVariant.ERROR);
         deleteButton.addClassName(DELETE_BUTTON);
         deleteButton.setEnabled(!isCurrentUser(editedUserEntity));
         editorActionsLayout.add(deleteButton);
@@ -1826,7 +1828,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private Component createActionButtons(UserEntity userEntity) {
     Button editUserButton = new Button(AppIcon.EDIT.create(), clickEvent -> openDialog(userEntity));
-    editUserButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    editUserButton.addThemeVariants(ButtonVariant.TERTIARY);
     editUserButton.setTooltipText(messageProperties.getAdminUsersEdit());
     boolean protectedAccount =
         userEntity.hasRole(RoleType.ROLE_SUPERADMIN) && !userService.canManageSuperadmins();
@@ -1834,7 +1836,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     Button deleteUserButton =
         new Button(AppIcon.TRASH.create(), clickEvent -> deleteUser(userEntity));
-    deleteUserButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+    deleteUserButton.addThemeVariants(ButtonVariant.ERROR, ButtonVariant.TERTIARY);
     deleteUserButton.addClassName(DELETE_BUTTON);
     deleteUserButton.setTooltipText(messageProperties.getAdminUsersDelete());
     deleteUserButton.setEnabled(!isCurrentUser(userEntity) && !protectedAccount);

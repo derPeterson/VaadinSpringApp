@@ -67,7 +67,7 @@ public final class TwoFactorActionDialog extends Dialog {
     cancelButton.addClickListener(event -> close());
     confirmIdentityButton.setId("two-factor-action-confirm");
     confirmIdentityButton.setPrefixComponent(AppIcon.CHECK.create());
-    confirmIdentityButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmIdentityButton.addThemeVariants(ButtonVariant.PRIMARY);
     confirmIdentityButton.addClickListener(event -> confirmProtectedAction());
 
     Div dialogActionsDiv = new Div(cancelButton, confirmIdentityButton);

@@ -19,7 +19,6 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -95,8 +94,9 @@ public class AccountAvatarDialog extends Dialog {
     avatarDialogIconDiv.addClassName(PANEL_ICON);
     closeDialogButton.setId("account-avatar-close");
     closeDialogButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
-    closeDialogButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    closeDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeDialogButton.addClassNames("cosmos-overlay-close", CosmosCssClasses.TEXT_PRIMARY);
+    closeDialogButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeDialogButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
 
     Div avatarDialogHeaderDiv =
         new Div(avatarDialogIconDiv, avatarDialogHeadingDiv, closeDialogButton);
@@ -161,7 +161,7 @@ public class AccountAvatarDialog extends Dialog {
     cancelAvatarChangesButton.setPrefixComponent(AppIcon.CLOSE.create());
     saveAvatarButton.setId("account-avatar-save");
     saveAvatarButton.setPrefixComponent(AppIcon.CHECK.create());
-    saveAvatarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveAvatarButton.addThemeVariants(ButtonVariant.PRIMARY);
     saveAvatarButton.addClickListener(event -> submitAvatarChanges());
 
     Div avatarDialogActionsDiv = new Div(cancelAvatarChangesButton, saveAvatarButton);

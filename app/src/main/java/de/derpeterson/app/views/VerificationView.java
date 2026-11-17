@@ -23,7 +23,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
@@ -35,6 +34,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -200,7 +200,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             messageProperties.getBaseResendButton(),
             resendClickEvent -> requestVerificationLinkByToken(verificationToken));
     resendVerificationLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    resendVerificationLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resendVerificationLinkButton.addThemeVariants(ButtonVariant.PRIMARY);
     resendVerificationLinkButton.setWidthFull();
 
     verificationHomeButton = createVerificationHomeButton();
@@ -233,7 +233,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
   private void showUnknownLinkCard() {
     SvgIcon invalidLinkWarningSvgIcon = AppIcon.WARNING.create();
-    invalidLinkWarningSvgIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.ERROR);
+    invalidLinkWarningSvgIcon.addClassNames(STATUS_ICON, CosmosCssClasses.TEXT_ERROR);
 
     unknownLinkH1 = new H1(messageProperties.getVerificationNotFoundTitle());
     unknownLinkH1.addClassName(HEADLINE_CSS_CLASS);
@@ -256,7 +256,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             messageProperties.getVerificationRequestActivationLink(),
             requestClickEvent -> requestVerificationLinkByEmail());
     requestVerificationLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    requestVerificationLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    requestVerificationLinkButton.addThemeVariants(ButtonVariant.PRIMARY);
     requestVerificationLinkButton.setWidthFull();
 
     verificationHomeButton = createVerificationHomeButton();
@@ -355,7 +355,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private void showVerificationSuccessCard() {
     SvgIcon verificationSuccessSvgIcon = AppIcon.CHECK_CIRCLE.create();
     verificationSuccessSvgIcon.addClassNames(
-        "cosmos-verification-success-icon", STATUS_ICON, LumoUtility.TextColor.SUCCESS);
+        "cosmos-verification-success-icon", STATUS_ICON, CosmosCssClasses.TEXT_SUCCESS);
 
     verificationSuccessH1 = new H1(messageProperties.getVerificationSuccessTitle());
     verificationSuccessH1.addClassName(HEADLINE_CSS_CLASS);
@@ -375,7 +375,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             messageProperties.getBaseLoginButton(),
             loginClickEvent -> UI.getCurrent().navigate(LoginView.class));
     verificationLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    verificationLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    verificationLoginButton.addThemeVariants(ButtonVariant.PRIMARY);
     verificationLoginButton.setWidthFull();
 
     PublicPanelComponent verificationSuccessPanelComponent =

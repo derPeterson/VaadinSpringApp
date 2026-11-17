@@ -174,7 +174,7 @@ public final class CosmosPagination extends HorizontalLayout {
       pageNumberButton.setAriaLabel(
           messageProperties.getAdminUsersPaginationPage(visiblePageIndex + 1));
       if (visiblePageIndex == currentPage) {
-        pageNumberButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        pageNumberButton.addThemeVariants(ButtonVariant.PRIMARY);
         pageNumberButton.addClassName("admin-user-pagination-current");
         pageNumberButton.getElement().setAttribute("aria-current", "page");
       }

@@ -2,6 +2,9 @@
 
 ## Laufende Umsetzung
 
+- [ ] [Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme](docs/planung/aura-umstellung.md)
+  auf Branch `design/aura-theme` fortsetzen; Stand und Wiedereinstieg stehen im Plan.
+
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).

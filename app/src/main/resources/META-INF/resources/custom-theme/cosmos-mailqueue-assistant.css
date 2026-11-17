@@ -9,8 +9,8 @@
 .admin-queue-cleanup-fields .admin-config-switch { justify-content: center; }
 .admin-queue-cleanup-status { width: 100%; box-sizing: border-box; padding: 16px; gap: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-panel); }
 .admin-queue-cleanup-status > vaadin-icon { width: 20px; height: 20px; flex: none; color: var(--cosmos-reference-accent); }
-.admin-queue-cleanup-status-title { color: var(--cosmos-reference-accent); font: 500 11px/18px Inter,sans-serif; text-transform: uppercase; letter-spacing: .5px; }
-.admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 12px/20px Consolas,"Courier New",monospace; white-space: pre-line; overflow-wrap: anywhere; }
+.admin-queue-cleanup-status-title { color: var(--cosmos-reference-accent); font: 500 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family); text-transform: uppercase; letter-spacing: .5px; }
+.admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family-mono); white-space: pre-line; overflow-wrap: anywhere; }
 .admin-queue-cleanup-actions { flex: none; gap: 8px; }
 .admin-queue-cleanup-status-heading { width: 100%; flex-wrap: wrap; gap: var(--cosmos-space-s); }
 /* Dieselben kompakten Badge-Maße wie bei Verifikation und Portalpasswort. */
@@ -19,7 +19,7 @@
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 10px/15px Inter,sans-serif;
+    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-reference-label);
     border: 1px solid var(--cosmos-status-badge-border);
     background-color: var(--cosmos-status-badge-surface);
@@ -27,12 +27,12 @@
 #admin-mail-queue-status[theme~=success] { --vaadin-badge-text-color: var(--cosmos-reference-success); }
 #admin-mail-queue-status[theme~=warning] { --vaadin-badge-text-color: var(--cosmos-reference-warning); }
 #admin-mail-queue-status[theme~=error] { --vaadin-badge-text-color: var(--cosmos-reference-invalid); }
-.admin-queue-cleanup-explanation { font: 400 12px/20px Inter,sans-serif; }
+.admin-queue-cleanup-explanation { font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family); }
 .admin-queue-cleanup-success { color: var(--cosmos-reference-success); }
 .admin-queue-cleanup-failed { color: var(--cosmos-reference-invalid); }
 .admin-queue-cleanup-warning { color: var(--cosmos-reference-warning); }
 .admin-queue-cleanup-parameters-copy { gap: var(--cosmos-space-s); }
-.admin-queue-cleanup-info { width: 100%; box-sizing: border-box; gap: var(--cosmos-info-box-gap); padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-border); border-radius: var(--cosmos-control-radius); background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 12px/20px Inter,sans-serif; }
+.admin-queue-cleanup-info { width: 100%; box-sizing: border-box; gap: var(--cosmos-info-box-gap); padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-border); border-radius: var(--cosmos-control-radius); background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family); }
 .admin-queue-cleanup-info > vaadin-icon { width: 16px; height: 16px; flex: none; color: var(--cosmos-reference-accent); }
 .admin-queue-cleanup-confirmation-details { gap: 16px; }
 .admin-queue-cleanup-confirmation .admin-queue-cleanup-info > vaadin-icon { margin-top: 2px; }

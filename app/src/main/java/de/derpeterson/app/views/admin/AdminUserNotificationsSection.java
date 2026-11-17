@@ -48,6 +48,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosContentCardComponent;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.NotificationEmptyState;
@@ -221,7 +222,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     sendNotificationButton.setIcon(AppIcon.PAPERPLANE.create());
     sendNotificationButton.setId("admin-notifications-send");
     previewButton.addClickListener(_ -> reviewNotificationDraft());
-    sendNotificationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sendNotificationButton.addThemeVariants(ButtonVariant.PRIMARY);
     sendNotificationButton.setEnabled(false);
     sendNotificationButton.addClickListener(_ -> sendReviewedNotification());
   }
@@ -687,7 +688,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
         new Button(
             messageProperties.getNotificationsRecipientDetails(), AppIcon.ANGLE_DOWN.create());
     recipientDetailsButton.setId("admin-notifications-preview-details");
-    recipientDetailsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    recipientDetailsButton.addThemeVariants(ButtonVariant.TERTIARY);
+    recipientDetailsButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     recipientDetailsButton.addClassName("cosmos-notification-compose-details-toggle");
     recipientDetailsButton.setIconAfterText(true);
     recipientDetailsButton

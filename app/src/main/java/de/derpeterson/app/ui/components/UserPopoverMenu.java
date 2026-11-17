@@ -1,6 +1,5 @@
 package de.derpeterson.app.ui.components;
 
-import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.USER_MENU_ACTION;
 
@@ -23,7 +22,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -234,7 +232,8 @@ public class UserPopoverMenu {
               messageProperties.getBaseHomeButton(),
               event -> userPopoverActions.homeAction().run());
       homeButton.setPrefixComponent(AppIcon.HOME.create());
-      homeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+      homeButton.addThemeVariants(ButtonVariant.TERTIARY);
+      homeButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
       homeButton.addClassName(USER_MENU_ACTION);
       menuFooterDiv.add(homeButton);
     }
@@ -242,7 +241,8 @@ public class UserPopoverMenu {
     logoutButton =
         new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
     logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logoutButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+    logoutButton.addThemeVariants(ButtonVariant.TERTIARY);
+    logoutButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     logoutButton.addClassNames(USER_MENU_ACTION, "portal-menu-logout");
     menuFooterDiv.add(logoutButton);
 
@@ -311,7 +311,7 @@ public class UserPopoverMenu {
       UI.getCurrent().navigate(AccountView.class);
     });
 
-    manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    manageAccountButton.addThemeVariants(ButtonVariant.PRIMARY);
     manageAccountButton.addClassName("portal-menu-primary");
     contentLayout.add(manageAccountButton);
   }
@@ -396,7 +396,7 @@ public class UserPopoverMenu {
     statusNameSpan.addClassName("user-popover-status-label");
     Span statusDescriptionSpan = new Span(messageProperties.getUserStatusDescription(userStatus));
     statusDescriptionSpan.addClassNames(
-        LumoUtility.FontSize.XXSMALL, LumoUtility.TextColor.SECONDARY);
+        "user-popover-status-description", CosmosCssClasses.TEXT_SECONDARY);
 
     statusTextLayout.add(statusNameSpan);
     statusTextLayout.add(new Hr());

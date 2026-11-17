@@ -85,7 +85,7 @@ public class PendingEmailVerificationView extends VerticalLayout
 
     resendVerificationButton.setId("resend-verification-email");
     resendVerificationButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
-    resendVerificationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resendVerificationButton.addThemeVariants(ButtonVariant.PRIMARY);
     resendVerificationButton.addClickListener(event -> resendVerificationEmail());
 
     cancelVerificationButton.setPrefixComponent(AppIcon.SIGN_OUT.create());

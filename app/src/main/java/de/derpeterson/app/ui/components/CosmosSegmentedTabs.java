@@ -5,7 +5,6 @@ import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
-import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,7 +32,7 @@ public class CosmosSegmentedTabs<T extends Serializable> extends CustomField<T> 
     setTabIndex(-1);
 
     selectionTabs.setAutoselect(false);
-    selectionTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    selectionTabs.addClassName(CosmosCssClasses.EQUAL_WIDTH_TABS);
     selectionTabs.addClassName("cosmos-segmented-tabs");
     selectionTabs.setWidthFull();
     selectionTabs.addSelectedChangeListener(event -> {

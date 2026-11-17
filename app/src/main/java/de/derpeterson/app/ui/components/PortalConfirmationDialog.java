@@ -173,7 +173,7 @@ public class PortalConfirmationDialog extends ConfirmDialog {
       addClassName("cosmos-unsaved-changes-dialog");
       cancelButton.addClassName(WARNING_BUTTON);
       cancelButton.setPrefixComponent(AppIcon.FILE_X.create());
-      confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      confirmButton.addThemeVariants(ButtonVariant.PRIMARY);
       confirmButton.setPrefixComponent(AppIcon.ANGLE_RIGHT.create());
       confirmButton.getElement().setAttribute("autofocus", true);
     }
@@ -230,9 +230,9 @@ public class PortalConfirmationDialog extends ConfirmDialog {
 
     setClassName("portal-confirm-destructive", confirmationPrompt.destructive());
     confirmButton.setClassName(DELETE_BUTTON, confirmationPrompt.destructive());
-    confirmButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmButton.removeThemeVariants(ButtonVariant.PRIMARY);
     if (!confirmationPrompt.destructive()) {
-      confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      confirmButton.addThemeVariants(ButtonVariant.PRIMARY);
     }
 
     dialogIconDiv.removeAll();

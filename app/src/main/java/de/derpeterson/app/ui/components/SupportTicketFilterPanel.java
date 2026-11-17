@@ -5,7 +5,6 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
-import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -13,7 +12,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
-import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.SerializablePredicate;
@@ -54,12 +52,10 @@ public final class SupportTicketFilterPanel extends AdminSidePanelDialog {
     addClassNames("admin-user-filter-drawer", "support-filter-drawer");
     statusFilter.setId("support-filter-status");
     statusFilter.setItems(Status.values());
-    statusFilter.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
     statusFilter.setWidthFull();
     statusFilter.addClassName("admin-filter-choices");
     assignmentFilter.setId("support-filter-assignment");
     assignmentFilter.setItems(Assignment.values());
-    assignmentFilter.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
     assignmentFilter.setValue(Assignment.ALL);
     assignmentFilter.setWidthFull();
     readingFilterTabs.setId("support-filter-reading");
@@ -133,7 +129,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanelDialog {
     cancelFilterChangesButton.setId("support-filter-cancel");
     cancelFilterChangesButton.addClickListener(event -> close());
     applyFiltersButton.setId("support-filter-apply");
-    applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    applyFiltersButton.addThemeVariants(ButtonVariant.PRIMARY);
     applyFiltersButton.addClickListener(event -> {
       appliedTicketFilter =
           new SupportTicketFilter(

@@ -68,7 +68,8 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
         new Button(messageProperties.getTwoFactorReturnToCode(), _ -> returnFromRecoveryHelp());
     returnFromRecoveryHelpButton.setId("support-back");
     returnFromRecoveryHelpButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
-    returnFromRecoveryHelpButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    returnFromRecoveryHelpButton.addThemeVariants(ButtonVariant.TERTIARY);
+    returnFromRecoveryHelpButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
     recoveryHelpTicketsComponent.addBackAction(returnFromRecoveryHelpButton);
 
     recoveryHelpLogoutButton =
