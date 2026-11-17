@@ -9,9 +9,11 @@ import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.TimeoutError;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ForcedColors;
@@ -622,7 +624,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @Tag("form-details")
   @DisplayName("COMPONENT-06: Globale Scrollleisten teilen Stil und erhalten die native Bedienung")
   @Description(
-      "Synthetische native Komponenten in der isolierten Anwendung prüfen: Dokument, Chat-Scroller, Grid, TextArea und Dialog erhalten dieselbe Scrollgestaltung. Chatabstände bleiben lokal; horizontales und vertikales Scrollen sowie Systemkontrast bleiben bedienbar.")
+      "Synthetische native Komponenten in der isolierten Anwendung prüfen: Dokument, Chat-Scroller, TextArea und Dialog erhalten den gemeinsamen Himmelblau-Strich ohne Pfeile; das innere Grid-Raster erbt dieselbe Farbe. Chatabstände bleiben lokal; horizontales und vertikales Scrollen sowie Systemkontrast bleiben bedienbar.")
   void globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing() {
     signIn();
     browserPage.navigate("/admin?section=support");
@@ -677,9 +679,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         Locator chat = browserPage.locator("#scrollbar-test-chat");
         Locator grid = browserPage.locator("#scrollbar-test-grid #table");
         Locator field = browserPage.locator("#scrollbar-test-field [part=input-field]");
-        for (Locator area : List.of(chat, grid, field)) {
+        for (Locator area : List.of(chat, field)) {
           assertScrollbarStyleAndMovement(area);
         }
+        assertInheritedGridScrollbarColorAndMovement(grid);
         browserPage.waitForCondition(() ->
             (Boolean)
                 browserPage.evaluate(
@@ -711,9 +714,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               dialog.setAttribute('theme', 'cosmos');
               dialog.height = '180px';
               dialog.width = '280px';
+              // Höher als der Viewport: Aura begrenzt die Dialogfläche auf 100 %, der Inhalt scrollt.
               dialog.renderer = root => {
                 const content = document.createElement('vaadin-vertical-layout');
-                content.style.minHeight = '600px';
+                content.style.minHeight = '2000px';
                 content.textContent = 'Synthetic dialog content';
                 root.replaceChildren(content);
               };
@@ -743,18 +747,74 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertScrollbarStyleAndMovement(Locator area) {
     assertThat(area).isVisible();
+    // Prüfwerte der gemeinsamen Scrollleiste; ok fasst alle Bedingungen zusammen.
+    String scrollbarStyleValues =
+        """
+        element => {
+          const root = document.documentElement;
+          const thumb = getComputedStyle(element, '::-webkit-scrollbar-thumb');
+          // Sollfarbe aus dem Token auflösen; das Dokument selbst gilt als überfahren.
+          const probe = document.createElement('div');
+          probe.style.color = getComputedStyle(root).getPropertyValue('--cosmos-scrollbar-thumb');
+          document.body.append(probe);
+          const expectedThumb = getComputedStyle(probe).color;
+          probe.remove();
+          const values = {
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+            width: getComputedStyle(element, '::-webkit-scrollbar').width,
+            expectedWidth: getComputedStyle(element).getPropertyValue('--cosmos-scrollbar-size').trim(),
+            thumb: thumb.backgroundColor,
+            expectedThumb,
+            inset: thumb.borderTopWidth,
+            expectedInset: getComputedStyle(root).getPropertyValue('--cosmos-scrollbar-inset').trim(),
+            buttons: getComputedStyle(element, '::-webkit-scrollbar-button').display
+          };
+          values.ok = values.scrollHeight > values.clientHeight
+            && values.width === values.expectedWidth
+            && values.thumb === values.expectedThumb
+            && values.inset === values.expectedInset
+            && values.buttons === 'none';
+          return values;
+        }\
+        """;
+    // Ruhezustand prüfen: Ein Zeiger über der Leiste würde die Hover-Farbe auslösen.
+    browserPage.mouse().move(0, 0);
+    try {
+      browserPage.waitForCondition(
+          () -> (Boolean) area.evaluate("element => (" + scrollbarStyleValues + ")(element).ok"));
+    } catch (TimeoutError timeoutError) {
+      // Die Einzelwerte machen sichtbar, welche Bedingung der gemeinsamen Leiste fehlt.
+      fail("Cosmos-Scrollleiste nicht wie erwartet: " + area.evaluate(scrollbarStyleValues));
+    }
+    assertWheelScrolling(area);
+  }
+
+  /**
+   * Das innere Grid-Raster hat keinen öffentlichen Part. Es erbt die Cosmos-Farbe über
+   * scrollbar-color; Breite und Form zeichnet der Browser (siehe docs/theme.md).
+   */
+  private void assertInheritedGridScrollbarColorAndMovement(Locator gridTable) {
+    assertThat(gridTable).isVisible();
     browserPage.waitForCondition(() ->
         (Boolean)
-            area.evaluate(
+            gridTable.evaluate(
                 """
                 element => {
-                  const size = getComputedStyle(element).getPropertyValue('--cosmos-scrollbar-size').trim();
+                  const probe = document.createElement('div');
+                  probe.style.color = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--cosmos-scrollbar-thumb');
+                  document.body.append(probe);
+                  const thumbColor = getComputedStyle(probe).color;
+                  probe.remove();
                   return element.scrollHeight > element.clientHeight
-                    && getComputedStyle(element, '::-webkit-scrollbar').width === size
-                    && getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor
-                      === getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb').backgroundColor;
+                    && getComputedStyle(element).scrollbarColor.startsWith(thumbColor);
                 }
                 """));
+    assertWheelScrolling(gridTable);
+  }
+
+  private void assertWheelScrolling(Locator area) {
     area.evaluate("element => element.scrollTop = 0");
     area.hover();
     browserPage.mouse().wheel(0, 80);
@@ -789,7 +849,8 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     if (adminUserDialog.deleteButton().isVisible()) {
       adminUserDialog.deleteButton().hover();
       assertThat(adminUserDialog.deleteButton()).hasCSS("color", "rgb(252, 165, 165)");
-      assertThat(adminUserDialog.deleteButton()).hasCSS("border-color", "color(srgb 0.972549 0.443137 0.443137 / 0.4)");
+      assertThat(adminUserDialog.deleteButton())
+          .hasCSS("border-color", "color(srgb 0.972549 0.443137 0.443137 / 0.4)");
     }
     adminUserDialog.setRole(uiTexts.getRoleUser(), true);
     Locator roleSearchInputLocator = adminUserDialog.root().locator(".admin-user-roles input");

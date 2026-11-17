@@ -1,21 +1,5 @@
 # Offene Fehler
 
-## Grid- und TextArea-Scrollleisten seit der Aura-Umstellung
-
-- **Status:** Bestätigt im Browserlauf DE vom 17.11.2026 (COMPONENT-06), Branch
-  `design/aura-theme`. Nicht behoben, weil Scrollgestaltung auf Benutzerwunsch
-  zurückgestellt ist (siehe nächster Eintrag).
-- **Ist:** Das innere Scrollelement des Grids (`#table` im Shadow DOM) zeigt die native
-  Browser-Scrollleiste statt der Cosmos-Gestaltung; die Cosmos-Regeln wurden früher über
-  den privaten Lumo-Einschub (`--_lumo-vaadin-grid-inject-modules`) eingebunden, den es
-  unter Aura nicht mehr gibt, und `#table` besitzt keinen öffentlichen Part. Eine
-  TextArea mit fester Höhe scrollt nicht mehr im Part `input-field`.
-- **Erwartet:** Dokument, Chat, Grid, TextArea und Dialog teilen die Cosmos-Scrollleiste.
-- **Nächster Schritt:** Mit dem Benutzer entscheiden: native Grid-Scrollleiste akzeptieren
-  oder einen unterstützten Weg (öffentliche Vaadin-API) wählen; danach COMPONENT-06
-  anpassen bzw. erneut prüfen.
-- **Nachtest:** `.rowser-testsun.ps1 -Suite cosmos-scrollbars` in DE und EN.
-
 ## Leere Fehlertext-Eigenschaft im Dauerfeld
 
 - **Status:** Bestätigt im Browserlauf DE vom 17.11.2026, Ursache offen.

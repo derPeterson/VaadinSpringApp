@@ -1,6 +1,16 @@
-/* Gemeinsame native Scrollleisten, ohne Innenabstände oder Eingriff in die Scrollfunktion.
- * Öffentliche Parts erreichen Vaadins Scrollflächen. Grid bindet dieselbe Quelle über
- * den bereits verwendeten Lumo-Einschub ein, ohne private Element-IDs anzusprechen. */
+/* COSMOS-SCROLLLEISTEN
+ * Eine gemeinsame Scrollleiste für die gesamte Anwendung: ein abgerundeter Strich im
+ * Akzentblau, ohne Pfeile und ohne sichtbare Spur. Farben und Maße stehen als
+ * --cosmos-scrollbar-* in cosmos-tokens.css. Die Scrollfunktion selbst bleibt nativ.
+ *
+ * Zwei Wege, weil Browser und Vaadin-Komponenten unterschiedlich erreichbar sind:
+ * 1. Chrome/Edge: ::-webkit-scrollbar für Dokument, eigene Container und alle Vaadin-
+ *    Scrollflächen mit öffentlichem Part (Overlays, Dialoginhalte, Listen, Textbereiche).
+ * 2. Firefox sowie Scrollflächen ohne öffentlichen Part (inneres Grid-Raster): die
+ *    vererbbaren Standardeigenschaften scrollbar-width/scrollbar-color. Der Browser
+ *    zeichnet dort die Form selbst; Farbe und schmale Breite stimmen überein.
+ * Bei erzwungenen Systemfarben (Hochkontrast) bleibt die Systemleiste erhalten. */
+
 :where(*),
 :where(*)::part(content),
 :where(*)::part(overlay),
@@ -13,6 +23,7 @@
 
 @supports selector(::-webkit-scrollbar) {
     @media (forced-colors: none) {
+        /* Standardeigenschaften abschalten: Chrome ignoriert sonst ::-webkit-scrollbar. */
         :where(*),
         :where(*)::part(content),
         :where(*)::part(overlay),
@@ -23,6 +34,12 @@
             scrollbar-color: auto;
         }
 
+        /* Das innere Grid-Raster hat keinen öffentlichen Part; es erbt Breite und Farbe. */
+        :is(vaadin-grid, vaadin-grid-pro) {
+            scrollbar-width: thin;
+            scrollbar-color: var(--cosmos-scrollbar-thumb) var(--cosmos-scrollbar-track);
+        }
+
         :where(*)::-webkit-scrollbar,
         :where(*)::part(content)::-webkit-scrollbar,
         :where(*)::part(overlay)::-webkit-scrollbar,
@@ -31,6 +48,7 @@
         :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar {
             width: var(--cosmos-scrollbar-size);
             height: var(--cosmos-scrollbar-size);
+            background: transparent;
         }
 
         :where(*)::-webkit-scrollbar-track,
@@ -48,14 +66,16 @@
             background: var(--cosmos-scrollbar-track);
         }
 
+        /* Der transparente Rand rückt den Strich vom Rand ab und macht ihn schmaler. */
         :where(*)::-webkit-scrollbar-thumb,
         :where(*)::part(content)::-webkit-scrollbar-thumb,
         :where(*)::part(overlay)::-webkit-scrollbar-thumb,
         :where(*)::part(drawer)::-webkit-scrollbar-thumb,
         :where(*)::part(items)::-webkit-scrollbar-thumb,
         :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb {
-            background: var(--cosmos-scrollbar-thumb);
+            border: var(--cosmos-scrollbar-inset) solid transparent;
             border-radius: 999px;
+            background: var(--cosmos-scrollbar-thumb) padding-box;
         }
 
         :where(*)::-webkit-scrollbar-thumb:hover,
@@ -64,7 +84,7 @@
         :where(*)::part(drawer)::-webkit-scrollbar-thumb:hover,
         :where(*)::part(items)::-webkit-scrollbar-thumb:hover,
         :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:hover {
-            background: var(--cosmos-scrollbar-thumb-hover);
+            background-color: var(--cosmos-scrollbar-thumb-hover);
         }
 
         :where(*)::-webkit-scrollbar-thumb:active,
@@ -73,7 +93,7 @@
         :where(*)::part(drawer)::-webkit-scrollbar-thumb:active,
         :where(*)::part(items)::-webkit-scrollbar-thumb:active,
         :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:active {
-            background: var(--cosmos-scrollbar-thumb-active);
+            background-color: var(--cosmos-scrollbar-thumb-active);
         }
 
         :where(*)::-webkit-scrollbar-button,
@@ -93,7 +113,8 @@
     :where(*)::part(overlay),
     :where(*)::part(drawer),
     :where(*)::part(items),
-    :where(vaadin-text-area)::part(input-field) {
+    :where(vaadin-text-area)::part(input-field),
+    :is(vaadin-grid, vaadin-grid-pro) {
         scrollbar-width: auto;
         scrollbar-color: auto;
     }

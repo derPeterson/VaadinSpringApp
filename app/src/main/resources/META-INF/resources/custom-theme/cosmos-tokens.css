@@ -11,9 +11,11 @@
 :root {
     --vaadin-clickable-cursor: pointer;
     --cosmos-hover-background: var(--cosmos-color-hover);
-    --cosmos-scrollbar-size: 6px;
-    --cosmos-scrollbar-thumb: var(--cosmos-color-slate-600);
-    --cosmos-scrollbar-thumb-hover: var(--cosmos-hover-background);
+    /* Scrollleiste: 10 px breite Fläche mit 3 px Abstand, sichtbar bleibt ein 4 px Strich. */
+    --cosmos-scrollbar-size: 10px;
+    --cosmos-scrollbar-inset: 3px;
+    --cosmos-scrollbar-thumb: color-mix(in srgb, var(--cosmos-color-sky) 55%, transparent);
+    --cosmos-scrollbar-thumb-hover: color-mix(in srgb, var(--cosmos-color-sky) 80%, transparent);
     --cosmos-scrollbar-thumb-active: var(--cosmos-color-sky);
     --cosmos-scrollbar-track: transparent;
 

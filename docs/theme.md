@@ -134,16 +134,24 @@ Portal und Administration. Für Stitch kann die betroffene Ansicht in einer
 isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst werden.
 Der frühere Bestand statischer Referenzen liegt im Git-Tag `archiv/html-referenzen`.
 
-Scrollleisten verwenden anwendungsweit `cosmos-scrollbars.css`: transparente Bahn,
-gedeckter runder Griff, bei Hover die gemeinsame blaue Fläche und beim Ziehen Cyan, ohne Richtungspfeile. Die zentralen
-`--cosmos-scrollbar-*`-Tokens in `cosmos-tokens.css` gelten auch am Dokument:
-Breite/Höhe 6 px, Griff `#475569`, Hover `--cosmos-hover-background`, aktiv beim Ziehen `#38bdf8`, Bahn transparent. Browser ohne
-WebKit-Scrollselektoren verwenden die native schmale Breite und dieselben Farben.
-Im erzwungenen Systemkontrast bleiben native Farben und Breite erhalten.
-`Application` lädt die gemeinsame Quelle `cosmos-scrollbars.css` für Dokument, normale
-Scrollcontainer und öffentliche Vaadin-Parts; private Element-IDs sind nicht Teil der
-Gestaltung. Das innere Scrollelement des Grids hat unter Aura keinen öffentlichen Part
-und zeigt derzeit die native Scrollleiste (offener Fehler in [BUGS](../BUGS.md)). Scrollfunktionen und Innenabstände werden nicht geändert.
+Scrollleisten verwenden anwendungsweit `cosmos-scrollbars.css` (vom Benutzer gewählte
+Variante „Himmelblau-Strich“): ein abgerundeter Strich im Akzentblau, ohne Richtungspfeile
+und ohne sichtbare Bahn. Die zentralen `--cosmos-scrollbar-*`-Tokens in `cosmos-tokens.css`
+gelten auch am Dokument: Fläche 10 px mit 3 px transparentem Abstand (sichtbar 4 px),
+Griff Himmelblau 55 %, Hover 80 %, beim Ziehen voll `--cosmos-color-sky`, Bahn transparent.
+
+Zwei Wege sorgen für dieselbe Leiste überall:
+
+| Bereich | Technik | Ergebnis |
+| --- | --- | --- |
+| Dokument, eigene Container, Vaadin-Parts `content`, `overlay`, `drawer`, `items`, TextArea-`input-field` | `::-webkit-scrollbar` (Chrome/Edge) | Strich wie beschrieben, Hover-/Ziehfarbe |
+| Inneres Grid-Raster (`vaadin-grid`, `vaadin-grid-pro`), kein öffentlicher Part | vererbtes `scrollbar-color` am Grid | Farbe wie oben; Breite und Form zeichnet der Browser (normale Breite, ggf. Pfeile) |
+| Firefox | `scrollbar-width: thin` und `scrollbar-color` | schmale Leiste in denselben Farben |
+
+`scrollbar-width` wird nicht vererbt; deshalb lässt sich die Breite im Grid-Inneren mit
+öffentlichen Mitteln nicht verringern. Im erzwungenen Systemkontrast bleiben native Farben
+und Breite erhalten. Private Element-IDs sind nicht Teil der Gestaltung.
+Scrollfunktionen und Innenabstände werden nicht geändert.
 Nur Chatverläufe reservieren zusätzlich Platz für die Scrollbahn und Abstand zu den
 Sprechblasenspitzen; diese lokalen Regeln bleiben in `cosmos-mfa-confirmation.css`.
 
@@ -1363,7 +1371,7 @@ Vollständigkeit und den Verzicht auf `@import`:
 | Typografie | typography.css | Inter und Space Mono, Schriftfamilien |
 | Tokens | cosmos-tokens.css | Semantische Farbrollen, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen, Schatten |
 | Aura-Abgleich | cosmos-aura.css | Zurückgesetzte Aura-Standards |
-| Bausteine | cosmos-scrollbars.css | Native Scrollleisten für Dokument, Container und Vaadin-Scrollflächen |
+| Bausteine | cosmos-scrollbars.css | Gemeinsame Scrollleiste (Himmelblau-Strich) für Dokument, Container, Vaadin-Scrollflächen und Grid |
 | | cosmos-duration-field.css | Integrierte Zeiteinheit im Dauerfeld |
 | | cosmos-breadcrumbs.css | Native Seitenpfade |
 | | cosmos-segmented-tabs.css | Segmentierte Auswahl mit nativen Tabs |

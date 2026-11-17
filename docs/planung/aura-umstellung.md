@@ -14,11 +14,12 @@ Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Offene Fehler aus Paket 6 klären (Details in [BUGS](../../BUGS.md)): Grid-/TextArea-
-      Scrollleisten unter Aura (Benutzerentscheidung nötig) und leere `errorMessage` im
-      Dauerfeld. Browserfälle und JUnit-Tests sind an Aura angepasst; vollständige Läufe
-      DE/EN am selben Image vom 17.11.2026: 372/380 bzw. 373/380 bestanden, Rest siehe BUGS
-      und [Testbedarf](../testbedarf.md).
+- [ ] Offene Fehler aus Paket 6 klären (Details in [BUGS](../../BUGS.md)): leere
+      `errorMessage` im Dauerfeld. Browserfälle und JUnit-Tests sind an Aura angepasst;
+      vollständige Läufe DE/EN am selben Image vom 17.11.2026: 372/380 bzw. 373/380
+      bestanden, Rest siehe BUGS und [Testbedarf](../testbedarf.md). Die Scrollleisten sind
+      inzwischen mit der vom Benutzer gewählten Variante „Himmelblau-Strich“ umgesetzt;
+      COMPONENT-06 besteht in DE und EN.
 - [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte je Baustein).
 - [ ] Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen.
       Bisher sind nur Klassen ohne Vorkommen im Java-Code entfernt; alle sichtbaren Seiten
