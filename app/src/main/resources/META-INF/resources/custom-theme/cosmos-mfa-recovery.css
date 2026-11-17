@@ -46,10 +46,10 @@
 }
 .two-factor-recovery-hint-title {
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .two-factor-recovery .cosmos-panel-description {
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .two-factor-recovery-controls {
@@ -87,7 +87,7 @@
     gap: 8px;
     min-width: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .two-factor-recovery-heading > vaadin-icon {
     width: 16px;
@@ -119,7 +119,7 @@
     --vaadin-switch-label-color: var(--cosmos-text-secondary-color);
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 400;
-    --vaadin-switch-label-line-height: 20px;
+    --vaadin-switch-label-line-height: var(--cosmos-line-height-m);
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -139,7 +139,7 @@
     padding: 0;
     text-align: left;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .two-factor-recovery #two-factor-codes-saved::part(switch) {
     grid-column: 2;
@@ -183,7 +183,7 @@
 }
 .two-factor-view vaadin-text-field.two-factor-recovery-code::part(input-field),
 .two-factor-view vaadin-text-field.two-factor-recovery-code > input[slot="input"] {
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family-mono);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family-mono);
 }
 .two-factor-recovery-code .two-factor-recovery-copy {
     flex: none;

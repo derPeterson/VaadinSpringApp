@@ -551,8 +551,7 @@ innerhalb des nativen Eintrags, damit alle vier Seiten sichtbar bleiben.
 Die transparenten Außenrahmen schaffen den Abstand; das native Inhaltspadding bleibt bestehen.
 Die Pagination-Auswahllisten haben
 eine Mindestbreite von 88 px, damit Auswahlrahmen und Häkchen vollständig bleiben.
-Die gewählte Datei `cosmos-background-base.css` oder `cosmos-background-advanced.css`
-enthält die anwendungsweite Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
+`cosmos-background.css` enthält die anwendungsweite Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
 kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
 verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav;
 der Formularschutz nutzt Tablers `file-diff` und `file-x`.
@@ -1251,7 +1250,26 @@ bleiben davon unberührt. Alle Schriftgrößen verwenden die Skala aus `cosmos-t
 | `3xl` / `display` | 28 / 32 px | Große Symbolschrift, Hero-Zahlen |
 
 Stärken: 400 regulär, 500 mittel, 600 halbfett, 700 fett
-(`--cosmos-font-weight-*`). Zeilenhöhen sind noch Einzelwerte je Baustein.
+(`--cosmos-font-weight-*`).
+
+Zeilenhöhen stehen als Tokens in `cosmos-tokens.css`; Bausteine verwenden keine eigenen
+Einzelwerte mehr:
+
+| Token | Wert | Einsatz |
+| --- | --- | --- |
+| `--cosmos-line-height-xs` | 16 px | Großbuchstaben-Labels, Badges, Metadaten |
+| `--cosmos-line-height-s` | 18 px | kompakte Texte und Labels |
+| `--cosmos-line-height-m` | 20 px | Fließtext in Controls, Panels und Listen |
+| `--cosmos-line-height-l` | 24 px | 16-px-Titel |
+| `--cosmos-line-height-xl` | 28 px | Panel- und Dialogtitel |
+| `--cosmos-line-height-heading-m` / `-heading-l` | 32 / 36 px | Seitenüberschriften mobil / Desktop |
+| `--cosmos-line-height-display` | 38 px | Hero-Zahlen |
+| `--cosmos-line-height-tight` | 1.375 | mehrzeilige Überschriften und Tooltips |
+| `--cosmos-line-height-copy` | 1.5 | Standardfließtext |
+| `--cosmos-line-height-relaxed` | 1.7 | längere Hinweis- und Hilfetexte |
+
+Bewusste Ausnahmen: `1` für einzeilige Symbol- und Zählerflächen sowie die fließende
+Hero-Überschrift der Startseite.
 
 ## Gestaltungsregeln
 
@@ -1324,7 +1342,7 @@ zusätzliche globale Feldregeln sind dafür nicht nötig.
 
 | Konstante | Klasse | Wirkung |
 | --- | --- | --- |
-| `INLINE_BUTTON` | `cosmos-inline-button` | Textartiger Button ohne Fläche, Innenabstand und eigene Höhe; Schrift des Umfelds, Akzentfarbe |
+| `INLINE_BUTTON` | `cosmos-inline-button` | Textartiger Button ohne Fläche, Innenabstand und eigene Höhe; Schrift des Umfelds. Die Akzentfarbe ist nur ein Standard ohne Spezifität (`:where`), lokale Regeln wie weiße Secondary-Texte gehen vor; Auras Tertiary-Innenabstand ist über `--vaadin-padding-s: 0` neutralisiert |
 | `ICON_BUTTON` | `cosmos-icon-button` | Quadratischer Button in Controlhöhe ohne Innenabstand |
 | `EQUAL_WIDTH_TABS` | `cosmos-equal-width-tabs` | Reiter teilen sich die verfügbare Breite gleichmäßig |
 | `TEXT_PRIMARY` / `TEXT_SECONDARY` | `cosmos-text-primary` / `-secondary` | Akzent- bzw. Sekundärtextfarbe |
@@ -1339,8 +1357,21 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
 kleinerer Aufklapppfeil der Seitennavigation, Pflichtfeldpunkt direkt hinter dem Label,
-Feldsymbole in ca. 16 px, Aufklappbereiche ohne Einrückung um die Pfeilbreite und
-Kalendertage mit der gemeinsamen Hoverfläche statt der Aura-Akzentfläche.
+Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
+ohne Einrückung um die Pfeilbreite, Kalendertage mit der gemeinsamen Hoverfläche statt der
+Aura-Akzentfläche, Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
+ohne Abstand zum leeren Textbereich, Cosmos-Auswahlzeilen (`cosmos-reference-option`) ohne
+Auras Fokusrahmen und Innenabstand sowie eine kompakte Seitengrößenauswahl mit 4 px Abstand
+zum Pfeil. Textlinks in `.two-factor-help-row` zeigen beim Überfahren nur hellere Schrift
+ohne Fläche (`cosmos-mfa-confirmation.css`).
+
+Reine Icon-Buttons (Symbol ohne Slot, also ohne Text) und `cosmos-icon-button` setzen
+`--vaadin-button-gap: 0`: Vaadin legt das Symbol in den Textbereich, Auras Abstand zum
+leeren Präfix würde es sonst 4 px aus der Mitte schieben. Overlays verzichten über
+`--aura-overlay-outline-shadow` und `--aura-overlay-surface-opacity: 1` auf Auras Umrissring
+und die halbtransparente Fläche; den Rahmen zeichnet Cosmos selbst. Checkbox-Chips mit
+absolut gelegtem Label (Benutzerfilter) heben die Rasterzelle des Label-Parts auf, damit
+das Label senkrecht mittig in der ganzen Fläche steht.
 Spätere Bausteine und Fachbereiche dürfen diese Grundwerte gezielt überschreiben.
 
 Zwei Vaadin-Basisregeln sind beim Gestalten zu beachten: Schalter (`vaadin-switch`)
@@ -1380,7 +1411,7 @@ Vollständigkeit und den Verzicht auf `@import`:
 | | cosmos-cards.css | Hüllen für native Karten |
 | | cosmos-avatar.css | Avatarkern und Statuspunkte |
 | App-Rahmen | cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
-| | cosmos-background-base.css / cosmos-background-advanced.css | Dekoration samt Szenenfarben; genau eine Variante wird geladen |
+| | cosmos-background.css | Hintergrundszene „Horizont mit Mondaufgang“ samt Szenenfarben |
 | Fachbereiche | cosmos-admin.css | Adminnavigation, Panels, Konfiguration, Dashboard, Feldhilfe, Seitenpanels |
 | | cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
 
@@ -1417,25 +1448,28 @@ npm run lint:css
 
 Konfiguration und Grenzen: [CSS prüfen und formatieren](entwicklung.md#css-prüfen-und-formatieren).
 
-### Hintergrundvarianten zum Ausprobieren
+### Hintergrund
 
-`CosmosBackgroundComponent.ACTIVE_VARIANT` ist die einzige Umschaltstelle:
-`ADVANCED_VARIANT` (`"advanced"`) aktiviert den gelieferten Entwurf „Horizont Plus",
-`BASE_VARIANT` (`"base"`) den
-bisherigen Hintergrund. `Application` übernimmt daraus den konstanten
-Stylesheet-Pfad; der gemeinsame `PageFrameComponent` erhält dazu die passenden
-nativen dekorativen Div-Ebenen. Besucherbereich, Portal und Administration
-verwenden dieselbe Auswahl. Aktuell ist **Advanced** ausgewählt.
-Advanced richtet seine Selektoren am gemeinsamen `cosmos-page-frame` aus;
-der öffentliche Rahmen benötigt dafür keine zusätzliche Klasse `cosmos-page`.
+Es gibt genau einen Anwendungshintergrund, „Horizont mit Mondaufgang“ (vom Benutzer
+gewählte Variante A). `CosmosBackgroundComponent` erzeugt im gemeinsamen
+`PageFrameComponent` die nativen dekorativen Div-Ebenen; `Application` lädt
+`CosmosBackgroundComponent.STYLESHEET` (`cosmos-background.css`). Besucherbereich, Portal
+und Administration verwenden denselben Hintergrund.
 
-Advanced übernimmt Horizont mit Atmosphäre und Wolkenbändern, zwei Sternflächen,
-vier funkelnde Sterne, Mond, Sternschnuppen und Satellit aus der gelieferten
-HTML-Vorlage. Farben, Verläufe, Positionen und Animationen liegen gemeinsam in
-`cosmos-background-advanced.css` (`--cosmos-advanced-*` am Dateianfang). Die originale
-Base-Gestaltung bleibt samt ihren Szenenfarben in `cosmos-background-base.css` erhalten.
-Als dekorative Ausnahme dürfen beide Dateien eigene Farbwerte außerhalb der Palette enthalten.
-Die globale Palette für Controls, Panels und Dialoge wird nicht umgeschaltet.
+Die Szene besteht aus Horizont mit Atmosphäre und Wolkenbändern, zwei Sternflächen, vier
+Funkelsternen, Mond, drei Sternschnuppen (die dritte unten rechts länger und flacher), einem
+Satelliten (links nach rechts), einem blinkenden Wanderstern (`cosmos-drift`, rechts nach
+links) und einer entfernten Supernova links (`cosmos-nova`) im System-Violett der Badges.
+Bei reduzierter Bewegung sind Sternschnuppen, Satellit und Wanderstern ausgeblendet; alle
+übrigen Ebenen stehen still. Gestaltungsregel: Dekoration
+liegt nur in den Randzonen links und rechts der Inhaltsbreite oder über dem Horizont, nie
+fest nach Bildschirmprozenten im Kopfbereich. Der Mond steht deshalb tief rechts über dem
+Horizont (`bottom` statt `top`), die Funkelsterne liegen an den Rändern, und die Sternflächen
+sind hinter dem Inhaltsbereich per zusätzlicher Maske gedämpft. So verdeckt bei keiner
+Breite etwas Seitenüberschrift oder Beschreibung. Farben, Verläufe, Positionen und
+Animationen liegen gemeinsam in `cosmos-background.css` (`--cosmos-background-*` am
+Dateianfang); als dekorative Ausnahme darf diese Datei eigene Farbwerte außerhalb der
+Palette enthalten (Stylelint-Ausnahme).
 
 Die leichte Zeigerparallaxe setzt ausschließlich Variablen auf der Hintergrundebene.
 Bei Navigation wird der vorherige Listener abgemeldet; ein entfernter Hintergrund
@@ -1444,10 +1478,6 @@ deaktiviert Animationen und Zeigerparallaxe; bei einer Änderung dieser
 Systemeinstellung werden vorhandene Parallaxenwerte zurückgesetzt.
 Alle Ebenen sind dekorativ und `aria-hidden`; sie fangen keine Eingaben ab.
 Nur die feste Hintergrundebene verwendet `overflow: hidden`, keine Inhaltsfläche.
-
-Nach einem Wechsel neu bauen, Anwendung neu starten und Browser neu laden.
-Die endgültige Auswahl und das Entfernen der übrigen Varianten stehen in
-[TODO](../TODO.md); das ist keine Nachtaufgabe.
 
 ## Neue Oberfläche und Übernahme in den Standard
 

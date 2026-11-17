@@ -41,7 +41,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .two-factor-view vaadin-text-area.two-factor-manual-input::part(label)::before {
     content: "";
@@ -59,7 +59,7 @@
 }
 .two-factor-view vaadin-text-area.two-factor-manual-input > textarea {
     text-align: center;
-    font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family-mono);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family-mono);
 }
 .two-factor-manual-input #two-factor-copy-key {
     flex: none;

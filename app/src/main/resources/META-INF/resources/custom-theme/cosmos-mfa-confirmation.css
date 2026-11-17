@@ -22,7 +22,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     min-width: 0;
 }
 .two-factor-dialog-codes .two-factor-confirmation-input > .cosmos-panel-description {
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .two-factor-confirmation-input .two-factor-otp {
     align-self: center;
@@ -81,13 +81,21 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     column-gap: 8px;
     row-gap: 0;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .two-factor-help-row > vaadin-button.cosmos-inline-button {
     margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
+    color: var(--cosmos-label-color);
+    /* Abstand zum Pfeil setzt allein der Suffix-Außenabstand unten. */
+    --vaadin-button-gap: 0;
+}
+/* Textlinks zeigen beim Überfahren nur hellere Schrift, keine Fläche (Benutzerentscheidung). */
+.two-factor-help-row > vaadin-button.cosmos-inline-button:hover:not([disabled]) {
+    background: transparent;
+    color: var(--cosmos-heading-color);
 }
 .two-factor-help-row > vaadin-button.cosmos-inline-button:focus:not([focus-ring], :focus-visible) {
     outline: none;
@@ -130,7 +138,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 :is(.two-factor-restore-notice, .support-help-notice, .mfa-role-scope) > vaadin-icon {
     width: 16px;
@@ -163,7 +171,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .support-empty-state > vaadin-icon {
     width: 20px;
@@ -197,7 +205,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 .support-conversation-heading {
     margin: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -207,7 +215,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     border-radius: 4px;
     background: var(--cosmos-subtle-surface);
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .support-request-count {
     margin-inline-start: auto;
@@ -222,7 +230,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 .support-ticket-updated,
 .support-message-metadata {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .support-ticket-updated,
 .support-message-time,
@@ -279,7 +287,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     border-radius: var(--cosmos-control-radius);
     background: var(--support-bubble-background);
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
@@ -344,7 +352,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 }
 .support-user-form vaadin-grid {
     min-width: 0;
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .support-user-requests vaadin-grid {
     --cosmos-table-row-background: var(--cosmos-base-color);
@@ -410,7 +418,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     padding: 10px;
     border-radius: 4px;
     color: var(--cosmos-status-badge-accent);
-    font: 500 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 #support-filter-status vaadin-checkbox {
     --filter-choice-color: var(--cosmos-status-badge-accent);
@@ -507,7 +515,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 .support-admin-status-note {
     margin-block-start: 8px;
     color: var(--cosmos-text-secondary-color);
-    font: italic 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: italic 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-align: center;
 }
 .support-admin-detail .support-conversation-heading {
@@ -519,7 +527,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     min-height: 112px;
     gap: 4px;
     padding: 12px;
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 #support-queue-empty > vaadin-icon {
     width: 24px;
@@ -535,7 +543,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     height: 36px;
 }
 .support-admin-no-selection > .cosmos-notification-empty-title {
-    font: 600 var(--cosmos-font-size-title)/26px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-title)/var(--cosmos-line-height-xl) var(--cosmos-font-family);
 }
 #support-select-ticket > .cosmos-panel-description {
     max-width: 420px;
@@ -593,7 +601,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 }
 .support-admin-ticket-card > .support-ticket-title {
     width: 100%;
-    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .support-admin-ticket-footer {
     padding-block-start: 8px;
@@ -614,7 +622,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 }
 .support-ticket-assignment {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .support-ticket-unassigned {
     font-style: italic;
@@ -626,7 +634,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-success-color);
 }
 .support-admin-requester,
@@ -662,7 +670,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 }
 .support-admin-person-label {
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 1.2px;
 }
@@ -675,11 +683,11 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 }
 .support-admin-person-email {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .support-admin-person-name {
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .support-admin-person-name,
 .support-admin-person-email {
@@ -743,7 +751,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     --support-bubble-border: var(--cosmos-system-border);
 }
 .support-admin-internal {
-    font: 500 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     color: var(--cosmos-system-text);
     background: var(--cosmos-system-surface);
     border: 1px solid var(--cosmos-system-border);
@@ -782,7 +790,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 .support-instruction-guide {
     gap: 16px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .support-instruction-step {
     gap: 12px;
@@ -794,7 +802,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 .support-instruction-step-title,
 .support-instruction-title {
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-badge.support-instruction-number {
     box-sizing: border-box;
@@ -809,7 +817,7 @@ vaadin-badge.support-instruction-number {
     border-radius: 4px;
     background: var(--cosmos-selection-background);
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .support-instruction-message {
     gap: 8px;
@@ -905,7 +913,7 @@ vaadin-badge.support-instruction-number {
     gap: 4px;
     padding-block: 8px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .support-history-event > vaadin-horizontal-layout {
     gap: 6px;

@@ -27,13 +27,29 @@
     --cosmos-icon-size-em-m: 1.5em;
     --cosmos-icon-size-em-l: 2.25em;
     --cosmos-status-symbol-size: 40px;
+    /* Zeilenhöhen: feste Pixelstufen für einzeilige Bausteine und Überschriften,
+     * Verhältniswerte für mehrzeiligen Fließtext. */
+    --cosmos-line-height-xs: 16px;
+    --cosmos-line-height-s: 18px;
+    --cosmos-line-height-m: 20px;
+    --cosmos-line-height-l: 24px;
+    --cosmos-line-height-xl: 28px;
+    --cosmos-line-height-heading-m: 32px;
+    --cosmos-line-height-heading-l: 36px;
+    --cosmos-line-height-display: 38px;
     --cosmos-line-height-tight: 1.375;
+    --cosmos-line-height-relaxed: 1.7;
 
     /* Aura-Anbindung: Schrift, Grundgröße und dunkles Farbschema. */
     --aura-font-family: var(--cosmos-font-family);
     --aura-base-font-size: 16;
     --aura-background-color-dark: var(--cosmos-color-space);
     --aura-accent-color-dark: var(--cosmos-color-sky);
+
+    /* Overlays (Auswahllisten, Menüs, Dialoge) tragen den Cosmos-Rahmen selbst: Auras zusätzlicher
+     * Umrissring und die halbtransparente Fläche würden sonst wie eine zweite Ebene wirken. */
+    --aura-overlay-outline-shadow: 0 0 0 0 transparent;
+    --aura-overlay-surface-opacity: 1;
 
     /* Der Cosmos-Seitenrahmen füllt das AppLayout randlos; Aura rahmt den Inhalt sonst ein. */
     --aura-app-layout-inset: 0px;

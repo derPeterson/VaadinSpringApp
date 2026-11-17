@@ -14,7 +14,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
 }
 .cosmos-provider-settings .provider-panel-header .cosmos-panel-description {
     white-space: pre-line;
-    line-height: 20px;
+    line-height: var(--cosmos-line-height-m);
 }
 .cosmos-provider-settings .provider-statuses {
     display: flex;
@@ -29,7 +29,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
     padding: 6px 10px;
     border-radius: 6px;
     gap: 6px;
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 1.2px;
     text-transform: uppercase;
     cursor: default;
@@ -104,7 +104,7 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
     border-bottom: 0;
     border-radius: 10px 10px 0 0;
     background: transparent;
-    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .cosmos-panel-tabs vaadin-tab[selected] {
@@ -144,7 +144,7 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
 }
 .cosmos-provider-settings .provider-fields > span {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-provider-settings .provider-fields a {
     align-self: flex-start;
@@ -180,7 +180,7 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
     justify-content: space-between;
     gap: 16px;
     min-height: 40px;
-    font: 500 var(--cosmos-font-size-s)/1.6 var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 @media (max-width: 600px) {
     vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-panel-header {
@@ -228,7 +228,7 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
 }
 .cosmos-provider-settings .provider-field-label {
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-row {
     align-items: start;
@@ -266,18 +266,18 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-hel
 .cosmos-provider-settings :is(.provider-assistant-kicker, .provider-step-label) {
     display: block;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 1.2px;
 }
 .cosmos-provider-settings .provider-assistant-title {
     margin: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 .cosmos-provider-settings .provider-assistant-description {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-provider-settings .provider-step {
     display: flex;
@@ -296,7 +296,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-hel
 }
 .cosmos-provider-settings .provider-console-guide > span {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-provider-settings a.provider-console-link {
     display: inline-flex;
@@ -309,7 +309,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-hel
     border-radius: 8px;
     background: transparent;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     text-decoration: none;
 }
 .cosmos-provider-settings a.provider-console-link > vaadin-icon {

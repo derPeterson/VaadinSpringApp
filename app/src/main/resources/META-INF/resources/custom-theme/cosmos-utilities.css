@@ -3,17 +3,25 @@
  * Direkt nach cosmos-theme.css geladen, damit diese Klassen die gemeinsamen Komponentenregeln
  * gleicher Spezifität ergänzen. */
 
-/* Textartiger Button: keine eigene Fläche, kein Innenabstand, Schrift des Umfelds. */
+/* Textartiger Button: keine eigene Fläche, kein Innenabstand, Schrift des Umfelds.
+ * Nur Variablen, die Vaadins Grundgestaltung speisen: Lokale Regeln mit eigenem Rahmen,
+ * Innenabstand oder eigener Schriftfarbe (z. B. Secondary-Buttons „Zurück“) gehen vor.
+ * --vaadin-padding-s neutralisiert Auras zusätzlichen Innenabstand für Tertiary-Buttons. */
 vaadin-button.cosmos-inline-button {
     --vaadin-button-background: transparent;
     --vaadin-button-border-width: 0;
     --vaadin-button-padding: 0;
     --vaadin-button-height: auto;
+    --vaadin-padding-s: 0px;
     min-width: 0;
     margin: 0;
-    color: var(--cosmos-primary-text-color);
     font-size: inherit;
     line-height: inherit;
+}
+
+/* Akzentfarbe nur als schwacher Standard ohne Spezifität, wie früher unter Lumo. */
+:where(vaadin-button.cosmos-inline-button) {
+    color: var(--cosmos-primary-text-color);
 }
 
 /* Quadratischer Icon-Button in Controlhöhe. */

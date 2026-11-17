@@ -26,7 +26,7 @@ vaadin-card.cosmos-metric-card--highlighted {
 
 .cosmos-metric-card-label {
     color: var(--cosmos-text-secondary-color);
-    font: 600 var(--cosmos-font-size-2xs)/14px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.045em;
     text-transform: uppercase;
 }
@@ -34,7 +34,7 @@ vaadin-card.cosmos-metric-card--highlighted {
 .cosmos-metric-card-value {
     margin-top: 3px;
     color: var(--cosmos-heading-color);
-    font: 700 var(--cosmos-font-size-heading-s)/24px var(--cosmos-font-family);
+    font: 700 var(--cosmos-font-size-heading-s)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 
 .cosmos-metric-card--highlighted :is(.cosmos-metric-card-label, .cosmos-metric-card-value) {

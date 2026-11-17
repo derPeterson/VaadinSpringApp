@@ -2,43 +2,20 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.html.Div;
 
-/** Gemeinsame dekorative CSS-Ebenen für Besucherbereich, Portal und Administration. */
+/**
+ * Gemeinsamer dekorativer Hintergrund für Besucherbereich, Portal und Administration: Horizont,
+ * Sterne, Funkelsterne, Sternschnuppen, Satellit, Wanderstern, Supernova und Mond als native
+ * Div-Ebenen. Gestaltung in {@link #STYLESHEET}; die Ebenen sind für Hilfstechnik ausgeblendet.
+ */
 public class CosmosBackgroundComponent extends Div {
-  private static final String BASE_VARIANT = "base";
-  private static final String ADVANCED_VARIANT = "advanced";
+  public static final String STYLESHEET = "custom-theme/cosmos-background.css";
+
   private static final String STARS_CLASS = "cosmos-stars";
   private static final String SPARK_CLASS = "cosmos-spark";
-
-  // Zum anwendungsweiten Wechsel nur diese Zeile auf BASE_VARIANT oder ADVANCED_VARIANT setzen.
-  public static final String ACTIVE_VARIANT = ADVANCED_VARIANT;
-  public static final String STYLESHEET =
-      "custom-theme/cosmos-background-" + ACTIVE_VARIANT + ".css";
 
   public CosmosBackgroundComponent() {
     addClassName("cosmos-sky");
     getElement().setAttribute("aria-hidden", "true");
-
-    switch (ACTIVE_VARIANT) {
-      case BASE_VARIANT -> addBaseBackgroundLayers();
-      case ADVANCED_VARIANT -> addAdvancedBackgroundLayers();
-      default -> throw new IllegalStateException("Unknown Cosmos background: " + ACTIVE_VARIANT);
-    }
-  }
-
-  private void addBaseBackgroundLayers() {
-    add(
-        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars--small"),
-        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars--far"),
-        createBackgroundLayerDiv("cosmos-galaxy"),
-        createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--blue"),
-        createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--violet"),
-        createBackgroundLayerDiv("cosmos-horizon"),
-        createBackgroundLayerDiv("cosmos-planet"),
-        createBackgroundLayerDiv("cosmos-moon"));
-  }
-
-  private void addAdvancedBackgroundLayers() {
-    addClassName("cosmos-sky--advanced");
     add(
         createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars-a"),
         createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars-b"),
@@ -49,12 +26,15 @@ public class CosmosBackgroundComponent extends Div {
         createBackgroundLayerDiv("cosmos-moon"),
         createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--first"),
         createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--second"),
+        createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--third"),
         createBackgroundLayerDiv("cosmos-satellite"),
+        createBackgroundLayerDiv("cosmos-drift"),
+        createBackgroundLayerDiv("cosmos-nova"),
         createBackgroundLayerDiv("cosmos-horizon"));
-    addAttachListener(attachEvent -> connectAdvancedBackgroundParallax());
+    addAttachListener(attachEvent -> connectBackgroundParallax());
   }
 
-  private void connectAdvancedBackgroundParallax() {
+  private void connectBackgroundParallax() {
     getElement()
         .executeJs(
             """

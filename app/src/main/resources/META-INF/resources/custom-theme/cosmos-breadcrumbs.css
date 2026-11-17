@@ -4,12 +4,12 @@ vaadin-breadcrumbs.cosmos-breadcrumbs {
     min-width: 0;
     max-width: 100%;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.05em;
     text-transform: uppercase;
     --vaadin-breadcrumbs-font-size: inherit;
     --vaadin-breadcrumbs-font-weight: inherit;
-    --vaadin-breadcrumbs-line-height: 16px;
+    --vaadin-breadcrumbs-line-height: var(--cosmos-line-height-xs);
     --vaadin-breadcrumbs-link-color: var(--cosmos-primary-text-color);
     --vaadin-breadcrumbs-text-color: var(--cosmos-primary-text-color);
     --vaadin-breadcrumbs-gap: 6px;

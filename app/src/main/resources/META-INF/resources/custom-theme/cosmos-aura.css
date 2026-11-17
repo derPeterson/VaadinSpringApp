@@ -32,9 +32,49 @@ vaadin-tabs.cosmos-theme {
     width: auto;
 }
 
-/* Feldsymbole (Auge, Auswahlpfeil, Kalender, Löschen) in der bisherigen Größe von ca. 16 px. */
+/* Feldsymbole (Auge, Auswahlpfeil, Kalender, Löschen) in der bisherigen Größe von 16 px.
+ * Die Symbolfläche bleibt dadurch so schmal wie früher; Vaadin hält die Klickfläche über
+ * Innenabstand und negativen Außenabstand trotzdem bei 24 px. */
 :is(.cosmos-theme, .cosmos-reference-overlay) ::part(field-button) {
-    --vaadin-icon-visual-size: 80%;
+    --vaadin-icon-size: 16px;
+    --vaadin-icon-visual-size: 100%;
+}
+
+/* Reine Icon-Buttons: Vaadin legt das Symbol ohne Slot in den Textbereich. Auras Abstand
+ * zwischen leerem Präfix und Textbereich würde es um 4 px aus der Mitte schieben.
+ * Gilt global, auch in Overlays außerhalb von .cosmos-theme. */
+vaadin-button:has(> :is(vaadin-icon, svg):not([slot])),
+vaadin-button.cosmos-icon-button {
+    --vaadin-button-gap: 0;
+}
+
+/* Schließen-Buttons: Symbol mittig in 18 px. */
+vaadin-button.cosmos-overlay-close {
+    --vaadin-button-gap: 0;
+    --vaadin-icon-size: 18px;
+    padding: 0;
+}
+
+/* Kompakte Seitengrößenauswahl: kleinerer Abstand zum Pfeil, damit zweistellige Werte passen. */
+:is(.portal-pagination-size, .portal-page-size) {
+    --vaadin-input-field-container-gap: 4px;
+}
+
+/* Auswahllisten mit Cosmos-Zeilen zeichnen Fokus und Hover in der Zeile selbst;
+ * Auras Fokusrahmen um den ganzen Eintrag entfällt, sonst erscheinen zwei Flächen. */
+vaadin-combo-box-item.cosmos-reference-option[focused] {
+    outline: none;
+}
+
+/* Die Cosmos-Zeile füllt den Eintrag vollständig; Auras Innenabstand ließ links einen Streifen frei. */
+vaadin-combo-box-item.cosmos-reference-option {
+    --vaadin-item-padding: 0;
+    --vaadin-item-gap: 0;
+}
+
+vaadin-combo-box-item.cosmos-reference-option::part(content) {
+    margin: 0;
+    padding: 0;
 }
 
 /* Aufklappbereiche: Inhalt bündig unter der Überschrift statt um die Pfeilbreite eingerückt. */

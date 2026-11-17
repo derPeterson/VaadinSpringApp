@@ -71,14 +71,14 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    font: 600 var(--cosmos-font-size-m)/19.5px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .external-connection-heading vaadin-badge {
     box-sizing: border-box;
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 .external-connection-heading vaadin-badge[theme~="success"] {
@@ -117,7 +117,7 @@
     align-items: center;
     gap: 12px;
     color: var(--cosmos-text-secondary-color);
-    font: 600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
@@ -129,7 +129,7 @@
 }
 .external-proof-ready {
     color: var(--cosmos-success-color);
-    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 @media (max-width: 600px) {
     .external-connections-overview {
@@ -149,7 +149,7 @@
 .external-login-buttons:not(.external-login-panel) #external-login-google::part(label) {
     font-family: "Google Sans Signin", Arial, sans-serif;
     font-weight: 500;
-    line-height: 20px;
+    line-height: var(--cosmos-line-height-m);
 }
 #external-login-google .external-provider-mark {
     background: #fff;
@@ -205,26 +205,26 @@
 }
 .external-login-panel .external-login-kicker {
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 .external-login-panel h2 {
     margin: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 .external-login-panel .external-login-hint {
     margin: 0 0 12px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-reference-public .external-login-panel vaadin-button.external-provider-button {
     border-color: var(--cosmos-border-color);
     border-radius: 8px;
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
 }
 .cosmos-reference-public .external-login-panel vaadin-button.external-provider-button:hover {
     border-color: var(--cosmos-primary-text-color);
@@ -272,7 +272,7 @@
 }
 .external-login-divider > span {
     color: var(--cosmos-text-secondary-color);
-    font: 600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }

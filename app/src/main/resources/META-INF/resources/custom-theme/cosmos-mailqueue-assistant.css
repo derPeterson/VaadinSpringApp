@@ -43,13 +43,13 @@
 }
 .admin-queue-cleanup-status-title {
     color: var(--cosmos-primary-text-color);
-    font: 500 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 .admin-queue-cleanup-output {
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family-mono);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family-mono);
     white-space: pre-line;
     overflow-wrap: anywhere;
 }
@@ -68,7 +68,7 @@
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-label-color);
     border: 1px solid var(--cosmos-status-badge-border);
     background-color: var(--cosmos-status-badge-surface);
@@ -83,7 +83,7 @@
     --vaadin-badge-text-color: var(--cosmos-error-color);
 }
 .admin-queue-cleanup-explanation {
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .admin-queue-cleanup-success {
     color: var(--cosmos-success-color);
@@ -106,7 +106,7 @@
     border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .admin-queue-cleanup-info > vaadin-icon {
     width: 16px;

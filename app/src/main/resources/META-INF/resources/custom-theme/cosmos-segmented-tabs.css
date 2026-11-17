@@ -33,7 +33,7 @@
     border: 1px solid transparent;
     border-radius: 6px;
     color: var(--cosmos-text-secondary-color);
-    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-align: center;
     justify-content: center;
     cursor: pointer;
@@ -79,7 +79,7 @@
     margin: 0 0 6px;
     padding: 0;
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .cosmos-segmented-tabs vaadin-tab > * {
     cursor: inherit;

@@ -30,13 +30,13 @@
 .two-factor-introduction-title {
     margin: 4px 0 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-heading-s)/1.3 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-heading-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     letter-spacing: -0.02em;
     overflow-wrap: anywhere;
 }
 .two-factor-introduction .cosmos-panel-description {
     max-width: 360px;
-    font: 400 var(--cosmos-font-size-l)/1.7 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .two-factor-view #two-factor-panel.two-factor-introduction > .cosmos-panel-footer {
@@ -135,7 +135,7 @@
     align-items: center;
     gap: 8px;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 1.2px;
 }
@@ -158,7 +158,7 @@
     border-radius: 8px;
     background: transparent;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     text-decoration: none;
 }
 .two-factor-setup .two-factor-app-links > a > vaadin-icon {
@@ -174,7 +174,7 @@
 .two-factor-app-compatibility {
     gap: 8px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .two-factor-app-compatibility > vaadin-icon {
     width: 14px;
@@ -196,7 +196,7 @@
     width: 100%;
     min-width: 0;
     margin: 0;
-    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     --fc-otp-field-slot-width: clamp(24px, calc((100vw - 136px) / 6), 44px);
     --fc-otp-field-slot-height: 44px;
     --fc-otp-field-slot-gap: 6px;
@@ -232,7 +232,7 @@
     margin: 0 0 6px;
     padding: 0;
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .two-factor-otp::part(required-indicator) {
     position: static;
@@ -242,7 +242,7 @@
     width: auto;
     margin: 0;
     padding: 0;
-    font: 500 var(--cosmos-font-size-l)/14px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-l)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .two-factor-otp::part(required-indicator)::after {
     content: "•";
@@ -314,7 +314,7 @@
     padding-bottom: 8px;
     border-bottom: 1px solid var(--cosmos-border-color);
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-mfa-settings .mfa-config-heading > vaadin-icon,
 .cosmos-mfa-settings .mfa-guide-item > vaadin-icon {
@@ -343,7 +343,7 @@
 }
 .cosmos-mfa-settings .mfa-guide-item-title {
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-mfa-settings .mfa-role-guide > hr {
     width: 100%;
@@ -429,7 +429,7 @@
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 .two-factor-account-entry vaadin-badge[theme~="success"] {
@@ -456,7 +456,7 @@
     padding: 16px 24px;
 }
 .support-tickets vaadin-grid vaadin-badge {
-    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     border-radius: 4px;
 }
 .support-instructions .portal-confirm-explanation {
@@ -485,7 +485,7 @@
 
 .cosmos-theme vaadin-text-area.support-message-input::part(label) {
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     margin: 0 0 6px;
     padding: 0;
 }
@@ -530,7 +530,7 @@ vaadin-badge.support-ticket-unread {
     margin-bottom: 0;
 }
 .support-filter-drawer #support-filter-assignment vaadin-radio-button > label[slot="label"] {
-    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .support-filter-drawer #support-filter-assignment vaadin-radio-button[checked] > label[slot="label"] {

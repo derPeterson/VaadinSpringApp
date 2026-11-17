@@ -7,7 +7,7 @@
 /** Dateien, die eigene Farbwerte enthalten dürfen: Palette, Hintergrundszene, Google-Markenfarben. */
 const colorSourceFiles = [
   '**/custom-theme/cosmos-palette.css',
-  '**/custom-theme/cosmos-background-*.css',
+  '**/custom-theme/cosmos-background.css',
   '**/custom-theme/cosmos-external-login.css',
 ];
 

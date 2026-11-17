@@ -28,16 +28,9 @@ class CosmosThemeStylesheetsTest {
   private static final String THEME_DIRECTORY = "custom-theme/";
   private static final String RESOURCE_ROOT = "/META-INF/resources/";
 
-  /**
-   * Dateien mit eigenem Ladeweg: Mailvorlagen, OTP-Schattenwurzel und die zweite
-   * Hintergrundvariante.
-   */
+  /** Dateien mit eigenem Ladeweg: Mailvorlagen und OTP-Schattenwurzel. */
   private static final Set<String> SEPARATELY_LOADED_STYLESHEETS =
-      Set.of(
-          "custom-theme/email-fonts.css",
-          "custom-theme/cosmos-mfa-otp.css",
-          "custom-theme/cosmos-background-base.css",
-          "custom-theme/cosmos-background-advanced.css");
+      Set.of("custom-theme/email-fonts.css", "custom-theme/cosmos-mfa-otp.css");
 
   @Test
   void applicationLoadsGlobalLayersInDocumentedOrder() {

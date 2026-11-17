@@ -261,11 +261,9 @@ menschliche beziehungsweise ausdrücklich freizugebende Integrationsprüfungen.
 Es wurden keine echten E-Mails versendet und keine vorhandenen Entwicklerdaten
 oder gespeicherten Passwörter als Testdaten verwendet.
 
-Der gemeldete [Scrollfehler](../BUGS.md#scrollbereiche-erneut-fehlerhaft) bleibt
-auf ausdrücklichen Benutzerwunsch zurückgestellt. Betroffene Ansicht, konkrete
-Reproduktion sowie gewünschtes Aussehen und Verhalten müssen noch gemeinsam
-geklärt werden. Normale Erreichbarkeit wurde geprüft; das ersetzt diesen Nachtest
-nicht. Der wartende Bedarf bleibt in [testbedarf.md](testbedarf.md).
+Der damals gemeldete Scrollfehler (verändertes Verhalten und Farben der
+Scrollleisten nach Umbauten) ist auf dem Branch `design/aura-theme` mit der
+einheitlichen Scrollleiste behoben; COMPONENT-06 besteht dort in DE und EN.
 
 Die Mailqueue-Erweiterung ändert das aktuelle H2-Schema. Für ältere lokale
 Entwicklungsdatenbanken ist eine frische Datenbank erforderlich; eine Migration

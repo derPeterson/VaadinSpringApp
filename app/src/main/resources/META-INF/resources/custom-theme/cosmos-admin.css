@@ -67,7 +67,7 @@ vaadin-app-layout.cosmos-admin {
     border-radius: var(--cosmos-badge-radius);
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
-    line-height: 1.4;
+    line-height: var(--cosmos-line-height-tight);
     letter-spacing: 0.2px;
 }
 
@@ -471,7 +471,7 @@ vaadin-app-layout.cosmos-admin {
     color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
-    line-height: 20px;
+    line-height: var(--cosmos-line-height-m);
 }
 @media (max-width: 600px) {
     .cosmos-unsaved-changes-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
@@ -615,7 +615,7 @@ vaadin-app-layout.cosmos-reference-admin {
     padding-inline-start: 0;
     background: var(--cosmos-page-background);
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-m)/1.6 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 
 vaadin-app-layout.cosmos-reference-admin .cosmos-topbar {
@@ -666,7 +666,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-footer {
     border-top: 1px solid var(--cosmos-border-color);
     background: var(--cosmos-page-background);
     text-align: center;
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-sidebar {
     min-height: 0;
@@ -678,7 +678,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-portal-label {
     box-sizing: border-box;
     padding: 0 12px 8px;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-form-card,
@@ -731,14 +731,14 @@ vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-heading, .cosmos-conf
 }
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-title, .cosmos-config-group-title) {
     margin: 0;
-    font: 600 var(--cosmos-font-size-2xl)/22px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
     color: var(--cosmos-text-color);
     letter-spacing: -0.025em;
 }
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-description, .cosmos-config-group-description) {
     display: block;
     margin: 4px 0 0;
-    font: 400 var(--cosmos-font-size-s)/19px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 vaadin-app-layout.cosmos-reference-admin
@@ -746,7 +746,7 @@ vaadin-app-layout.cosmos-reference-admin
     padding: 6px 10px;
     border-radius: 6px;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin
     :is(.cosmos-config-setting-count, .cosmos-panel-meta, .admin-user-active-filter-count):not(
@@ -786,7 +786,7 @@ vaadin-app-layout.cosmos-reference-admin
     background: transparent;
     color: var(--cosmos-text-secondary-color);
     border: 0;
-    font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
     flex: none;
     min-height: 0;
     height: auto;
@@ -827,7 +827,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-field {
     gap: 6px;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-field > vaadin-horizontal-layout > span {
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     color: var(--cosmos-label-color);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-config-required::after {
@@ -862,7 +862,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     padding: 10px 0;
     border: 0;
     background: transparent;
-    font: 500 var(--cosmos-font-size-s)/19.2px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     --vaadin-switch-width: 34px;
     --vaadin-switch-height: 20px;
     --vaadin-switch-background: var(--cosmos-base-color);
@@ -877,7 +877,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     --vaadin-switch-label-color: var(--cosmos-label-color);
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 500;
-    --vaadin-switch-label-line-height: 19.2px;
+    --vaadin-switch-label-line-height: var(--cosmos-line-height-m);
     --vaadin-switch-label-padding: 0;
 }
 .cosmos-reference-admin vaadin-switch.cosmos-config-switch::part(label) {
@@ -927,7 +927,7 @@ vaadin-app-layout.cosmos-reference-admin vaadin-checkbox[checked]::part(checkbox
     border-color: var(--cosmos-primary-background);
 }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox::part(label) {
-    font: 500 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     padding-inline-start: 8px;
 }
 vaadin-app-layout.cosmos-reference-admin vaadin-integer-field::part(increase-button),
@@ -1006,7 +1006,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     align-items: stretch;
 }
 .admin-reference-drawer :is(vaadin-radio-group, vaadin-checkbox-group)::part(label) {
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     color: var(--cosmos-label-color);
     margin-bottom: 8px;
     padding: 0;
@@ -1024,7 +1024,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     background: var(--cosmos-selection-background);
     border: 1px solid var(--cosmos-icon-border-color);
     border-radius: 5px;
-    font: 500 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 .admin-reference-drawer .admin-filter-choices::part(group-field) {
     display: grid;
@@ -1044,7 +1044,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox > label[slot="label"] {
     padding: 0;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox[checked] {
     border-color: var(--cosmos-primary-background);
@@ -1069,7 +1069,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     background: var(--cosmos-base-color);
     border-radius: 9px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .admin-reference-drawer .admin-filter-hint > vaadin-icon {
     width: 16px;
@@ -1078,7 +1078,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
 }
 .admin-reference-drawer .admin-help-description {
     display: block;
-    font: 400 var(--cosmos-font-size-m)/21px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .admin-reference-drawer :is(.admin-help-default, .admin-help-rules) {
@@ -1087,12 +1087,12 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     background: var(--cosmos-base-color);
     padding: 16px;
     margin-top: 18px;
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .admin-reference-drawer .admin-help-rules h3 {
     margin: 0 0 8px;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
 }
 .admin-reference-drawer .admin-help-rules ul {
@@ -1110,7 +1110,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     border-radius: 5px;
     padding: 4px 8px;
     color: var(--cosmos-primary-text-color);
-    font: var(--cosmos-font-size-s)/18px monospace;
+    font: var(--cosmos-font-size-s)/var(--cosmos-line-height-s) monospace;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-hero {
     overflow: hidden;
@@ -1137,19 +1137,19 @@ vaadin-app-layout.cosmos-reference-admin .admin-dashboard-copy {
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-eyebrow {
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-copy h2 {
     margin: 0;
     color: var(--cosmos-heading-color);
-    font: 700 var(--cosmos-font-size-display)/38px var(--cosmos-font-family);
+    font: 700 var(--cosmos-font-size-display)/var(--cosmos-line-height-display) var(--cosmos-font-family);
     letter-spacing: -0.03em;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-copy > span {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/23px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-image {
     display: block;
@@ -1170,7 +1170,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-dashboard-hint {
     padding: 16px 24px;
     border-top: 1px solid var(--cosmos-border-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/19px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-hint > vaadin-icon {
     width: 16px;
@@ -1198,11 +1198,11 @@ vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcut > div:nth-chi
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcut h3 {
     margin: 0 0 5px;
-    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcut span {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-notification-columns {
     display: grid;
@@ -1256,11 +1256,11 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-preview-co
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-preview-subject {
     display: block;
     margin: 12px 0 8px;
-    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-body {
     white-space: pre-wrap;
-    font: 400 var(--cosmos-font-size-s)/21px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipients {
     display: flex;
@@ -1275,7 +1275,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-notification-preview-recipient-l
     gap: 6px;
     flex-basis: 100%;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-notification-preview-recipient-label > vaadin-icon {
@@ -1290,7 +1290,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-notification-preview-meta {
     gap: 8px;
     margin: 0;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-preview-header {
     justify-content: space-between;
@@ -1310,7 +1310,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipient-
     inset-block-start: 23px;
     height: 40px;
     max-width: calc(100% - 109px);
-    font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin
     .cosmos-notification-compose-recipient-field:has(vaadin-multi-select-combo-box[has-value])
@@ -1331,7 +1331,7 @@ vaadin-app-layout.cosmos-reference-admin
 vaadin-app-layout.cosmos-reference-admin #admin-notifications-everyone-recipients input[slot="input"] {
     color: var(--cosmos-text-tertiary-color);
     -webkit-text-fill-color: var(--cosmos-text-tertiary-color);
-    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     opacity: 1;
 }
 vaadin-app-layout.cosmos-reference-admin #admin-notifications-everyone-recipients::part(label) {
@@ -1373,12 +1373,12 @@ vaadin-app-layout.cosmos-reference-admin #admin-notifications-recipients vaadin-
 }
 .admin-notification-recipient-label > span {
     display: block;
-    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .admin-notification-recipient-label > span + span {
     margin-top: 2px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/17px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 /* Die native Textarea bleibt bedienbar; nur ihr Host bekommt den vertikalen Griff. */
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field {
@@ -1394,7 +1394,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field::part(in
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field > textarea {
     padding: 0;
     margin: 0;
-    font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-section--notifications .cosmos-panel-footer {
     display: block;
@@ -1425,7 +1425,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-details-to
     border: 0;
     background: transparent;
     color: var(--cosmos-heading-color);
-    font: 600 var(--cosmos-font-size-s)/16.8px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-details-toggle::part(label) {
     justify-content: flex-start;
@@ -1445,7 +1445,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipient-
     max-height: 220px;
     overflow: auto;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipient-list > div {
     display: grid;
@@ -1534,12 +1534,12 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-icon > vaadin
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-title {
     margin: 0;
-    font: 700 var(--cosmos-font-size-m)/19.5px var(--cosmos-font-family);
+    font: 700 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-meta {
     margin-top: 4px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-notification-compose-status, .cosmos-notification-sent-status) {
     height: auto;
@@ -1547,7 +1547,7 @@ vaadin-app-layout.cosmos-reference-admin :is(.cosmos-notification-compose-status
     padding: 4px 7px;
     gap: 5px;
     border-radius: 6px;
-    font: 400 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin
     :is(.cosmos-notification-compose-status, .cosmos-notification-sent-status)[has-icon]::part(icon) {
@@ -1563,7 +1563,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-status {
     color: var(--cosmos-success-color);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-actions > vaadin-button {
-    font: 600 var(--cosmos-font-size-s)/16.8px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-actions {
     display: flex;
@@ -1592,7 +1592,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-content {
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-body {
     margin: 0;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20.4px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin :is(.admin-history-content-heading, .admin-notification-preview-heading) {
     display: flex;
@@ -1600,7 +1600,7 @@ vaadin-app-layout.cosmos-reference-admin :is(.admin-history-content-heading, .ad
     gap: 6px;
     margin: 0;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-2xs)/16.5px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -1618,7 +1618,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-history-note {
     padding-top: 8px;
     border-top: 1px solid color-mix(in srgb, var(--cosmos-color-white) 5%, transparent);
     color: var(--cosmos-text-tertiary-color);
-    font: 400 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-history-note > span:last-child {
     margin-left: auto;
@@ -1709,7 +1709,7 @@ vaadin-app-layout.cosmos-reference-admin
 }
 vaadin-app-layout.cosmos-reference-admin :is(vaadin-text-area, vaadin-multi-select-combo-box)::part(label) {
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     margin: 0 0 6px;
     padding: 0;
 }
@@ -1732,11 +1732,11 @@ vaadin-app-layout.cosmos-reference-admin .admin-dashboard-access-heading {
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-access-heading h2 {
     margin: 0;
     text-align: left;
-    font: 600 var(--cosmos-font-size-2xl)/22px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-dashboard-access-heading > span {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 
 @media (max-width: 767px) {
@@ -1754,7 +1754,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-preview-empty {
     gap: 12px;
     min-height: 210px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-preview-empty > vaadin-icon {
     width: 28px;
@@ -1784,7 +1784,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-grid-empty {
     gap: 8px;
     padding: 48px 24px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     text-align: center;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-grid-empty > vaadin-icon {
@@ -1821,10 +1821,10 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-panel-header 
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-panel-description {
     margin-top: 4px;
-    line-height: 19px;
+    line-height: var(--cosmos-line-height-m);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card :is(vaadin-text-field, vaadin-text-area)::part(label) {
-    line-height: 18px;
+    line-height: var(--cosmos-line-height-s);
     margin-bottom: 6px;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-field::part(input-field) {
@@ -1871,7 +1871,7 @@ vaadin-app-layout.cosmos-reference-admin a.admin-smtp-link {
     background: transparent;
     text-decoration: none;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin a.admin-smtp-link > vaadin-icon {
     width: 16px;
@@ -1893,7 +1893,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::par
     padding: 6px 0 0;
     color: var(--cosmos-text-secondary-color);
     background: transparent;
-    font: 400 var(--cosmos-font-size-xs)/18.7px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     transition: none;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::part(helper-text)::before {
@@ -1914,19 +1914,19 @@ vaadin-dialog.admin-reference-drawer.admin-config-help .cosmos-panel-heading {
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .cosmos-panel-title {
     margin: 0;
-    font: 600 var(--cosmos-font-size-title)/28px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-title)/var(--cosmos-line-height-xl) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .cosmos-panel-description {
     display: block;
     margin-top: 2px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 /* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
 vaadin-dialog.admin-reference-drawer.admin-config-help::part(content) {
     padding: 20px !important;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20.4px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-group {
     display: block;
@@ -1934,18 +1934,18 @@ vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-group {
     color: var(--cosmos-primary-text-color);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font: 600 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-field-title {
     margin: 0 0 12px;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-description {
     display: block;
     white-space: pre-line;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/20.4px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-default {
     display: flex;
@@ -1960,7 +1960,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-default {
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-default > span:first-child {
     flex-shrink: 0;
-    font: 400 var(--cosmos-font-size-xs)/18.7px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-default > span:last-child {
     min-width: 0;
@@ -1968,7 +1968,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-default > spa
     text-align: right;
     color: var(--cosmos-label-color);
     font:
-        400 var(--cosmos-font-size-xs)/18.7px ui-monospace,
+        400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) ui-monospace,
         var(--cosmos-font-family-mono);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help :is(.admin-help-rules, .admin-help-placeholders) {
@@ -1984,7 +1984,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help :is(.admin-help-rules, .a
     color: var(--cosmos-primary-text-color);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font: 600 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-rules ul {
     list-style: disc;
@@ -2022,7 +2022,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-token {
     background: color-mix(in srgb, var(--cosmos-color-primary) 5%, transparent);
     color: var(--cosmos-primary-text-color);
     font:
-        400 var(--cosmos-font-size-xs)/17.6px ui-monospace,
+        400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) ui-monospace,
         var(--cosmos-font-family-mono);
 }
 vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-config-help::part(header) {
@@ -2083,7 +2083,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-hint {
     display: block;
     width: calc(100% - 36px);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/18.7px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-field::part(helper-text) {
     position: absolute;

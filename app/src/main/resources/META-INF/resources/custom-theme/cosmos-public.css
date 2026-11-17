@@ -12,7 +12,7 @@
     box-sizing: border-box;
     background: var(--cosmos-page-background);
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-m)/1.6 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-header {
     background: var(--cosmos-page-background);
@@ -36,7 +36,7 @@
     flex: 0 1 auto;
     min-width: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
     text-decoration: none;
 }
 .cosmos-reference-public .public-brand > span {
@@ -90,7 +90,7 @@
     padding: 0 12px;
     border-color: transparent;
     background: transparent;
-    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-navigation > vaadin-button::part(prefix) {
     margin-inline-start: 0;
@@ -123,7 +123,7 @@
     border-radius: 4px;
     background: transparent;
     color: var(--cosmos-text-secondary-color);
-    font: 500 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-languages vaadin-button[aria-pressed="true"] {
     border: 1px solid var(--cosmos-primary-background);
@@ -154,18 +154,18 @@
 .cosmos-reference-public .public-kicker {
     display: block;
     color: var(--cosmos-primary-text-color);
-    font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.05em;
 }
 .cosmos-reference-public .public-page-heading h1 {
     margin: 0;
     color: var(--cosmos-heading-color);
-    font: 700 var(--cosmos-font-size-heading-l)/36px var(--cosmos-font-family);
+    font: 700 var(--cosmos-font-size-heading-l)/var(--cosmos-line-height-heading-l) var(--cosmos-font-family);
     letter-spacing: -0.025em;
 }
 .cosmos-reference-public .public-page-description {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-cards {
     display: flex;
@@ -227,7 +227,7 @@
 }
 .cosmos-reference-public .public-panel .cosmos-headline {
     margin: 0;
-    font: 600 var(--cosmos-font-size-title)/25px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-title)/var(--cosmos-line-height-xl) var(--cosmos-font-family);
     letter-spacing: -0.025em;
     text-align: left;
     color: var(--cosmos-text-color);
@@ -235,7 +235,7 @@
 .cosmos-reference-public .public-panel .cosmos-panel-description {
     display: block;
     margin-top: 4px;
-    font: 400 var(--cosmos-font-size-s)/19px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .public-email-outcome .cosmos-reference-public .public-panel .cosmos-panel-description {
@@ -251,7 +251,7 @@
     padding: 24px;
     background: var(--cosmos-page-background);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-panel-body:empty {
     display: none;
@@ -267,7 +267,7 @@
     border-radius: 9px;
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-panel-body > .cosmos-panel-hint > vaadin-icon {
     width: 16px;
@@ -312,7 +312,7 @@
     justify-content: flex-start;
     align-items: center;
     gap: 8px;
-    font: 400 var(--cosmos-font-size-s)/19px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-panel-footer > .cosmos-intro > span {
     color: var(--cosmos-text-secondary-color);
@@ -339,7 +339,7 @@
 }
 .cosmos-reference-public .public-panel-body .cosmos-forgot a {
     color: var(--cosmos-primary-text-color);
-    font: 400 var(--cosmos-font-size-s)/1.6 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
     text-decoration: none;
 }
 /* Öffentliche Registrierung: dieselbe Bildschirmgrenze und dieselben Feldabstände. */
@@ -365,7 +365,7 @@
     align-items: flex-start;
     text-align: left;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/1.8 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-panel-body .cosmos-form-text {
     font: inherit;
@@ -382,7 +382,7 @@
     border-top: 1px solid var(--cosmos-border-color);
     background: var(--cosmos-page-background);
     color: var(--cosmos-text-tertiary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-align: center;
 }
 .cosmos-reference-public .public-panel .cosmos-panel-icon:has(> .cosmos-status-icon--warning) {
@@ -423,24 +423,24 @@
     padding: 40px 40px 24px;
 }
 .cosmos-reference-public .public-home .portal-home-copy {
-    font: 400 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-home .portal-home-kicker {
     margin: 0;
-    font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.05em;
 }
 .cosmos-reference-public .public-home .portal-home-copy h2 {
     max-width: none;
     margin: 12px 0 16px;
     color: var(--cosmos-text-color);
-    font: 700 var(--cosmos-font-size-display)/1.35 var(--cosmos-font-family);
+    font: 700 var(--cosmos-font-size-display)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     letter-spacing: normal;
 }
 .cosmos-reference-public .public-home .portal-home-description {
     max-width: 460px;
     margin: 0;
-    font: 400 var(--cosmos-font-size-m)/1.9 var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 .cosmos-reference-public .public-home .portal-home-actions {
     margin-top: 22px;
@@ -550,11 +550,11 @@
     }
     .cosmos-reference-public .public-page-heading h1 {
         font-size: var(--cosmos-font-size-heading-m);
-        line-height: 32px;
+        line-height: var(--cosmos-line-height-heading-m);
     }
     .cosmos-reference-public .public-page-description {
         font-size: var(--cosmos-font-size-s);
-        line-height: 16px;
+        line-height: var(--cosmos-line-height-xs);
     }
     .cosmos-reference-public .public-panel > .cosmos-panel-header {
         padding: 20px;
@@ -593,7 +593,7 @@
     border-color: var(--cosmos-primary-background);
 }
 .cosmos-reference-public vaadin-checkbox::part(label) {
-    font: 400 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
     padding-inline-start: 8px;
 }
@@ -613,7 +613,7 @@
     --vaadin-switch-label-color: var(--cosmos-text-secondary-color);
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 400;
-    --vaadin-switch-label-line-height: 19.2px;
+    --vaadin-switch-label-line-height: var(--cosmos-line-height-m);
     /* Grid der Vaadin-Basisstile: das native input liegt über der Bahn und bleibt klickbar. */
     display: inline-grid;
     align-items: center;
@@ -629,7 +629,7 @@
     margin: 0;
     padding: 0;
     white-space: nowrap;
-    font: 400 var(--cosmos-font-size-s)/19.2px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 .cosmos-reference-public .cosmos-remember vaadin-switch[focus-ring]::part(switch) {

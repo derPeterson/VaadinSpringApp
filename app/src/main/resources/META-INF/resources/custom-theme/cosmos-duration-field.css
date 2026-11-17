@@ -101,7 +101,7 @@
 
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) input {
     text-align: center;
-    font: 400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 /* Öffentliche Parts halten die Einheit ganz rechts hinter Löschen und Plus. */
@@ -123,7 +123,7 @@
     padding-inline: 10px 0;
     border-inline-start: 1px solid var(--cosmos-control-border-color);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-duration-field > vaadin-integer-field[focused] > .cosmos-duration-unit-label {
@@ -205,7 +205,7 @@
     padding: 0;
     background: transparent;
     color: inherit;
-    font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-duration-unit-select vaadin-select-value-button > vaadin-select-item::part(checkmark) {
@@ -239,7 +239,7 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     border: 1px solid transparent;
     border-radius: 8px;
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-selection-color-text: var(--cosmos-primary-text-color);
 }
 

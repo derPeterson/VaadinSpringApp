@@ -12,34 +12,30 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 class CosmosBackgroundComponentTest {
   @Test
-  void applicationLoadsExactlyTheSelectedBackgroundResource() {
+  void applicationLoadsExactlyTheSharedBackgroundResource() {
     List<String> backgroundStylesheets =
         Arrays.stream(Application.class.getAnnotationsByType(StyleSheet.class))
             .map(StyleSheet::value)
-            .filter(stylesheetPath -> stylesheetPath.startsWith("custom-theme/cosmos-background-"))
+            .filter(stylesheetPath -> stylesheetPath.startsWith("custom-theme/cosmos-background"))
             .toList();
 
     assertEquals(List.of(CosmosBackgroundComponent.STYLESHEET), backgroundStylesheets);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"base", "advanced"})
-  void bothSwitchableBackgroundsAreAvailableFromTheClasspath(String variantName) throws Exception {
+  @Test
+  void backgroundStylesheetIsDecorativeAndRespectsReducedMotion() throws Exception {
     try (InputStream stylesheetStream =
         getClass()
-            .getResourceAsStream(
-                "/META-INF/resources/custom-theme/cosmos-background-" + variantName + ".css")) {
-      assertNotNull(stylesheetStream, variantName);
+            .getResourceAsStream("/META-INF/resources/" + CosmosBackgroundComponent.STYLESHEET)) {
+      assertNotNull(stylesheetStream);
       String stylesheetContent =
           new String(stylesheetStream.readAllBytes(), StandardCharsets.UTF_8);
 
-      assertTrue(stylesheetContent.contains("pointer-events: none"), variantName);
-      assertTrue(stylesheetContent.contains("prefers-reduced-motion: reduce"), variantName);
+      assertTrue(stylesheetContent.contains("pointer-events: none"));
+      assertTrue(stylesheetContent.contains("prefers-reduced-motion: reduce"));
     }
   }
 

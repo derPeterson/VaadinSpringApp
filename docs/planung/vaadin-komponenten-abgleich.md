@@ -42,13 +42,11 @@ und die Wiederverwendung vorhandener nativer Cosmos-Bausteine. Gestaltung und
 Fachverhalten bleiben erhalten, soweit keine andere Entscheidung getroffen wird.
 Die unten aufgeführten Kandidaten sind noch keine pauschale Umbaufreigabe.
 
-Scrollverhalten, eine allgemeine Smartphone-Tooltip-Lösung, endgültige
+Eine allgemeine Smartphone-Tooltip-Lösung, endgültige
 Hintergrundauswahl, sichtbare Bereinigungshistorie, Release-/Neuigkeitenablauf,
 Passkeys und Hosting gehören zu eigenen Themen nach dem Komponentenumbau.
-Die offenen Aufgaben bleiben in [TODO](../../TODO.md); der zurückgestellte
-Scrollfehler samt Nachtest bleibt in [BUGS](../../BUGS.md) und
-[Testbedarf](../testbedarf.md) erhalten. Diese Abgrenzung behebt oder erledigt
-die betreffenden Aufgaben nicht.
+Die offenen Aufgaben bleiben in [TODO](../../TODO.md). Diese Abgrenzung behebt
+oder erledigt die betreffenden Aufgaben nicht.
 
 ## Offen: AvatarGroup und Empfängerliste gemeinsam sichten
 

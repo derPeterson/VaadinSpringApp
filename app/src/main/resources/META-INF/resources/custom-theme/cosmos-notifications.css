@@ -408,7 +408,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 .cosmos-notification-empty-title {
     margin: 0;
     color: var(--cosmos-text-color);
-    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-notification-inbox-rows {
@@ -665,7 +665,7 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     padding: var(--cosmos-space-xs) var(--cosmos-space-s);
     font-size: var(--cosmos-badge-font-size);
     font-weight: var(--cosmos-badge-font-weight);
-    line-height: 1.4;
+    line-height: var(--cosmos-line-height-tight);
     white-space: nowrap;
 }
 
@@ -1002,7 +1002,7 @@ vaadin-app-layout.cosmos-reference-admin
     border-radius: 10px;
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-notification-compose-avatar-group::part(content) {
@@ -1021,7 +1021,7 @@ vaadin-app-layout.cosmos-reference-admin
     border: 1px solid transparent;
     border-radius: 8px;
     color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     --vaadin-focus-ring-width: 0px;
     outline: none;
 }
@@ -1318,12 +1318,12 @@ vaadin-app-layout.cosmos-reference-admin
 
 .cosmos-reference-portal #notifications-inbox .cosmos-panel-title {
     margin: 0;
-    font: 600 var(--cosmos-font-size-title)/28px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-title)/var(--cosmos-line-height-xl) var(--cosmos-font-family);
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-panel-description {
     margin: 2px 0 0;
-    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-counts {
@@ -1448,7 +1448,7 @@ vaadin-app-layout.cosmos-reference-admin
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-time {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay, .cosmos-reference-admin)
@@ -1464,7 +1464,7 @@ vaadin-app-layout.cosmos-reference-admin
     border-radius: 4px;
     color: var(--cosmos-text-secondary-color);
     background: transparent;
-    font: 400 var(--cosmos-font-size-2xs)/14px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     white-space: nowrap;
 }
 
@@ -1496,7 +1496,7 @@ vaadin-app-layout.cosmos-reference-admin
     padding: 2px 6px;
     border-radius: 5px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-2xs)/13px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     white-space: nowrap;
 }
 
@@ -1529,7 +1529,7 @@ vaadin-app-layout.cosmos-reference-admin
     border: 0;
     background: transparent;
     color: var(--cosmos-heading-color);
-    font: 600 var(--cosmos-font-size-l)/20px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     white-space: normal;
     text-align: left;
 }
@@ -1544,7 +1544,7 @@ vaadin-app-layout.cosmos-reference-admin
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-message {
     margin-top: 4px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-s)/19.5px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-actions {
@@ -1617,7 +1617,7 @@ vaadin-app-layout.cosmos-reference-admin
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-range {
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     white-space: nowrap;
 }
 
@@ -1668,7 +1668,7 @@ vaadin-app-layout.cosmos-reference-admin
     padding: 12px 24px;
     border-top: 1px solid color-mix(in srgb, var(--cosmos-color-white) 4%, transparent);
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-align: center;
 }
 
@@ -1712,15 +1712,15 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
 
 #notifications-preview.cosmos-reference-overlay .cosmos-panel-title {
     font-size: var(--cosmos-font-size-title);
-    line-height: 25px;
-    font: 600 var(--cosmos-font-size-2xl)/22.4px var(--cosmos-font-family);
+    line-height: var(--cosmos-line-height-xl);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-panel-description {
     font-size: var(--cosmos-font-size-s);
-    line-height: 18px;
+    line-height: var(--cosmos-line-height-s);
     margin: 3px 0 0;
-    font: 400 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-toolbar {
@@ -1774,7 +1774,7 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
     grid-column: 1;
     margin: 0;
     width: 100%;
-    font: 600 var(--cosmos-font-size-s)/18px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-align: left;
 }
 
@@ -1832,12 +1832,12 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-title {
     margin: 0;
     color: var(--cosmos-heading-color);
-    font: 600 var(--cosmos-font-size-title)/27px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-title)/var(--cosmos-line-height-xl) var(--cosmos-font-family);
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-body {
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-m)/24.05px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-actions {
@@ -1921,12 +1921,12 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(footer
 }
 
 .portal-notification-confirmation .cosmos-panel-title {
-    font: 600 var(--cosmos-font-size-2xl)/22px var(--cosmos-font-family);
+    font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 
 .portal-notification-confirmation .cosmos-panel-description {
     margin-top: 2px;
-    font: 400 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 
 .portal-notification-confirmation .cosmos-dialog-actions {
@@ -2065,7 +2065,7 @@ vaadin-combo-box-item.portal-pagination-option {
     padding: 7px 9px;
     gap: 12px;
     border-radius: 5px;
-    font: 500 var(--cosmos-font-size-s)/16.8px var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
 }
 
@@ -2180,7 +2180,7 @@ vaadin-combo-box-item.portal-pagination-option {
     color: var(--cosmos-text-secondary-color);
     grid-column: 1;
     margin: 5px 0;
-    font: 400 var(--cosmos-font-size-xs)/16.5px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     -webkit-line-clamp: 1;
 }
 
@@ -2234,7 +2234,7 @@ vaadin-combo-box-item.portal-pagination-option {
     gap: 8px;
     margin-top: 14px;
     color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-align: center;
 }
 

@@ -7,16 +7,25 @@
   zweimal an einer bereits wieder entfernten Meldungskarte („Element is not attached to the
   DOM“ bzw. nicht gefunden), bestand aber in EN am selben Image. Wartebedingung auf die
   Meldung prüfen, ohne Timeouts pauschal zu erhöhen; danach DE/EN erneut ausführen.
-- **Scrollbereiche nach Regression prüfen – wartend:** Betroffene Ansicht,
-  konkretes Fehlerbild und Reproduktionsschritte sind noch zu klären.
-  Der Benutzer möchte Aussehen und Verhalten später gemeinsam festlegen;
-  keine Scrollgestaltung in der Nachtarbeit ändern. Normale Erreichbarkeit wurde
-  geprüft; das ersetzt den gezielten Nachtest nicht.
-  Nach der Behebung die betroffenen Scrollpanes gezielt prüfen: Inhalte und
-  Aktionen bleiben vollständig erreichbar, Scrollen funktioniert wie vorgesehen.
-  Passende bestehende Browserfälle wiederverwenden beziehungsweise ergänzen.
-  Ein Browserlauf benötigt eine Freigabe für den Behebungsauftrag.
-  Fehlerdetails: [Scrollbereiche erneut fehlerhaft](../BUGS.md#scrollbereiche-erneut-fehlerhaft).
+
+- **Aura-Nacharbeiten an Buttons und Auswahllisten – wartend:** Auf Benutzerwunsch erst in
+  der gemeinsamen Browserrunde am Schluss prüfen. Szenarien: Icon-only-Buttons (u. a.
+  Schließen im Benachrichtigungs-Popover, Tabellenaktionen, Pagination, Inbox-Werkzeuge)
+  sind horizontal mittig (Abweichung 0 px); Overlays zeigen keinen zusätzlichen Umrissring;
+  Status-/Rollen-Chips im Benutzerfilter zeigen ihren Text senkrecht mittig; Secondary-Buttons mit Rahmen wie
+  „Zurück“ zeigen weißen Text und blaues Icon; Textlinks in `.two-factor-help-row` zeigen
+  beim Überfahren nur hellere Schrift ohne Fläche; Cosmos-Auswahllisten
+  (`cosmos-reference-option`) haben bei Fokus/Hover genau eine Fläche ohne Randstreifen;
+  die Seitengrößenauswahl zeigt zweistellige Werte vollständig. Passende bestehende Fälle
+  in `cosmos-components` bzw. den Pagination-/2FA-Suites erweitern, DE und EN.
+
+- **Einheitlicher Hintergrund – wartend:** Auf Benutzerwunsch in der gemeinsamen
+  Browserrunde am Schluss. `BackgroundVariantsBrowserTest` und `LoginLayoutBrowserTest`
+  sind auf den einzigen Hintergrund (`cosmos-background.css`) umgestellt; zusätzlich bei
+  1440/1280/1100/390 px prüfen, dass Mond und Funkelsterne weder Seitenüberschrift noch
+  Seitenbeschreibung überdecken. Neu: dritte Sternschnuppe, Wanderstern (`cosmos-drift`,
+  rechts nach links) und Supernova (`cosmos-nova`) vorhanden; bei reduzierter Bewegung
+  Wanderstern ausgeblendet und Supernova ohne Animation.
 
 ## JUnit-Tests
 
