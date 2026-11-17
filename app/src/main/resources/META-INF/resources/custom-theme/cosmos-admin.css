@@ -71,14 +71,6 @@ vaadin-app-layout.cosmos-admin {
     letter-spacing: 0.2px;
 }
 
-.cosmos-admin-form-card {
-    max-width: 980px;
-}
-
-.cosmos-admin-users-card {
-    max-width: 1300px;
-}
-
 .cosmos-admin-form,
 .cosmos-admin-users-content,
 .cosmos-config-fields {
@@ -171,13 +163,6 @@ vaadin-app-layout.cosmos-admin {
     box-sizing: border-box;
     padding-top: var(--cosmos-space-2xl);
     border-top: var(--cosmos-border-width) solid var(--cosmos-card-border);
-}
-
-/* Abstand zwischen Hinweis und Aktionen in Konfiguration und Mail-Test. */
-
-.cosmos-config-card-footer,
-.cosmos-admin-section--mail .cosmos-panel-footer {
-    gap: var(--cosmos-space-4xl);
 }
 
 .cosmos-config-save-hint,
@@ -305,10 +290,6 @@ vaadin-app-layout.cosmos-admin {
     height: var(--cosmos-icon-size-em-m);
 }
 
-.cosmos-config-field {
-    min-width: 0;
-}
-
 .cosmos-config-field > vaadin-horizontal-layout > span,
 .cosmos-config-input-row > vaadin-checkbox > span[slot="label"] {
     color: var(--cosmos-text-secondary-color);
@@ -327,23 +308,7 @@ vaadin-app-layout.cosmos-admin {
     gap: var(--cosmos-space-xl);
 }
 
-/* Native Feldbeschriftungen bleiben über dem Input; Info daneben auf Inputhöhe. */
-
-/* 5. MAIL-TEST */
-
-.cosmos-mail-field-row {
-    align-items: end;
-}
-
-.cosmos-mail-field-row:has(vaadin-text-area) {
-    align-items: center;
-}
-
-.cosmos-mail-body-field {
-    min-height: 160px;
-}
-
-/* 6. BENUTZERVERWALTUNG / festgelegte Komponentenmaße, lokale Anordnung separat */
+/* 5. BENUTZERVERWALTUNG / festgelegte Komponentenmaße, lokale Anordnung separat */
 
 .cosmos-admin .admin-user-toolbar {
     padding-block: 0;
@@ -420,10 +385,6 @@ vaadin-app-layout.cosmos-admin {
     align-items: center;
 }
 
-.cosmos-admin .admin-user-pagination-numbers {
-    gap: var(--cosmos-space-xs);
-}
-
 /* Nur die Schrift der Pagination-Zusammenfassung wird dezenter dargestellt. */
 
 .cosmos-admin-users-card .admin-user-pagination-summary {
@@ -446,7 +407,7 @@ vaadin-app-layout.cosmos-admin {
     font-size: var(--cosmos-font-size-l);
 }
 
-/* 7. DIALOGE / gemeinsame Innenabstände und Aktionsleisten */
+/* 6. DIALOGE / gemeinsame Innenabstände und Aktionsleisten */
 
 /* Formularschutz als Variante des gemeinsamen nativen Bestätigungsdialogs. */
 .cosmos-unsaved-changes-dialog.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon {
@@ -990,14 +951,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     width: 100%;
     box-sizing: border-box;
 }
-.admin-reference-drawer-heading .cosmos-panel-heading {
-    flex: 1;
-    min-width: 0;
-}
-/* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
-.admin-reference-drawer::part(content) {
-    padding: 24px !important;
-}
 .admin-reference-drawer .admin-user-filters {
     display: flex;
     flex-direction: column;
@@ -1018,14 +971,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     gap: 12px;
     margin-bottom: 24px;
 }
-.admin-reference-drawer .admin-user-active-filter-count {
-    padding: 8px 10px;
-    color: var(--cosmos-primary-text-color);
-    background: var(--cosmos-selection-background);
-    border: 1px solid var(--cosmos-icon-border-color);
-    border-radius: 5px;
-    font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
-}
 .admin-reference-drawer .admin-filter-choices::part(group-field) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1040,11 +985,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
 }
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox::part(checkbox) {
     display: none;
-}
-.admin-reference-drawer .admin-filter-choices vaadin-checkbox > label[slot="label"] {
-    padding: 0;
-    color: var(--cosmos-text-secondary-color);
-    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox[checked] {
     border-color: var(--cosmos-primary-background);
@@ -1076,11 +1016,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     height: 16px;
     flex-shrink: 0;
 }
-.admin-reference-drawer .admin-help-description {
-    display: block;
-    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
-    color: var(--cosmos-text-secondary-color);
-}
 .admin-reference-drawer :is(.admin-help-default, .admin-help-rules) {
     border: 1px solid var(--cosmos-border-color);
     border-radius: 9px;
@@ -1094,10 +1029,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-smtp-link {
     color: var(--cosmos-primary-text-color);
     font: 600 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     text-transform: uppercase;
-}
-.admin-reference-drawer .admin-help-rules ul {
-    margin: 0;
-    padding-left: 18px;
 }
 .admin-reference-drawer .admin-help-placeholders {
     display: flex;
@@ -1674,15 +1605,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-history-note > span:last-child {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-.admin-reference-drawer .admin-filter-status-label[data-status="available"] {
-    color: var(--cosmos-success-color);
-}
-.admin-reference-drawer .admin-filter-status-label[data-status="employed"] {
-    color: var(--cosmos-error-color);
-}
-.admin-reference-drawer .admin-filter-status-label[data-status="absent"] {
-    color: var(--cosmos-warning-color);
 }
 
 vaadin-app-layout.cosmos-reference-admin

@@ -20,10 +20,13 @@ Commits nur auf ausdrücklichen Auftrag.
       Zeitauswahl zeigt wieder die gewählte Uhrzeit (manuell geprüft, Browserfall im
       [Testbedarf](../testbedarf.md)). Vollständige Läufe DE/EN vom 17.11.2026:
       372/380 bzw. 373/380 bestanden.
-- [ ] Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen.
-      Bisher sind nur Klassen ohne Vorkommen im Java-Code entfernt; alle sichtbaren Seiten
-      tragen `cosmos-reference-portal` bzw. `-overlay`, ältere Grundregeln davor sind daher
-      teils überschrieben.
+- [ ] Überdeckte Regeln weiter abbauen. Eine Kaskadenauswertung über alle aufgenommenen
+      Seiten, Overlays und Smartphone-Aufnahmen fand 88 passende, aber nie gewinnende Regeln;
+      58 eindeutig überdeckte sind entfernt (Aufnahmen pixelgleich). Bewusst noch erhalten:
+      Regeln in Media-Queries (wenige Smartphone-Aufnahmen), responsive Dialog-/Kartenbreiten,
+      breit wirkende Grundregeln für Buttons, Felder, Panelsymbole und Avatare (Hover-,
+      Deaktiviert- und nicht aufgenommene Zustände) sowie Utility-Klassen. Für sie zuerst die
+      Abdeckung erweitern (Smartphone aller Seiten, Zustände), dann einzeln prüfen.
 - [ ] Abschlussvergleich Desktop/Smartphone gegen `main` (Lumo) nach Paket 6; danach diesen
       Plan entfernen und Restpunkte übernehmen.
 
@@ -36,7 +39,8 @@ Vergleiche vorher/nachher bisher pixel- und stylegleich (zuletzt 46 Aufnahmen na
 Ersteinrichtung braucht eine frische H2-Datei, also vor jeder Aufnahmerunde neu starten),
 `Diff.java` (Pixelvergleich mit Vergleichsbildern vorher|nachher|Differenz; `Shots.java`
 schreibt zusätzlich berechnete Styles je Aufnahme, `sgroup.py` vergleicht sie gruppiert),
-`restart.ps1` (isolierter Neustart, siehe unten), Referenz von `main` aus einem
+`restart.ps1` (isolierter Neustart, siehe unten), Kaskadenauswertung in `Shots.java` über CDP
+(`COVERAGE_OUT`, `WINNERS_OUT`: je Element `CSS.getMatchedStylesForNode`, Laufzeit rund 100 min), Referenz von `main` aus einem
 temporären Worktree auf Port 8091.
 
 - Testlauf ohne `.env`: `.\mvnw.cmd -pl app compile`, danach die Anwendung direkt mit

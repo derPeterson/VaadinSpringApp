@@ -194,13 +194,6 @@ vaadin-app-layout.cosmos-app-shell {
     gap: var(--cosmos-space-s);
 }
 
-.cosmos-topbar .cosmos-topbar-shortcut {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    margin: 0;
-}
-
 /* Die beiden Symbole sitzen mit einem gleichmäßigen Rand in ihrer Buttonfläche. */
 
 .cosmos-topbar .cosmos-topbar-shortcut > vaadin-icon {
@@ -303,12 +296,6 @@ vaadin-avatar {
     max-width: var(--cosmos-page-content-width);
     min-width: 0;
     gap: var(--cosmos-space-2xl);
-}
-
-.cosmos-dashboard-introduction,
-.cosmos-section-header.cosmos-dashboard-introduction {
-    width: 100%;
-    max-width: var(--cosmos-page-content-width);
 }
 
 .cosmos-dashboard-kicker {
@@ -550,10 +537,6 @@ vaadin-select[theme~="cosmos"] {
 
 vaadin-select[theme~="cosmos-status"] vaadin-select-item::part(checkmark) {
     display: none;
-}
-
-vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item[selected] {
-    background: var(--cosmos-status-option-background);
 }
 vaadin-select[theme~="cosmos-status"]
     vaadin-select-list-box
@@ -1427,9 +1410,6 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
 .portal-menu-presence-details > vaadin-details-summary,
 .portal-menu-presence-details:not([opened]) {
     display: none;
-}
-.portal-menu-presence-details::part(content) {
-    padding: 8px 0 0;
 }
 
 .cosmos-reference-overlay .portal-status-option {

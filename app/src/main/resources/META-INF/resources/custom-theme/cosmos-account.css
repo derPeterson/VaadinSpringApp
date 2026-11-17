@@ -16,20 +16,6 @@
     grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
 }
 
-.cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry > .cosmos-panel-icon {
-    width: var(--cosmos-panel-icon-size-small);
-    height: var(--cosmos-panel-icon-size-small);
-}
-
-.cosmos-account
-    :is(#account-panel-security, #account-panel-sessions)
-    .account-entry
-    > .cosmos-panel-icon
-    > vaadin-icon {
-    width: var(--cosmos-panel-icon-symbol-size-small);
-    height: var(--cosmos-panel-icon-symbol-size-small);
-}
-
 /* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
  * Auf schmalen Displays bleibt der Button innerhalb seiner Textspalte. */
 
@@ -135,14 +121,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     min-width: 0;
 }
 
-.account-change-dialog-header > .cosmos-panel-heading {
-    flex: 1 1 0;
-}
-
-.account-change-dialog-header > .cosmos-panel-icon {
-    flex-shrink: 0;
-}
-
 .account-change-dialog .account-change-dialog-form {
     display: flex;
     flex-direction: column;
@@ -223,11 +201,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     border-radius: 50%;
     background: var(--cosmos-panel-icon-background);
     font-size: var(--cosmos-font-size-m);
-}
-
-.account-avatar-dialog .account-avatar-mode-icon > vaadin-icon {
-    width: 18px;
-    height: 18px;
 }
 
 .account-avatar-dialog .account-avatar-custom {
@@ -311,11 +284,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     color: var(--cosmos-primary-text-color);
 }
 
-.account-avatar-dialog .account-avatar-upload-icon > vaadin-icon {
-    width: 26px;
-    height: 26px;
-}
-
 .account-avatar-dialog .account-avatar-upload-title {
     font-size: var(--cosmos-font-size-xl);
     font-weight: var(--cosmos-font-weight-semibold);
@@ -348,11 +316,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     border-radius: 50%;
     background: var(--cosmos-panel-icon-background);
     color: var(--cosmos-primary-text-color);
-}
-
-.account-avatar-dialog .account-avatar-info-icon > vaadin-icon {
-    width: var(--cosmos-icon-size-m);
-    height: var(--cosmos-icon-size-m);
 }
 
 @media (max-width: 400px) {

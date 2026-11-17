@@ -29,10 +29,6 @@
     flex: 0 0 auto;
 }
 
-.admin-user-toolbar vaadin-button {
-    margin: 0;
-}
-
 .admin-user-filter-button {
     flex: 0 0 auto;
 }
@@ -41,14 +37,6 @@
 
 .cosmos-admin vaadin-button.admin-user-filter-reset {
     font-size: var(--cosmos-font-size-s);
-}
-
-.cosmos-admin vaadin-button.admin-user-filter-reset > vaadin-icon {
-    font-size: var(--cosmos-font-size-l);
-}
-
-.cosmos-admin .admin-user-active-filter-count {
-    border: var(--cosmos-border-width) solid var(--cosmos-primary-color-50pct);
 }
 
 .admin-user-filters {
@@ -74,10 +62,6 @@
 
 .cosmos-theme vaadin-time-picker.admin-user-activity-time-picker::part(overlay) {
     overflow: hidden;
-}
-
-.admin-user-activity-inputs {
-    gap: var(--cosmos-space-xs);
 }
 
 .admin-user-activity-inputs > vaadin-date-picker,
@@ -113,18 +97,6 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     gap: var(--cosmos-space-l);
     width: 100%;
     min-width: 0;
-}
-
-.admin-user-dialog-header > .cosmos-panel-heading {
-    flex: 1 1 0;
-}
-
-.admin-user-dialog-header > .cosmos-panel-icon {
-    flex-shrink: 0;
-}
-
-.admin-user-dialog vaadin-checkbox.admin-user-option-checkbox::part(checkbox) {
-    align-self: center;
 }
 
 .admin-user-dialog .admin-user-option-checkbox::part(label),
@@ -333,10 +305,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
 
 /* 4. TABELLENINHALTE / Name, Rollen, Avatar und Sortierindikatoren */
 
-.admin-users-grid {
-    --vaadin-grid-cell-padding: var(--cosmos-space-s) var(--cosmos-space-s);
-}
-
 .admin-users-grid::part(body-cell) {
     color: var(--cosmos-table-body-color);
 }
@@ -406,11 +374,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
     margin-inline-start: auto;
     gap: var(--cosmos-space-xs);
     flex-wrap: wrap;
-}
-
-.admin-user-pagination-number,
-.admin-user-pagination-arrow {
-    min-width: var(--cosmos-pagination-size);
 }
 
 .admin-user-pagination-ellipsis {
@@ -1028,10 +991,6 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
     flex: 1;
     min-width: 0;
 }
-.admin-reference-dialog .cosmos-dialog-form {
-    padding: 24px;
-    gap: 20px;
-}
 .admin-reference-dialog .cosmos-form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1044,21 +1003,8 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
     padding-top: 4px;
     font-size: var(--cosmos-font-size-xs);
 }
-.admin-reference-dialog .cosmos-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
 .admin-reference-dialog .cosmos-dialog-cancel {
     margin-left: auto;
-}
-.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
-    width: auto;
-}
-.admin-reference-dialog .cosmos-panel-hint {
-    align-items: center;
-    padding: 0;
-    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .admin-reference-dialog .admin-user-delete-warning {
     display: block;
@@ -1479,11 +1425,6 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
         flex: none;
         width: 100%;
     }
-}
-.admin-reference-dialog .cosmos-delete-accent {
-    color: var(--cosmos-error-color);
-    border-color: var(--cosmos-danger-border);
-    background: var(--cosmos-danger-surface);
 }
 vaadin-dialog.admin-reference-dialog::part(overlay) {
     width: min(660px, calc(100vw - 32px));

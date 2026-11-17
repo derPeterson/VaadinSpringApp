@@ -196,10 +196,6 @@
     outline-offset: 2px;
 }
 
-.cosmos-duration-unit-select::part(toggle-button) {
-    color: var(--cosmos-primary-text-color);
-}
-
 .cosmos-duration-unit-select vaadin-select-value-button > vaadin-select-item {
     min-height: 20px;
     padding: 0;

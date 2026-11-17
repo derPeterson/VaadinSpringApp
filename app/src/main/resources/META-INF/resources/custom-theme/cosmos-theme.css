@@ -133,12 +133,6 @@ vaadin-tooltip::part(content) {
     overflow-wrap: anywhere;
 }
 
-.cosmos-form-links {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--cosmos-space-s);
-}
-
 .cosmos-form-links a,
 .cosmos-options a {
     overflow-wrap: anywhere;

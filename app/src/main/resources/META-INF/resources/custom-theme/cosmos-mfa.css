@@ -244,14 +244,6 @@
     padding: 0;
     font: 500 var(--cosmos-font-size-l)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
-.two-factor-otp::part(required-indicator)::after {
-    content: "•";
-    color: var(--cosmos-primary-text-color);
-    opacity: 1;
-    position: static;
-    width: auto;
-    margin-left: 0;
-}
 @media (max-width: 760px) {
     .two-factor-setup-layout {
         grid-template-columns: minmax(0, 1fr);
@@ -267,10 +259,6 @@
     --vaadin-form-layout-row-spacing: var(--cosmos-space-2xl, 24px);
     --mfa-policy-two-column-min-width: 0px;
     width: 100%;
-}
-.cosmos-mfa-settings .cosmos-config-input-row {
-    gap: var(--cosmos-space-m, 12px);
-    align-items: center;
 }
 .cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box {
     min-width: 0;
@@ -451,9 +439,6 @@
     gap: 8px;
     justify-content: flex-end;
     width: 100%;
-}
-.support-tickets .cosmos-panel-footer {
-    padding: 16px 24px;
 }
 .support-tickets vaadin-grid vaadin-badge {
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
