@@ -223,21 +223,21 @@ public class NotificationHelper implements Serializable {
     SvgIcon statusSvgIcon = null;
     if (notificationType == NotificationType.ERROR) {
       statusSvgIcon = AppIcon.ERROR.create();
-      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_ERROR);
+      statusSvgIcon.addClassName(CosmosCssClasses.TEXT_ERROR);
       if (titleText != null) {
-        titleText.addClassNames(CosmosCssClasses.TEXT_ERROR);
+        titleText.addClassName(CosmosCssClasses.TEXT_ERROR);
       }
     } else if (notificationType == NotificationType.SUCCESS) {
       statusSvgIcon = AppIcon.CHECK_CIRCLE.create();
-      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_SUCCESS);
+      statusSvgIcon.addClassName(CosmosCssClasses.TEXT_SUCCESS);
       if (titleText != null) {
-        titleText.addClassNames(CosmosCssClasses.TEXT_SUCCESS);
+        titleText.addClassName(CosmosCssClasses.TEXT_SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
       statusSvgIcon = AppIcon.WARNING.create();
-      statusSvgIcon.addClassNames(CosmosCssClasses.TEXT_WARNING);
+      statusSvgIcon.addClassName(CosmosCssClasses.TEXT_WARNING);
       if (titleText != null) {
-        titleText.addClassNames(CosmosCssClasses.TEXT_WARNING);
+        titleText.addClassName(CosmosCssClasses.TEXT_WARNING);
       }
     }
 
@@ -277,9 +277,8 @@ public class NotificationHelper implements Serializable {
   private static Button createNotificationCloseButton(Notification targetNotification) {
     Button closeButton =
         new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> targetNotification.close());
-    closeButton.addClassNames(CosmosCssClasses.TEXT_PRIMARY);
     closeButton.addThemeVariants(ButtonVariant.TERTIARY);
-    closeButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
+    closeButton.addClassNames(CosmosCssClasses.INLINE_BUTTON, CosmosCssClasses.TEXT_PRIMARY);
 
     return closeButton;
   }

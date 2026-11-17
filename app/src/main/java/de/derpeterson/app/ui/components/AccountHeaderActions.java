@@ -25,8 +25,8 @@ public class AccountHeaderActions extends HorizontalLayout {
     for (Button accountActionButton :
         new Button[] {openNotificationsButton, openAccountSettingsButton}) {
       accountActionButton.addThemeVariants(ButtonVariant.TERTIARY);
-      accountActionButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
-      accountActionButton.addClassNames("cosmos-topbar-shortcut", CosmosCssClasses.TEXT_PRIMARY);
+      accountActionButton.addClassNames(
+          CosmosCssClasses.INLINE_BUTTON, "cosmos-topbar-shortcut", CosmosCssClasses.TEXT_PRIMARY);
     }
 
     if (authenticated) {

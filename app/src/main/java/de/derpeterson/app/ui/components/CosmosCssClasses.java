@@ -26,9 +26,8 @@ public final class CosmosCssClasses {
   /** Reiter teilen sich die verfügbare Breite gleichmäßig. */
   public static final String EQUAL_WIDTH_TABS = "cosmos-equal-width-tabs";
 
-  /** Semantische Textfarben; die Werte stehen als Tokens im Theme. */
+  // Semantische Textfarben; die Werte stehen als Tokens im Theme.
   public static final String TEXT_PRIMARY = "cosmos-text-primary";
-
   public static final String TEXT_SECONDARY = "cosmos-text-secondary";
   public static final String TEXT_SUCCESS = "cosmos-text-success";
   public static final String TEXT_WARNING = "cosmos-text-warning";
