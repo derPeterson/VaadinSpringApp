@@ -1,20 +1,5 @@
 # Offene Fehler
 
-## Doppelt wirkender Hover in Auswahllisten (Geschlecht, Sprache)
-
-- **Status:** Vom Benutzer am 17.11.2026 gemeldet, Branch `design/aura-theme`, Ursache noch
-  nicht vollständig behoben.
-- **Reproduktion:** Mein Konto → Persönliche Daten → Auswahl „Geschlecht“ oder
-  „Bevorzugte Sprache“ öffnen und mit der Maus über einen nicht ausgewählten Eintrag fahren.
-- **Ist:** Die Hoverfläche wirkt doppelt, als lägen zwei unterschiedliche Flächen
-  übereinander. Bereits umgesetzt: Auras Fokusrahmen und Innenabstand der Einträge
-  (`cosmos-reference-option`) sowie Umrissring und Transparenz der Overlays sind
-  abgeschaltet; der Hoverzustand selbst ist noch nicht im Browser bestätigt.
-- **Erwartet:** Genau eine Hoverfläche wie im Lumo-Stand (`main`).
-- **Nächster Schritt:** Hoverzustand im laufenden Browser untersuchen (Host, Part
-  `content`, `.cosmos-reference-option-row`, Scroller) und gegen `main` vergleichen.
-- **Nachtest:** Hover und Tastaturfokus in beiden Auswahllisten, Desktop und Smartphone.
-
 ## Datumsauswahl noch nicht im Cosmos-Stil
 
 - **Status:** Vom Benutzer am 17.11.2026 gemeldet, Branch `design/aura-theme`.
@@ -41,20 +26,6 @@
   `invalid`.
 - **Nachtest:** Suites `token-configuration` und `configuration` in DE und EN; danach
   diesen Eintrag entfernen.
-
-## Fehlertexte unter Eingabefeldern zu groß
-
-- **Status:** Am 17.11.2026 im Browser beobachtet, Branch `design/aura-theme`.
-- **Reproduktion:** Benutzerverwaltung → Filter → „Letzte Aktivität ab“ → ungültiges
-  Datum wie `99.99.9999` eingeben.
-- **Ist:** Der Part `error-message` erbt unter Aura 16px/22px; die Meldung bricht im
-  schmalen Filter auf mehrere Zeilen um. `main` setzt keine eigene Regel, dort galt die
-  kleinere Lumo-Schrift.
-- **Erwartet:** Fehlertexte in der Cosmos-Schriftskala wie im Lumo-Stand.
-- **Nächster Schritt:** Lumo-Wert auf `main` messen und eine gemeinsame Regel für
-  `::part(error-message)` neben der vorhandenen `helper-text`-Regel in `cosmos-theme.css`
-  ergänzen.
-- **Nachtest:** Feldfehler in Filter, Kontoformular und Konfiguration, Desktop und Smartphone.
 
 Die bewussten Grenzen der Google-Ersteinrichtung stehen in der
 [Sicherheitsdokumentation](docs/externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).

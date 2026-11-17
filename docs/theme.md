@@ -1361,8 +1361,11 @@ Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklap
 ohne Einrückung um die Pfeilbreite, Kalendertage mit der gemeinsamen Hoverfläche statt der
 Aura-Akzentfläche, Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
 ohne Abstand zum leeren Textbereich, Cosmos-Auswahlzeilen (`cosmos-reference-option`) ohne
-Auras Fokusrahmen und Innenabstand sowie eine kompakte Seitengrößenauswahl mit 4 px Abstand
-zum Pfeil. Textlinks in `.two-factor-help-row` zeigen beim Überfahren nur hellere Schrift
+Auras Fokusrahmen, Innenabstand und Hover-/Active-Fläche auf dem Eintrag (die einzige
+Fläche zeichnet die Zeile), Feldfehler in 13 px/16 px mit `--cosmos-error-text-color` ohne
+Auras Warnsymbol (die Variablen stehen zusätzlich an Elementen mit `theme`-Attribut, weil
+Aura die Fehlerfarbe dort direkt setzt) sowie eine kompakte Seitengrößenauswahl mit 4 px
+Abstand zum Pfeil. Textlinks in `.two-factor-help-row` zeigen beim Überfahren nur hellere Schrift
 ohne Fläche (`cosmos-mfa-confirmation.css`).
 
 Reine Icon-Buttons (Symbol ohne Slot, also ohne Text) und `cosmos-icon-button` setzen

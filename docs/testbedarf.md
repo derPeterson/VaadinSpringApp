@@ -15,7 +15,10 @@
   Status-/Rollen-Chips im Benutzerfilter zeigen ihren Text senkrecht mittig; Secondary-Buttons mit Rahmen wie
   „Zurück“ zeigen weißen Text und blaues Icon; Textlinks in `.two-factor-help-row` zeigen
   beim Überfahren nur hellere Schrift ohne Fläche; Cosmos-Auswahllisten
-  (`cosmos-reference-option`) haben bei Fokus/Hover genau eine Fläche ohne Randstreifen;
+  (`cosmos-reference-option`, etwa Geschlecht und Sprache im Konto) haben bei Fokus/Hover
+  genau eine Fläche ohne Randstreifen, der Eintrag selbst bleibt transparent; Feldfehler
+  (Geburtsdatum, Benutzerfilter, Dauerfelder der Konfiguration) erscheinen in 13 px ohne
+  Warnsymbol, auch bei 390 px;
   die Seitengrößenauswahl zeigt zweistellige Werte vollständig. Passende bestehende Fälle
   in `cosmos-components` bzw. den Pagination-/2FA-Suites erweitern, DE und EN.
 

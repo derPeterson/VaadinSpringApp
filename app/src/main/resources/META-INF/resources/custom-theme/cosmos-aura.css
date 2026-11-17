@@ -32,6 +32,19 @@ vaadin-tabs.cosmos-theme {
     width: auto;
 }
 
+/* Feldfehler wie bisher in der kleinen Feldschrift und ohne Auras Warnsymbol. Aura setzt die
+ * Fehlerfarbe auch direkt an Elementen mit theme-Attribut; daher dort ebenfalls zuweisen. */
+:is(.cosmos-theme, .cosmos-reference-overlay),
+:is(.cosmos-theme, .cosmos-reference-overlay) [theme] {
+    --vaadin-input-field-error-font-size: var(--cosmos-font-size-m);
+    --vaadin-input-field-error-line-height: var(--cosmos-line-height-xs);
+    --vaadin-input-field-error-color: var(--cosmos-error-text-color);
+}
+
+:is(.cosmos-theme, .cosmos-reference-overlay) ::part(error-message)::before {
+    display: none;
+}
+
 /* Feldsymbole (Auge, Auswahlpfeil, Kalender, Löschen) in der bisherigen Größe von 16 px.
  * Die Symbolfläche bleibt dadurch so schmal wie früher; Vaadin hält die Klickfläche über
  * Innenabstand und negativen Außenabstand trotzdem bei 24 px. */
@@ -64,6 +77,11 @@ vaadin-button.cosmos-overlay-close {
  * Auras Fokusrahmen um den ganzen Eintrag entfällt, sonst erscheinen zwei Flächen. */
 vaadin-combo-box-item.cosmos-reference-option[focused] {
     outline: none;
+}
+
+/* Auras Hover-/Active-Fläche auf dem Eintrag selbst lag unter der Cosmos-Zeilenfläche. */
+vaadin-combo-box-item.cosmos-reference-option:not([disabled]):is(:hover, :active) {
+    background: transparent;
 }
 
 /* Die Cosmos-Zeile füllt den Eintrag vollständig; Auras Innenabstand ließ links einen Streifen frei. */

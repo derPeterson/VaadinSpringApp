@@ -14,8 +14,9 @@ Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Offene Fehler in [BUGS](../../BUGS.md) abarbeiten: Hover in Auswahllisten,
-      Datumsauswahl im Cosmos-Stil, zu große Fehlertexte. Für das Dauerfeld sind nur die
+- [ ] Offene Fehler in [BUGS](../../BUGS.md) abarbeiten: Datumsauswahl im Cosmos-Stil.
+      Hover in Auswahllisten und Fehlertextgröße sind behoben (manuell geprüft, Browserfälle
+      im Testbedarf). Für das Dauerfeld sind nur die
       Browserprüfungen angepasst; ihr Nachtest läuft mit der gemeinsamen Runde. Die
       Zeitauswahl zeigt wieder die gewählte Uhrzeit (manuell geprüft, Browserfall im
       [Testbedarf](../testbedarf.md)). Vollständige Läufe DE/EN vom 17.11.2026:
