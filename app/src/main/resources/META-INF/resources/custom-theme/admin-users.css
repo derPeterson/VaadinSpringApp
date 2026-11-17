@@ -330,7 +330,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     color: var(--cosmos-primary-text-color);
     font-size: var(--cosmos-font-size-m);
     line-height: 18px;
-    letter-spacing: .08em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
@@ -372,13 +372,13 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 
-.admin-user-dialog #admin-user-account-type[data-development-account=true] {
+.admin-user-dialog #admin-user-account-type[data-development-account="true"] {
     --vaadin-badge-text-color: var(--cosmos-system-text);
     --cosmos-status-badge-border: var(--cosmos-system-border);
     --cosmos-status-badge-surface: var(--cosmos-system-surface);
 }
 
-.admin-user-dialog #admin-user-registered-via[data-self-registered=true] {
+.admin-user-dialog #admin-user-registered-via[data-self-registered="true"] {
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 
@@ -531,7 +531,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
 }
 
 @media (max-width: 600px) {
-
     .admin-user-toolbar {
         gap: var(--cosmos-space-xs);
     }

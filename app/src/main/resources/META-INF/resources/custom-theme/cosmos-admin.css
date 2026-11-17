@@ -23,7 +23,7 @@ vaadin-app-layout.cosmos-admin {
     border-radius: var(--cosmos-badge-radius);
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
-    letter-spacing: .4px;
+    letter-spacing: 0.4px;
     white-space: nowrap;
     text-transform: uppercase;
 }
@@ -120,7 +120,7 @@ vaadin-app-layout.cosmos-admin {
     font-size: var(--cosmos-font-size-heading-m);
     font-weight: 600;
     line-height: 1.25;
-    letter-spacing: -.5px;
+    letter-spacing: -0.5px;
 }
 
 .cosmos-admin-account-summary {
@@ -172,7 +172,7 @@ vaadin-app-layout.cosmos-admin {
     background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
     line-height: 1.4;
-    letter-spacing: .2px;
+    letter-spacing: 0.2px;
 }
 
 .cosmos-admin-form-card {
@@ -335,7 +335,6 @@ vaadin-app-layout.cosmos-admin {
 }
 
 @media (max-width: 600px) {
-
     .cosmos-config-card-header,
     .cosmos-panel-header {
         grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr);
@@ -664,7 +663,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 @media (max-width: 750px) {
-
     vaadin-app-layout.cosmos-admin {
         --vaadin-app-layout-drawer-width: min(260px, 85vw);
     }
@@ -675,7 +673,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 @media (max-width: 600px) {
-
     .cosmos-admin-section {
         gap: var(--cosmos-space-2xl);
     }
@@ -690,7 +687,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 @media (max-width: 480px) {
-
     .cosmos-topbar-badge {
         display: none;
     }
@@ -703,7 +699,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-
     .cosmos-admin::part(drawer) {
         background: var(--cosmos-base-color);
         -webkit-backdrop-filter: none;
@@ -712,4 +707,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 /* Separate Verwaltungsaktion, ueber beide Konfigurationsspalten. */
-.admin-mail-queue-resolution { grid-column: 1 / -1; }
+.admin-mail-queue-resolution {
+    grid-column: 1 / -1;
+}

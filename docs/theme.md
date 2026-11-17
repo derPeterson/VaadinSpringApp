@@ -1242,13 +1242,13 @@ Basis: `app/src/main/resources/META-INF/resources/custom-theme/`.
 | Datei | Aufgabe |
 | --- | --- |
 | typography.css | Lokale Inter-Schrift und Schriftfamilie |
-| cosmos-tokens.css | Palette, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen, Verläufe und Schatten |
+| cosmos-tokens.css | Semantische Farbrollen, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen und Schatten |
 | cosmos-theme.css | Gemeinsame Cards, Formulare, Buttons, Grids und Systemmeldungen |
 | cosmos-scrollbars.css | Gemeinsame native Scrollleisten für Dokument, Container und Vaadin-Scrollflächen |
 | cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
 | cosmos-admin.css | Adminnavigation, Panels, Konfiguration und Dialogstandards |
 | cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
-| cosmos-background-base.css / cosmos-background-advanced.css | Alternative Dekorationen; genau eine Variante wird geladen |
+| cosmos-background-base.css / cosmos-background-advanced.css | Alternative Dekorationen samt Szenenfarben; genau eine Variante wird geladen |
 | cosmos-account.css | Lokale Konto-/Profilbild-/Sitzungsansichten |
 | admin-users.css | Lokale Benutzerfilter, Tabelle, Pagination und Dialoge |
 
@@ -1272,9 +1272,10 @@ der öffentliche Rahmen benötigt dafür keine zusätzliche Klasse `cosmos-page`
 
 Advanced übernimmt Horizont mit Atmosphäre und Wolkenbändern, zwei Sternflächen,
 vier funkelnde Sterne, Mond, Sternschnuppen und Satellit aus der gelieferten
-HTML-Vorlage. Farben und Verläufe liegen als `--cosmos-advanced-*` in
-`cosmos-tokens.css`; Positionen und Animationen in `cosmos-background-advanced.css`.
-Die originale Base-Gestaltung bleibt in `cosmos-background-base.css` erhalten.
+HTML-Vorlage. Farben, Verläufe, Positionen und Animationen liegen gemeinsam in
+`cosmos-background-advanced.css` (`--cosmos-advanced-*` am Dateianfang). Die originale
+Base-Gestaltung bleibt samt ihren Szenenfarben in `cosmos-background-base.css` erhalten.
+Als dekorative Ausnahme dürfen beide Dateien eigene Farbwerte außerhalb der Palette enthalten.
 Die globale Palette für Controls, Panels und Dialoge wird nicht umgeschaltet.
 
 Die leichte Zeigerparallaxe setzt ausschließlich Variablen auf der Hintergrundebene.

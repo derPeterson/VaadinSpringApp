@@ -5,7 +5,7 @@ vaadin-breadcrumbs.cosmos-breadcrumbs {
     max-width: 100%;
     color: var(--cosmos-primary-text-color);
     font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
-    letter-spacing: .05em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     --vaadin-breadcrumbs-font-size: inherit;
     --vaadin-breadcrumbs-font-weight: inherit;

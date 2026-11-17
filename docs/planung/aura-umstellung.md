@@ -115,9 +115,9 @@ behalten 10 px als eigene Stufe, damit sich Breiten und Umbrüche nicht ändern.
 ## Werkzeuge
 
 Prettier formatiert CSS einheitlich, Stylelint prüft Regeln (unbekannte Eigenschaften,
-doppelte Selektoren, Hexwerte außerhalb der Palette, keine `--lumo-*`).
-Einbindung als npm-Entwicklungsabhängigkeit im `app`-Modul; Befehle stehen nach
-Einrichtung in der [Entwicklungsanleitung](../entwicklung.md).
+doppelte Selektoren und Eigenschaften, Farbliterale außerhalb der Palette, keine `--lumo-*`).
+Eingerichtet als feste npm-Entwicklungsabhängigkeiten im `app`-Modul; Befehle und Grenzen
+stehen in der [Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatieren).
 
 ## Arbeitsschritte und Stand
 
@@ -141,40 +141,52 @@ Einrichtung in der [Entwicklungsanleitung](../entwicklung.md).
       geladen direkt nach Aura). Semantische Tokens und frühere Referenzwerte verweisen
       darauf; alle Literale in Fachdateien sind durch Palettenfarben bzw. `color-mix()` ersetzt.
       Ausnahmen: dekorative Hintergrundszene und Google-Markenfarben. Die beiden parallelen
-      Tokenfamilien (`--cosmos-*` und `--cosmos-reference-*`) haben jetzt identische Werte;
-      ihre Zusammenführung zu einer Familie gehört zum Neugliedern.
+      Tokenfamilien sind inzwischen zusammengeführt (Paket 1).
 - [x] Typografie auf die Skala bringen: alle `font`/`font-size`/`font-family`-Angaben
       verwenden `--cosmos-font-size-*`, `--cosmos-font-family` (mit Roboto-/Systemersatz)
       bzw. `--cosmos-font-family-mono`. Space Mono ist jetzt global in `typography.css`
       definiert (vorher nur auf 2FA-Seiten geladen, sonst Ersatzschrift Consolas).
       Stärken auf 400/500/600/700 gerundet. Einzelwerte gerundet: 9→10, 17→18, 21→20,
       22→20, 25→24 px. Zeilenhöhen sind noch Einzelwerte (nächster Schritt beim Gliedern).
-- [ ] CSS-Dateien nach Zielstruktur neu gliedern, Duplikate und ungenutzte Regeln entfernen,
-      `!important` abbauen.
-- [ ] Prettier/Stylelint einrichten, alle CSS-Dateien formatieren und prüfen.
-- [ ] Abschlussvergleich Desktop/Smartphone, `docs/theme.md` auf den neuen Stand bringen,
-      Plan entfernen bzw. Restpunkte übernehmen.
+- [x] Paket 1 – Token-Familien zusammengeführt: `--cosmos-reference-*` durch die semantischen
+      `--cosmos-*`-Rollen ersetzt (CSS, `UserStatus`, `docs/theme.md`), fehlende Rollen im
+      gemeinsamen Tokenblock ergänzt. Der Block für `.cosmos-reference-portal`/`-overlay`
+      enthält nur noch vier bewusst abweichende Werte (Sekundärrahmen, Primary-Schatten,
+      Kopfzeilenhöhe 65 px, Avatar-Statusanker). Keine Regel wiederholte nur noch Werte;
+      die Markerklassen und `CosmosCssClasses.REFERENCE_*` bleiben, weil Selektoren und
+      Java-Verzweigungen sie brauchen. Vergleich vorher/nachher: pixelgleich.
+- [x] Paket 3 – Prettier 3.9.10 und Stylelint 17.16.0 eingerichtet, alle Dateien unter
+      `custom-theme` formatiert (eine Deklaration pro Zeile, vier Leerzeichen). Befunde
+      behoben: Dekor-Tokens mit eigenen Farbwerten aus `cosmos-tokens.css` in die beiden
+      Hintergrunddateien verschoben, 31 doppelte Selektoren kaskadensicher zusammengeführt,
+      `100vh`-Ersatzwerte neben `100dvh` entfernt. Vergleich vorher/nachher (46 Aufnahmen
+      inkl. Passwortdialog und Benachrichtigungsvorschau): pixelgleich.
+- [ ] Paket 2 – Dateistruktur nach Zielstruktur neu gliedern, Duplikate über Dateien hinweg
+      und ungenutzte Regeln entfernen, `!important` abbauen (Schritte siehe Wiedereinstieg).
+- [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte).
+- [ ] Paket 5 – Abschlussvergleich Desktop/Smartphone, `docs/theme.md` auf den neuen Stand
+      bringen, Plan entfernen bzw. Restpunkte übernehmen.
+- [ ] Paket 6 – Browsertests an geänderte Klassen/Varianten anpassen.
 
 ## Wiedereinstieg
 
-**Nächster Schritt: Neugliedern.** Reihenfolge:
+**Nächster Schritt: Paket 2 (Neugliedern).** Reihenfolge:
 
-1. `--cosmos-reference-*` und die gleichwertigen `--cosmos-*`-Rollen zu einer Familie
-   zusammenführen (gleiche Werte, siehe `cosmos-tokens.css`); danach den Referenzblock
-   samt `cosmos-reference-portal`/`-overlay`-Doppelungen in Selektoren abbauen.
-2. Aura-Anpassungen (Abschnitte 9/10 am Ende von `cosmos-theme.css`) in eine eigene
+1. Aura-Anpassungen (Abschnitte 9/10 am Ende von `cosmos-theme.css`) in eine eigene
    Datei `cosmos-aura.css` direkt nach den Tokens verschieben.
-3. Fachdateien zusammenfassen, wo nur kleine Fragmente existieren (`cosmos-native-card`,
+2. Fachdateien zusammenfassen, wo nur kleine Fragmente existieren (`cosmos-native-card`,
    `cosmos-public-card`, `cosmos-content-card`, `cosmos-icons`, `cosmos-mfa-otp`), und
    `cosmos-admin-reference.css` (Einzeilerstil) in `cosmos-admin.css`/`admin-users.css`
    aufteilen. Versteckte `@import`s in `cosmos-theme.css` durch `@StyleSheet` ersetzen.
-4. Danach Prettier/Stylelint einführen und alle Dateien formatieren; Stylelint-Regeln:
-   keine Hexwerte außerhalb `cosmos-palette.css` und Hintergrunddateien, keine `--lumo-*`,
-   `declaration-block-no-duplicate-properties`, `no-duplicate-selectors`.
-5. Nach jedem Schritt Vergleichsaufnahmen gegen `main`; Zeilenhöhen vereinheitlichen.
+3. Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen:
+   Alle sichtbaren Seiten tragen `cosmos-reference-portal` bzw. `-overlay`; die Grundregeln
+   davor sind daher teils überschrieben oder ungenutzt.
+4. Nach jedem Schritt `npm run format:css`, `npm run lint:css` im Modul `app` und
+   Vergleichsaufnahmen gegen den Stand davor.
 
 **Werkzeuge (temporär, im Scratchpad der Sitzung; bei Verlust neu anlegen):**
-`Shots.java` (Playwright-Aufnahmen inkl. 2FA-Ersteinrichtung und sieben Overlays),
+`Shots.java` (Playwright-Aufnahmen inkl. 2FA-Ersteinrichtung und acht Overlays; die
+Ersteinrichtung braucht eine frische H2-Datei, also vor jeder Aufnahmerunde neu starten),
 `Diff.java` (Pixelvergleich mit Vergleichsbildern vorher|nachher|Differenz),
 `restart.ps1` (isolierter Neustart, siehe unten), Referenz von `main` aus einem
 temporären Worktree auf Port 8091.

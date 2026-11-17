@@ -2,6 +2,11 @@
   "name": "no-name",
   "license": "UNLICENSED",
   "type": "module",
+  "scripts": {
+    "format:css": "prettier --write \"src/main/resources/META-INF/resources/custom-theme/**/*.css\"",
+    "format:css:check": "prettier --check \"src/main/resources/META-INF/resources/custom-theme/**/*.css\"",
+    "lint:css": "stylelint \"src/main/resources/META-INF/resources/custom-theme/**/*.css\""
+  },
   "dependencies": {
     "@vaadin/aura": "25.3.5",
     "@vaadin/common-frontend": "0.0.25",
@@ -36,9 +41,11 @@
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitejs/plugin-react": "6.1.2",
     "magic-string": "1.4.5",
+    "prettier": "3.9.10",
     "rollup-plugin-brotli": "3.1.0",
     "rollup-plugin-visualizer": "7.1.1",
     "strip-css-comments": "5.0.0",
+    "stylelint": "17.16.0",
     "transform-ast": "2.4.4",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "vite": "8.3.5",
@@ -97,7 +104,7 @@
       "workbox-routing": "7.4.1",
       "workbox-strategies": "7.4.1"
     },
-    "hash": "b879e688639a78482c6b0dba7a663435f8d7188efd404d86dbd31932de5e5dbc"
+    "hash": "54157c1b8276ff1985fae603dbc08f073ffc884bdfa4bdd25f1763a58cedfe3e"
   },
   "overrides": {
     "@vaadin/a11y-base": "25.3.5",

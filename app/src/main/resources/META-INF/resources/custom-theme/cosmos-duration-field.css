@@ -180,7 +180,11 @@
 }
 
 /* Auch bei Fokus auf der Einheit bleibt nur die gemeinsame Feldfläche umrandet. */
-.cosmos-theme .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field):has(.cosmos-duration-unit-select[focused])::part(input-field) {
+.cosmos-theme
+    .cosmos-duration-field
+    > :is(vaadin-integer-field, vaadin-big-decimal-field):has(.cosmos-duration-unit-select[focused])::part(
+        input-field
+    ) {
     outline: 1px solid var(--cosmos-primary-text-color);
     outline-offset: 2px;
 }
@@ -232,7 +236,11 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     --vaadin-selection-color-text: var(--cosmos-primary-text-color);
 }
 
-.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark) {
+.cosmos-theme
+    .cosmos-duration-field
+    .cosmos-duration-unit-select
+    vaadin-select-list-box
+    > vaadin-select-item::part(checkmark) {
     order: 1;
     flex: none;
     width: 16px;
@@ -240,7 +248,11 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     color: var(--cosmos-primary-text-color);
 }
 
-.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark)::before {
+.cosmos-theme
+    .cosmos-duration-field
+    .cosmos-duration-unit-select
+    vaadin-select-list-box
+    > vaadin-select-item::part(checkmark)::before {
     width: 16px;
     height: 16px;
     margin: 0;
@@ -248,13 +260,21 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     font-size: var(--cosmos-font-size-2xl);
 }
 
-.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item[selected] {
+.cosmos-theme
+    .cosmos-duration-field
+    .cosmos-duration-unit-select
+    vaadin-select-list-box
+    > vaadin-select-item[selected] {
     border-color: var(--cosmos-primary-background);
     background: var(--cosmos-selection-background);
     color: var(--cosmos-primary-text-color);
 }
 
-.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item:not([selected], [disabled]):is(:hover, [focused]) {
+.cosmos-theme
+    .cosmos-duration-field
+    .cosmos-duration-unit-select
+    vaadin-select-list-box
+    > vaadin-select-item:not([selected], [disabled]):is(:hover, [focused]) {
     background: var(--cosmos-hover-background);
 }
 

@@ -1,72 +1,330 @@
-@font-face {font-family:"Google Sans Signin";src:url("../icons/external-login/GoogleSans-latin.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap;}
+@font-face {
+    font-family: "Google Sans Signin";
+    src: url("../icons/external-login/GoogleSans-latin.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
 /* Auf die neuen Anmeldebausteine begrenzt; bestehende Felder und Buttons bleiben unverändert. */
-.external-login-buttons { display:flex;flex-direction:column;gap:10px;width:100%; }
-.external-login-buttons .external-provider-actions {display:flex;flex-direction:column;gap:10px;min-width:0;width:100%;}
-.cosmos-reference-public .external-login-buttons vaadin-button.external-provider-button { height:40px;min-height:40px;background:#131314;border:1px solid #8e918f;color:#e3e3e3;border-radius:4px;font-size:var(--cosmos-font-size-l);font-weight:500;padding:0 12px; }
-.external-provider-button::part(label) { font-size:var(--cosmos-font-size-l);font-weight:500; }
-.external-provider-mark { width:20px;height:20px;object-fit:contain;flex-shrink:0; }
-.external-login-alternative { display:flex;align-items:center;gap:12px;color:var(--cosmos-text-secondary-color);font-size:var(--cosmos-font-size-xs); }
-.external-login-alternative::before,.external-login-alternative::after { content:"";flex:1;border-top:1px solid var(--cosmos-border-color); }
-.external-connections-overview { display:grid;gap:16px;padding:24px; }
-.cosmos-reference-portal #account-panel-security .external-connection-row { grid-template-columns:36px minmax(0,1fr) auto; }
-.cosmos-reference-portal #account-panel-security .external-connection-row > vaadin-button { width:auto; }
-.external-connection-row .cosmos-panel-icon { width:36px;height:36px; }
-.external-connection-row .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }
-.external-connection-copy { min-width:0; }
-.external-connection-heading { display:flex;align-items:center;flex-wrap:wrap;gap:8px;font:600 var(--cosmos-font-size-m)/19.5px var(--cosmos-font-family); }
-.external-connection-heading vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border-radius:4px; font:500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family); --vaadin-badge-text-color:var(--cosmos-primary-text-color); }
-.external-connection-heading vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-success-color); }
-.external-proof-alternatives { display:flex;flex-direction:column;gap:8px;min-width:0; }
-.external-proof-provider { width:100%;height:36px;min-height:36px; }
-.external-proof-provider-mark { display:block;width:16px;height:16px;flex:0 0 16px;object-fit:contain; }
-.external-proof-heading-mark { display:block;width:20px;height:20px;object-fit:contain; }
+.external-login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+.external-login-buttons .external-provider-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    width: 100%;
+}
+.cosmos-reference-public .external-login-buttons vaadin-button.external-provider-button {
+    height: 40px;
+    min-height: 40px;
+    background: #131314;
+    border: 1px solid #8e918f;
+    color: #e3e3e3;
+    border-radius: 4px;
+    font-size: var(--cosmos-font-size-l);
+    font-weight: 500;
+    padding: 0 12px;
+}
+.external-provider-button::part(label) {
+    font-size: var(--cosmos-font-size-l);
+    font-weight: 500;
+}
+.external-provider-mark {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.external-login-alternative {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--cosmos-text-secondary-color);
+    font-size: var(--cosmos-font-size-xs);
+}
+.external-login-alternative::before,
+.external-login-alternative::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--cosmos-border-color);
+}
+.external-connections-overview {
+    display: grid;
+    gap: 16px;
+    padding: 24px;
+}
+.cosmos-reference-portal #account-panel-security .external-connection-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+}
+.cosmos-reference-portal #account-panel-security .external-connection-row > vaadin-button {
+    width: auto;
+}
+.external-connection-row .cosmos-panel-icon {
+    width: 36px;
+    height: 36px;
+}
+.external-connection-row .cosmos-panel-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+.external-connection-copy {
+    min-width: 0;
+}
+.external-connection-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font: 600 var(--cosmos-font-size-m)/19.5px var(--cosmos-font-family);
+}
+.external-connection-heading vaadin-badge {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font: 500 var(--cosmos-font-size-2xs)/15px var(--cosmos-font-family);
+    --vaadin-badge-text-color: var(--cosmos-primary-text-color);
+}
+.external-connection-heading vaadin-badge[theme~="success"] {
+    --vaadin-badge-text-color: var(--cosmos-success-color);
+}
+.external-proof-alternatives {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+.external-proof-provider {
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+}
+.external-proof-provider-mark {
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    object-fit: contain;
+}
+.external-proof-heading-mark {
+    display: block;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
 .external-identity-dialog .account-change-dialog-form > .cosmos-panel-description:first-child {
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
 }
-.external-proof-separator { display:flex;align-items:center;gap:12px;color:var(--cosmos-text-secondary-color);font:600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family); }
-.external-proof-separator::before,.external-proof-separator::after { content:"";flex:1;border-top:1px solid var(--cosmos-border-color); }
-.external-proof-ready { color:var(--cosmos-success-color);font:500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family); }
-@media(max-width:600px){.external-connections-overview{padding:20px;}.cosmos-reference-portal #account-panel-security .external-connection-row{grid-template-columns:32px minmax(0,1fr);}.external-connection-row > vaadin-button{grid-column:2;justify-self:end;max-width:100%;}}
+.external-proof-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--cosmos-text-secondary-color);
+    font: 600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.external-proof-separator::before,
+.external-proof-separator::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--cosmos-border-color);
+}
+.external-proof-ready {
+    color: var(--cosmos-success-color);
+    font: 500 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+}
+@media (max-width: 600px) {
+    .external-connections-overview {
+        padding: 20px;
+    }
+    .cosmos-reference-portal #account-panel-security .external-connection-row {
+        grid-template-columns: 32px minmax(0, 1fr);
+    }
+    .external-connection-row > vaadin-button {
+        grid-column: 2;
+        justify-self: end;
+        max-width: 100%;
+    }
+}
 
-.external-login-buttons:not(.external-login-panel) #external-login-google,.external-login-buttons:not(.external-login-panel) #external-login-google::part(label){font-family:"Google Sans Signin",Arial,sans-serif;font-weight:500;line-height:20px}#external-login-google .external-provider-mark{background:#fff;border-radius:2px} .external-provider-button::part(prefix){margin-inline-end:10px}
+.external-login-buttons:not(.external-login-panel) #external-login-google,
+.external-login-buttons:not(.external-login-panel) #external-login-google::part(label) {
+    font-family: "Google Sans Signin", Arial, sans-serif;
+    font-weight: 500;
+    line-height: 20px;
+}
+#external-login-google .external-provider-mark {
+    background: #fff;
+    border-radius: 2px;
+}
+.external-provider-button::part(prefix) {
+    margin-inline-end: 10px;
+}
 
-.cosmos-reference-public[data-public-page=register] .external-registration-panel {max-width:600px}
+.cosmos-reference-public[data-public-page="register"] .external-registration-panel {
+    max-width: 600px;
+}
 
 /* Anmeldung und Registrierung behalten ihr eigenes Panel mit dunkler Inhaltsfläche und Aktionsfooter. */
-.cosmos-reference-public .public-auth-panels {width:100%;max-width:600px;margin:0 auto;}
-.cosmos-reference-public .public-auth-panels--external {display:grid;grid-template-columns:600px 40px minmax(0,1fr);gap:16px;align-items:center;max-width:1048px;}
-.cosmos-reference-public .public-auth-panels[hidden] {display:none!important;}
-.cosmos-reference-public .public-auth-panels .public-panel-footer > .cosmos-intro {flex:1 1 min-content;min-width:min-content;flex-wrap:wrap;row-gap:0;}
-.cosmos-reference-public .public-auth-panels .public-panel-footer > .cosmos-intro > span {white-space:nowrap;}
-.cosmos-reference-public .external-login-panel {box-sizing:border-box;gap:8px;min-width:0;padding:32px;border:1px solid var(--cosmos-border-color);border-radius:16px;background:var(--cosmos-card-background);}
-.external-login-panel .external-provider-actions {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;}
-.external-login-panel .external-login-kicker {color:var(--cosmos-primary-text-color);font:600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);letter-spacing:.06em;text-transform:uppercase;}
-.external-login-panel h2 {margin:0;color:var(--cosmos-text-color);font:600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);}
-.external-login-panel .external-login-hint {margin:0 0 12px;color:var(--cosmos-text-secondary-color);font:400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);}
-.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button {border-color:var(--cosmos-border-color);border-radius:8px;background:var(--cosmos-base-color);color:var(--cosmos-text-color);font:600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);}
-.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button:hover {border-color:var(--cosmos-primary-text-color);}
-.external-login-panel #external-login-google .external-provider-mark {background:transparent;}
-@media(max-width:1023px){.cosmos-reference-public .public-auth-panels--external{grid-template-columns:minmax(0,1fr);max-width:600px;}}
-@media(max-width:639px){.cosmos-reference-public .external-login-panel{padding:24px 20px;}}
+.cosmos-reference-public .public-auth-panels {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.cosmos-reference-public .public-auth-panels--external {
+    display: grid;
+    grid-template-columns: 600px 40px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    max-width: 1048px;
+}
+.cosmos-reference-public .public-auth-panels[hidden] {
+    display: none !important;
+}
+.cosmos-reference-public .public-auth-panels .public-panel-footer > .cosmos-intro {
+    flex: 1 1 min-content;
+    min-width: min-content;
+    flex-wrap: wrap;
+    row-gap: 0;
+}
+.cosmos-reference-public .public-auth-panels .public-panel-footer > .cosmos-intro > span {
+    white-space: nowrap;
+}
+.cosmos-reference-public .external-login-panel {
+    box-sizing: border-box;
+    gap: 8px;
+    min-width: 0;
+    padding: 32px;
+    border: 1px solid var(--cosmos-border-color);
+    border-radius: 16px;
+    background: var(--cosmos-card-background);
+}
+.external-login-panel .external-provider-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 8px;
+}
+.external-login-panel .external-login-kicker {
+    color: var(--cosmos-primary-text-color);
+    font: 600 var(--cosmos-font-size-2xs)/16px var(--cosmos-font-family);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.external-login-panel h2 {
+    margin: 0;
+    color: var(--cosmos-text-color);
+    font: 600 var(--cosmos-font-size-2xl)/24px var(--cosmos-font-family);
+}
+.external-login-panel .external-login-hint {
+    margin: 0 0 12px;
+    color: var(--cosmos-text-secondary-color);
+    font: 400 var(--cosmos-font-size-s)/20px var(--cosmos-font-family);
+}
+.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button {
+    border-color: var(--cosmos-border-color);
+    border-radius: 8px;
+    background: var(--cosmos-base-color);
+    color: var(--cosmos-text-color);
+    font: 600 var(--cosmos-font-size-s)/1.4 var(--cosmos-font-family);
+}
+.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button:hover {
+    border-color: var(--cosmos-primary-text-color);
+}
+.external-login-panel #external-login-google .external-provider-mark {
+    background: transparent;
+}
+@media (max-width: 1023px) {
+    .cosmos-reference-public .public-auth-panels--external {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 600px;
+    }
+}
+@media (max-width: 639px) {
+    .cosmos-reference-public .external-login-panel {
+        padding: 24px 20px;
+    }
+}
 
-.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button::part(label){font:inherit;}
-.external-login-panel .external-provider-mark{width:16px;height:16px;}
-.external-login-panel .external-provider-button::part(prefix){margin-inline-end:8px;}
+.cosmos-reference-public .external-login-panel vaadin-button.external-provider-button::part(label) {
+    font: inherit;
+}
+.external-login-panel .external-provider-mark {
+    width: 16px;
+    height: 16px;
+}
+.external-login-panel .external-provider-button::part(prefix) {
+    margin-inline-end: 8px;
+}
 
 /* Der Trenner gehört zwischen die zwei eigenständigen Panels. */
-.cosmos-reference-public .external-login-divider {display:flex;flex-direction:column;align-items:center;align-self:stretch;gap:12px;padding:24px 0;}
-.external-login-divider::before,.external-login-divider::after {content:"";flex:1;border-left:1px solid var(--cosmos-border-color);}
-.external-login-divider > span {color:var(--cosmos-text-secondary-color);font:600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family);text-transform:uppercase;letter-spacing:.06em;}
-@media(max-width:1023px){.cosmos-reference-public .external-login-divider{flex-direction:row;padding:0;}.external-login-divider::before,.external-login-divider::after{border-left:0;border-top:1px solid var(--cosmos-border-color);}}
+.cosmos-reference-public .external-login-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    gap: 12px;
+    padding: 24px 0;
+}
+.external-login-divider::before,
+.external-login-divider::after {
+    content: "";
+    flex: 1;
+    border-left: 1px solid var(--cosmos-border-color);
+}
+.external-login-divider > span {
+    color: var(--cosmos-text-secondary-color);
+    font: 600 var(--cosmos-font-size-2xs)/18px var(--cosmos-font-family);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+@media (max-width: 1023px) {
+    .cosmos-reference-public .external-login-divider {
+        flex-direction: row;
+        padding: 0;
+    }
+    .external-login-divider::before,
+    .external-login-divider::after {
+        border-left: 0;
+        border-top: 1px solid var(--cosmos-border-color);
+    }
+}
 
 /* Das zweispaltige Registrierungsformular nutzt mehr Breite und stapelt früher. */
-.cosmos-reference-public .public-auth-panels--register {max-width:880px;}
-.cosmos-reference-public .public-auth-panels--register.public-auth-panels--external {grid-template-columns:minmax(600px,880px) 40px 376px;max-width:1328px;}
-@media(max-width:1199px){.cosmos-reference-public .public-auth-panels--register.public-auth-panels--external{grid-template-columns:minmax(0,1fr);max-width:880px;}.public-auth-panels--register .external-login-divider{flex-direction:row;padding:0;}.public-auth-panels--register .external-login-divider::before,.public-auth-panels--register .external-login-divider::after{border-left:0;border-top:1px solid var(--cosmos-border-color);}}
-
-.external-proof-separator { text-transform:uppercase;letter-spacing:.06em; }
-.external-identity-dialog .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }
+.cosmos-reference-public .public-auth-panels--register {
+    max-width: 880px;
+}
+.cosmos-reference-public .public-auth-panels--register.public-auth-panels--external {
+    grid-template-columns: minmax(600px, 880px) 40px 376px;
+    max-width: 1328px;
+}
+@media (max-width: 1199px) {
+    .cosmos-reference-public .public-auth-panels--register.public-auth-panels--external {
+        grid-template-columns: minmax(0, 1fr);
+        max-width: 880px;
+    }
+    .public-auth-panels--register .external-login-divider {
+        flex-direction: row;
+        padding: 0;
+    }
+    .public-auth-panels--register .external-login-divider::before,
+    .public-auth-panels--register .external-login-divider::after {
+        border-left: 0;
+        border-top: 1px solid var(--cosmos-border-color);
+    }
+}
+.external-identity-dialog .cosmos-panel-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
 
 /* Native Card-Parts übernehmen die vorhandenen Abstände der Anbieter-Nebenkarte. */
 .cosmos-reference-public vaadin-card.external-login-panel {

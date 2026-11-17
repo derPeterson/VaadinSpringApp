@@ -800,6 +800,39 @@ Dateien formatieren und prüfen; nach Korrekturen wiederholen:
 Ruff hat hier keinen Git-Ratchet; fremde Dateien nicht mitformatieren.
 `ruff check --fix` ersetzt die Formatierung nicht. OpenCode bleibt eingefroren.
 
+### CSS prüfen und formatieren
+
+Prettier formatiert und Stylelint prüft die Theme-Dateien unter
+`app/src/main/resources/META-INF/resources/custom-theme/`. Beide sind feste
+npm-Entwicklungsabhängigkeiten in `app/package.json`; `npm install` im Modul `app`
+(oder ein Vaadin-Build) installiert sie. Konfiguration: `app/.prettierrc.json`
+(CSS mit vier Leerzeichen, doppelten Anführungszeichen, 120 Zeichen Breite) und
+`app/stylelint.config.js`. Nach jeder eigenen CSS-Änderungsrunde im Verzeichnis `app`:
+
+```powershell
+npm run format:css
+npm run format:css:check
+npm run lint:css
+```
+
+Stylelint verlangt:
+
+- Farben nur aus `cosmos-palette.css`: keine Hexwerte und keine `rgb()`/`rgba()`/`hsl()`-Literale.
+  Ausnahmen mit eigenen Farbwerten sind die dekorative Hintergrundszene
+  (`cosmos-background-*.css`) und die Google-Markenfarben in `cosmos-external-login.css`.
+- keine `--lumo-*`-Variablen, weder als Definition noch in Werten;
+- keine doppelten Selektoren im selben Kontext einer Datei (`no-duplicate-selectors`) und
+  keine doppelten Eigenschaften in einem Block (`declaration-block-no-duplicate-properties`,
+  auch für Custom Properties);
+- keine unbekannten Eigenschaften und keine leeren Blöcke.
+
+Grenzen: Die Prüfung arbeitet je Datei; Doppelungen über Dateien hinweg und ungenutzte
+Regeln erkennt sie nicht. `!important` und Spezifität prüft sie nicht. Beim Zusammenführen
+gemeldeter Doppelungen die Kaskade beachten: Deklarationen nur verschieben, wenn keine
+dazwischenliegende Regel gleicher Spezifität dasselbe Element mit derselben Eigenschaft
+gestaltet. Prettier und Stylelint sind nicht an den Maven-Build gekoppelt; generierte
+Frontenddateien (`vite.generated.ts`, `src/main/frontend/generated/`) prüfen sie nicht.
+
 Verbindliche Agentenregeln: [AGENTS.md](../AGENTS.md).
 Für sinnvolle Ereignisse, Logpegel und sichere Diagnose gilt der [Logging-Vertrag](logging.md).
 

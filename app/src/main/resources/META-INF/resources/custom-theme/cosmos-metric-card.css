@@ -27,7 +27,7 @@ vaadin-card.cosmos-metric-card--highlighted {
 .cosmos-metric-card-label {
     color: var(--cosmos-text-secondary-color);
     font: 600 var(--cosmos-font-size-2xs)/14px var(--cosmos-font-family);
-    letter-spacing: .045em;
+    letter-spacing: 0.045em;
     text-transform: uppercase;
 }
 

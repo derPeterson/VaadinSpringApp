@@ -30,7 +30,10 @@ vaadin-avatar.cosmos-avatar-circle::part(abbr) {
     width: 100%;
     height: 100%;
     font-family: inherit;
-    font-size: calc(100px * var(--cosmos-avatar-initial-font-size) / (var(--cosmos-avatar-size) - 2 * var(--cosmos-avatar-render-border-width)));
+    font-size: calc(
+        100px * var(--cosmos-avatar-initial-font-size) /
+            (var(--cosmos-avatar-size) - 2 * var(--cosmos-avatar-render-border-width))
+    );
     font-weight: var(--cosmos-font-weight-semibold);
     line-height: 1;
     transform: translateY(var(--cosmos-avatar-initial-offset));
@@ -40,7 +43,10 @@ vaadin-avatar.cosmos-avatar-circle::part(icon) {
     width: 100%;
     height: 100%;
     background: currentColor;
-    mask: url('../icons/lucide/user-round.svg') center / calc(var(--cosmos-avatar-size) / 2) calc(var(--cosmos-avatar-size) / 2) no-repeat;
+    mask: url("../icons/lucide/user-round.svg") center / calc(var(--cosmos-avatar-size) / 2)
+        calc(var(--cosmos-avatar-size) / 2) no-repeat;
 }
 
-vaadin-avatar.cosmos-avatar-circle::part(icon)::before { content: none; }
+vaadin-avatar.cosmos-avatar-circle::part(icon)::before {
+    content: none;
+}
