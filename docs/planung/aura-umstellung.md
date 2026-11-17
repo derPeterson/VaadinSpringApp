@@ -14,7 +14,11 @@ Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Paket 6 – Browsertests an geänderte Klassen/Varianten anpassen und DE/EN ausführen.
+- [ ] Offene Fehler aus Paket 6 klären (Details in [BUGS](../../BUGS.md)): Grid-/TextArea-
+      Scrollleisten unter Aura (Benutzerentscheidung nötig) und leere `errorMessage` im
+      Dauerfeld. Browserfälle und JUnit-Tests sind an Aura angepasst; vollständige Läufe
+      DE/EN am selben Image vom 17.11.2026: 372/380 bzw. 373/380 bestanden, Rest siehe BUGS
+      und [Testbedarf](../testbedarf.md).
 - [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte je Baustein).
 - [ ] Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen.
       Bisher sind nur Klassen ohne Vorkommen im Java-Code entfernt; alle sichtbaren Seiten

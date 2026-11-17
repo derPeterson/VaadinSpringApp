@@ -3,8 +3,8 @@
 ## Laufende Umsetzung
 
 - [ ] [Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme](docs/planung/aura-umstellung.md)
-  auf Branch `design/aura-theme` abschließen: Browsertests, Zeilenhöhen, Nutzungsprüfung
-  und Abschlussvergleich; offene Punkte und Wiedereinstieg stehen im Plan.
+  auf Branch `design/aura-theme` abschließen: offene Aura-Fehler aus BUGS, Zeilenhöhen,
+  Nutzungsprüfung und Abschlussvergleich; offene Punkte und Wiedereinstieg stehen im Plan.
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise

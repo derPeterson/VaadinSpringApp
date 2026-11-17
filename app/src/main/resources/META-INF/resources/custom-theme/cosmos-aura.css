@@ -41,3 +41,17 @@ vaadin-tabs.cosmos-theme {
 :is(.cosmos-theme, .cosmos-reference-overlay, vaadin-popover[theme~="cosmos"]) vaadin-details::part(content) {
     margin-inline-start: 0;
 }
+
+/* Kalendertage: Hover mit der gemeinsamen Cosmos-Hoverfläche statt der Aura-Akzentfläche.
+   Ausgewählte und deaktivierte Tage behalten ihre Aura-Darstellung. */
+vaadin-month-calendar::part(date):hover::after {
+    background: var(--cosmos-hover-background);
+}
+
+vaadin-month-calendar::part(date selected):hover::after {
+    background: var(--aura-accent-color);
+}
+
+vaadin-month-calendar::part(date disabled):hover::after {
+    background: transparent;
+}

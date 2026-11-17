@@ -1331,8 +1331,15 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
 kleinerer Aufklapppfeil der Seitennavigation, Pflichtfeldpunkt direkt hinter dem Label,
-Feldsymbole in ca. 16 px und Aufklappbereiche ohne Einrückung um die Pfeilbreite.
+Feldsymbole in ca. 16 px, Aufklappbereiche ohne Einrückung um die Pfeilbreite und
+Kalendertage mit der gemeinsamen Hoverfläche statt der Aura-Akzentfläche.
 Spätere Bausteine und Fachbereiche dürfen diese Grundwerte gezielt überschreiben.
+
+Zwei Vaadin-Basisregeln sind beim Gestalten zu beachten: Schalter (`vaadin-switch`)
+behalten ihr Grid-Layout (`grid`/`inline-grid`, nicht `flex`), sonst erhält das native
+`input` die Breite 0 und ist nicht mehr klickbar. Felder im Suffix eines anderen Felds
+(Zeiteinheit im Dauerfeld) blenden das Baseline-Pseudoelement `::before` aus, sonst
+reserviert es eine Labelzeile und schiebt die Auswahl aus dem Feld.
 
 Vom Benutzer akzeptierte Abweichungen durch Aura (kein pixelgenauer Nachbau):
 
