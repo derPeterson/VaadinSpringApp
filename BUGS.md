@@ -28,31 +28,33 @@
 - **Nachtest:** Kalender öffnen, Monat wechseln, Tag auswählen, heute markiert, Desktop
   und Smartphone.
 
-## Zeitauswahl springt nicht mehr zur gewählten Uhrzeit
+## Leere Fehlertext-Eigenschaft im Dauerfeld (Testanpassung, Nachtest offen)
 
-- **Status:** Vom Benutzer am 17.11.2026 gemeldet, Branch `design/aura-theme`.
-- **Reproduktion:** Benutzerverwaltung → Filter → „Letzte Aktivität ab“ → Uhrzeit wählen,
-  Auswahl erneut öffnen.
-- **Ist:** Die Liste scrollt nicht mehr zum ausgewählten Zeitpunkt.
-- **Erwartet:** Beim Öffnen steht der ausgewählte Zeitpunkt sichtbar in der Liste.
-- **Nächster Schritt:** `compact-time-input.js`/`CompactTimePicker` prüfen; das Skript
-  scrollt gezielt in die Auswahl und greift dafür auf die Komponente zu, deren Aufbau sich
-  mit Aura/Vaadin 25 geändert haben kann.
-- **Nachtest:** Uhrzeit wählen, schließen, wieder öffnen; auch mit Tastatur.
+- **Status:** Ursache am 17.11.2026 geklärt, kein Anwendungsfehler. Seit der Umstellung
+  auf native `CustomField`s (`b9f77499`, auf `main` nach der letzten großen Testrunde)
+  tragen `vaadin-custom-field.cosmos-duration-custom-field` den Zustand `invalid` und
+  die eine sichtbare Meldung; das innere `vaadin-big-decimal-field` ist nur `invalid`.
+  Im Browser nachgestellt: Meldung am CustomField, innere `errorMessage` leer.
+- **Umgesetzt:** TOKEN-01 bis TOKEN-04 (`TokenConfigurationPage.reject`) und die
+  Queue-Aufbewahrung in `ConfigurationBrowserTest` prüfen `errorMessage` jetzt an der
+  Feldhülle (`AdminConfigurationPage.durationCustomField`), das innere Feld weiter auf
+  `invalid`.
+- **Nachtest:** Suites `token-configuration` und `configuration` in DE und EN; danach
+  diesen Eintrag entfernen.
 
-## Leere Fehlertext-Eigenschaft im Dauerfeld
+## Fehlertexte unter Eingabefeldern zu groß
 
-- **Status:** Bestätigt im Browserlauf DE vom 17.11.2026, Ursache offen.
-- **Reproduktion:** Superadmin → Konfiguration → Token-Laufzeiten, Einheit „Sekunden“,
-  Wert 30 eingeben, speichern. Die Meldung „Die Dauer muss mindestens 1 min betragen.“
-  ist unter dem Feld sichtbar, `vaadin-big-decimal-field.errorMessage` ist jedoch leer.
-  Gleiches Bild bei der Queue-Aufbewahrung (Allgemeine E-Mail-Queue-Konfiguration).
-- **Erwartet:** Feld ist `invalid` und `errorMessage` enthält den sichtbaren Text, wie es
-  TOKEN-01 bis TOKEN-04 und CONFIG-Queue-Aufbewahrung prüfen.
-- **Nächster Schritt:** Prüfen, wie `CosmosDurationField.setErrorMessage` den Text an
-  die Vaadin-Felder übergibt und ob ein späterer Aufruf die Eigenschaft leert; Vergleich
-  mit `main`.
-- **Nachtest:** Suites `token-configuration` und `configuration` in DE und EN.
+- **Status:** Am 17.11.2026 im Browser beobachtet, Branch `design/aura-theme`.
+- **Reproduktion:** Benutzerverwaltung → Filter → „Letzte Aktivität ab“ → ungültiges
+  Datum wie `99.99.9999` eingeben.
+- **Ist:** Der Part `error-message` erbt unter Aura 16px/22px; die Meldung bricht im
+  schmalen Filter auf mehrere Zeilen um. `main` setzt keine eigene Regel, dort galt die
+  kleinere Lumo-Schrift.
+- **Erwartet:** Fehlertexte in der Cosmos-Schriftskala wie im Lumo-Stand.
+- **Nächster Schritt:** Lumo-Wert auf `main` messen und eine gemeinsame Regel für
+  `::part(error-message)` neben der vorhandenen `helper-text`-Regel in `cosmos-theme.css`
+  ergänzen.
+- **Nachtest:** Feldfehler in Filter, Kontoformular und Konfiguration, Desktop und Smartphone.
 
 Die bewussten Grenzen der Google-Ersteinrichtung stehen in der
 [Sicherheitsdokumentation](docs/externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).

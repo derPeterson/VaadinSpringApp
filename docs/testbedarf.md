@@ -19,6 +19,13 @@
   die Seitengrößenauswahl zeigt zweistellige Werte vollständig. Passende bestehende Fälle
   in `cosmos-components` bzw. den Pagination-/2FA-Suites erweitern, DE und EN.
 
+- **Zeitauswahl zeigt die gewählte Uhrzeit – wartend:** Auf Benutzerwunsch in der
+  gemeinsamen Browserrunde am Schluss. Benutzerfilter „Letzte Aktivität ab“: Datum setzen,
+  Uhrzeit 07:30 wählen, Liste über das Uhrsymbol erneut öffnen; 07:30 ist sichtbar und
+  markiert. Bei 07:37 zeigt die Liste 07:30, Schließen ohne Auswahl lässt 07:37 stehen.
+  Leeres Feld zeigt weiterhin die Platzhalterzeit. Passenden Fall der Benutzerverwaltung
+  erweitern, DE und EN, Desktop und Smartphone.
+
 - **Einheitlicher Hintergrund – wartend:** Auf Benutzerwunsch in der gemeinsamen
   Browserrunde am Schluss. `BackgroundVariantsBrowserTest` und `LoginLayoutBrowserTest`
   sind auf den einzigen Hintergrund (`cosmos-background.css`) umgestellt; zusätzlich bei

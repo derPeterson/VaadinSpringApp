@@ -120,6 +120,13 @@ public final class AdminConfigurationPage {
         .filter(new Locator.FilterOptions().setHas(input(fieldLabelText)));
   }
 
+  /** Native Feldhülle des Zeitfelds; sie trägt Ungültigkeit und den sichtbaren Feldfehler. */
+  public Locator durationCustomField(String fieldLabelText) {
+    return browserPage
+        .locator("vaadin-custom-field.cosmos-duration-custom-field")
+        .filter(new Locator.FilterOptions().setHas(input(fieldLabelText)));
+  }
+
   public BigDecimal seconds(String durationFieldLabel) {
     Locator durationFieldLocator = duration(durationFieldLabel);
     Locator durationUnitLabel =

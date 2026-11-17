@@ -14,12 +14,12 @@ Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Offene Fehler aus Paket 6 klären (Details in [BUGS](../../BUGS.md)): leere
-      `errorMessage` im Dauerfeld. Browserfälle und JUnit-Tests sind an Aura angepasst;
-      vollständige Läufe DE/EN am selben Image vom 17.11.2026: 372/380 bzw. 373/380
-      bestanden, Rest siehe BUGS und [Testbedarf](../testbedarf.md). Die Scrollleisten sind
-      inzwischen mit der vom Benutzer gewählten Variante „Himmelblau-Strich“ umgesetzt;
-      COMPONENT-06 besteht in DE und EN.
+- [ ] Offene Fehler in [BUGS](../../BUGS.md) abarbeiten: Hover in Auswahllisten,
+      Datumsauswahl im Cosmos-Stil, zu große Fehlertexte. Für das Dauerfeld sind nur die
+      Browserprüfungen angepasst; ihr Nachtest läuft mit der gemeinsamen Runde. Die
+      Zeitauswahl zeigt wieder die gewählte Uhrzeit (manuell geprüft, Browserfall im
+      [Testbedarf](../testbedarf.md)). Vollständige Läufe DE/EN vom 17.11.2026:
+      372/380 bzw. 373/380 bestanden.
 - [ ] Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen.
       Bisher sind nur Klassen ohne Vorkommen im Java-Code entfernt; alle sichtbaren Seiten
       tragen `cosmos-reference-portal` bzw. `-overlay`, ältere Grundregeln davor sind daher

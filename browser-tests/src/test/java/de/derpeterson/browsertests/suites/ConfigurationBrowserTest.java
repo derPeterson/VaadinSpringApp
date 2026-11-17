@@ -519,7 +519,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     try {
       settings.enterSeconds(label, java.math.BigDecimal.ZERO);
       settings.reject(
-          "vaadin-big-decimal-field", uiTexts.getAdminConfigValidationPositiveDuration());
+          "vaadin-custom-field.cosmos-duration-custom-field",
+          uiTexts.getAdminConfigValidationPositiveDuration());
       settings.reload();
 
       assertEquals(

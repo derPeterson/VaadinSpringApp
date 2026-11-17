@@ -65,9 +65,8 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
         .addEventListener(
             "opened-changed",
             openedChangeDomEvent -> {
-              if (openedChangeDomEvent.getEventData().path("event.detail.value").asBoolean()
-                  && activityTimePicker.isEmpty()) {
-                scrollToActivityTimePlaceholder();
+              if (openedChangeDomEvent.getEventData().path("event.detail.value").asBoolean()) {
+                scrollToActivityTimeListPosition();
               }
             })
         .addEventData("event.detail.value");
@@ -108,19 +107,25 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
             DateTimeFormatter.ofPattern(placeholderTimePattern, locale)));
   }
 
-  private void scrollToActivityTimePlaceholder() {
+  /**
+   * Zeigt beim Öffnen die gewählte Uhrzeit, bei leerem Feld die aktuelle Platzhalterzeit. Vaadin 25
+   * scrollt die Liste nicht selbst zur Auswahl und bietet keine öffentliche Java-Scrollmethode.
+   */
+  private void scrollToActivityTimeListPosition() {
     refreshActivityTimePlaceholder();
-    // Vaadin 25 bietet keine öffentliche Java-Scrollmethode für den TimePicker.
     // Nur die Liste scrollen: Ein fokussierter Eintrag würde beim Schließen übernommen.
+    // Werte außerhalb des Rasters zeigen den letzten früheren Eintrag; "HH:mm" sortiert als Text.
     activityTimePicker
         .getElement()
         .executeJs(
             """
             requestAnimationFrame(() => requestAnimationFrame(() => {
-                if (!this.opened || this.value || this.inputElement?.value || this._focusedIndex >= 0) return;
+                if (!this.opened || this._focusedIndex >= 0) return;
+                if (!this.value && this.inputElement?.value) return;
                 const scroller = this._scroller;
                 if (!scroller?.opened || typeof scroller.scrollIntoView !== 'function') return;
-                const index = scroller.items?.findIndex(item => item.value === $0);
+                const targetTime = this.value ? this.value.slice(0, 5) : $0;
+                const index = scroller.items?.findLastIndex(item => item.value <= targetTime);
                 if (index >= 0) scroller.scrollIntoView(index);
             }));
             """,

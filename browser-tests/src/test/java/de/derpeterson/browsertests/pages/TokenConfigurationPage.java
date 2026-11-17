@@ -66,8 +66,12 @@ public final class TokenConfigurationPage {
   public void reject(String fieldLabelText, String expectedErrorText) {
     findActionButtonLocator(uiTexts.getAdminConfigSave()).click();
 
+    Locator durationCustomFieldLocator =
+        new AdminConfigurationPage(browserPage).durationCustomField(fieldLabelText);
+
     assertThat(field(fieldLabelText)).hasAttribute("invalid", "");
-    assertThat(field(fieldLabelText)).hasJSProperty("errorMessage", expectedErrorText);
+    assertThat(durationCustomFieldLocator).hasAttribute("invalid", "");
+    assertThat(durationCustomFieldLocator).hasJSProperty("errorMessage", expectedErrorText);
     assertThat(notificationCardLocator())
         .containsText(uiTexts.getAdminConfigValidationInvalidFields());
     dismissNotificationCard();
