@@ -31,10 +31,6 @@ vaadin-app-layout.cosmos-admin {
     width: 100%;
 }
 
-.cosmos-admin-section {
-    gap: var(--cosmos-space-3xl);
-}
-
 .cosmos-section-header {
     width: 100%;
     max-width: 1300px;
@@ -89,11 +85,6 @@ vaadin-app-layout.cosmos-admin {
 /* Konfigurations-Card: gemeinsamer Rahmen für alle Gruppen; Felder bleiben unverändert. */
 
 /* 3. KONFIGURATION UND GEMEINSAME PANELBAUSTEINE */
-
-.cosmos-config-card,
-.cosmos-panel-card {
-    padding: var(--cosmos-space-3xl) clamp(20px, 4vw, 36px) 28px;
-}
 
 .cosmos-config-card-header,
 .cosmos-panel-header {
@@ -463,8 +454,7 @@ vaadin-dialog[theme~="cosmos"]::part(footer) {
     color: var(--cosmos-heading-color);
 }
 
-/* Lumos eigene 9px-Rundung passt nicht zu unserer größeren Dialogfläche.
- * Innenradius = Außenradius minus 1px Rahmen: so übermalen Header und Footer
+/* Innenradius = Außenradius minus 1px Rahmen: so übermalen Header und Footer
  * die Rundungen des Außenrahmens nicht. Kein overflow:hidden am Dialog,
  * damit die nativen Resize-Griffe außerhalb der Fläche bedienbar bleiben. */
 
@@ -521,10 +511,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
 }
 
 @media (max-width: 600px) {
-    .cosmos-admin-section {
-        gap: var(--cosmos-space-2xl);
-    }
-
     .cosmos-dialog-actions > vaadin-button {
         flex: 1 1 120px;
     }

@@ -10,12 +10,6 @@
     padding-block: var(--cosmos-space-2xl);
 }
 
-/* Sicherheitsaktionen und Geräte: eine kleinere Stufe als die Panelköpfe. */
-
-.cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
-    grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr) auto;
-}
-
 /* Gemeinsame Aktionsbreite fuer Passwort und E-Mail, auch bei Sprachwechsel.
  * Auf schmalen Displays bleibt der Button innerhalb seiner Textspalte. */
 
@@ -76,18 +70,8 @@
 }
 
 @media (max-width: 600px) {
-    .cosmos-account
-        :is(#account-panel-profile, #account-panel-security, #account-panel-sessions)
-        > .cosmos-panel-footer {
-        padding: var(--cosmos-space-l);
-    }
-
     .cosmos-account .account-entry {
         grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr);
-    }
-
-    .cosmos-account :is(#account-panel-security, #account-panel-sessions) .account-entry {
-        grid-template-columns: var(--cosmos-panel-icon-size-small) minmax(0, 1fr);
     }
 
     .cosmos-account .account-entry > vaadin-button {

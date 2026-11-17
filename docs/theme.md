@@ -1379,6 +1379,16 @@ absolut gelegtem Label (Benutzerfilter) heben die Rasterzelle des Label-Parts au
 das Label senkrecht mittig in der ganzen Fläche steht.
 Spätere Bausteine und Fachbereiche dürfen diese Grundwerte gezielt überschreiben.
 
+Bei der Regelbereinigung sind lokale Anordnungen von gemeinsamen Grundregeln zu
+unterscheiden: Überdeckte Werkzeugleisten-, Karten- und Kontoeintrag-Regeln entfallen,
+wenn die zuständige Fachgestaltung sie über alle relevanten Breiten ersetzt.
+Button-, Feld-, Dialog- und Avatargrundregeln sowie von Java verwendete Utilities
+sind anhand ihrer Aufrufer, Zustände und nativen Varianten zu beurteilen. Eine
+Kaskadenaufnahme ohne Gewinn allein beweist ihre Entbehrlichkeit nicht.
+Insbesondere bleibt der Inhaltsabstand von
+`.portal-menu-presence-details` zusammen mit der nativen Variante `AURA_NO_PADDING`
+erhalten; die Variante und die ergänzende Cosmos-Regel wirken gemeinsam.
+
 Zwei Vaadin-Basisregeln sind beim Gestalten zu beachten: Schalter (`vaadin-switch`)
 behalten ihr Grid-Layout (`grid`/`inline-grid`, nicht `flex`), sonst erhält das native
 `input` die Breite 0 und ist nicht mehr klickbar. Felder im Suffix eines anderen Felds

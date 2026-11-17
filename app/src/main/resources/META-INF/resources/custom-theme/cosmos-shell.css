@@ -268,10 +268,6 @@ vaadin-avatar {
     pointer-events: none;
 }
 
-.cosmos-avatar-status > :is(vaadin-icon, div) {
-    box-shadow: 0 0 0 2px var(--cosmos-base-color);
-}
-
 .cosmos-app-main {
     position: relative;
     z-index: 1;

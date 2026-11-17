@@ -452,10 +452,6 @@ vaadin-tooltip::part(content) {
     --vaadin-grid-cell-background-color: var(--cosmos-table-alternate-row-background);
 }
 
-.cosmos-theme vaadin-grid vaadin-grid-sorter::part(indicators) {
-    color: var(--cosmos-table-header-color);
-}
-
 .cosmos-theme vaadin-grid::part(body-cell) {
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
