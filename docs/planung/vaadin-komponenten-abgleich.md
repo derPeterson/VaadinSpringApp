@@ -153,7 +153,8 @@ die Gestaltung des nativen Überlaufs wird gemeinsam gesichtet.
 
 ## Wo Browsercode und CSS beteiligt sind
 
-Die Anwendung lädt Lumo und darüber das eigene Silent-Cosmos-Theme.
+Die Anwendung lädt Vaadin Aura und darüber das eigene Silent-Cosmos-Theme
+(Schichten und Ladereihenfolge: [Theme](../theme.md#dateien-und-ladereihenfolge)).
 `cosmos-tokens.css` liefert gemeinsame Werte. Gemeinsame Controls und
 Overlays liegen im Theme, fachbezogene Selektoren unter anderem in
 `cosmos-account.css`, `cosmos-admin.css`, `cosmos-notifications.css` und

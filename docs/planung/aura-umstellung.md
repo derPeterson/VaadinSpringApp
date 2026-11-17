@@ -1,191 +1,31 @@
-# Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme
+# Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme – offene Punkte
 
 Branch: `design/aura-theme`. Auftrag des Benutzers vom 17.11.2026.
 
-## Ziel und Grenzen
+Umgesetzt sind Aura als Basis, die eine Palette, die Typografieskala, zusammengeführte
+Token-Familien, Prettier/Stylelint und die neu gegliederte Dateistruktur. Der gültige
+Stand steht in der [Theme-Anleitung](../theme.md#basis-vaadin-aura-mit-cosmos-schichten)
+einschließlich akzeptierter Abweichungen; Werkzeuge in der
+[Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatieren).
 
-- Basis wechselt von Lumo auf das Vaadin-Theme **Aura** (`aura/aura.css`,
-  Vaadin 25.3.5). Der Name **Cosmos** bleibt für das eigene Theme erhalten.
-- Die Anwendung sieht danach **wie bisher** aus (dunkles Schema). Erlaubt sind nur
-  kleine Abweichungen durch vereinheitlichte Farben, Schriftgrößen oder Kontrastkorrekturen;
-  jede bewusste Abweichung steht in diesem Plan bzw. danach in der Theme-Anleitung.
-- Dark Mode bleibt Standard. Aura arbeitet mit `light-dark()`; die Tokens werden so
-  angelegt, dass ein späterer Light-Modus mit Benutzerwahl ergänzt werden kann.
-  Der Light-Modus selbst ist **nicht** Teil dieses Auftrags.
-- Schrift: Inter, Ersatz Roboto/Systemschrift; Space Mono für Codes, Schlüssel und
-  E-Mail-Adressen in Codeoptik. Markenvorgaben (Google-Schrift im Google-Button) bleiben.
-- Lumo-Bezüge im Java-Code werden mit umgestellt. Browsertests werden im Nachgang
-  angepasst; bis dahin dürfen sie an geänderten Klassen/Varianten scheitern.
-- Modernisierungs- und Barrierefreiheitsideen, die das Aussehen spürbar ändern würden,
-  werden nur gesammelt (Abschnitt „Spätere Verbesserungsvorschläge“), nicht umgesetzt.
-- Freigaben: eigener Branch, App-Start mit isolierten Testdaten, Screenshots, Einführung
-  von Stylelint/Prettier für CSS. Commits nur auf ausdrücklichen Auftrag.
+Grenzen bleiben: Die Anwendung sieht wie bisher aus; Änderungen, die das Aussehen spürbar
+ändern würden, werden nur unten gesammelt. Ein Light-Modus ist nicht Teil des Auftrags.
+Commits nur auf ausdrücklichen Auftrag.
 
-## Ausgangslage
+## Offene Arbeiten
 
-| Kennzahl | Wert |
-| --- | --- |
-| CSS-Dateien unter `META-INF/resources/custom-theme/` | 33, zusammen ca. 460 KB |
-| Laden | `Application` (10 globale), ~40 Klassen per `@StyleSheet` |
-| `var(--lumo-*)`-Verwendungen | 257 (47 verschiedene; 13 davon nur Lumo-Standardwerte) |
-| Verschiedene Hex-Farben / `rgba()` | 141 / 85 |
-| `!important` | 65 |
-| Schriftgrößen | 16 feste px-Werte (9–30 px) neben der Skala `--cosmos-font-size-*` |
-| Schriftstärken | 400, 450, 500, 550, 600, 630, 650, 700 |
-
-Zwei Paletten existieren parallel: die ältere **Cosmos**-Palette (Indigo/Lavendel,
-z. B. `#526ebc`, `#a9c0fb`) und die neuere **Reference**-Palette (Slate/Himmelblau,
-z. B. `#0088cc`, `#38bdf8`). Sichtbar ist überwiegend Reference, weil
-`TrackedUserAppLayout` und `PublicPageComponent` sie setzen. Die alten Werte schlagen
-an nicht überschriebenen Stellen durch, etwa `--lumo-primary-color-10pct/50pct` bei
-Badges, Panelicons und Avatarrändern. Java enthält Lumo-Bezüge: `ButtonVariant.LUMO_*`,
-`LumoUtility`, `var(--lumo-success-color)` in `UserStatus`, `/lumo/`-Pfade in
-`SecurityConfig`, `MaintenanceHttpFilter`, `TwoFactorHttpFilter`.
-
-## Zielstruktur
-
-Ladereihenfolge in `Application`: Aura → Cosmos-Schichten. Jede Datei hat genau
-eine Zuständigkeit und beginnt mit einem kurzen Kopfkommentar.
-
-| Schicht | Inhalt |
-| --- | --- |
-| 1. Fonts | `@font-face` Inter/Space Mono |
-| 2. Palette | Rohfarben (Neutral-, Akzent-, Statusfarben) – einzige Stelle für Hexwerte |
-| 3. Semantische Tokens | Text, Flächen, Rahmen, Akzent, Status, Fokus; Abbildung auf `--aura-*`/`--vaadin-*` |
-| 4. Skalen | Schrift, Abstände, Radien, Größen, Schatten |
-| 5. Vaadin-Bausteine | Buttons, Felder, Grid, Dialoge, Tabs, Badges … (gemeinsam) |
-| 6. App-Rahmen | Kopf, Seitenrahmen, Navigation, Hintergrund |
-| 7. Fachbereiche | Konto, Admin, Benachrichtigungen, 2FA, öffentliche Seiten |
-
-Regeln: keine Hex-/RGBA-Werte außerhalb der Palette (Ausnahme: dekorative Hintergrundszene),
-keine `--lumo-*`-Variablen, `!important` nur mit begründendem Kommentar, keine
-doppelten Selektoren über Dateien hinweg.
-
-## Farbvorschlag (eine Palette)
-
-Grundlage ist die sichtbare Reference-Palette. Alte Indigo-Werte entfallen.
-Kontraste nach WCAG 2.x (normaler Text ≥ 4,5:1, große Schrift/Bedienelemente ≥ 3:1).
-
-| Rolle | Neu | Ersetzt | Kontrast |
-| --- | --- | --- | --- |
-| Seite | `#050811` | `#03050b`, `#040710`, `#02040a` (außer Szene) | – |
-| Panel | `#080e1b` | `#0b1220`, Card-Verlauf alt | – |
-| Eingabe | `#091120` | – | – |
-| Dialog/Overlay | `#0e1726` | `#11192a`, `#0f172a` | – |
-| Hover | `#152238` | – | – |
-| Auswahl | `#122342` | `#1b2b42` (Tabelle) | – |
-| Text | `#e2e8f0` | `#edf2ff`, `#e4edfb` | 15,6 auf Panel |
-| Überschrift | `#ffffff` | `#f8fafc`, `#f3f6ff` | – |
-| Label | `#cbd5e1` | – | 13,0 |
-| Sekundär | `#94a3b8` | `#a7b7d2` | 7,5 |
-| Gedämpft | `#7c8aa0` **(angehoben)** | `#64748b`, `#899ab8`, `#748199` | 5,4 auf Eingabe (alt 3,97 ✗) |
-| Akzent (Text/Icon) | `#38bdf8` | `#a9c0fb`, `#7dd3fc` | 9,0 |
-| Primary-Fläche | `#0077b6` **(abgedunkelt)** | `#0088cc`, `#526ebc`, Indigo-Verlauf | Weiß 4,9 (alt 3,89 ✗) |
-| Primary-Hover | `#00679e` | `#0078b4` | Weiß 6,0 |
-| Erfolg | `#34d399` | `#468c69`, `#a3d5b8` | 10,0 |
-| Warnung | `#fbbf24` | `#f59e0b`, `#c99950`, `#efcb8a` | 11,6 |
-| Fehler | `#f87171` | `#bc596e`, `#efa4b1`, `#e05a6c` | 7,0 |
-| Fehler-Text hell | `#fca5a5` | – | – |
-| Zählerbadge | `#b4233b` | – | Weiß 6,5 |
-| System (Violett) | `#a855f7` / Text `#d8b4fe` | – | Text 9,5; Weiß auf Violett 3,96 → nur als Rahmen/Akzent |
-
-Transparente Flächen (10 %/20 %/50 %) werden per `color-mix()` aus diesen Farben
-gebildet, statt eigene RGBA-Werte zu pflegen. Die dekorative Hintergrundszene
-(Sterne, Horizont, Mond) behält eigene Verlaufswerte, gebündelt in einer Datei.
-
-## Typografieskala
-
-| Token | Wert | Einsatz |
-| --- | --- | --- |
-| `2xs` | 10 px | Großbuchstaben-Labels (Eyebrows, Kennzahlbeschriftungen) |
-| `xs` | 11 px | Badges, Metadaten, Tabellenköpfe |
-| `s` | 12 px | Labels, Hilfetexte |
-| `m` | 13 px | Fließtext in Panels, Eingaben, Buttons |
-| `l` | 14 px | Hervorgehobener Text, Navigation |
-| `xl` | 15 px | Bestätigungsfragen |
-| `2xl` | 16 px | Marke, Abschnittstitel |
-| `title` | 18 px | Panel- und Dialogtitel |
-| `heading-s`/`heading-m`/`heading-l` | 20/24/30 px | Seiten-Überschriften (mobil/Desktop) |
-| `3xl`/`display` | 28/32 px | Große Symbolschrift, Hero-Zahlen |
-
-Stärken: 400 regulär, 500 mittel, 600 halbfett, 700 fett; 450/550/630/650 sind gerundet.
-Die frühere Vorgabe „9/10 px auf 11 px anheben“ wurde verworfen: Die Großbuchstaben-Labels
-behalten 10 px als eigene Stufe, damit sich Breiten und Umbrüche nicht ändern.
-
-## Werkzeuge
-
-Prettier formatiert CSS einheitlich, Stylelint prüft Regeln (unbekannte Eigenschaften,
-doppelte Selektoren und Eigenschaften, Farbliterale außerhalb der Palette, keine `--lumo-*`).
-Eingerichtet als feste npm-Entwicklungsabhängigkeiten im `app`-Modul; Befehle und Grenzen
-stehen in der [Entwicklungsanleitung](../entwicklung.md#css-prüfen-und-formatieren).
-
-## Arbeitsschritte und Stand
-
-- [x] Branch `design/aura-theme` angelegt, Bestand erfasst (siehe oben).
-- [x] Vorher-Aufnahmen: 36 ganzseitige Screenshots 1440×900 und 390×844 (DE, isolierte
-      H2, Superadmin mit echter 2FA-Einrichtung). Ablage nur temporär im Scratchpad;
-      jederzeit von `main` reproduzierbar (siehe Wiedereinstieg).
-- [x] Farb- und Schriftvorschlag mit Kontrastprüfung (dieser Plan).
-- [x] Aura laden, Lumo entfernen; fehlende Lumo-Standardwerte als Cosmos-Tokens anlegen;
-      alle `var(--lumo-*)` ersetzen; Java-Bezüge (`LumoUtility`, `ButtonVariant.LUMO_*`,
-      `UserStatus`, Sicherheits-Pfade) umstellen. Ersatzklassen in `CosmosCssClasses`
-      (`INLINE_BUTTON`, `ICON_BUTTON`, `EQUAL_WIDTH_TABS`, `TEXT_*`); Grid-Zeilenfarben über
-      öffentliche `--vaadin-grid-row-*`-Variablen und den Part `odd-row-cell`.
-- [x] Nachher-Aufnahmen gegen Vorher vergleichen und Abweichungen beheben (43 Aufnahmen
-      inkl. Overlays). Behoben: AppLayout-Rahmen, Reiterleiste, Pflichtfeldpunkt,
-      Feldsymbolgröße, Schalterraster, Haken in Checkboxen, doppelte FormLayout-Abstände,
-      Einrückung in Aufklappbereichen, Grid-Zeilenhöhe. Neue Aura-Anpassungen stehen
-      vorläufig am Ende von `cosmos-theme.css` (Abschnitte 9 und 10) und werden beim
-      Neugliedern einsortiert.
-- [x] Palette konsolidieren: neue Datei `cosmos-palette.css` (einzige Stelle für Farbwerte,
-      geladen direkt nach Aura). Semantische Tokens und frühere Referenzwerte verweisen
-      darauf; alle Literale in Fachdateien sind durch Palettenfarben bzw. `color-mix()` ersetzt.
-      Ausnahmen: dekorative Hintergrundszene und Google-Markenfarben. Die beiden parallelen
-      Tokenfamilien sind inzwischen zusammengeführt (Paket 1).
-- [x] Typografie auf die Skala bringen: alle `font`/`font-size`/`font-family`-Angaben
-      verwenden `--cosmos-font-size-*`, `--cosmos-font-family` (mit Roboto-/Systemersatz)
-      bzw. `--cosmos-font-family-mono`. Space Mono ist jetzt global in `typography.css`
-      definiert (vorher nur auf 2FA-Seiten geladen, sonst Ersatzschrift Consolas).
-      Stärken auf 400/500/600/700 gerundet. Einzelwerte gerundet: 9→10, 17→18, 21→20,
-      22→20, 25→24 px. Zeilenhöhen sind noch Einzelwerte (nächster Schritt beim Gliedern).
-- [x] Paket 1 – Token-Familien zusammengeführt: `--cosmos-reference-*` durch die semantischen
-      `--cosmos-*`-Rollen ersetzt (CSS, `UserStatus`, `docs/theme.md`), fehlende Rollen im
-      gemeinsamen Tokenblock ergänzt. Der Block für `.cosmos-reference-portal`/`-overlay`
-      enthält nur noch vier bewusst abweichende Werte (Sekundärrahmen, Primary-Schatten,
-      Kopfzeilenhöhe 65 px, Avatar-Statusanker). Keine Regel wiederholte nur noch Werte;
-      die Markerklassen und `CosmosCssClasses.REFERENCE_*` bleiben, weil Selektoren und
-      Java-Verzweigungen sie brauchen. Vergleich vorher/nachher: pixelgleich.
-- [x] Paket 3 – Prettier 3.9.10 und Stylelint 17.16.0 eingerichtet, alle Dateien unter
-      `custom-theme` formatiert (eine Deklaration pro Zeile, vier Leerzeichen). Befunde
-      behoben: Dekor-Tokens mit eigenen Farbwerten aus `cosmos-tokens.css` in die beiden
-      Hintergrunddateien verschoben, 31 doppelte Selektoren kaskadensicher zusammengeführt,
-      `100vh`-Ersatzwerte neben `100dvh` entfernt. Vergleich vorher/nachher (46 Aufnahmen
-      inkl. Passwortdialog und Benachrichtigungsvorschau): pixelgleich.
-- [x] Paket 2 – Dateistruktur neu gegliedert: `cosmos-aura.css` (Aura-Abgleich, direkt nach den
-      Tokens), `cosmos-utilities.css` (Ersatzklassen, direkt nach `cosmos-theme.css`, weil sie
-      Komponentenregeln gleicher Spezifität ergänzen müssen), `cosmos-cards.css` (bisher drei
-      Card-Dateien), Iconregel in `cosmos-theme.css`, Avatarstatus in `cosmos-avatar.css`;
-      `cosmos-admin-reference.css` auf `cosmos-admin.css`/`admin-users.css` verteilt; `@import`s
-      durch sichtbare `@StyleSheet`-Einträge ersetzt (`CosmosThemeStylesheetsTest`). Ungenutzte
-      Regeln entfernt (Klassen ohne Java-Vorkommen, `vaadin-dialog`-Selektoren für den als
-      `vaadin-confirm-dialog` umgesetzten Löschdialog). `!important` von 65 auf 61: übrige sind
-      kommentiert und per Vergleich als nötig belegt (Inline-Styles aus Java, Dialog-Overlay,
-      `[hidden]`, reduzierte Bewegung). `cosmos-mfa-otp.css` bleibt getrennt, weil sie in die
-      Schattenwurzel des OTP-Felds geladen wird. Befund: Komponenten-Stylesheets verloren bisher
-      Gleichstände gegen die globalen Dateien; zwei so verdeckte Regeln (Hilfebuttonmaße,
-      Breite der Löschbestätigung) sind jetzt reihenfolgeunabhängig. Vergleich vorher/nachher
-      (46 Aufnahmen mit berechneten Styles aller sichtbaren Elemente): gleich; Pixelabweichung
-      nur durch zufällige Ersatzcodes/QR-Code.
-- [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte).
-- [ ] Paket 5 – Abschlussvergleich Desktop/Smartphone, `docs/theme.md` auf den neuen Stand
-      bringen, Plan entfernen bzw. Restpunkte übernehmen.
-- [ ] Paket 6 – Browsertests an geänderte Klassen/Varianten anpassen.
+- [ ] Paket 6 – Browsertests an geänderte Klassen/Varianten anpassen und DE/EN ausführen.
+- [ ] Paket 4 – Zeilenhöhen vereinheitlichen (noch Einzelwerte je Baustein).
+- [ ] Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen, auf Nutzung prüfen.
+      Bisher sind nur Klassen ohne Vorkommen im Java-Code entfernt; alle sichtbaren Seiten
+      tragen `cosmos-reference-portal` bzw. `-overlay`, ältere Grundregeln davor sind daher
+      teils überschrieben.
+- [ ] Abschlussvergleich Desktop/Smartphone gegen `main` (Lumo) nach Paket 6; danach diesen
+      Plan entfernen und Restpunkte übernehmen.
 
 ## Wiedereinstieg
 
-**Nächster Schritt: Paket 5 (Dokumentation), danach Paket 6 (Browsertests).**
-Offene Prüfung zu Paket 2: Regeln, die nur außerhalb der Portal-/Overlayrahmen greifen,
-sind nicht systematisch auf Nutzung geprüft (nur Klassen ohne Java-Vorkommen entfernt).
+Vergleiche vorher/nachher bisher pixel- und stylegleich (zuletzt 46 Aufnahmen nach Paket 2).
 
 **Werkzeuge (temporär, im Scratchpad der Sitzung; bei Verlust neu anlegen):**
 `Shots.java` (Playwright-Aufnahmen inkl. 2FA-Ersteinrichtung und acht Overlays; die
@@ -211,17 +51,6 @@ temporären Worktree auf Port 8091.
   `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` setzen. Das Skript meldet den Superadmin an,
   durchläuft die 2FA-Ersteinrichtung und fotografiert Portal, Konto und alle Adminbereiche.
 - Vorher-Stand bei Bedarf aus einem temporären Worktree von `main` neu erzeugen.
-
-## Akzeptierte Abweichungen durch Aura
-
-Vom Benutzer freigegeben: kein pixelgenauer Nachbau; Aura-Standards dürfen bleiben,
-wenn sie nicht stören.
-
-- Eingabefelder sind teils 2 px niedriger (vom Benutzer ausdrücklich akzeptiert).
-- Feldsymbole stammen aus Aura (u. a. anderes Kalendersymbol), Größe auf ca. 16 px abgeglichen.
-- Überschriften brechen mit `text-wrap: balance` ausgewogener um.
-- Checkboxen 16 statt 18 px; Buttons mit Aura-Innenabstand teils 2–4 px breiter.
-- Textbereich und Mehrfachauswahl verwenden denselben dezenten Rahmen wie alle übrigen Felder.
 
 ## Spätere Verbesserungsvorschläge
 

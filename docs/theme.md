@@ -5,7 +5,7 @@
 `CosmosCardComponent` verwendet die native Vaadin-`Card` für die gemeinsamen
 Konto-, Konfigurations-, Verwaltungs- und Ticketpanels. Die vorhandenen
 Cosmos-Klassen bestimmen weiterhin Rahmen, Flächen und Abstände.
-`cosmos-native-card.css` setzt nur die zusätzlichen nativen Zwischenräume zurück;
+`cosmos-cards.css` setzt nur die zusätzlichen nativen Zwischenräume zurück;
 die öffentlichen Content-/Footer-Parts geben die bestehende fachliche Anordnung
 frei. `AccountPanelComponent` ordnet Kopf und Footer den Card-Slots zu und bindet
 die sichtbare Überschrift als zugängliche Beschriftung ein.
@@ -16,7 +16,7 @@ unveränderte Gestaltung; ein Wechsel der Java-Basis erlaubt keine Neugestaltung
 
 `CosmosContentCardComponent` verwendet die native Card auch für kleine Konto-,
 Sitzungs-, Anbieter-, Vorschau- und Kontextkarten. Bestehende Fachklassen bestimmen
-weiterhin Rahmen und Anordnung; `cosmos-content-card.css` neutralisiert nur die
+weiterhin Rahmen und Anordnung; `cosmos-cards.css` neutralisiert nur die
 zusätzlichen nativen Abstände und Flächen mit bewusst niedriger Selektorgewichtung.
 Vorschauen ordnen Kopf und Footer den öffentlichen Card-Slots zu. Tabellenzeilen
 und illustrative Seitenkompositionen erhalten dadurch keinen zusätzlichen Rahmen.
@@ -140,10 +140,9 @@ gedeckter runder Griff, bei Hover die gemeinsame blaue Fläche und beim Ziehen C
 Breite/Höhe 6 px, Griff `#475569`, Hover `--cosmos-hover-background`, aktiv beim Ziehen `#38bdf8`, Bahn transparent. Browser ohne
 WebKit-Scrollselektoren verwenden die native schmale Breite und dieselben Farben.
 Im erzwungenen Systemkontrast bleiben native Farben und Breite erhalten.
-`cosmos-theme.css` importiert die gemeinsame Quelle für Dokument, normale
-Scrollcontainer und öffentliche Vaadin-Parts. Grid verwendet dieselbe unveränderte
-Quelle über seinen bereits vorhandenen Lumo-Einschub; private Element-IDs sind
-nicht Teil der Gestaltung. Scrollfunktionen und Innenabstände werden nicht geändert.
+`Application` lädt die gemeinsame Quelle `cosmos-scrollbars.css` für Dokument, normale
+Scrollcontainer und öffentliche Vaadin-Parts einschließlich Grid; private Element-IDs
+sind nicht Teil der Gestaltung. Scrollfunktionen und Innenabstände werden nicht geändert.
 Nur Chatverläufe reservieren zusätzlich Platz für die Scrollbahn und Abstand zu den
 Sprechblasenspitzen; diese lokalen Regeln bleiben in `cosmos-mfa-confirmation.css`.
 
@@ -273,10 +272,10 @@ Elements nicht. Reine Identitätsavatare und Anbieterstatus behalten den normale
 Zeiger; Avatare innerhalb nativer Buttons erben dessen Mauszeiger. Eingabefelder
 behalten ihren Textzeiger.
 Bedienbare native Komponenten verwenden zentral den Handzeiger über
-`--lumo-clickable-cursor` und `--vaadin-clickable-cursor` in `cosmos-tokens.css`.
+`--vaadin-clickable-cursor` in `cosmos-tokens.css`.
 Das gilt auch für Iconbuttons, Tabs, Pagination und native Auswahlaktionen.
-Bei Checkboxen und Radiobuttons ergänzt `cosmos-theme.css` die ausdrücklich von
-Lumo auf den Pfeil gesetzte äußere Fläche und den Label-Part. Eigene Labelinhalte
+Bei Checkboxen und Radiobuttons ergänzt `cosmos-theme.css` die äußere Fläche und
+den Label-Part, die das Basistheme mit dem normalen Pfeil zeigt. Eigene Labelinhalte
 wie die Filterbeschriftung mit Zähler erben den Cursor. Disabled und Readonly
 sind von dieser Ergänzung ausgenommen.
 Deaktivierte Komponenten behalten ihren nativen Disabled-Zeiger. Eine pauschale
@@ -292,7 +291,7 @@ Identitätszeilen; Avatar, Statuspunkt und Pfeil bleiben unverändert.
 Die Angaben bleiben grundsätzlich einzeilig mit Ellipse. Im Smartphone-
 Löschdialog sind bei der bestehenden mobilen Dialogbreite höchstens zwei
 Zeilen je Angabe erlaubt. Gespeicherte Daten werden nicht gekürzt.
-`cosmos-shell.css`, `cosmos-account.css` und `cosmos-admin-reference.css`
+`cosmos-shell.css`, `cosmos-account.css` und `admin-users.css`
 halten die jeweiligen Regeln lokal an den vorhandenen Identitätsklassen.
 Native `Tooltip`-Ziele zeigen die vollständigen Werte per Hover und
 Tastaturfokus; Namensänderungen aktualisieren auch den Tooltip. Der native
@@ -374,7 +373,7 @@ Auch die Registrierung (`RegistrationView`) und Benutzer anlegen/bearbeiten
 `public-registration-form` in `cosmos-public.css` erhält 20 px Zeilen-/Spaltenabstand
 und die bisherige Bildschirmgrenze von 640 px. Im Benutzerformular bleiben
 Passwort und Hinweis als gemeinsame Spalte erhalten. `admin-user-paired-form`
-in `cosmos-admin-reference.css` ordnet die Feldpaare mit 16 px Abstand an;
+in `admin-users.css` ordnet die Feldpaare mit 16 px Abstand an;
 der äußere Formularbereich behält über `--admin-user-group-spacing` 18 px
 Gruppenabstand, unabhängig vom Innenabstand verschachtelter FormLayouts.
 Die Medienabfrage und `--admin-user-two-column-min-width` erhalten den Wechsel bei 768 px.
@@ -384,7 +383,7 @@ zusätzlichen Superadmin-Optionen und die eingeklappte Anmeldung bleiben erhalte
 
 Die allgemeinen Konfigurationsgruppen und „E-Mail-Queue / Allgemein“ verwenden
 ebenfalls natives `FormLayout`. `cosmos-config-fields` in
-`cosmos-admin-reference.css` erhält 20 px Feldabstand und die bestehende
+`cosmos-admin.css` erhält 20 px Feldabstand und die bestehende
 Bildschirmgrenze von 768 px über `--admin-config-two-column-min-width`.
 `FieldHelpRowLayout` verbindet das unveränderte Eingabefeld und seinen
 `ConfigInfoButton` als natives `HorizontalLayout`: Das Feld wächst und darf
@@ -419,7 +418,7 @@ Vaadin-`Card`, einschließlich des abgenommenen Piloten „Passwort vergessen“
 die vorhandenen Panelzonen. Kopf und Footer sind native `HorizontalLayout`-
 Container, der Inhalt bleibt ein `VerticalLayout`. Die Beschriftung der Card ist
 über `setAriaLabelledBy` mit der bestehenden Überschrift verbunden und folgt
-dadurch deren Sprachwechsel. `cosmos-public-card.css` setzt ausschließlich für
+dadurch deren Sprachwechsel. `cosmos-cards.css` setzt ausschließlich für
 `.public-card-panel` die nativen Card-Innenabstände und Zwischenräume auf null
 sowie den äußeren Header-Abstand zurück. Die vorhandenen Zonenklassen beziehen
 Farben, Innenabstände, Rahmen, Radien und mobile Anordnung unverändert aus
@@ -478,7 +477,7 @@ Konfigurationskopf native Badges. Die Aktiv- und Anwesenheitsangaben in der
 Benutzertabelle bleiben flach. Mailtest und Benachrichtigungsversand zeigen
 den Versandzustand über Badge-Farbe und Tooltip. Die Quelle der
 Versandvorschau nutzt dieselbe Gestaltung wie die Quelle im persönlichen
-Postfach. Die lokalen Admin-Varianten stehen in `cosmos-admin-reference.css`,
+Postfach. Die lokalen Admin-Varianten stehen in `cosmos-admin.css`,
 die gemeinsame Quellendarstellung in `cosmos-notifications.css`.
 
 Im Benutzerformular teilen „Aktiv“ und „Verifikation“ die native Checkbox-
@@ -559,7 +558,7 @@ Auswahlmarkierung in kleineren Zeilen.
 Sekundäre Aktionsbuttons und Schließen-Buttons nutzen die Eingabefläche, bei Hover
 `--cosmos-hover-background` als Verweis auf die gemeinsame Hoverfarbe.
 Die übrigen Hoverflächen verwenden denselben zentralen Wert. Schließen-Buttons setzen auch Vaadins native Variable
-`--vaadin-button-tertiary-background`, damit `tertiary-inline` die Fläche nicht
+`--vaadin-button-tertiary-background`, damit die Tertiary-Variante die Fläche nicht
 transparent überschreibt. Navigation und Menüoptionen behalten ihre jeweiligen Zustände.
 Destruktive Buttons verwenden gemeinsam `.cosmos-delete-button`: rotes Icon und
 Text, 5 % rote Fläche und 25 % roter Rahmen; bei Hover 10 % rote Fläche,
@@ -620,7 +619,7 @@ Diese Einstellungen und eine am Wert gesetzte ID bleiben bei Zähler- und
 Sprachaktualisierungen erhalten. Die Inhaltskomponenten nicht ersetzen;
 Texte über die Setter aktualisieren. Auch die Konten-Karte in der
 Benutzerverwaltung verwendet diesen Baustein. Ihr lokaler Abgleich in
-`cosmos-admin-reference.css` erhält die bisherigen 96 × 59 px, die dezente
+`admin-users.css` erhält die bisherigen 96 × 59 px, die dezente
 blaue Metadatenpalette und blaue Schrift mit 1,2 px Buchstabenabstand.
 Die Texte füllen weiterhin die Inhaltsbreite; der `content`-Part braucht dort
 keinen optischen Versatz. Die Gesamtzahl zählt alle geladenen Konten unabhängig
@@ -811,12 +810,12 @@ Nachricht bleibt nur der Titel sichtbar. Die Überladung mit Anzeigedauer erhäl
 auch dauerhafte Hinweise. `showTextNotificationWithDetails` ergänzt eine native
 `UnorderedList` mit `ListItem`. `showHighlightedTextNotification` hebt das erste
 exakte Vorkommen des separat gelieferten Texts mit einer nativen `Span`,
-`text-primary` und `LumoUtility.FontWeight.SEMIBOLD` hervor. Fehlt dieses Vorkommen,
+`cosmos-text-primary` und `cosmos-toast-highlight` (halbfett) hervor. Fehlt dieses Vorkommen,
 bleibt die gesamte Nachricht als normaler Text erhalten. Keine dieser Methoden
 wertet HTML aus; Titel, Nachricht, Hervorhebung und Details folgen ihren Suppliern
 auch beim Sprachwechsel.
 
-Die bestehenden Klassen `cosmos-notification-message` und `LumoUtility.Margin.NONE`
+Die bestehende Klasse `cosmos-notification-message` (ohne Außenabstand)
 sowie Meldungshülle, Symbole, Farben, Dauer und Schließen bleiben erhalten.
 Alle globalen UI-Meldungen verwenden diese Methoden, einschließlich öffentlicher
 Kontoabläufe, Kontosicherheit, Tickets, persönlicher Benachrichtigungen und
@@ -988,7 +987,7 @@ Die echten Linkzustände und Recoveryabläufe prüfen die isolierten Browsertest
 ## Administration in Vaadin
 
 `AdminView` übernimmt die freigegebene Adminreferenz mit dem lokalen Scope
-`cosmos-reference-admin`. `cosmos-admin-reference.css` ergänzt die gemeinsamen
+`cosmos-reference-admin`. `cosmos-admin.css` (Abschnitt „Adminrahmen im Portal“) und `admin-users.css` ergänzen die gemeinsamen
 Referenztokens und Controls; Besucher- und Kontoseiten erhalten keine Adminregeln.
 Header und Benutzermenü verwenden die bestehenden Portalbausteine. Die native
 SideNav enthält die acht Konfigurationsgruppen mit denselben Lucide-Icons wie die
@@ -1011,7 +1010,7 @@ Die seitliche 3-px-Akzentmarkierung gilt für den aktiven Hauptpunkt im Portal u
 in der Administration.
 Der Ticketsystem-Eintrag zeigt relevante ungelesene Aktivitäten als roten Punkt
 rechts am nativen `SideNavItem`. Ein natives `Badge` mit der lokalen Klasse
-`.admin-nav-support-activity` in `cosmos-admin-reference.css` verwendet 8 px
+`.admin-nav-support-activity` in `cosmos-admin.css` verwendet 8 px
 Durchmesser und die bestehende rote Zählerfarbe `--cosmos-counter-badge-background`.
 Der native Tooltip erscheint nur bei aktivem Punkt und folgt dem Sprachwechsel.
 Mobil verwendet die Seitenleiste denselben Innenabstand von 20 px wie das Frontend.
@@ -1021,7 +1020,7 @@ Schnellzugriffe, ohne Beispielstatistik. Der Benachrichtigungszugang folgt der
 vorhandenen Superadminberechtigung; Dienste prüfen Rechte weiterhin unabhängig.
 
 Die Benutzerverwaltung verwendet weiterhin das native Grid und seine Sortierung.
-Ihre lokale Referenzgestaltung in `cosmos-admin-reference.css` übernimmt die
+Ihre lokale Referenzgestaltung in `admin-users.css` übernimmt die
 kompakte Werkzeugleiste ohne zusätzlichen oberen Abstand, einmalige Zellinnenabstände,
 Referenzzeilenfarben sowie flache Statusbadges mit Text und gegebenenfalls
 Anwesenheitsicon. Die sieben Spalten
@@ -1076,7 +1075,7 @@ den gemeinsamen Gefahrenstil.
 Bei Status- und Rollenbadges deckt das native Checkbox-Label die gesamte sichtbare
 Fläche ab. Dadurch aktivieren auch freie Randbereiche die Auswahl, ohne einen
 zusätzlichen JavaScript-Klickhandler. Die lokale Regel steht in
-`cosmos-admin-reference.css`.
+`admin-users.css`.
 
 Alle Konfigurationsgruppen behalten ihre vorhandenen Eingaben und Validierung.
 Die rechte Feldhilfe nutzt `AdminSidePanelDialog` im kompakten Referenzaufbau: fester
@@ -1105,7 +1104,7 @@ dem blauen Lucide-`square-arrow-right-enter` aus den Dashboard-Schnellzugriffen.
 Die Maße entsprechen dem Anbieter-Link; der obere Abstand beträgt 4 px.
 Wie bei „Startseite“ und „Abmelden“ im Avatar-Overlay bleiben Fläche, Text- und
 Iconfarbe bei Hover unverändert. Der Tastaturfokus bleibt sichtbar.
-Die Regeln liegen in `cosmos-admin-reference.css`. Der Panelkopf verwendet 18 px
+Die Regeln liegen in `cosmos-admin.css`. Der Panelkopf verwendet 18 px
 vertikal und 22 px seitlich, der Inhalt 22 px. Bis 600 px verwenden Kopf und
 Inhalt 16 px. Die Nachrichtenfläche ist mindestens 144 px hoch.
 Der Klartexthinweis unter dem Nachrichtenfeld verwendet konstant 11 px bei Gewicht 400
@@ -1138,14 +1137,14 @@ behalten ihre eigenen Maße; native Eingabe- und Tabellensymbole werden nicht um
 
 `AppIcon` definiert die benötigten Symbolfunktionen und erzeugt jeweils ein natives
 Vaadin-`SvgIcon` aus `META-INF/resources/icons/lucide/<name>.svg`. Buttons behalten
-ihre Beschriftung, Icons sind dekorativ mit `aria-hidden`. Direkte `VaadinIcon`-,
-`LumoIcon`-Aufrufe und der frühere `PortalIcon`-Wrapper entfallen. Logo, Flaggen und
+ihre Beschriftung, Icons sind dekorativ mit `aria-hidden`. Direkte `VaadinIcon`-Aufrufe
+und der frühere `PortalIcon`-Wrapper entfallen. Logo, Flaggen und
 Kosmosillustration sind eigenständige Bildinhalte und kein Teil des UI-Iconsets.
 Lokale Original-SVGs, vollständige Lizenz und Paketquelle liegen zusammen im
 Lucide-Ordner; es gibt keinen CDN-Aufruf und keine zusätzliche JavaScript-Bibliothek.
 
-`cosmos-icons.css` wird nach den übrigen Themequellen geladen und betrifft nur
-ausdrücklich erzeugte `AppIcon`-Symbole. Es übernimmt die Lucide-Originalstrichstärke;
+Die Iconregel in `cosmos-theme.css` betrifft nur ausdrücklich erzeugte
+`AppIcon`-Symbole (`cosmos-lucide-icon`, `cosmos-tabler-icon`). Es übernimmt die Lucide-Originalstrichstärke;
 vorhandene Größen, Statusfarben und Zustandsregeln bleiben maßgeblich.
 Anwesenheitsanzeigen verwenden `circle-check`, `circle-minus`,
 `clock` und `circle-x`. Der Gerätebaustein verwendet `monitor-smartphone`, die
@@ -1159,17 +1158,91 @@ nicht umgebaut. Die Suche verwendet Lucide, wenn ihre Lupe durch Anwendungscode
 gesetzt wird. Es gibt keine Masken- oder Schriftglyphenüberschreibung für native
 Komponenten und keine Abhängigkeit von internen Icon-CSS-Variablen.
 
+## Basis: Vaadin Aura mit Cosmos-Schichten
+
+Grundlage ist das Vaadin-Theme **Aura** (`Aura.STYLESHEET`, Version laut `pom.xml`).
+Lumo wird nicht geladen; Lumo-Variablen, `LumoUtility` und `ButtonVariant.LUMO_*`
+werden nicht verwendet (Stylelint lehnt `--lumo-*` ab). Das eigene Theme heißt weiterhin
+**Cosmos** und legt sich in Schichten über Aura. Das dunkle Schema ist Standard
+(`@ColorScheme(DARK)`); die Tokens sind so angelegt, dass ein späterer Light-Modus über
+`light-dark()` ergänzt werden kann. Ein Light-Modus ist derzeit nicht umgesetzt.
+
+Vorteile: native Vaadin-Komponenten mit aktuellem Basistheme, eine einzige Farbquelle,
+sichtbare Ladeordnung. Grenzen: Aura-Standards weichen teils ab und werden in
+`cosmos-aura.css` zurückgesetzt (siehe [Aura-Abgleich](#aura-abgleich-und-akzeptierte-abweichungen));
+Aura-Updates können dort Nacharbeit erfordern.
+
 ## Theme-Quellen und Template
 
-Das gemeinsame Template besteht aus den vorhandenen Theme-CSS-Dateien und ihren
-Tokens. Es gibt derzeit keine separate Template-Eingabedatei und keinen eigenen
-CSS-Generator. Die CSS-Dateien unter `app/src/main/resources/META-INF/resources/custom-theme/`
-sind die gepflegten Quellen; der optimierte Vaadin-Build erzeugt die ausgelieferten
-Frontend-/JAR-Ressourcen. Generierte Ausgaben nicht von Hand bearbeiten.
+Das gemeinsame Template besteht aus den CSS-Dateien unter
+`app/src/main/resources/META-INF/resources/custom-theme/`. Es gibt keine separate
+Template-Eingabedatei und keinen CSS-Generator; der optimierte Vaadin-Build erzeugt die
+ausgelieferten Ressourcen. Generierte Ausgaben nicht von Hand bearbeiten.
 
 „Ins Template übernehmen“ bedeutet: die freigegebene Gestaltung an der passenden
 gemeinsamen Stelle dieser Quellen verankern und hier dokumentieren. Konkrete Werte
 werden in CSS definiert; die folgenden Tabellen beschreiben den dazugehörigen Standard.
+
+## Palette
+
+`cosmos-palette.css` ist die einzige Stelle für Farbwerte der Oberfläche
+(`--cosmos-color-*`). Semantische Tokens in `cosmos-tokens.css` verweisen darauf;
+Fachdateien verwenden Tokens oder Palettenfarben. Transparente Flächen entstehen per
+`color-mix()` aus diesen Farben, nicht als eigene RGBA-Werte. Ausnahmen mit eigenen
+Farbwerten: die dekorative Hintergrundszene (`cosmos-background-*.css`) und die
+Google-Markenfarben in `cosmos-external-login.css`.
+
+Kontraste nach WCAG 2.x (normaler Text ≥ 4,5:1, große Schrift und Bedienelemente ≥ 3:1):
+
+| Rolle | Token | Wert | Kontrast |
+| --- | --- | --- | --- |
+| Seite | `--cosmos-color-space` | `#050811` | – |
+| Panel | `--cosmos-color-panel` | `#080e1b` | – |
+| Eingabe | `--cosmos-color-input` | `#091120` | – |
+| Dialog/Overlay | `--cosmos-color-raised` | `#0e1726` | – |
+| Auswahl | `--cosmos-color-selection` | `#122342` | – |
+| Hover | `--cosmos-color-hover` | `#152238` | – |
+| Text | `--cosmos-color-text` | `#e2e8f0` | 15,6 auf Panel |
+| Überschrift | `--cosmos-color-white` | `#ffffff` | – |
+| Label | `--cosmos-color-label` | `#cbd5e1` | 13,0 |
+| Sekundär | `--cosmos-color-secondary` | `#94a3b8` | 7,5 |
+| Gedämpft | `--cosmos-color-muted` | `#7c8aa0` | 5,4 auf Eingabe |
+| Akzent (Text/Icon) | `--cosmos-color-sky` | `#38bdf8` | 9,0 |
+| Primary-Fläche | `--cosmos-color-primary` | `#0077b6` | Weiß 4,9 |
+| Primary-Hover | `--cosmos-color-primary-hover` | `#00679e` | Weiß 6,0 |
+| Erfolg | `--cosmos-color-success` | `#34d399` | 10,0 |
+| Warnung | `--cosmos-color-warning` | `#fbbf24` | 11,6 |
+| Fehler | `--cosmos-color-danger` | `#f87171` | 7,0 |
+| Fehlertext hell | `--cosmos-color-danger-light` | `#fca5a5` | – |
+| Zählerbadge | `--cosmos-color-danger-strong` | `#b4233b` | Weiß 6,5 |
+| System (Violett) | `--cosmos-color-violet` / `-light` | `#a855f7` / `#d8b4fe` | Text 9,5 |
+
+Weiß auf Violett erreicht nur 3,96:1; Violett dient daher als Rahmen/Akzent, nicht als
+Fläche hinter normalem Text. Gedämpfter Text und Primary-Fläche sind für ausreichenden
+Kontrast bewusst heller bzw. dunkler gewählt.
+
+## Typografie
+
+`typography.css` definiert Inter (variable Schrift) mit Roboto/Systemschrift als Ersatz
+(`--cosmos-font-family`) und Space Mono für Codes, Schlüssel und technische Ausgaben
+(`--cosmos-font-family-mono`). Markenvorgaben wie die Google-Schrift im Google-Button
+bleiben davon unberührt. Alle Schriftgrößen verwenden die Skala aus `cosmos-tokens.css`:
+
+| Token `--cosmos-font-size-*` | Wert | Einsatz |
+| --- | --- | --- |
+| `2xs` | 10 px | Großbuchstaben-Labels (Eyebrows, Kennzahlbeschriftungen) |
+| `xs` | 11 px | Badges, Metadaten, Tabellenköpfe |
+| `s` | 12 px | Labels, Hilfetexte |
+| `m` | 13 px | Fließtext in Panels, Eingaben, Buttons |
+| `l` | 14 px | Hervorgehobener Text, Navigation |
+| `xl` | 15 px | Bestätigungsfragen |
+| `2xl` | 16 px | Marke, Abschnittstitel |
+| `title` | 18 px | Panel- und Dialogtitel |
+| `heading-s` / `heading-m` / `heading-l` | 20 / 24 / 30 px | Seitenüberschriften (mobil/Desktop) |
+| `3xl` / `display` | 28 / 32 px | Große Symbolschrift, Hero-Zahlen |
+
+Stärken: 400 regulär, 500 mittel, 600 halbfett, 700 fett
+(`--cosmos-font-weight-*`). Zeilenhöhen sind noch Einzelwerte je Baustein.
 
 ## Gestaltungsregeln
 
@@ -1179,39 +1252,37 @@ anderen Views, Icons oder Maße als Nebenwirkung.
 
 | Element | Standard |
 | --- | --- |
-| Primary-/Secondary-Button | Lumo M (36 px), 9 px Radius, 13 px / 600 |
-| Primary | Blauer Cosmos-Verlauf, Primary-Border, Kontrastschrift |
-| Secondary | Input-Hintergrund, Primary-Text, 1 px lumo-contrast-20pct |
+| Primary-/Secondary-Button | 36 px (`--cosmos-control-height`), 9 px Radius, 13 px / 600 |
+| Primary | Primary-Fläche, Primary-Border, Kontrastschrift |
+| Secondary | Input-Hintergrund, Primary-Text, dezenter 1-px-Rahmen |
 | Buttonicons | Vorhandene Größe; die 14-px-Basis für em-Icons erhalten |
 | Tabellenaktionen | 32×32 px, Icons 16×16 px |
 | Pagination | 28×28 px, 11 px Schrift, 4 px Abstand; aktiv Primary |
-| Eingaben | Lumo M, 13 px / 700; Platzhalter/leere Eingaben 13 px / 400 |
-| Labels | 12 px / 450, Secondary |
+| Eingaben | 36 px Controlhöhe, 13 px; Platzhalter/leere Eingaben 13 px / 400 |
+| Labels | 12 px / 500, Secondary |
 | Paneltitel/-beschreibung | Gemeinsame cosmos-panel-title / cosmos-panel-description |
 | Schließen | cosmos-overlay-close und bestehendes CLOSE_CIRCLE |
-| Frage-/Erfolgs-/Warnsymbole der Kontoansichten | Breite/Höhe über --lumo-font-size-xxxl, standardmäßig 40 px |
+| Frage-/Erfolgs-/Warnsymbole der Kontoansichten | 40 px über die Cosmos-Größentokens |
 
 Formularpaare nutzen `cosmos-form-row` und stehen unter 600 px untereinander.
-Die Löschaktion verwendet die vereinbarte 50-%-Mischung der Error- und Basisfarbe;
+Die Löschaktion verwendet die vereinbarte Mischung aus Fehler- und Basisfarbe;
 weitere rote Komponentenfarben werden nicht parallel eingeführt.
 
-Alle Cosmos-Grids verwenden dieselben vier zentralen Variablen:
+Alle Cosmos-Grids verwenden dieselben vier zentralen Tokens, gebildet aus der Palette:
 
-| Token | Wert |
+| Token | Herkunft |
 | --- | --- |
-| --cosmos-table-header-background | #223353b3 |
-| --cosmos-table-row-background | #101a2a73 |
-| --cosmos-table-alternate-row-background | #18213681 |
-| --cosmos-table-highlight-background | #1B2B42 für Auswahl |
+| --cosmos-table-header-background | Slate 800, 70 % deckend |
+| --cosmos-table-row-background | Overlayfläche, 45 % deckend |
+| --cosmos-table-alternate-row-background | Hoverfläche, 50 % deckend |
+| --cosmos-table-highlight-background | Auswahlfläche |
 
-Zeilenwechsel gilt im Cosmos-Theme automatisch; keine zusätzliche ROW_STRIPES-
-Variante oder benutzerverwaltungsspezifische Klasse nötig. Eine neue Tabelle übernimmt
-die gemeinsame Palette über die vorhandenen Gridregeln. Hover verwendet den
-zentralen Wert `--cosmos-hover-background`, Auswahl behält `--cosmos-table-highlight-background`. Keine eigene Tabellenpalette pro View hinzufügen.
-Tastaturfokus, native Lumo-Zustände und die vorhandenen responsiven Gridregeln erhalten.
-Die benannten `@media lumo_cosmos_grid_colors`-/`lumo_cosmos_grid_hover`-Blöcke und
-ihre `--_lumo-...`-Zuordnungen sind Vaadin-/Lumo-Einschübe, keine Bildschirmbreakpoints;
-sie nicht als vermeintlich ungenutzte Mediaqueries entfernen oder umbenennen.
+Zeilenwechsel gilt im Cosmos-Theme automatisch über die öffentlichen
+`--vaadin-grid-row-*`-Variablen und den Part `odd-row-cell`; keine zusätzliche
+Variante oder benutzerverwaltungsspezifische Klasse nötig. Hover verwendet
+`--cosmos-hover-background`, Auswahl `--cosmos-table-highlight-background`.
+Keine eigene Tabellenpalette pro View hinzufügen; Tastaturfokus und die vorhandenen
+responsiven Gridregeln erhalten.
 
 ## Vorhandene Bausteine wiederverwenden
 
@@ -1224,6 +1295,8 @@ für Klassen und Struktur; nicht nur einzelne sichtbare Maße nachbauen.
 | --- | --- | --- |
 | Eingabefelder und Formularpaare | Native Vaadin-Felder, `cosmos-form` / `cosmos-form-row` | cosmos-theme.css |
 | Primary-/Secondary-/Löschaktionen | Vorhandene Button-Themes und zentrale Control-/Danger-Tokens | cosmos-theme.css / cosmos-tokens.css |
+| Textartige und quadratische Buttons, Textfarben | Ersatzklassen aus `CosmosCssClasses` | cosmos-utilities.css |
+| Karten | `CosmosCardComponent`, `CosmosContentCardComponent`, öffentliche Panels | cosmos-cards.css |
 | Panels | Vorhandene Cardbasis und `cosmos-panel-card`, Header, Icon, Heading, Titel, Beschreibung, Footer und Aktionen | cosmos-admin.css |
 | Tabellen | Vaadin Grid im Cosmos-Theme, gemeinsame Zeilen-/Header-/Hoverregeln | cosmos-theme.css |
 | Dialoge und Schließen | Bestehende Dialogstruktur, Overlay-/Dialogtokens und `cosmos-overlay-close` | cosmos-theme.css / cosmos-admin.css / cosmos-shell.css |
@@ -1235,28 +1308,98 @@ Für neue Panels die vorhandene Header-/Inhalts-/Footerstruktur samt passenden
 Anordnung. Ein neues Eingabefeld bleibt beim vorhandenen Controlstandard;
 zusätzliche globale Feldregeln sind dafür nicht nötig.
 
+## Ersatzklassen für frühere Lumo-Varianten
+
+`CosmosCssClasses` stellt die Java-Konstanten bereit; die Regeln stehen in
+`cosmos-utilities.css`.
+
+| Konstante | Klasse | Wirkung |
+| --- | --- | --- |
+| `INLINE_BUTTON` | `cosmos-inline-button` | Textartiger Button ohne Fläche, Innenabstand und eigene Höhe; Schrift des Umfelds, Akzentfarbe |
+| `ICON_BUTTON` | `cosmos-icon-button` | Quadratischer Button in Controlhöhe ohne Innenabstand |
+| `EQUAL_WIDTH_TABS` | `cosmos-equal-width-tabs` | Reiter teilen sich die verfügbare Breite gleichmäßig |
+| `TEXT_PRIMARY` / `TEXT_SECONDARY` | `cosmos-text-primary` / `-secondary` | Akzent- bzw. Sekundärtextfarbe |
+| `TEXT_SUCCESS` / `TEXT_WARNING` / `TEXT_ERROR` | `cosmos-text-success` / `-warning` / `-error` | Statustextfarben |
+
+Die Datei lädt direkt nach `cosmos-theme.css`, damit diese Klassen die gemeinsamen
+Komponentenregeln gleicher Spezifität ergänzen. Abstände und Hervorhebung früherer
+Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls dort.
+
+## Aura-Abgleich und akzeptierte Abweichungen
+
+`cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
+Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
+kleinerer Aufklapppfeil der Seitennavigation, Pflichtfeldpunkt direkt hinter dem Label,
+Feldsymbole in ca. 16 px und Aufklappbereiche ohne Einrückung um die Pfeilbreite.
+Spätere Bausteine und Fachbereiche dürfen diese Grundwerte gezielt überschreiben.
+
+Vom Benutzer akzeptierte Abweichungen durch Aura (kein pixelgenauer Nachbau):
+
+- Eingabefelder sind teils 2 px niedriger.
+- Feldsymbole stammen aus Aura (u. a. anderes Kalendersymbol).
+- Überschriften brechen mit `text-wrap: balance` ausgewogener um.
+- Checkboxen 16 statt 18 px; Buttons mit Aura-Innenabstand teils 2–4 px breiter.
+- Textbereich und Mehrfachauswahl verwenden denselben dezenten Rahmen wie alle übrigen Felder.
+
 ## Dateien und Ladereihenfolge
 
-Basis: `app/src/main/resources/META-INF/resources/custom-theme/`.
+Basis: `app/src/main/resources/META-INF/resources/custom-theme/`. Jede Datei beginnt mit
+einem kurzen Kopfkommentar zu ihrer Zuständigkeit. `Application` lädt die globalen
+Schichten in dieser Reihenfolge; `CosmosThemeStylesheetsTest` sichert Reihenfolge,
+Vollständigkeit und den Verzicht auf `@import`:
 
-| Datei | Aufgabe |
-| --- | --- |
-| typography.css | Lokale Inter-Schrift und Schriftfamilie |
-| cosmos-tokens.css | Semantische Farbrollen, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen und Schatten |
-| cosmos-theme.css | Gemeinsame Cards, Formulare, Buttons, Grids und Systemmeldungen |
-| cosmos-scrollbars.css | Gemeinsame native Scrollleisten für Dokument, Container und Vaadin-Scrollflächen |
-| cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
-| cosmos-admin.css | Adminnavigation, Panels, Konfiguration und Dialogstandards |
-| cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
-| cosmos-background-base.css / cosmos-background-advanced.css | Alternative Dekorationen samt Szenenfarben; genau eine Variante wird geladen |
-| cosmos-account.css | Lokale Konto-/Profilbild-/Sitzungsansichten |
-| admin-users.css | Lokale Benutzerfilter, Tabelle, Pagination und Dialoge |
+| Schicht | Datei | Aufgabe |
+| --- | --- | --- |
+| Basis | `Aura.STYLESHEET` | Vaadin Aura |
+| Palette | cosmos-palette.css | Einzige Quelle der Farbwerte |
+| Typografie | typography.css | Inter und Space Mono, Schriftfamilien |
+| Tokens | cosmos-tokens.css | Semantische Farbrollen, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen, Schatten |
+| Aura-Abgleich | cosmos-aura.css | Zurückgesetzte Aura-Standards |
+| Bausteine | cosmos-scrollbars.css | Native Scrollleisten für Dokument, Container und Vaadin-Scrollflächen |
+| | cosmos-duration-field.css | Integrierte Zeiteinheit im Dauerfeld |
+| | cosmos-breadcrumbs.css | Native Seitenpfade |
+| | cosmos-segmented-tabs.css | Segmentierte Auswahl mit nativen Tabs |
+| | cosmos-theme.css | Formulare, Felder, Buttons, Grids, Badges, Systemmeldungen, Anwendungsicons |
+| | cosmos-utilities.css | Ersatzklassen aus `CosmosCssClasses` |
+| | cosmos-cards.css | Hüllen für native Karten |
+| | cosmos-avatar.css | Avatarkern und Statuspunkte |
+| App-Rahmen | cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
+| | cosmos-background-base.css / cosmos-background-advanced.css | Dekoration samt Szenenfarben; genau eine Variante wird geladen |
+| Fachbereiche | cosmos-admin.css | Adminnavigation, Panels, Konfiguration, Dashboard, Feldhilfe, Seitenpanels |
+| | cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
 
-`Application.java` lädt die gemeinsamen Stylesheets in dieser Reihenfolge;
-von den Hintergrundvarianten wird nur die zentral ausgewählte Datei eingebunden.
-AdminView ergänzt admin-users.css; AccountView/LoginView die benötigten Kontoregeln.
-Die Reihenfolge ist Teil der Kaskade. Dialoge brauchen eigene Klassen, da Vaadin
-sie außerhalb der View platzieren kann. Keine versteckten CSS-Imports einführen.
+Fachliche Einzeldateien laden die zuständigen Views und Komponenten selbst per
+`@StyleSheet`: `admin-users.css` (Benutzerverwaltung, Pagination), `cosmos-account.css`,
+`cosmos-external-login.css`, `cosmos-public.css`, `cosmos-confirmation.css`,
+`cosmos-email-verification.css`, `cosmos-metric-card.css`, `cosmos-mailqueue-assistant.css`,
+`cosmos-provider-settings.css` und die `cosmos-mfa*.css`-Dateien.
+Sonderwege: `cosmos-mfa-otp.css` wird von `TwoFactorCodeFields` in die Schattenwurzel des
+OTP-Felds geladen und lässt sich deshalb nicht mit anderen Dateien zusammenfassen;
+`email-fonts.css` dient nur den Mailvorlagen.
+
+Die Reihenfolge ist Teil der Kaskade. Stylesheets aus Views und Komponenten verlieren
+Gleichstände gleicher Spezifität gegen die globalen Dateien; eine fachliche Regel, die
+eine globale überstimmen soll, braucht daher eine höhere Spezifität statt einer
+bestimmten Ladereihenfolge. Dialoge brauchen eigene Klassen, da Vaadin sie außerhalb der
+View platziert. Keine versteckten CSS-Imports einführen.
+
+`!important` nur mit begründendem Kommentar, etwa gegen Inline-Styles aus Java
+(`UserStatus`, `OverlayUserIcon`, `CosmosPagination`), für Seitenpanels über dem
+Vaadin-Dialogoverlay, `[hidden]` und reduzierte Bewegung.
+
+### CSS prüfen und formatieren
+
+Prettier formatiert, Stylelint prüft die Theme-Dateien (Farben nur aus der Palette, keine
+`--lumo-*`-Variablen, keine doppelten Selektoren/Eigenschaften, keine unbekannten
+Eigenschaften). Im Verzeichnis `app`:
+
+```powershell
+npm run format:css
+npm run format:css:check
+npm run lint:css
+```
+
+Konfiguration und Grenzen: [CSS prüfen und formatieren](entwicklung.md#css-prüfen-und-formatieren).
 
 ### Hintergrundvarianten zum Ausprobieren
 
@@ -1319,7 +1462,8 @@ Die Benachrichtigungsbausteine sind bereits Teil des gemeinsamen Standards:
 
 Nur im ausdrücklich freigegebenen Umfang:
 
-1. Palette, Typografie, Flächen und Schatten in `cosmos-tokens.css` ändern.
+1. Farbwerte in `cosmos-palette.css`, Typografie, Flächen und Schatten in
+   `cosmos-tokens.css` ändern.
 2. Gemeinsame Bausteine verwenden diese Tokens; keine neuen lokalen Hex-/RGBA-Farben
    neben der zentralen Palette anlegen.
 3. Gemeinsame Regeln in cosmos-theme/shell/admin pflegen, nur Anordnung in lokalen Dateien.
@@ -1327,8 +1471,8 @@ Nur im ausdrücklich freigegebenen Umfang:
    zweite unübersichtliche Override-Kaskade parallel laden.
 5. Desktop, schmale Ansichten, Fokus, Fehler, Hover, Auswahl und Dialoge prüfen.
 
-Typische Skalen: `--cosmos-space-xs/s/m/l/xl/2xl/3xl` und
-`--cosmos-font-size-xs/s/m/l/xl/title`. Komponentenmaße haben eigene Aliase,
+Typische Skalen: `--cosmos-space-xs/s/m/l/xl/2xl/3xl` und die
+[Schriftskala](#typografie). Komponentenmaße haben eigene Aliase,
 z. B. `--cosmos-control-height`, `--cosmos-pagination-size`, `--cosmos-panel-icon-size`
 und `--cosmos-notification-preview-width`. Die vier Tabellenfarben bleiben gemeinsame Tokens.
 
@@ -1411,7 +1555,7 @@ sichtbaren Textbuttons und brechen bei wenig Platz um. Konfigurationsaktionen
 behalten ihre eigene responsive Anordnung. Bis 600 px stehen „Werte neu laden“
 und „Konfiguration speichern“ untereinander in voller Breite innerhalb der
 bestehenden Footer-Innenabstände. Die lokale Regel für `.cosmos-config-card-actions`
-in `cosmos-admin-reference.css` setzt dafür `--cosmos-equal-button-width:100%`;
+in `cosmos-admin.css` setzt dafür `--cosmos-equal-button-width:100%`;
 sie gilt auch für Anbieter, Queue-Assistent und 2FA-Rollen. Die Desktopanordnung
 bleibt erhalten. Der Mailtest erlaubt
 über `resize:vertical` am nativen TextArea-Host das manuelle Vergrößern des
@@ -1505,8 +1649,8 @@ Eine Einheitenauswahl gibt es für diese Tageswerte nicht. Ihre Feldhilfen
 beschreiben die Eingabe in ganzen Tagen und zeigen den aktuellen Wert in Tagen.
 Andere Zeitspannen bleiben Pflichtfelder.
 
-Die gemeinsame Gestaltung steht in `cosmos-duration-field.css`, importiert durch
-`cosmos-theme.css`. Sie hängt an `cosmos-duration-field` und benötigt keinen
+Die gemeinsame Gestaltung steht in `cosmos-duration-field.css`, global geladen durch
+`Application`. Sie hängt an `cosmos-duration-field` und benötigt keinen
 Admin-Seitencontainer. Die Zahlenfläche bleibt 40 px hoch. `cosmos-duration-unit-select`
 verwendet ohne eigene Außenbox den vorhandenen Suffix, eine eigene zugängliche
 Beschriftung „Einheit“. Der Einheitenbereich ist 104 px breit und 28 px hoch,
@@ -1536,7 +1680,7 @@ gelbe gemeinsame Warnbox in der Feldhilfe.
 Alle booleschen Konfigurationsfelder verwenden native Vaadin-Switches mit der
 Klasse `cosmos-config-switch`, auch in der Anbietereinrichtung. Der Text steht
 links, der Schalter rechts und das Infoicon außerhalb. Die Zeile hat keinen
-Rahmenkasten. Die gemeinsame Gestaltung liegt in `cosmos-admin-reference.css`:
+Rahmenkasten. Die gemeinsame Gestaltung liegt in `cosmos-admin.css`:
 34 × 20 px Bahn, 14-px-Marker und mindestens 40 px Zeilenhöhe. Das Label steht
 links, die Bahn am rechten Rand der Eingabespalte.
 Die öffentlichen Parts `label` und `switch` sowie der native Eingabeslot liegen
@@ -1551,7 +1695,7 @@ beim Tippen dem Suchtext. `admin-notification-body-field` erlaubt ausschließlic
 vertikales Vergrößern und behält den Innenabstand der Textarea. Vorschau und
 Eingabepanel beginnen bündig. Ihre Aktionsleisten erhalten vollbreite Trennlinien;
 Der Zeitstempel bleibt einfacher Text und der Prüfstatus verwendet ein grünes Häkchen.
-Die Darstellung bleibt lokal in `cosmos-admin-reference.css`.
+Die Darstellung bleibt lokal in `cosmos-admin.css`.
 Panel-Badges in der Administration verwenden 30 px Höhe und Schrift mit
 10 px, Gewicht 600, 16 px Zeilenhöhe und 1,2 px Zeichenabstand wie
 Konfiguration und Mailtest. Die Empfängeranzahl verwendet Gewicht 600 bei einer
@@ -1605,7 +1749,7 @@ Optionsbeschriftungen und Anzahl folgen dem Sprachwechsel. Mindestens eine Rolle
 bleibt erforderlich. Die Superadminrolle wird nur entsprechend der bestehenden
 Berechtigung angeboten. Der Prüfhinweis steht in einer eigenen Footerzeile über den
 rechtsbündigen Aktionen, mit durchgehender Trennlinie. Die lokalen Regeln liegen in
-`cosmos-admin-reference.css`.
+`admin-users.css`.
 Am unteren Ende der Benutzertabelle zeichnet allein die Pagination die Abschlusslinie;
 die letzte Zeile erhält keinen zusätzlichen unteren Rahmen.
 

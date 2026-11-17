@@ -30,7 +30,8 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Offene Arbeiten
 
 Die [Umstellung auf Vaadin Aura](planung/aura-umstellung.md) mit neu gegliedertem
-Cosmos-Theme läuft auf dem Branch `design/aura-theme`.
+Cosmos-Theme läuft auf dem Branch `design/aura-theme`; der umgesetzte Stand steht
+im [Theme-Standard](theme.md), offen sind noch Browsertests und Restpunkte.
 
 Die geplante [Versionierung mit Release-Ablauf](planung/releases.md) und der
 darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind durchgelesen;
