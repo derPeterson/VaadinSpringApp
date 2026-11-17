@@ -100,16 +100,75 @@ vaadin-combo-box-item.cosmos-reference-option::part(content) {
     margin-inline-start: 0;
 }
 
-/* Kalendertage: Hover mit der gemeinsamen Cosmos-Hoverfläche statt der Aura-Akzentfläche.
-   Ausgewählte und deaktivierte Tage behalten ihre Aura-Darstellung. */
+/* Kalender (Datumsauswahl) im Cosmos-Stil des Lumo-Stands: dunkle Overlayfläche ohne Auras
+ * Zwischenflächen, 36-px-Tage, „heute“ als Akzentschrift ohne Kreis, kleine Jahresspalte. */
+vaadin-date-picker,
+vaadin-date-picker-overlay-content {
+    --vaadin-date-picker-date-width: 36px;
+    --vaadin-date-picker-date-height: 36px;
+    --vaadin-date-picker-date-border-radius: var(--cosmos-radius-xs);
+    --vaadin-date-picker-date-today-color: var(--cosmos-primary-text-color);
+    --vaadin-date-picker-date-selected-background: var(--cosmos-primary-color);
+    --vaadin-date-picker-date-selected-color: var(--cosmos-heading-color);
+    --vaadin-date-picker-month-header-color: var(--cosmos-heading-color);
+    --vaadin-date-picker-month-header-font-weight: 500;
+    --vaadin-date-picker-weekday-color: var(--cosmos-text-secondary-color);
+    --vaadin-date-picker-weekday-font-weight: 400;
+    --vaadin-date-picker-year-scroller-background: transparent;
+    --vaadin-date-picker-year-scroller-border-color: transparent;
+    --vaadin-date-picker-year-scroller-current-year-color: var(--cosmos-primary-text-color);
+}
+
+vaadin-date-picker-month-scroller,
+vaadin-date-picker-overlay-content::part(toolbar) {
+    background: transparent;
+}
+
+vaadin-month-calendar::part(date) {
+    color: var(--cosmos-text-color);
+}
+
+vaadin-month-calendar::part(today) {
+    color: var(--cosmos-primary-text-color);
+    font-weight: 400;
+}
+
+vaadin-month-calendar::part(today)::before,
+vaadin-date-picker-year-scroller::before,
+vaadin-date-picker-year[selected]::after {
+    content: none;
+}
+
+vaadin-month-calendar::part(date selected) {
+    color: var(--cosmos-heading-color);
+}
+
+/* Hover mit der gemeinsamen Cosmos-Hoverfläche statt der Aura-Akzentfläche. */
 vaadin-month-calendar::part(date):hover::after {
     background: var(--cosmos-hover-background);
 }
 
 vaadin-month-calendar::part(date selected):hover::after {
-    background: var(--aura-accent-color);
+    background: var(--cosmos-primary-color);
 }
 
 vaadin-month-calendar::part(date disabled):hover::after {
+    background: transparent;
+}
+
+vaadin-date-picker-year::part(year-number) {
+    color: var(--cosmos-text-color);
+    font-size: var(--cosmos-font-size-xs);
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+vaadin-date-picker-year:is([current], [selected])::part(year-number) {
+    color: var(--cosmos-primary-text-color);
+    opacity: 1;
+}
+
+/* „Heute“ und „Abbrechen“ wie bisher als umrandete Tertiärbuttons ohne Füllung. */
+vaadin-date-picker-overlay-content > vaadin-button {
     background: transparent;
 }

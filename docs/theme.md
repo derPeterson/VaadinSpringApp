@@ -1358,8 +1358,10 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
 kleinerer Aufklapppfeil der Seitennavigation, Pflichtfeldpunkt direkt hinter dem Label,
 Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
-ohne Einrückung um die Pfeilbreite, Kalendertage mit der gemeinsamen Hoverfläche statt der
-Aura-Akzentfläche, Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
+ohne Einrückung um die Pfeilbreite, Kalender (Datumsauswahl) im Cosmos-Stil mit
+dunkler Fläche ohne Auras Zwischenflächen, 36-px-Tagen, „heute“ als Akzentschrift ohne
+Kreis, gemeinsamer Hoverfläche, ausgewähltem Tag in `--cosmos-primary-color`, kleiner
+Jahresspalte ohne Markierungsfläche und ungefüllten Buttons „Heute“/„Abbrechen“, Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
 ohne Abstand zum leeren Textbereich, Cosmos-Auswahlzeilen (`cosmos-reference-option`) ohne
 Auras Fokusrahmen, Innenabstand und Hover-/Active-Fläche auf dem Eintrag (die einzige
 Fläche zeichnet die Zeile), Feldfehler in 13 px/16 px mit `--cosmos-error-text-color` ohne

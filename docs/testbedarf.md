@@ -22,6 +22,13 @@
   die Seitengrößenauswahl zeigt zweistellige Werte vollständig. Passende bestehende Fälle
   in `cosmos-components` bzw. den Pagination-/2FA-Suites erweitern, DE und EN.
 
+- **Datumsauswahl im Cosmos-Stil – wartend:** Auf Benutzerwunsch in der gemeinsamen
+  Browserrunde am Schluss. Geburtsdatum und Benutzerfilter: Monats- und Jahresbereich sowie
+  Werkzeugleiste ohne eigene Fläche, Tage 36 px, „heute“ in `--cosmos-primary-text-color`
+  ohne Kreis, ausgewählter Tag in `--cosmos-primary-color` mit weißer Schrift, Hover mit
+  `--cosmos-hover-background`, Jahreszahlen 11 px, „Heute“/„Abbrechen“ ohne Füllung; Monat
+  wechseln und Tag wählen; Desktop und 390 px (Ansicht von unten), DE und EN.
+
 - **Zeitauswahl zeigt die gewählte Uhrzeit – wartend:** Auf Benutzerwunsch in der
   gemeinsamen Browserrunde am Schluss. Benutzerfilter „Letzte Aktivität ab“: Datum setzen,
   Uhrzeit 07:30 wählen, Liste über das Uhrsymbol erneut öffnen; 07:30 ist sichtbar und

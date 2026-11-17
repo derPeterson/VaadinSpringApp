@@ -1,18 +1,5 @@
 # Offene Fehler
 
-## Datumsauswahl noch nicht im Cosmos-Stil
-
-- **Status:** Vom Benutzer am 17.11.2026 gemeldet, Branch `design/aura-theme`.
-- **Reproduktion:** Ein Datumsfeld öffnen, z. B. Geburtsdatum unter Persönliche Daten oder
-  „Letzte Aktivität ab“ im Benutzerfilter.
-- **Ist:** Das Kalender-Overlay (`vaadin-date-picker`) zeigt weitgehend Aura-Standards.
-- **Erwartet:** Kalender im Cosmos-Stil wie die übrigen Overlays (Flächen, Rahmen,
-  Auswahl- und Hoverfarben aus `cosmos-palette.css`, Schriftskala).
-- **Nächster Schritt:** Vergleich mit `main`; Gestaltung über öffentliche Parts und
-  `--vaadin-date-picker-*`-Variablen in `cosmos-aura.css` bzw. `cosmos-theme.css`.
-- **Nachtest:** Kalender öffnen, Monat wechseln, Tag auswählen, heute markiert, Desktop
-  und Smartphone.
-
 ## Leere Fehlertext-Eigenschaft im Dauerfeld (Testanpassung, Nachtest offen)
 
 - **Status:** Ursache am 17.11.2026 geklärt, kein Anwendungsfehler. Seit der Umstellung
