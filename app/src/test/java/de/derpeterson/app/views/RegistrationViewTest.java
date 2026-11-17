@@ -283,7 +283,7 @@ public class RegistrationViewTest {
             .findFirst()
             .orElseThrow();
     assertEquals(email, highlightedEmail.getText());
-    assertTrue(highlightedEmail.hasClassName("text-primary"));
+    assertTrue(highlightedEmail.hasClassName("cosmos-text-primary"));
   }
 
   @ParameterizedTest

@@ -153,7 +153,14 @@
     padding: 0;
 }
 
-/* ::before gehört Vaadins Grundlinienausrichtung und bleibt unverändert. */
+/* Das Baseline-Pseudoelement der Vaadin-Feldbasis spannt sich von der Labelzeile bis zur
+   Grundlinie. Im Suffix braucht die Auswahl keine eigene Grundlinie; ohne diese Regel
+   reserviert es unter Aura eine Labelzeile und schiebt die Auswahl unter das Zahlenfeld. */
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select::before {
+    display: none;
+}
+
+/* Trennstrich vor der Einheit. */
 .cosmos-duration-unit-select::after {
     content: "";
     position: absolute;

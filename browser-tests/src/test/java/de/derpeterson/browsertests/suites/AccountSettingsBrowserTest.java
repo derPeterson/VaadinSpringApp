@@ -277,7 +277,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(
             proofDialogLocator.locator(".account-change-dialog-header .cosmos-panel-description"))
         .hasText(uiTexts.getExternalProof());
-    String expectedAccentColor = deletingAccount ? "rgb(239, 164, 177)" : "rgb(245, 158, 11)";
+    String expectedAccentColor = deletingAccount ? "rgb(252, 165, 165)" : "rgb(251, 191, 36)";
     assertThat(proofDialogLocator.locator(".cosmos-security-warning-label"))
         .hasCSS("color", expectedAccentColor);
     assertThat(proofDialogLocator.locator(".cosmos-panel-icon"))
@@ -422,9 +422,9 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     ConfirmationAppearanceChecks.assertMobileFullWidthActions(
         browserPage, unsavedChangesPrompt.root());
     discardButtonLocator.hover();
-    assertThat(discardButtonLocator).hasCSS("border-color", "rgb(245, 158, 11)");
+    assertThat(discardButtonLocator).hasCSS("border-color", "rgb(251, 191, 36)");
     keepEditingButtonLocator.hover();
-    assertThat(keepEditingButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
+    assertThat(keepEditingButtonLocator).hasCSS("background-color", "rgb(0, 103, 158)");
   }
 
   @ParameterizedTest

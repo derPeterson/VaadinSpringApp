@@ -609,7 +609,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertThat(selectedUnitOptionLocator).hasCSS("font-weight", "500");
     assertThat(selectedUnitOptionLocator).hasCSS("border-radius", "8px");
     assertThat(selectedUnitOptionLocator).hasCSS("border-top-width", "1px");
-    assertThat(selectedUnitOptionLocator).hasCSS("border-top-color", "rgb(0, 136, 204)");
+    assertThat(selectedUnitOptionLocator).hasCSS("border-top-color", "rgb(0, 119, 182)");
     assertThat(selectedUnitOptionLocator).hasCSS("background-color", "rgb(18, 35, 66)");
     assertThat(selectedUnitOptionLocator.locator("[part=checkmark]"))
         .hasCSS("color", "rgb(56, 189, 248)");
@@ -789,7 +789,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     if (adminUserDialog.deleteButton().isVisible()) {
       adminUserDialog.deleteButton().hover();
       assertThat(adminUserDialog.deleteButton()).hasCSS("color", "rgb(252, 165, 165)");
-      assertThat(adminUserDialog.deleteButton()).hasCSS("border-color", "rgba(248, 113, 113, 0.4)");
+      assertThat(adminUserDialog.deleteButton()).hasCSS("border-color", "color(srgb 0.972549 0.443137 0.443137 / 0.4)");
     }
     adminUserDialog.setRole(uiTexts.getRoleUser(), true);
     Locator roleSearchInputLocator = adminUserDialog.root().locator(".admin-user-roles input");
@@ -919,7 +919,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             AriaRole.BUTTON,
             new Page.GetByRoleOptions().setName(uiTexts.getAdminUsersAdd()).setExact(true));
     createUserButtonLocator.hover();
-    assertThat(createUserButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
+    assertThat(createUserButtonLocator).hasCSS("background-color", "rgb(0, 103, 158)");
 
     Locator refreshUsersButtonLocator =
         browserPage.getByRole(
@@ -1393,7 +1393,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertTooltip(Locator tooltip) {
     assertThat(tooltip).isVisible();
-    assertThat(tooltip).hasCSS("background-color", "rgb(15, 23, 42)");
+    assertThat(tooltip).hasCSS("background-color", "rgb(14, 23, 38)");
     assertThat(tooltip).hasCSS("border-top-color", "rgb(51, 65, 85)");
     assertThat(tooltip).hasCSS("border-top-width", "1px");
     assertThat(tooltip).hasCSS("border-radius", "4px");

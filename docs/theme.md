@@ -141,8 +141,9 @@ Breite/Höhe 6 px, Griff `#475569`, Hover `--cosmos-hover-background`, aktiv bei
 WebKit-Scrollselektoren verwenden die native schmale Breite und dieselben Farben.
 Im erzwungenen Systemkontrast bleiben native Farben und Breite erhalten.
 `Application` lädt die gemeinsame Quelle `cosmos-scrollbars.css` für Dokument, normale
-Scrollcontainer und öffentliche Vaadin-Parts einschließlich Grid; private Element-IDs
-sind nicht Teil der Gestaltung. Scrollfunktionen und Innenabstände werden nicht geändert.
+Scrollcontainer und öffentliche Vaadin-Parts; private Element-IDs sind nicht Teil der
+Gestaltung. Das innere Scrollelement des Grids hat unter Aura keinen öffentlichen Part
+und zeigt derzeit die native Scrollleiste (offener Fehler in [BUGS](../BUGS.md)). Scrollfunktionen und Innenabstände werden nicht geändert.
 Nur Chatverläufe reservieren zusätzlich Platz für die Scrollbahn und Abstand zu den
 Sprechblasenspitzen; diese lokalen Regeln bleiben in `cosmos-mfa-confirmation.css`.
 

@@ -712,7 +712,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     assertThat(reloadNoticeLocator).isVisible();
     reloadNoticeLocator.getByRole(AriaRole.BUTTON).click();
     assertThat(browserPage.locator(".admin-queue-cleanup-output"))
-        .hasCSS("font-family", "Consolas, \"Courier New\", monospace");
+        .hasCSS("font-family", "\"Space Mono\", ui-monospace, Consolas, monospace");
     AllurePlaywright.attachScreenshot("Assistent eingeschaltet " + viewportWidth, browserPage);
     assertTrue(
         (boolean)

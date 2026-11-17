@@ -112,7 +112,7 @@ public final class ResetPasswordPage {
     assertRejectedLink(
         uiTexts.getResetPasswordInvalidTitle(),
         uiTexts.getResetPasswordInvalidText(),
-        "text-error");
+        "cosmos-text-error");
   }
 
   @Step("Abgelaufener Link zeigt einen gelben Hinweis und kein Resetformular")

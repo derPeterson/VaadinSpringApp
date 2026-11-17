@@ -320,7 +320,7 @@ class PasswordResetViewsTest {
       Paragraph messageParagraph =
           (Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText");
       assertEquals(messageProperties.getEmailVerificationTitle(), titleSpan.getText());
-      assertTrue(titleSpan.hasClassName("text-warning"));
+      assertTrue(titleSpan.hasClassName("cosmos-text-warning"));
       assertEquals(messageProperties.getEmailVerificationWait(), messageParagraph.getText());
     }
   }
@@ -468,7 +468,8 @@ class PasswordResetViewsTest {
 
     assertEquals(-1, visible.getDuration());
     assertTrue(
-        ((Span) ReflectionTestUtils.getField(helper, "titleText")).hasClassName("text-success"));
+        ((Span) ReflectionTestUtils.getField(helper, "titleText"))
+            .hasClassName("cosmos-text-success"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
 
     assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));

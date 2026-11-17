@@ -43,7 +43,7 @@ public final class NotificationAppearanceChecks {
             card.evaluate(
                 """
                 card => JSON.stringify([card, ...card.querySelectorAll(
-                  '.cosmos-toast-title,.cosmos-notification-message,.text-primary,.cosmos-notification-details > li')]
+                  '.cosmos-toast-title,.cosmos-notification-message,.cosmos-text-primary,.cosmos-notification-details > li')]
                   .map(element => {
                     const bounds = element.getBoundingClientRect();
                     const style = getComputedStyle(element);

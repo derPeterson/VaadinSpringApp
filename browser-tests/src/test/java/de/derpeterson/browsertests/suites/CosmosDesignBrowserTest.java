@@ -547,7 +547,8 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   private String primary(Page target, String selector) {
     return target
         .locator(selector)
-        .evaluate("el => getComputedStyle(el).getPropertyValue('--lumo-primary-color').trim()")
+        .evaluate(
+            "el => getComputedStyle(el).getPropertyValue('--cosmos-primary-text-color').trim()")
         .toString();
   }
 

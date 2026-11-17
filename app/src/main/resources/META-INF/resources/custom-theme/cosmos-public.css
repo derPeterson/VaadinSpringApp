@@ -614,7 +614,8 @@
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 400;
     --vaadin-switch-label-line-height: 19.2px;
-    display: inline-flex;
+    /* Grid der Vaadin-Basisstile: das native input liegt über der Bahn und bleibt klickbar. */
+    display: inline-grid;
     align-items: center;
     margin: 0;
     padding: 0;

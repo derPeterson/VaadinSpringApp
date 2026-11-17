@@ -39,6 +39,9 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
     List<String> recipientEmails = createRecipients();
     NotificationComposePage composePage = new NotificationComposePage(browserPage);
     composePage.open();
+    // Frühere Fälle desselben Workers dürfen Versandeinträge hinterlassen; die Vorschau
+    // darf keinen weiteren erzeugen.
+    int sentRowCountBeforePreview = browserPage.locator(".cosmos-notification-sent-row").count();
 
     int selectedRecipientCount = 0;
     for (int recipientCount : new int[] {3, 5, 6, 9}) {
@@ -96,7 +99,8 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
       }
     }
     checkNativeOverflowWithTwoHundredSyntheticItems();
-    assertThat(browserPage.locator(".cosmos-notification-sent-row")).hasCount(0);
+    assertThat(browserPage.locator(".cosmos-notification-sent-row"))
+        .hasCount(sentRowCountBeforePreview);
   }
 
   private void assertAvatarFrameMatchesHeader(Locator recipientAvatarLocator) {

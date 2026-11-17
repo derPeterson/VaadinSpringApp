@@ -578,7 +578,7 @@ class AdminUserManagementSectionTest {
     Span notificationTitle = (Span) ReflectionTestUtils.getField(helper, "titleText");
 
     assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
-    assertTrue(notificationTitle.hasClassName("text-success"));
+    assertTrue(notificationTitle.hasClassName("cosmos-text-success"));
     Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
     LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
 

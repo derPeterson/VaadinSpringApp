@@ -2,6 +2,10 @@
 
 ## Browser-Tests
 
+- **Vollständige Browserrunde DE/EN nach der Aura-Umstellung – offen:** Die Läufe vom
+  17.11.2026 erreichten das 90-Minuten-Budget je Worker, bevor alle Klassen liefen
+  (zuletzt drei Worker). Vollständigen Lauf mit vier Workern bzw. aufgeteilten Suites
+  wiederholen; offene Fehler siehe [BUGS](../BUGS.md#grid--und-textarea-scrollleisten-seit-der-aura-umstellung).
 - **Scrollbereiche nach Regression prüfen – wartend:** Betroffene Ansicht,
   konkretes Fehlerbild und Reproduktionsschritte sind noch zu klären.
   Der Benutzer möchte Aussehen und Verhalten später gemeinsam festlegen;

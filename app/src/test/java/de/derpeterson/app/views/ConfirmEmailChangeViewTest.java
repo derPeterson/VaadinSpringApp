@@ -123,7 +123,7 @@ class ConfirmEmailChangeViewTest {
     assertEquals(
         "icons/lucide/circle-check.svg",
         findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
-    assertTrue(findConfirmationStatusSvgIcon().hasClassName("text-success"));
+    assertTrue(findConfirmationStatusSvgIcon().hasClassName("cosmos-text-success"));
     assertTrue(
         emailConfirmationView
             .getElement()
@@ -146,7 +146,9 @@ class ConfirmEmailChangeViewTest {
     assertTrue(
         findConfirmationStatusSvgIcon()
             .hasClassName(
-                confirmationState == Confirmation.EXPIRED ? "text-warning" : "text-error"));
+                confirmationState == Confirmation.EXPIRED
+                    ? "cosmos-text-warning"
+                    : "cosmos-text-error"));
     assertEquals(
         confirmationState == Confirmation.EXPIRED,
         findConfirmationStatusSvgIcon().hasClassName("cosmos-status-icon--warning"));
@@ -163,7 +165,7 @@ class ConfirmEmailChangeViewTest {
     assertEquals(
         "icons/lucide/circle-alert.svg",
         findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
-    assertTrue(findConfirmationStatusSvgIcon().hasClassName("text-error"));
+    assertTrue(findConfirmationStatusSvgIcon().hasClassName("cosmos-text-error"));
     String confirmationPageText = emailConfirmationView.getElement().getTextRecursively();
 
     assertTrue(
