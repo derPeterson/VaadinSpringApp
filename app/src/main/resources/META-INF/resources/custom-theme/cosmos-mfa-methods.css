@@ -7,16 +7,16 @@
 .two-factor-methods .two-factor-manual-content { padding-top:16px; }
 .two-factor-manual-input { min-width:0; }
 .two-factor-view vaadin-text-area.two-factor-manual-input::part(label) { display:flex; align-items:center; gap:6px; font:500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family); }
-.two-factor-view vaadin-text-area.two-factor-manual-input::part(label)::before { content:''; flex:none; width:14px; height:14px; background:var(--cosmos-reference-accent); mask:url('../icons/lucide/key-round.svg') center/contain no-repeat; }
+.two-factor-view vaadin-text-area.two-factor-manual-input::part(label)::before { content:''; flex:none; width:14px; height:14px; background:var(--cosmos-primary-text-color); mask:url('../icons/lucide/key-round.svg') center/contain no-repeat; }
 .two-factor-manual-input::part(input-field) { align-items:center; }
 .two-factor-manual-input[readonly]::part(input-field) { border-style:dashed; }
 .two-factor-view vaadin-text-area.two-factor-manual-input > textarea { text-align:center; font:400 var(--cosmos-font-size-l)/20px var(--cosmos-font-family-mono); }
-.two-factor-manual-input #two-factor-copy-key { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-reference-secondary); }
+.two-factor-manual-input #two-factor-copy-key { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-text-secondary-color); }
 .two-factor-manual-input #two-factor-copy-key vaadin-icon { width:16px; height:16px; color:inherit; }
-.two-factor-manual-input #two-factor-copy-key:hover { color:var(--cosmos-reference-text); background:var(--cosmos-hover-background); box-shadow:none; }
+.two-factor-manual-input #two-factor-copy-key:hover { color:var(--cosmos-text-color); background:var(--cosmos-hover-background); box-shadow:none; }
 .two-factor-manual-input #two-factor-copy-key:active { background:transparent; box-shadow:none; }
 .two-factor-manual-input #two-factor-copy-key::before { display:none; }
-.two-factor-manual-input #two-factor-copy-key:focus-visible { color:var(--cosmos-reference-accent); }
+.two-factor-manual-input #two-factor-copy-key:focus-visible { color:var(--cosmos-primary-text-color); }
 .two-factor-manual-input[focused] #two-factor-copy-key,
-.two-factor-manual-input:focus-within #two-factor-copy-key { color:var(--cosmos-reference-accent); }
+.two-factor-manual-input:focus-within #two-factor-copy-key { color:var(--cosmos-primary-text-color); }
 @media (max-width:760px) { .two-factor-methods { max-width:340px; width:100%; justify-self:center; } }

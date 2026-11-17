@@ -33,16 +33,7 @@ public enum UserStatus {
 
     Div statusIconDiv = new Div(statusAppIcon.create());
     statusIconDiv.addClassName("portal-status-symbol");
-
-    String selectionColorVariableName =
-        switch (this) {
-          case AVAILABLE -> "--cosmos-reference-success";
-          case EMPLOYED -> "--cosmos-reference-invalid";
-          case ABSENT -> "--cosmos-reference-warning";
-          case OFFLINE -> "--cosmos-reference-secondary";
-        };
-
-    statusIconDiv.getStyle().setColor("var(" + selectionColorVariableName + ", " + color + ")");
+    statusIconDiv.getStyle().setColor(color);
     return statusIconDiv;
   }
 

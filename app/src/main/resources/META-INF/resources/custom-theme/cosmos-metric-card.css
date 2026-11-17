@@ -2,9 +2,9 @@
 vaadin-card.cosmos-metric-card {
     --vaadin-card-gap: 0;
     --vaadin-card-padding: 8px 12px;
-    --vaadin-card-background: var(--cosmos-reference-input);
+    --vaadin-card-background: var(--cosmos-base-color);
     --vaadin-card-border-width: 1px;
-    --vaadin-card-border-color: var(--cosmos-reference-border);
+    --vaadin-card-border-color: var(--cosmos-border-color);
     --vaadin-card-border-radius: 9px;
     --vaadin-card-shadow: none;
     width: 96px;
@@ -20,12 +20,12 @@ vaadin-card.cosmos-metric-card::part(content) {
 }
 
 vaadin-card.cosmos-metric-card--highlighted {
-    --vaadin-card-background: var(--cosmos-reference-selection);
+    --vaadin-card-background: var(--cosmos-selection-background);
     --vaadin-card-border-color: color-mix(in srgb, var(--cosmos-color-primary) 40%, transparent);
 }
 
 .cosmos-metric-card-label {
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
     font: 600 var(--cosmos-font-size-2xs)/14px var(--cosmos-font-family);
     letter-spacing: .045em;
     text-transform: uppercase;
@@ -33,10 +33,10 @@ vaadin-card.cosmos-metric-card--highlighted {
 
 .cosmos-metric-card-value {
     margin-top: 3px;
-    color: var(--cosmos-reference-white);
+    color: var(--cosmos-heading-color);
     font: 700 var(--cosmos-font-size-heading-s)/24px var(--cosmos-font-family);
 }
 
 .cosmos-metric-card--highlighted :is(.cosmos-metric-card-label, .cosmos-metric-card-value) {
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }

@@ -29,6 +29,14 @@ class UserStatusResourceTest {
     }
   }
 
+  @ParameterizedTest
+  @EnumSource(UserStatus.class)
+  void selectionSymbolUsesTheSemanticStatusColor(UserStatus status) {
+    Component selectionComponent = status.getSelectionComponent();
+
+    assertEquals(status.getColor(), selectionComponent.getElement().getStyle().get("color"));
+  }
+
   @Test
   void outlineRendererWorksFromAPackedJarWithoutLegacySvg() throws Exception {
     Path jar = temporary.resolve("status-resource.jar");

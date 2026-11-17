@@ -244,7 +244,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     box-sizing: border-box;
     flex: none;
     margin: 0;
-    border-color: var(--cosmos-reference-border);
+    border-color: var(--cosmos-border-color);
     gap: var(--cosmos-space-m);
 }
 
@@ -269,7 +269,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog .admin-user-lifecycle-status {
-    border-top: 1px solid var(--cosmos-reference-border);
+    border-top: 1px solid var(--cosmos-border-color);
     padding-top: var(--cosmos-space-m);
 }
 
@@ -277,7 +277,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     width: var(--cosmos-icon-size-xs);
     height: var(--cosmos-icon-size-xs);
     flex-shrink: 0;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .admin-user-dialog .admin-user-verification-detail {
@@ -298,12 +298,12 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     height: 1px;
     margin: 0;
     border: 0;
-    background: var(--cosmos-reference-border);
+    background: var(--cosmos-border-color);
 }
 
 .admin-user-dialog .admin-user-mail-actions-hint {
     gap: var(--cosmos-info-box-gap);
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
     line-height: var(--cosmos-line-height-copy);
@@ -313,7 +313,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     width: var(--cosmos-icon-size-xs);
     height: var(--cosmos-icon-size-xs);
     flex-shrink: 0;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .admin-user-dialog .admin-user-sign-in-detail {
@@ -321,13 +321,13 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     align-content: start;
     gap: 6px;
     min-width: 0;
-    color: var(--cosmos-reference-text);
+    color: var(--cosmos-text-color);
     font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
     overflow-wrap: anywhere;
 }
 
 .admin-user-dialog .cosmos-panel-title.admin-user-sign-in-title {
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
     font-size: var(--cosmos-font-size-m);
     line-height: 18px;
     letter-spacing: .08em;
@@ -338,7 +338,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog .admin-user-methods-label,
 .admin-user-dialog .admin-user-verification-label,
 .admin-user-dialog .admin-user-account-type-label {
-    color: var(--cosmos-reference-label);
+    color: var(--cosmos-label-color);
     font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
 }
 
@@ -364,12 +364,12 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     justify-self: start;
     max-width: 100%;
     white-space: normal;
-    --vaadin-badge-text-color: var(--cosmos-reference-label);
+    --vaadin-badge-text-color: var(--cosmos-label-color);
 }
 
 .admin-user-dialog #admin-user-account-type {
     align-self: flex-start;
-    --vaadin-badge-text-color: var(--cosmos-reference-accent);
+    --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 
 .admin-user-dialog #admin-user-account-type[data-development-account=true] {
@@ -379,11 +379,11 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog #admin-user-registered-via[data-self-registered=true] {
-    --vaadin-badge-text-color: var(--cosmos-reference-accent);
+    --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
-    --vaadin-badge-text-color: var(--cosmos-reference-success);
+    --vaadin-badge-text-color: var(--cosmos-success-color);
 }
 
 .admin-user-option-label > span {

@@ -9,11 +9,11 @@
 }
 
 .pending-email-verification-view .pending-verification-spam-hint {
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
 }
 
 .pending-email-verification-view .pending-verification-folder-emphasis {
-    color: var(--cosmos-reference-text);
+    color: var(--cosmos-text-color);
     font-weight: var(--cosmos-font-weight-bold);
 }
 
@@ -22,9 +22,9 @@
     flex-wrap: wrap;
     gap: var(--cosmos-space-m);
     padding: var(--cosmos-info-box-padding);
-    border: 1px solid var(--cosmos-reference-border);
+    border: 1px solid var(--cosmos-border-color);
     border-radius: var(--cosmos-control-radius);
-    background: var(--cosmos-reference-input);
+    background: var(--cosmos-base-color);
 }
 
 .pending-email-verification-view .pending-verification-address-details {
@@ -34,7 +34,7 @@
 }
 
 .pending-email-verification-view .pending-verification-address-label {
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     line-height: var(--cosmos-line-height-copy);
 }
@@ -42,7 +42,7 @@
 .pending-email-verification-view #pending-verification-email,
 .pending-email-verification-view #pending-reactivation-email {
     max-width: 100%;
-    color: var(--cosmos-reference-text);
+    color: var(--cosmos-text-color);
     font-family: var(--cosmos-font-family-mono);
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-semibold);
@@ -52,7 +52,7 @@
 
 .pending-email-verification-view .pending-verification-resend-hint {
     gap: var(--cosmos-info-box-gap);
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     line-height: var(--cosmos-line-height-copy);
 }
@@ -61,7 +61,7 @@
     width: var(--cosmos-icon-size-xs);
     height: var(--cosmos-icon-size-xs);
     flex: none;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .pending-email-verification-view .pending-verification-actions {

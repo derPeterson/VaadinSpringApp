@@ -10,22 +10,22 @@
     width: min(540px, calc(100vw - 32px));
     max-height: calc(100dvh - 32px);
     overflow: hidden;
-    border: 1px solid var(--cosmos-reference-control-border);
+    border: 1px solid var(--cosmos-control-border-color);
     border-radius: 16px;
-    background: var(--cosmos-reference-dialog);
+    background: var(--cosmos-raised-background);
     box-shadow: 0 24px 80px color-mix(in srgb, var(--cosmos-color-black) 60%, transparent);
 }
 
 .cosmos-native-confirmation::part(backdrop) {
-    background: var(--cosmos-reference-backdrop);
+    background: var(--cosmos-backdrop-color);
     backdrop-filter: blur(3px);
 }
 
 .cosmos-native-confirmation::part(header) {
     margin: 0;
     padding: 0;
-    border-bottom: 1px solid var(--cosmos-reference-border);
-    background: var(--cosmos-reference-dialog);
+    border-bottom: 1px solid var(--cosmos-border-color);
+    background: var(--cosmos-raised-background);
     font-size: var(--cosmos-font-size-2xl);
     font-weight: 400;
     line-height: var(--cosmos-line-height-tight);
@@ -36,7 +36,7 @@
     min-height: 0;
     margin: 0;
     padding: 0;
-    background: var(--cosmos-reference-page);
+    background: var(--cosmos-page-background);
 }
 
 /* ConfirmDialog ergänzt gegenüber Dialog eine Nachrichtenzone; lange Vorschauen
@@ -52,8 +52,8 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 16px 24px;
-    border-top: 1px solid var(--cosmos-reference-border);
-    background: var(--cosmos-reference-dialog);
+    border-top: 1px solid var(--cosmos-border-color);
+    background: var(--cosmos-raised-background);
 }
 
 .cosmos-native-confirmation::part(cancel-button),

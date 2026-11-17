@@ -3,15 +3,15 @@ vaadin-breadcrumbs.cosmos-breadcrumbs {
     display: block;
     min-width: 0;
     max-width: 100%;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
     font: 600 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
     letter-spacing: .05em;
     text-transform: uppercase;
     --vaadin-breadcrumbs-font-size: inherit;
     --vaadin-breadcrumbs-font-weight: inherit;
     --vaadin-breadcrumbs-line-height: 16px;
-    --vaadin-breadcrumbs-link-color: var(--cosmos-reference-accent);
-    --vaadin-breadcrumbs-text-color: var(--cosmos-reference-accent);
+    --vaadin-breadcrumbs-link-color: var(--cosmos-primary-text-color);
+    --vaadin-breadcrumbs-text-color: var(--cosmos-primary-text-color);
     --vaadin-breadcrumbs-gap: 6px;
 }
 
@@ -53,8 +53,8 @@ vaadin-breadcrumbs.cosmos-breadcrumbs::part(overflow-button) {
 }
 
 vaadin-breadcrumbs.cosmos-breadcrumbs::part(overlay) {
-    background: var(--cosmos-reference-panel);
-    color: var(--cosmos-reference-accent);
-    border: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-card-background);
+    color: var(--cosmos-primary-text-color);
+    border: 1px solid var(--cosmos-border-color);
     border-radius: var(--cosmos-control-radius);
 }

@@ -5,7 +5,7 @@
  */
 
 .cosmos-page-frame {
-    --cosmos-sky-color: var(--cosmos-reference-page);
+    --cosmos-sky-color: var(--cosmos-page-background);
     position: relative;
     isolation: isolate;
     box-sizing: border-box;
@@ -13,7 +13,7 @@
     min-width: 0;
     min-height: 100vh;
     min-height: 100dvh;
-    background: var(--cosmos-reference-page);
+    background: var(--cosmos-page-background);
 }
 .cosmos-page-frame .cosmos-sky--advanced {
   position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;

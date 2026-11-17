@@ -26,13 +26,13 @@
     min-width: 0;
     padding: 0;
     margin: 0;
-    --vaadin-input-field-background: var(--cosmos-reference-input);
-    --vaadin-input-field-border-color: var(--cosmos-reference-border);
+    --vaadin-input-field-background: var(--cosmos-base-color);
+    --vaadin-input-field-border-color: var(--cosmos-border-color);
     --vaadin-input-field-border-width: 1px;
     --vaadin-input-field-border-radius: 8px;
     --vaadin-input-field-value-font-size: 14px;
     --vaadin-input-field-value-font-weight: 400;
-    --vaadin-input-field-value-color: var(--cosmos-reference-text);
+    --vaadin-input-field-value-color: var(--cosmos-text-color);
 }
 
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(label) {
@@ -93,9 +93,9 @@
 }
 
 .cosmos-duration-field > vaadin-big-decimal-field::part(input-field) {
-    border: 1px solid var(--cosmos-reference-border);
+    border: 1px solid var(--cosmos-border-color);
     border-radius: 8px;
-    background: var(--cosmos-reference-input);
+    background: var(--cosmos-base-color);
     padding: 0 14px;
 }
 
@@ -121,13 +121,13 @@
 .cosmos-duration-unit-label,
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select {
     padding-inline: 10px 0;
-    border-inline-start: 1px solid var(--cosmos-reference-control-border);
-    color: var(--cosmos-reference-secondary);
+    border-inline-start: 1px solid var(--cosmos-control-border-color);
+    color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-m)/20px var(--cosmos-font-family);
 }
 
 .cosmos-duration-field > vaadin-integer-field[focused] > .cosmos-duration-unit-label {
-    color: var(--cosmos-reference-white);
+    color: var(--cosmos-heading-color);
 }
 
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select {
@@ -163,7 +163,7 @@
     margin: 0;
     padding: 0;
     transform: translateY(-50%);
-    border-inline-start: 1px solid var(--cosmos-reference-control-border);
+    border-inline-start: 1px solid var(--cosmos-control-border-color);
     pointer-events: none;
 }
 
@@ -181,12 +181,12 @@
 
 /* Auch bei Fokus auf der Einheit bleibt nur die gemeinsame Feldfläche umrandet. */
 .cosmos-theme .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field):has(.cosmos-duration-unit-select[focused])::part(input-field) {
-    outline: 1px solid var(--cosmos-reference-accent);
+    outline: 1px solid var(--cosmos-primary-text-color);
     outline-offset: 2px;
 }
 
 .cosmos-duration-unit-select::part(toggle-button) {
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-duration-unit-select vaadin-select-value-button > vaadin-select-item {
@@ -202,12 +202,12 @@
 }
 
 .cosmos-duration-unit-select[focused] vaadin-select-value-button > vaadin-select-item {
-    color: var(--cosmos-reference-white);
+    color: var(--cosmos-heading-color);
 }
 
 vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(overlay) {
-    background: var(--cosmos-reference-input);
-    border: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-base-color);
+    border: 1px solid var(--cosmos-border-color);
     border-radius: 10px;
     min-width: 132px;
 }
@@ -227,9 +227,9 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     margin: 0 0 4px;
     border: 1px solid transparent;
     border-radius: 8px;
-    color: var(--cosmos-reference-label);
+    color: var(--cosmos-label-color);
     font: 500 var(--cosmos-font-size-s)/16px var(--cosmos-font-family);
-    --vaadin-selection-color-text: var(--cosmos-reference-accent);
+    --vaadin-selection-color-text: var(--cosmos-primary-text-color);
 }
 
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark) {
@@ -237,21 +237,21 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     flex: none;
     width: 16px;
     margin-inline-start: auto;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark)::before {
     width: 16px;
     height: 16px;
     margin: 0;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
     font-size: var(--cosmos-font-size-2xl);
 }
 
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item[selected] {
-    border-color: var(--cosmos-reference-primary);
-    background: var(--cosmos-reference-selection);
-    color: var(--cosmos-reference-accent);
+    border-color: var(--cosmos-primary-background);
+    background: var(--cosmos-selection-background);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item:not([selected], [disabled]):is(:hover, [focused]) {
@@ -267,7 +267,7 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
     margin: 0;
     border: 0;
     background: transparent;
-    color: var(--cosmos-reference-accent);
+    color: var(--cosmos-primary-text-color);
 }
 
 .cosmos-duration-field .cosmos-duration-step > vaadin-icon {

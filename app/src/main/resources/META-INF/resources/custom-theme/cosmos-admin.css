@@ -578,7 +578,7 @@ vaadin-app-layout.cosmos-admin {
     margin-inline-start: auto;
 }
 .cosmos-unsaved-changes-dialog.cosmos-reference-overlay .portal-confirm-explanation {
-    color: var(--cosmos-reference-secondary);
+    color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
     line-height: 20px;

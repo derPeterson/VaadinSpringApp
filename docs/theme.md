@@ -525,10 +525,10 @@ Navigation, Auswahllisten, Eingabeflächen, Kalender und ungeprüfte native Chec
 Radiobuttons sowie Scrollleistengriffe. Auswahlfarben und Zustandsmarkierungen
 bleiben davon getrennt; ausgewählte Einträge und aktive Seitennummern behalten
 beim Hover ihre bestehende Gestaltung. Dauerhafte dezente Flächen verwenden
-`--cosmos-reference-subtle-surface` und ändern sich nicht mit der Hoverfarbe.
+`--cosmos-subtle-surface` und ändern sich nicht mit der Hoverfarbe.
 Primär-, Lösch- und Warnbuttons verwenden ihre eigenen semantischen Hoverfarben.
 Die neutralen Hover-Bezeichner verweisen auf den gemeinsamen Wert.
-`--cosmos-reference-*` in `cosmos-tokens.css` begrenzen die übrigen akzeptierten Werte.
+Die semantischen `--cosmos-*`-Rollen in `cosmos-tokens.css` begrenzen die übrigen akzeptierten Werte.
 `cosmos-theme.css` gestaltet markierte native Controls, ComboBox-Optionen und
 Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und
 portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
@@ -537,7 +537,7 @@ In `cosmos-shell.css` übernehmen die Auswahllisten von ComboBox und MultiSelect
 die Grundfarbe ihres Eingabefelds. Ausgewählte Einträge verwenden in `cosmos-theme.css`
 die Akzentfläche mit blauem Rahmen und Häkchen am rechten Rand. Im geschlossenen
 Feld steht der Wert ohne Auswahlmarkierung. Nicht ausgewählte Optionen verwenden
-bei Hover die blaue Fläche `--cosmos-reference-button-hover`. Zwischen den
+bei Hover die blaue Fläche `--cosmos-hover-background`. Zwischen den
 MultiSelect-Optionen liegen 2 px Abstand. Die Rahmenfläche liegt vollständig
 innerhalb des nativen Eintrags, damit alle vier Seiten sichtbar bleiben.
 Die transparenten Außenrahmen schaffen den Abstand; das native Inhaltspadding bleibt bestehen.
@@ -557,14 +557,14 @@ die native ComboBox-Bedienung. Seitengrößen und kompakte Felder verwenden dies
 Auswahlmarkierung in kleineren Zeilen.
 
 Sekundäre Aktionsbuttons und Schließen-Buttons nutzen die Eingabefläche, bei Hover
-`--cosmos-reference-button-hover` als Verweis auf die gemeinsame Hoverfarbe.
+`--cosmos-hover-background` als Verweis auf die gemeinsame Hoverfarbe.
 Die übrigen Hoverflächen verwenden denselben zentralen Wert. Schließen-Buttons setzen auch Vaadins native Variable
 `--vaadin-button-tertiary-background`, damit `tertiary-inline` die Fläche nicht
 transparent überschreibt. Navigation und Menüoptionen behalten ihre jeweiligen Zustände.
 Destruktive Buttons verwenden gemeinsam `.cosmos-delete-button`: rotes Icon und
 Text, 5 % rote Fläche und 25 % roter Rahmen; bei Hover 10 % rote Fläche,
 40 % roter Rahmen und helleres Rot. Die Werte liegen in `cosmos-tokens.css` unter
-`--cosmos-reference-danger-*`, die Grundregeln in `cosmos-theme.css`.
+`--cosmos-danger-*`, die Grundregeln in `cosmos-theme.css`.
 Das gilt für einzelne und gesammelte Lösch-/Geräteaktionen sowie Bestätigungen.
 Warnaktionen nutzen zentral `.cosmos-warning-button`: gelbes Icon und gelber Text,
 Warnrahmen und dezente Warnfläche. Der Hover bleibt in der Warnpalette über
@@ -580,7 +580,7 @@ verwenden `.cosmos-side-navigation`, nicht globale Buttonzentrierung.
 Klickbare Einträge und Unterpunkt-Toggles verwenden den Handzeiger.
 Der Navigationspfeil ist 16 × 16 px groß, seine Klickfläche bleibt 24 × 32 px.
 Die Hoverfläche
-ist `--cosmos-reference-button-hover` (#152238). Die aktive blaue Fläche bleibt
+ist `--cosmos-hover-background` (#152238). Die aktive blaue Fläche bleibt
 bei Hover erhalten; Hauptpunkte tragen die freigegebene seitliche Akzentmarkierung.
 
 Header und SideNav teilen Zählerform und Schriftstärke. „Verfügbar“ erscheint
@@ -590,7 +590,7 @@ Benutzermenü. Der Startseitenbutton verwendet denselben roten nativen
 Ungelesen-Zähler wie Header und SideNav. Avatarflächen in Header, Kontokarte und Benutzermenü verwenden die dunkle
 Eingabefläche mit dezentem Rahmen wie in der Referenz. Alle Avatarstatus sind
 gefüllte Punkte: verfügbar grün, beschäftigt rot, abwesend gelb und offline grau.
-Die Farben folgen `--cosmos-reference-avatar-presence`; Kontursymbole erscheinen
+Die Farben folgen `--cosmos-avatar-presence-color`; Kontursymbole erscheinen
 nur in der Statusauswahl. Die Punkte haben eine einfache schmale Freistellung; Border und äußerer Schatten
 werden nicht als doppelter Ring kombiniert. Die Punktmitte liegt bei 45 Grad
 auf der Mitte der Avatar-Kreislinie. Header, Kontokarte und Benutzermenü verwenden
@@ -740,7 +740,7 @@ Inhaltsbereich und Footer für den Formularschutz. Das Tabler-Icon `file-diff`
 steht im Kopf in einer Warnbox: Icon, Rahmen und dezente Hintergrundfläche
 verwenden die vorhandenen `--cosmos-security-warning-*`-Werte. Der
 Standard-Schließen-Button bleibt erhalten. Der Erklärungstext verwendet die
-dezente Textfarbe `--cosmos-reference-secondary` bei 12 px und Schriftgewicht 400.
+dezente Textfarbe `--cosmos-text-secondary-color` bei 12 px und Schriftgewicht 400.
 „Änderungen verwerfen“ steht zuerst als gelber Warnbutton mit Tabler `file-x`.
 „Weiter bearbeiten“ bleibt blau und verwendet Lucide `chevron-right`.
 Auf Desktop steht Verwerfen ganz links und Weiterbearbeiten ganz rechts im Footer; der freie
@@ -920,7 +920,7 @@ Validierung, Tokenbindung und erfolgreicher Passwortwechsel bleiben im bestehend
 Resetdienst; die neutralen Seiten- und Panelüberschriften bleiben getrennt.
 
 Die lokale Gestaltung liegt ausschließlich in `cosmos-public.css` unter
-`.cosmos-reference-public`. Sie nutzt die vorhandenen Referenztokens und Controls.
+`.cosmos-reference-public`. Sie nutzt die vorhandenen Cosmos-Tokens und Controls.
 `--cosmos-input-font-size` steht hier auf
 14 px; leere und ausgefüllte Eingaben sowie Platzhalter bleiben bei Gewicht 400.
 Mobil stehen Navigation und Sprachwahl kompakt neben der Marke; die beschrifteten
@@ -1012,7 +1012,7 @@ in der Administration.
 Der Ticketsystem-Eintrag zeigt relevante ungelesene Aktivitäten als roten Punkt
 rechts am nativen `SideNavItem`. Ein natives `Badge` mit der lokalen Klasse
 `.admin-nav-support-activity` in `cosmos-admin-reference.css` verwendet 8 px
-Durchmesser und die bestehende rote Zählerfarbe `--cosmos-reference-badge`.
+Durchmesser und die bestehende rote Zählerfarbe `--cosmos-counter-badge-background`.
 Der native Tooltip erscheint nur bei aktivem Punkt und folgt dem Sprachwechsel.
 Mobil verwendet die Seitenleiste denselben Innenabstand von 20 px wie das Frontend.
 
@@ -1404,7 +1404,7 @@ ausgeführte Prüfungen als erfolgt melden; eine Änderung der Quelle allein bel
 keine sichtbare Übernahme. Die letzten Prüfungen stehen im [aktuellen Stand](status.md).
 
 Der Textblock im Admin-Dashboard verwendet die Canvasfarbe
-(`--cosmos-reference-page`). Konfigurationsaktionen stehen über eine vollbreite
+(`--cosmos-page-background`). Konfigurationsaktionen stehen über eine vollbreite
 Trennlinie getrennt. Dialogaktionen verwenden den gemeinsamen Größenabgleich der
 sichtbaren Textbuttons und brechen bei wenig Platz um. Konfigurationsaktionen
 behalten ihre eigene responsive Anordnung. Bis 600 px stehen „Werte neu laden“
@@ -1690,7 +1690,7 @@ Identitätsbestätigungsdialog: 10 px, Gewicht 600, 18 px Zeilenhöhe,
 Beim Stapeln verläuft die Trennlinie waagerecht; der Textstil bleibt gleich.
 Der Schnellzugang behält seine Inhaltshöhe und steht auf Desktop vertikal mittig
 neben dem Formular. Er verwendet die Panelfläche von Kopf und Footer
-(`--cosmos-reference-panel`, in HTML `--surface-panel`) und 32 px Innenabstand,
+(`--cosmos-card-background`, in HTML `--surface-panel`) und 32 px Innenabstand,
 mobil 24 px / 20 px. Seine Anbieterbuttons übernehmen die Schrift des lokalen
 Anmelden-Buttons (Inter, 12 px, Gewicht 600). Die unveränderten farbigen Markenlogos
 stehen in einer 16 × 16 px großen Iconfläche mit 8 px Abstand zum Text.
@@ -1838,7 +1838,7 @@ des vorhandenen Dialograhmens. Der äußere Button und der Dialogtitel heißen
 „Manuelle Bereinigung“; im Dialog bestätigt „Jetzt bereinigen“ die Aktion.
 Beide Aktionen und der Dialogkopf verwenden `AppIcon.BRUSH_CLEANING`.
 Die bestehende Großschreibung der Statusüberschrift bleibt erhalten, ihre Farbe
-ist `--cosmos-reference-accent`. Die Kopf-Iconbox des Bestätigungsdialogs verwendet
+ist `--cosmos-primary-text-color`. Die Kopf-Iconbox des Bestätigungsdialogs verwendet
 die vorhandene rote Gefahrenvariante; der Bestätigungsbutton behält den
 gemeinsamen roten Aktionsstil, „Abbrechen“ bleibt unverändert.
 
@@ -2088,7 +2088,7 @@ Die Bearbeiterinfo der Admin-Karten verwendet denselben `OverlayUserIcon`
 mit 24 px wie die Anfrageansicht; der Detailkopf verwendet 32 px. Der gemeinsame
 Identitätstooltip zeigt oben den Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
 steht daneben ein grünes natives „Sie“-/„You“-Badge mit der Statusfarbe
-`--cosmos-reference-success` (`.support-assignee-self`).
+`--cosmos-success-color` (`.support-assignee-self`).
 Unzugewiesene Tickets zeigen „Nicht Zugewiesen“ / „Unassigned“ kursiv.
 Die Identitätsdaten des Bearbeiters
 liefert der Dienst ausschließlich im Adminzugang, niemals in der Nutzeransicht.

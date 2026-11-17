@@ -49,8 +49,16 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
 
     /* 1. SEMANTISCHE FARBEN / Rollen auf Basis der Cosmos-Palette (cosmos-palette.css).
      * 5pct/10pct/20pct sind transparente Kontrastflächen für Rahmen und Füllungen. */
+    --cosmos-page-background: var(--cosmos-color-space);
     --cosmos-base-color: var(--cosmos-color-input);
+    --cosmos-raised-background: var(--cosmos-color-raised);
+    --cosmos-selection-background: var(--cosmos-color-selection);
+    --cosmos-subtle-surface: color-mix(in srgb, var(--cosmos-color-white) 4%, transparent);
+    --cosmos-backdrop-color: color-mix(in srgb, var(--cosmos-color-space) 76%, transparent);
+    --cosmos-border-color: color-mix(in srgb, var(--cosmos-color-white) 8%, transparent);
+    --cosmos-control-border-color: color-mix(in srgb, var(--cosmos-color-white) 12%, transparent);
     --cosmos-text-color: var(--cosmos-color-text);
+    --cosmos-label-color: var(--cosmos-color-label);
     --vaadin-checkbox-background-hover: var(--cosmos-hover-background);
     --vaadin-radio-button-background-hover: var(--cosmos-hover-background);
     --cosmos-heading-color: var(--cosmos-color-white);
@@ -65,11 +73,20 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-primary-contrast-color: var(--cosmos-color-white);
     --cosmos-primary-color-10pct: color-mix(in srgb, var(--cosmos-color-sky) 13%, transparent);
     --cosmos-primary-color-50pct: color-mix(in srgb, var(--cosmos-color-sky) 50%, transparent);
+    --cosmos-icon-border-color: color-mix(in srgb, var(--cosmos-color-primary) 40%, transparent);
+    --cosmos-hint-border-color: color-mix(in srgb, var(--cosmos-color-primary) 20%, transparent);
     --cosmos-error-color: var(--cosmos-color-danger);
     --cosmos-error-text-color: var(--cosmos-color-danger-light);
     --cosmos-error-color-10pct: color-mix(in srgb, var(--cosmos-color-danger) 13%, transparent);
     --cosmos-error-color-50pct: color-mix(in srgb, var(--cosmos-color-danger) 50%, transparent);
     --cosmos-error-contrast-color: var(--cosmos-color-white);
+    --cosmos-danger-surface: color-mix(in srgb, var(--cosmos-color-danger) 5%, transparent);
+    --cosmos-danger-border: color-mix(in srgb, var(--cosmos-color-danger) 25%, transparent);
+    --cosmos-danger-hover-surface: color-mix(in srgb, var(--cosmos-color-danger) 10%, transparent);
+    --cosmos-danger-hover-border: color-mix(in srgb, var(--cosmos-color-danger) 40%, transparent);
+    /* Zählerbadge (ungelesene Meldungen): kräftiges Rot, damit weiße Ziffern lesbar bleiben. */
+    --cosmos-counter-badge-background: var(--cosmos-color-danger-strong);
+    --cosmos-counter-badge-border: color-mix(in srgb, var(--cosmos-color-danger) 33%, transparent);
     --cosmos-warning-color: var(--cosmos-color-warning);
     --cosmos-warning-text-color: var(--cosmos-color-warning);
     --cosmos-warning-color-10pct: color-mix(in srgb, var(--cosmos-color-warning) 13%, transparent);
@@ -88,6 +105,8 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-success-color-10pct: color-mix(in srgb, var(--cosmos-color-success) 13%, transparent);
     --cosmos-success-color-50pct: color-mix(in srgb, var(--cosmos-color-success) 50%, transparent);
     --cosmos-success-contrast-color: var(--cosmos-color-white);
+    --cosmos-success-surface: color-mix(in srgb, var(--cosmos-color-success) 10%, transparent);
+    --cosmos-success-border: color-mix(in srgb, var(--cosmos-color-success) 20%, transparent);
 
     /* BASISSKALEN / Typografie, Abstände, Radien.
      * Schriftgrößen: 2xs für Großbuchstaben-Labels, xs–xl für Fließtext und Controls,
@@ -140,17 +159,18 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-sky-color: var(--cosmos-color-space);
     --cosmos-card-background: var(--cosmos-color-panel);
     --cosmos-primary-background: var(--cosmos-color-primary);
+    --cosmos-primary-hover-background: var(--cosmos-color-primary-hover);
     --cosmos-table-header-background: color-mix(in srgb, var(--cosmos-color-slate-800) 70%, transparent);
     --cosmos-table-row-background: color-mix(in srgb, var(--cosmos-color-raised) 45%, transparent);
     --cosmos-table-alternate-row-background: color-mix(in srgb, var(--cosmos-color-hover) 50%, transparent);
-    --cosmos-table-highlight-background: var(--cosmos-color-selection);
+    --cosmos-table-highlight-background: var(--cosmos-selection-background);
 
     /* Gemeinsame Seitenbreite; Vorschaugröße separat vom übrigen Overlay-Theme. */
     --cosmos-page-content-width: 1100px;
     --cosmos-notification-preview-width: 480px;
     --cosmos-notification-preview-max-height: min(720px, 75dvh);
     --cosmos-card-radius: 18px;
-    --cosmos-card-border: color-mix(in srgb, var(--cosmos-color-white) 8%, transparent);
+    --cosmos-card-border: var(--cosmos-border-color);
     --cosmos-card-shadow: 0 25px 95px color-mix(in srgb, var(--cosmos-color-black) 47%, transparent), inset 0 1px color-mix(in srgb, var(--cosmos-color-white) 5%, transparent);
 
     /* Standardavatar: Initialen und spätere eigene Bilder teilen denselben Rahmen.
@@ -321,8 +341,9 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --vaadin-input-field-autofill-color: var(--cosmos-text-color);
 }
 
-/* Abgenommene Kontoreferenz: paketweise auf die Kontoansicht und ihren E-Mail-Dialog
- * begrenzt. Andere Ansichten behalten bis zu ihrer eigenen Übernahme ihre Tokens. */
+/* Portal- und Overlayrahmen: Werte, die dort bewusst von den Grundwerten oben abweichen.
+ * Die Markerklassen setzt Java (CosmosCssClasses.REFERENCE_PORTAL/REFERENCE_OVERLAY und das
+ * Theme cosmos-reference); alle übrigen Farbrollen gelten unverändert aus dem Block oben. */
 .cosmos-reference-portal,
 .cosmos-reference-overlay,
 vaadin-dialog[theme~="cosmos-reference"],
@@ -332,51 +353,8 @@ vaadin-dialog.account-email-dialog,
 vaadin-dialog.account-password-dialog,
 vaadin-combo-box-item.cosmos-reference-option,
 vaadin-notification-card[theme~="cosmos-reference"] {
-    --cosmos-reference-page: var(--cosmos-color-space);
-    --cosmos-reference-input: var(--cosmos-color-input);
-    --cosmos-reference-panel: var(--cosmos-color-panel);
-    --cosmos-reference-dialog: var(--cosmos-color-raised);
-    --cosmos-reference-text: var(--cosmos-color-text);
-    --cosmos-reference-white: var(--cosmos-color-white);
-    --cosmos-reference-label: var(--cosmos-color-label);
-    --cosmos-reference-secondary: var(--cosmos-color-secondary);
-    --cosmos-reference-muted: var(--cosmos-color-muted);
-    --cosmos-reference-accent: var(--cosmos-color-sky);
-    --cosmos-reference-primary: var(--cosmos-color-primary);
-    --cosmos-reference-primary-hover: var(--cosmos-color-primary-hover);
-    --cosmos-reference-selection: var(--cosmos-color-selection);
-    --cosmos-reference-border: color-mix(in srgb, var(--cosmos-color-white) 8%, transparent);
-    --cosmos-reference-control-border: color-mix(in srgb, var(--cosmos-color-white) 12%, transparent);
-    --cosmos-reference-success: var(--cosmos-color-success);
-    --cosmos-reference-success-surface: color-mix(in srgb, var(--cosmos-color-success) 10%, transparent);
-    --cosmos-reference-success-border: color-mix(in srgb, var(--cosmos-color-success) 20%, transparent);
-    --cosmos-reference-subtle-surface: color-mix(in srgb, var(--cosmos-color-white) 4%, transparent);
-    --cosmos-reference-hover: var(--cosmos-hover-background);
-    --cosmos-reference-button-hover: var(--cosmos-hover-background);
-    --cosmos-reference-badge: var(--cosmos-color-danger-strong);
-    --cosmos-reference-badge-border: color-mix(in srgb, var(--cosmos-color-danger) 33%, transparent);
-    --cosmos-reference-warning: var(--cosmos-color-warning);
-    --cosmos-reference-invalid: var(--cosmos-color-danger);
-    --cosmos-reference-danger-surface: color-mix(in srgb, var(--cosmos-color-danger) 5%, transparent);
-    --cosmos-reference-danger-border: color-mix(in srgb, var(--cosmos-color-danger) 25%, transparent);
-    --cosmos-reference-danger-hover-surface: color-mix(in srgb, var(--cosmos-color-danger) 10%, transparent);
-    --cosmos-reference-danger-hover-border: color-mix(in srgb, var(--cosmos-color-danger) 40%, transparent);
-    --cosmos-reference-danger-hover-text: var(--cosmos-color-danger-light);
-    --cosmos-reference-backdrop: color-mix(in srgb, var(--cosmos-color-space) 76%, transparent);
-    --cosmos-reference-icon-border: color-mix(in srgb, var(--cosmos-color-primary) 40%, transparent);
-    --cosmos-reference-hint-border: color-mix(in srgb, var(--cosmos-color-primary) 20%, transparent);
-    --cosmos-primary-color: var(--cosmos-color-sky);
-    --cosmos-primary-text-color: var(--cosmos-color-sky);
-    --cosmos-text-color: var(--cosmos-color-text);
-    --cosmos-heading-color: var(--cosmos-color-white);
-    --cosmos-text-secondary-color: var(--cosmos-color-secondary);
-    --cosmos-base-color: var(--cosmos-color-input);
-    --cosmos-success-color: var(--cosmos-color-success);
-    --cosmos-success-text-color: var(--cosmos-color-success);
-    --cosmos-button-secondary-border: var(--cosmos-reference-control-border);
+    --cosmos-button-secondary-border: var(--cosmos-control-border-color);
     --cosmos-button-primary-shadow: none;
-    --cosmos-card-border: color-mix(in srgb, var(--cosmos-color-white) 8%, transparent);
-    --cosmos-card-background: var(--cosmos-color-panel);
     --cosmos-topbar-height: 65px;
     --cosmos-avatar-status-anchor: 6px;
 }
