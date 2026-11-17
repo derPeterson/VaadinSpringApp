@@ -9,6 +9,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.details.DetailsVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -179,6 +180,8 @@ public class UserPopoverMenu {
     presenceDetails.setOpened(true);
     presenceDetails.setWidthFull();
     presenceDetails.addClassName("portal-menu-presence-details");
+    // Auras Innenabstand würde die Statusflächen gegenüber dem Menü einrücken.
+    presenceDetails.addThemeVariants(DetailsVariant.AURA_NO_PADDING);
     presenceDetails
         .getElement()
         .setAttribute("aria-labelledby", presenceHeadingSpan.getId().orElseThrow());

@@ -74,7 +74,12 @@ public class BackgroundVariantsBrowserTest extends BrowserFixture {
     assertThat(scene.locator(".cosmos-shoot")).hasCount(3);
     assertThat(scene.locator(".cosmos-satellite")).hasCount(1);
     assertThat(scene.locator(".cosmos-drift")).hasCount(1);
-    assertThat(scene.locator(".cosmos-nova")).isVisible();
+    // Auf schmalen Bildschirmen läge die Supernova hinter den Inhaltskarten.
+    if (browserPage.viewportSize().width > 600) {
+      assertThat(scene.locator(".cosmos-nova")).isVisible();
+    } else {
+      assertThat(scene.locator(".cosmos-nova")).isHidden();
+    }
     assertThat(scene.locator(".cosmos-moon")).isVisible();
     browserPage.mouse().move(10, 120);
     browserPage.mouse().move(browserPage.viewportSize().width - 10, 180);

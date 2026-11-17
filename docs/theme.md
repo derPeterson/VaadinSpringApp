@@ -1392,6 +1392,12 @@ Vom Benutzer akzeptierte Abweichungen durch Aura (kein pixelgenauer Nachbau):
 - Überschriften brechen mit `text-wrap: balance` ausgewogener um.
 - Checkboxen 16 statt 18 px; Buttons mit Aura-Innenabstand teils 2–4 px breiter.
 - Textbereich und Mehrfachauswahl verwenden denselben dezenten Rahmen wie alle übrigen Felder.
+- Primärflächen in `#0077b6` statt `#0088cc`, damit weiße Schrift den WCAG-Kontrast erreicht.
+- Chips (Rollen, „Dein Benutzer“) mit Auras Innenabstand etwas höher; Tabellenzeilen mit
+  Chips dadurch einige Pixel höher.
+- Sortierpfeile der Tabellen größer und heller.
+- Schließen-Symbol in Dialogen kräftiger; gestrichelter Rahmen schreibgeschützter Felder
+  schwächer.
 
 ## Dateien und Ladereihenfolge
 
@@ -1464,7 +1470,8 @@ und Administration verwenden denselben Hintergrund.
 Die Szene besteht aus Horizont mit Atmosphäre und Wolkenbändern, zwei Sternflächen, vier
 Funkelsternen, Mond, drei Sternschnuppen (die dritte unten rechts länger und flacher), einem
 Satelliten (links nach rechts), einem blinkenden Wanderstern (`cosmos-drift`, rechts nach
-links) und einer entfernten Supernova links (`cosmos-nova`) im System-Violett der Badges.
+links) und einer entfernten Supernova am rechten Rand (`cosmos-nova`, auf Smartphones
+ausgeblendet) im System-Violett der Badges.
 Bei reduzierter Bewegung sind Sternschnuppen, Satellit und Wanderstern ausgeblendet; alle
 übrigen Ebenen stehen still. Gestaltungsregel: Dekoration
 liegt nur in den Randzonen links und rechts der Inhaltsbreite oder über dem Horizont, nie

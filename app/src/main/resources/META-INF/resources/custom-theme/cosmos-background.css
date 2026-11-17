@@ -262,11 +262,12 @@
         cosmos-background-blink 2.2s steps(1) infinite;
 }
 
-/* ---------- Entfernte Supernova links im System-Violett ----------
+/* ---------- Entfernte Supernova rechts im System-Violett ----------
+ * Am rechten Rand über dem Mond, teils angeschnitten; links läge sie hinter der Seitenleiste.
  * #a855f7 entspricht --cosmos-color-violet, #d8b4fe --cosmos-color-violet-light. */
 .cosmos-page-frame .cosmos-sky .cosmos-nova {
-    left: 14vw;
-    top: 42vh;
+    left: calc(100vw - 28px);
+    top: 34vh;
     width: clamp(70px, 7vw, 140px);
     aspect-ratio: 1;
     transform: translate(-50%, -50%);
@@ -383,6 +384,10 @@
 }
 
 @media (max-width: 600px) {
+    /* Auf schmalen Bildschirmen läge die Supernova hinter den Inhaltskarten. */
+    .cosmos-page-frame .cosmos-sky .cosmos-nova {
+        display: none;
+    }
     .cosmos-page-frame .cosmos-sky .cosmos-moon {
         right: 5vw;
         bottom: 118px;

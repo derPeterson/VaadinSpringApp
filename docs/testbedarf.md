@@ -41,8 +41,9 @@
   sind auf den einzigen Hintergrund (`cosmos-background.css`) umgestellt; zusätzlich bei
   1440/1280/1100/390 px prüfen, dass Mond und Funkelsterne weder Seitenüberschrift noch
   Seitenbeschreibung überdecken. Neu: dritte Sternschnuppe, Wanderstern (`cosmos-drift`,
-  rechts nach links) und Supernova (`cosmos-nova`) vorhanden; bei reduzierter Bewegung
-  Wanderstern ausgeblendet und Supernova ohne Animation.
+  rechts nach links) und Supernova (`cosmos-nova`, am rechten Rand, bei 390 px
+  ausgeblendet) vorhanden; bei reduzierter Bewegung Wanderstern ausgeblendet und Supernova
+  ohne Animation.
 
 ## JUnit-Tests
 

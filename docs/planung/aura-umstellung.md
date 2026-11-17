@@ -27,20 +27,12 @@ Commits nur auf ausdrücklichen Auftrag.
       breit wirkende Grundregeln für Buttons, Felder, Panelsymbole und Avatare (Hover-,
       Deaktiviert- und nicht aufgenommene Zustände) sowie Utility-Klassen. Für sie zuerst die
       Abdeckung erweitern (Smartphone aller Seiten, Zustände), dann einzeln prüfen.
-- [ ] Abschlussvergleich gegen `main` (Lumo) vom 17.11.2026 auswerten: 42 Aufnahmen Desktop,
-      Overlays und Smartphone verglichen; der runde Schaltergriff ist wiederhergestellt.
-      Offene Befunde zur Entscheidung des Benutzers (beheben oder als Abweichung akzeptieren):
-      - Primärflächen `#0077b6` statt `#0088cc` (Palettenentscheidung wegen WCAG-Kontrast,
-        noch nicht in der Liste akzeptierter Abweichungen der Theme-Anleitung).
-      - Chips (Rollen, „Dein Benutzer“) mit Auras Innenabstand etwas höher; erste
-        Tabellenzeile dadurch etwa 5 px höher, auf dem Smartphone deutlicher.
-      - Sortierpfeile der Tabellen größer und heller.
-      - Anwesenheitsliste im Benutzermenü: Einträge weiter eingerückt, Auswahlfläche schmaler.
-      - Deaktiviertes Feld (z. B. „Passwort bestätigen“) samt Label abgedunkelt; früher wie
-        ein normales Feld.
-      - Schließen-Symbol in Dialogen kräftiger; gestrichelter Rahmen schreibgeschützter Felder
-        schwächer; deaktivierter Primärbutton blasser.
-      - Violette Supernova des neuen Hintergrunds sitzt neben dem Seitenleisten-Label „PORTAL“.
+- [ ] Abschlussvergleich gegen `main` (Lumo) vom 17.11.2026 abschließen: Schaltergriff,
+      Anwesenheitsliste im Benutzermenü und Position der Supernova sind angeglichen;
+      Primärfarbe, Chips, Sortierpfeile, Schließen-Symbol und schreibgeschützter Rahmen sind
+      als Abweichungen akzeptiert (Theme-Anleitung). Offen: einheitlicher Deaktiviert-Zustand
+      nach dem Vorbild der Aura-Felder (abgedunkeltes Feld samt Label), einschließlich
+      deaktiviertem Primärbutton; vom Benutzer am 17.11.2026 freigegeben.
       Danach Restpunkte übernehmen und diesen Plan entfernen.
 
 ## Wiedereinstieg

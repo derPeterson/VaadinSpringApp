@@ -1411,6 +1411,9 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
 .portal-menu-presence-details:not([opened]) {
     display: none;
 }
+.portal-menu-presence-details::part(content) {
+    padding: 8px 0 0;
+}
 
 .cosmos-reference-overlay .portal-status-option {
     display: flex;
