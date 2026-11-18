@@ -108,8 +108,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Rücknahme alter Markierungen, Sprachwechsel sowie fachliche Unterschiede zwischen
   Antworten und internen Vermerken berücksichtigen. Sichtbarkeit und Rechte erhalten.
 
-- [ ] Prüfung, nötige Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Prüfung, nötige Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 5. Ticketsystem: Sicherheitshinweis beim internen Vermerk
 

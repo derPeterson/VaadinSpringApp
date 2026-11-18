@@ -2,6 +2,13 @@
 
 ## Browser-Tests
 
+- **Ticketsystem: konkrete Eingabefehler beim Absenden — offen.**
+  In DE/EN neue Anfrage, öffentliche Antwort und internen Vermerk prüfen:
+  Leeren/Blur ohne Rotmarkierung, erst Absenden markiert leeren oder zu langen Text
+  und erklärt konkret die nötige Korrektur. Keine Inline-Fehler oder Feldnamen-Zeile.
+  Bearbeitung entfernt die alte Markierung; Rechte, Ticketstatus und Versionskonflikte
+  bleiben wirksam. JUnit prüft die Komponenten; kein Browserlauf freigegeben.
+
 - **Mail-Test: Prüfung erst beim Senden — offen.**
   In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem
   Senden keine Rotmarkierung. Erst „Test-E-Mail senden“ markiert das jeweilige

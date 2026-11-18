@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -24,10 +26,12 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -38,6 +42,7 @@ import com.vaadin.flow.router.Location;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.ComponentTestTree;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportReplyEntity;
@@ -87,8 +92,54 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class TwoFactorFlowViewTest {
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  @SuppressWarnings("unchecked")
+  void ticketRepliesValidateOnlyOnSendingAndExplainTheSelectedMessageType(String language) {
+    openTwoFactorPage(language, false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    Ticket ticket = filterTicket(1L, Status.IN_PROGRESS, 9L);
+    stubInbox(ticketService, List.of(ticket));
+    when(ticketService.administratorId(mockHttpRequest)).thenReturn(9L);
+    SupportTicketsComponent ticketsComponent =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, true);
+    ((Grid<Ticket>) find(ticketsComponent, "support-ticket-grid"))
+        .asSingleSelect()
+        .setValue(ticket);
+    ticketsComponent.refreshTicketWorkspace();
+    TextArea messageInput = (TextArea) find(ticketsComponent, "support-reply");
+    Button replyButton = (Button) find(ticketsComponent, "support-add-reply");
+    messageInput.setValue(" ");
+    assertFalse(messageInput.isInvalid());
+    replyButton.click();
+    assertTrue(messageInput.isInvalid());
+    assertTicketValidationMessage(messageProperties.getSupportReplyRequired());
+    messageInput.setValue("Draft reply");
+    assertFalse(messageInput.isInvalid());
+    ((Tabs) find(ticketsComponent, "support-reply-mode"))
+        .setSelectedTab((Tab) find(ticketsComponent, "support-internal-note"));
+    messageInput.clear();
+    assertFalse(messageInput.isInvalid());
+    replyButton.click();
+    assertTicketValidationMessage(messageProperties.getSupportInternalRequired());
+    messageInput.setValue("x".repeat(SupportTicketService.MESSAGE_LIMIT + 1));
+    replyButton.click();
+    assertTicketValidationMessage(
+        messageProperties.getSupportMessageTooLong(SupportTicketService.MESSAGE_LIMIT));
+    verify(ticketService, never())
+        .replyToTicket(any(), anyLong(), anyLong(), anyString(), anyBoolean(), anyBoolean());
+  }
+
+  private void assertTicketValidationMessage(String expectedMessage) {
+    assertEquals(
+        expectedMessage,
+        ((Paragraph) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"))
+            .getText());
+  }
+
   private final HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
   private final SecurityService securityService = mock(SecurityService.class);
   private final TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);

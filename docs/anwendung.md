@@ -90,7 +90,9 @@ Identitätsbestätigungen beim Speichern bleiben erhalten.
 Diese Einstellung gilt für Registrierung, Anmeldung, persönliche Daten,
 Benutzeranlage/-bearbeitung, Konfiguration und Mail-Test. Beim Mail-Test löst erst
 „Test-E-Mail senden“ die Prüfung aus; ein Sprachwechsel erhält auch bewusst geleerte
-Entwürfe. Weitere Formulare sind noch nicht umgestellt.
+Entwürfe. Auch das Ticketsystem prüft Anfragen, Antworten und interne Vermerke erst
+beim Absenden und erklärt fehlenden oder zu langen Text konkret. Weitere Formulare
+sind noch nicht umgestellt.
 
 ### Entwicklerkonten
 

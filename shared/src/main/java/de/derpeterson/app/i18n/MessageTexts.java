@@ -480,6 +480,22 @@ public class MessageTexts {
     return getTranslation("support.replySaved");
   }
 
+  public String getSupportRequestRequired() {
+    return getTranslation("support.validation.requestRequired");
+  }
+
+  public String getSupportReplyRequired() {
+    return getTranslation("support.validation.replyRequired");
+  }
+
+  public String getSupportInternalRequired() {
+    return getTranslation("support.validation.internalRequired");
+  }
+
+  public String getSupportMessageTooLong(int maximumCharacters) {
+    return getFormattedTranslation("support.validation.messageTooLong", maximumCharacters);
+  }
+
   public String getSupportRefreshed() {
     return getTranslation("support.refreshed");
   }

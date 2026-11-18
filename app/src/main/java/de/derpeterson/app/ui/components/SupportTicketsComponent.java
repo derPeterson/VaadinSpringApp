@@ -30,7 +30,6 @@ import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.server.WrappedHttpSession;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportReplyEntity.Kind;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
@@ -401,11 +400,33 @@ public final class SupportTicketsComponent extends VerticalLayout {
     });
   }
 
+  private boolean validateMessageInput(boolean creatingRequest) {
+    String messageText = ticketMessageInput.getValue();
+    if (messageText.isBlank()) {
+      ticketMessageInput.setInvalid(true);
+      Supplier<String> errorMessageSupplier = messageProperties::getSupportReplyRequired;
+      if (creatingRequest) {
+        errorMessageSupplier = messageProperties::getSupportRequestRequired;
+      } else if (administration && replyMode.getSelectedTab() == internalNoteMode) {
+        errorMessageSupplier = messageProperties::getSupportInternalRequired;
+      }
+      failed(errorMessageSupplier);
+      return false;
+    }
+    if (messageText.length() > SupportTicketService.MESSAGE_LIMIT) {
+      ticketMessageInput.setInvalid(true);
+      failed(() -> messageProperties.getSupportMessageTooLong(SupportTicketService.MESSAGE_LIMIT));
+      return false;
+    }
+    ticketMessageInput.setInvalid(false);
+    return true;
+  }
+
   private void configureActions() {
     createRequestButton.setId("support-create");
     createRequestButton.setPrefixComponent(AppIcon.PLUS.create());
     createRequestButton.addClickListener(event -> {
-      if (ValidationHelper.validateRequiredInputs(List.of(ticketMessageInput), messageProperties)) {
+      if (validateMessageInput(true)) {
         runTicketActionAndRefreshWorkspace(
             () -> supportTicketService.createRecovery(httpRequest, ticketMessageInput.getValue()),
             messageProperties::getSupportCreated,
@@ -424,7 +445,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     sendReplyButton.setId("support-add-reply");
     sendReplyButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
     sendReplyButton.addClickListener(event -> {
-      if (ValidationHelper.validateRequiredInputs(List.of(ticketMessageInput), messageProperties)) {
+      if (validateMessageInput(false)) {
         boolean privateNote = administration && isInternalNote();
         runTicketActionAndRefreshWorkspace(
             () ->
