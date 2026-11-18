@@ -94,8 +94,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   die jeweilige Markierung zurück.
 - Bestehende Versand-, Zugriffs- und Verfügbarkeitsbedingungen erhalten.
 
-- [ ] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 4. Ticketsystem: Formulare und Nachrichtensenden vereinheitlichen
 

@@ -29,6 +29,7 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -120,6 +121,9 @@ public class AdminMailTestSection extends VerticalLayout {
     mailTestDescriptionSpan.addClassNames(CosmosCssClasses.TEXT_SECONDARY);
 
     testRecipientField = new EmailField();
+    testRecipientField.setManualValidation(true);
+    testRecipientField.setValueChangeMode(ValueChangeMode.EAGER);
+    testRecipientField.addValueChangeListener(_ -> testRecipientField.setInvalid(false));
     testRecipientField.setPattern(UserInputRules.EMAIL_REGEX);
     testRecipientField.setClearButtonVisible(true);
     testRecipientField.setWidthFull();
@@ -130,15 +134,23 @@ public class AdminMailTestSection extends VerticalLayout {
     }
 
     testSubjectField = new TextField();
+    testSubjectField.setManualValidation(true);
+    testSubjectField.setValueChangeMode(ValueChangeMode.EAGER);
+    testSubjectField.addValueChangeListener(_ -> testSubjectField.setInvalid(false));
     testSubjectField.setClearButtonVisible(true);
     testSubjectField.setWidthFull();
     testSubjectField.setRequiredIndicatorVisible(true);
 
     testBodyField = new TextArea();
+    testBodyField.setManualValidation(true);
+    testBodyField.setValueChangeMode(ValueChangeMode.EAGER);
+    testBodyField.addValueChangeListener(_ -> testBodyField.setInvalid(false));
     testBodyField.setClearButtonVisible(true);
     testBodyField.setWidthFull();
     testBodyField.setRequiredIndicatorVisible(true);
     testBodyField.addClassName("cosmos-mail-body-field");
+    testSubjectField.setValue(messageProperties.getAdminMailDefaultSubject());
+    testBodyField.setValue(messageProperties.getAdminMailDefaultBody());
 
     mailFieldHelpPanel = new AdminSidePanelDialog(messageProperties, AppIcon.INFO_CIRCLE);
     mailFieldHelpPanel.addClassName("admin-config-help");
@@ -376,14 +388,6 @@ public class AdminMailTestSection extends VerticalLayout {
     testRecipientField.setLabel(messageProperties.getAdminMailRecipient());
     testSubjectField.setLabel(messageProperties.getAdminMailSubject());
     testBodyField.setLabel(messageProperties.getAdminMailBody());
-
-    if (testSubjectField.isEmpty()) {
-      testSubjectField.setValue(messageProperties.getAdminMailDefaultSubject());
-    }
-
-    if (testBodyField.isEmpty()) {
-      testBodyField.setValue(messageProperties.getAdminMailDefaultBody());
-    }
   }
 
   private void sendTestMail() {

@@ -2,6 +2,14 @@
 
 ## Browser-Tests
 
+- **Mail-Test: Prüfung erst beim Senden — offen.**
+  In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem
+  Senden keine Rotmarkierung. Erst „Test-E-Mail senden“ markiert das jeweilige
+  fehlerhafte Feld und zeigt die konkrete übersetzte Notification ohne Inline-Fehler.
+  Änderungen entfernen dessen Markierung. Ein Sprachwechsel erhält auch bewusst
+  geleerte Betreff-/Textentwürfe. Versandverfügbarkeit bleibt maßgeblich.
+  JUnit prüft den Ablauf mit gemocktem Versand; kein Browserlauf freigegeben.
+
 - **Konfiguration: konkrete Notifications statt Inline-Fehler — offen.**
   In DE/EN auf Desktop und Smartphone alle Konfigurationsgruppen einschließlich
   Mailqueue-Assistenten, Anmeldeanbietern und 2FA prüfen. Ungültige Text-, E-Mail-,

@@ -16,6 +16,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -48,6 +49,56 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Native Komponenten und Callback-Sperre mit Mocks; kein Browser, Server oder SMTP. */
 class AdminMailTestSectionTest {
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void validationWaitsForSendingAndCorrectionClearsEachMarker(String language) {
+    localeReference.set(Locale.forLanguageTag(language));
+    AdminMailTestSection mailSection = section();
+    EmailField recipientField = field(mailSection, "testRecipientField");
+    TextField subjectField = field(mailSection, "testSubjectField");
+    TextArea bodyField = field(mailSection, "testBodyField");
+    recipientField.setValue("invalid");
+    subjectField.clear();
+    bodyField.clear();
+    assertFalse(recipientField.isInvalid());
+    assertFalse(subjectField.isInvalid());
+    assertFalse(bodyField.isInvalid());
+    ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
+    assertTrue(recipientField.isInvalid());
+    assertMailError(messageProperties.getAdminMailValidationRecipient());
+    recipientField.setValue("test@example.test");
+    assertFalse(recipientField.isInvalid());
+    ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
+    assertTrue(subjectField.isInvalid());
+    assertMailError(messageProperties.getAdminMailValidationSubject());
+    localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    mailSection.refreshTexts();
+    NotificationHelper.getInstance().updateText();
+    assertTrue(subjectField.isEmpty());
+    assertTrue(bodyField.isEmpty());
+    assertMailError(messageProperties.getAdminMailValidationSubject());
+    subjectField.setValue("Test subject");
+    assertFalse(subjectField.isInvalid());
+    ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
+    assertTrue(bodyField.isInvalid());
+    assertMailError(messageProperties.getAdminMailValidationBody());
+    verifyNoInteractions(emailService);
+    bodyField.setValue("Test body");
+    assertFalse(bodyField.isInvalid());
+    ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
+    verify(emailService).sendAdminEmail("test@example.test", "Test subject", "Test body");
+  }
+
+  private void assertMailError(String expectedMessage) {
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    assertEquals(
+        messageProperties.getBaseFailedTitle(),
+        ((Span) ReflectionTestUtils.getField(notificationHelper, "titleText")).getText());
+    assertEquals(
+        expectedMessage,
+        ((Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText")).getText());
+  }
+
   private UI testUi;
   private ConfigService configService;
   private EmailService emailService;
