@@ -34,6 +34,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.breadcrumbs.BreadcrumbsItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -576,7 +577,10 @@ class UserNotificationsUiTest {
         readFilterTabs.getItemLabelGenerator().apply(ReadFilter.UNREAD));
     assertEquals(
         messageProperties.getNotificationsFilter(), readFilterTabs.getAriaLabel().orElseThrow());
-    assertTrue(streamComponentTree(notificationsPanel).noneMatch(Checkbox.class::isInstance));
+    assertTrue(
+        streamComponentTree(notificationsPanel)
+            .noneMatch(controlComponent ->
+                controlComponent instanceof Checkbox || controlComponent instanceof Switch));
     Span previewHintSpan = readComponentField(notificationsPanel, "previewHint");
 
     assertEquals(messageProperties.getNotificationsLatest(5), previewHintSpan.getText());
@@ -2128,7 +2132,10 @@ class UserNotificationsUiTest {
     assertEquals(ReadFilter.ALL, readFilterTabs.getValue());
     assertEquals(
         List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ), readFilterTabs.getItems());
-    assertTrue(streamComponentTree(notificationsPanel).noneMatch(Checkbox.class::isInstance));
+    assertTrue(
+        streamComponentTree(notificationsPanel)
+            .noneMatch(controlComponent ->
+                controlComponent instanceof Checkbox || controlComponent instanceof Switch));
     assertTrue(
         streamComponentTree(notificationsPanel)
             .noneMatch(candidateComponent ->
@@ -2694,8 +2701,7 @@ class UserNotificationsUiTest {
         .setValue("Subject");
     ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
         .setValue("Message");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     Preview reviewedRecipientPreview = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(userNotificationService.preview(mockHttpSession, reviewedRecipientPreview.selection()))
         .thenReturn(reviewedRecipientPreview);
@@ -2744,7 +2750,7 @@ class UserNotificationsUiTest {
         ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
             .isEnabled());
     assertFalse(
-        ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
+        ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch"))
             .isEnabled());
     assertFalse(reviewDraftButton.isEnabled());
     assertFalse(sendNotificationButton.isEnabled());
@@ -2778,8 +2784,7 @@ class UserNotificationsUiTest {
         .setValue("Subject");
     ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
         .setValue("Message");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     Preview reviewedRecipientPreview = new Preview(new Selection(true, Set.of()), List.of(5L));
     when(userNotificationService.preview(mockHttpSession, reviewedRecipientPreview.selection()))
         .thenReturn(reviewedRecipientPreview);
@@ -2861,8 +2866,7 @@ class UserNotificationsUiTest {
         .setValue("Title");
     ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
         .setValue("Body");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     ((Button) readComponentField(adminNotificationsSection, "previewButton")).click();
 
     assertTrue(
@@ -2988,8 +2992,8 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "notificationBodyField");
     MultiSelectComboBox<Target> recipientMultiSelectComboBox =
         readComponentField(adminNotificationsSection, "recipientComboBox");
-    Checkbox sendToEveryoneCheckbox =
-        readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox");
+    Switch sendToEveryoneSwitch =
+        readComponentField(adminNotificationsSection, "sendToEveryoneSwitch");
     Button reviewDraftButton = readComponentField(adminNotificationsSection, "previewButton");
     Button sendNotificationButton =
         readComponentField(adminNotificationsSection, "sendNotificationButton");
@@ -3009,7 +3013,7 @@ class UserNotificationsUiTest {
       case "title" -> notificationTitleTextField.setValue("Changed subject");
       case "body" -> notificationBodyTextArea.clear();
       case "recipients" -> recipientMultiSelectComboBox.clear();
-      case "everyone" -> sendToEveryoneCheckbox.setValue(true);
+      case "everyone" -> sendToEveryoneSwitch.setValue(true);
       default -> fail("Unknown draft input");
     }
 
@@ -3044,8 +3048,7 @@ class UserNotificationsUiTest {
         .setValue("Subject");
     ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
         .setValue("Message");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     Preview reviewedRecipientPreview = new Preview(new Selection(true, Set.of()), List.of(5L));
     RuntimeException previewRejection =
         previewProblem.equals("UNAVAILABLE")
@@ -3097,8 +3100,7 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "notificationBodyField");
     notificationTitleTextField.setValue("Subject");
     notificationBodyTextArea.setValue("Message");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     if (draftInputName.equals("title")) {
       notificationTitleTextField.setValue("x".repeat(UserNotificationService.TITLE_LIMIT + 1));
     } else {
@@ -3128,8 +3130,7 @@ class UserNotificationsUiTest {
         .setValue("Title");
     ((TextArea) readComponentField(adminNotificationsSection, "notificationBodyField"))
         .setValue("Body");
-    ((Checkbox) readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox"))
-        .setValue(true);
+    ((Switch) readComponentField(adminNotificationsSection, "sendToEveryoneSwitch")).setValue(true);
     ((Button) readComponentField(adminNotificationsSection, "previewButton")).click();
     UUID sendRequestUuid = readComponentField(adminNotificationsSection, "sendRequestUuid");
     when(userNotificationService.send(
@@ -3275,15 +3276,15 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "recipientComboBox");
     TextField everyoneRecipientsTextField =
         readComponentField(adminNotificationsSection, "everyoneRecipientsTextField");
-    Checkbox sendToEveryoneCheckbox =
-        readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox");
+    Switch sendToEveryoneSwitch =
+        readComponentField(adminNotificationsSection, "sendToEveryoneSwitch");
 
     assertTrue(recipientMultiSelectComboBox.isVisible());
     assertTrue(recipientMultiSelectComboBox.isEnabled());
     assertFalse(everyoneRecipientsTextField.isVisible());
 
     recipientMultiSelectComboBox.setValue(Set.of(recipientTargets.getFirst()));
-    sendToEveryoneCheckbox.setValue(true);
+    sendToEveryoneSwitch.setValue(true);
 
     assertFalse(recipientMultiSelectComboBox.isVisible());
     assertFalse(recipientMultiSelectComboBox.isEnabled());
@@ -3305,7 +3306,7 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsRecipients(), everyoneRecipientsTextField.getLabel());
 
-    sendToEveryoneCheckbox.setValue(false);
+    sendToEveryoneSwitch.setValue(false);
 
     assertFalse(everyoneRecipientsTextField.isVisible());
     assertTrue(recipientMultiSelectComboBox.isVisible());
@@ -3560,8 +3561,8 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "notificationTitleField");
     TextArea notificationBodyTextArea =
         readComponentField(adminNotificationsSection, "notificationBodyField");
-    Checkbox sendToEveryoneCheckbox =
-        readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox");
+    Switch sendToEveryoneSwitch =
+        readComponentField(adminNotificationsSection, "sendToEveryoneSwitch");
     Preview recipientPreview =
         new Preview(
             new Selection(true, Set.of()), recipientTargets.stream().map(Target::id).toList());
@@ -3569,7 +3570,7 @@ class UserNotificationsUiTest {
         .thenReturn(recipientPreview);
     notificationTitleTextField.setValue("<b>Title</b>");
     notificationBodyTextArea.setValue("<img src=x onerror=alert(1)>\nPlain text");
-    sendToEveryoneCheckbox.setValue(true);
+    sendToEveryoneSwitch.setValue(true);
 
     return new AdminDraftFixture(adminNotificationsSection, recipientTargets);
   }

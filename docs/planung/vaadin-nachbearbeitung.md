@@ -162,8 +162,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Beschriftung, erklärenden Untertext, Empfängerauswahl und Funktion erhalten.
 - Dieser Punkt betrifft Benachrichtigungen, nicht das Ticketsystem.
 
-- [ ] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 9. AvatarGroup: vollständige Empfängerliste über die Avatarreihe
 

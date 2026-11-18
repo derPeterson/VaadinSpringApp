@@ -730,9 +730,9 @@ vaadin-app-layout.cosmos-reference-admin
 /* Beschriftungsblock wie bei „Aktiv“ im Benutzerdialog. */
 
 .cosmos-notification-compose-everyone {
-    --vaadin-checkbox-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-checkbox-label-font-weight: var(--cosmos-font-weight-bold);
-    --vaadin-checkbox-label-color: var(--vaadin-input-field-value-color, var(--cosmos-text-color));
+    --vaadin-switch-label-font-size: var(--cosmos-font-size-m);
+    --vaadin-switch-label-font-weight: var(--cosmos-font-weight-bold);
+    --vaadin-switch-label-color: var(--vaadin-input-field-value-color, var(--cosmos-text-color));
 }
 
 .cosmos-notification-compose-everyone::part(label) {

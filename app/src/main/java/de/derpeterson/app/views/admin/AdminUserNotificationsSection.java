@@ -17,7 +17,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
@@ -91,7 +91,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span bodyCountSpan = new Span();
   private final Badge previewStatusBadge = new Badge();
   private List<Target> eligibleTargets = List.of();
-  private final Checkbox sendToEveryoneCheckbox = new Checkbox();
+  private final Switch sendToEveryoneSwitch = new Switch();
   private final MultiSelectComboBox<Target> recipientComboBox = new MultiSelectComboBox<>();
   private final TextField everyoneRecipientsTextField = new TextField();
   private final Span recipientSummarySpan = new Span();
@@ -181,7 +181,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     recipientComboBox.setRequiredIndicatorVisible(true);
     recipientComboBox.setId("admin-notifications-recipients");
 
-    sendToEveryoneCheckbox.setId("admin-notifications-everyone");
+    sendToEveryoneSwitch.setId("admin-notifications-everyone");
     everyoneRecipientsTextField.setId("admin-notifications-everyone-recipients");
     everyoneRecipientsTextField.setManualValidation(true);
     everyoneRecipientsTextField.setRequiredIndicatorVisible(true);
@@ -211,7 +211,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       });
     }
 
-    sendToEveryoneCheckbox.addValueChangeListener(_ -> {
+    sendToEveryoneSwitch.addValueChangeListener(_ -> {
       recipientComboBox.setInvalid(false);
       everyoneRecipientsTextField.setInvalid(false);
       refreshRecipientSelectionControls();
@@ -246,7 +246,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
     Div deliveryInfoDiv = new Div(createDecorativeSvgIcon(AppIcon.INFO_CIRCLE), deliveryInfoSpan);
     deliveryInfoDiv.addClassName("cosmos-notification-compose-info");
-    sendToEveryoneCheckbox.addClassName("cosmos-notification-compose-everyone");
+    sendToEveryoneSwitch.addClassName("cosmos-notification-compose-everyone");
     everyoneHintSpan.addClassName("cosmos-notification-compose-everyone-hint");
     everyoneHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
     VerticalLayout everyoneLabelLayout = new VerticalLayout(everyoneCaptionSpan, everyoneHintSpan);
@@ -255,14 +255,14 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     everyoneLabelLayout.setWidth(null);
     everyoneLabelLayout.setAlignItems(FlexComponent.Alignment.START);
     everyoneLabelLayout.addClassName("cosmos-notification-compose-everyone-label");
-    sendToEveryoneCheckbox.setLabelComponent(everyoneLabelLayout);
-    sendToEveryoneCheckbox.setAriaDescribedBy(everyoneHintSpan);
+    sendToEveryoneSwitch.setLabelComponent(everyoneLabelLayout);
+    sendToEveryoneSwitch.setAriaDescribedBy(everyoneHintSpan);
 
     recipientSummarySpan.addClassName("cosmos-notification-compose-recipient-summary");
     recipientSummarySpan.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div recipientFieldDiv = new Div(recipientComboBox, recipientSummarySpan);
     recipientFieldDiv.addClassName("cosmos-notification-compose-recipient-field");
-    Div recipientSelectionDiv = new Div(sendToEveryoneCheckbox);
+    Div recipientSelectionDiv = new Div(sendToEveryoneSwitch);
     recipientSelectionDiv.addClassName("cosmos-notification-compose-selection");
 
     notificationPreviewDiv.addClassName("cosmos-notification-compose-preview");
@@ -482,7 +482,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             || notificationBodyField.getValue().length() > UserNotificationService.BODY_LIMIT);
 
     boolean hasNoRecipients =
-        Boolean.TRUE.equals(sendToEveryoneCheckbox.getValue())
+        Boolean.TRUE.equals(sendToEveryoneSwitch.getValue())
             ? eligibleTargets.isEmpty()
             : recipientComboBox.getSelectedItems().isEmpty();
     if (hasNoRecipients) {
@@ -513,7 +513,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void markRecipientInputInvalid() {
-    if (Boolean.TRUE.equals(sendToEveryoneCheckbox.getValue())) {
+    if (Boolean.TRUE.equals(sendToEveryoneSwitch.getValue())) {
       everyoneRecipientsTextField.setInvalid(true);
     } else {
       recipientComboBox.setInvalid(true);
@@ -535,7 +535,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           userNotificationService.preview(
               httpServletRequest.getSession(false),
               new Selection(
-                  Boolean.TRUE.equals(sendToEveryoneCheckbox.getValue()),
+                  Boolean.TRUE.equals(sendToEveryoneSwitch.getValue()),
                   recipientComboBox.getSelectedItems().stream()
                       .map(Target::id)
                       .collect(Collectors.toSet())));
@@ -581,7 +581,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void refreshRecipientSelectionControls() {
-    boolean isSendingToEveryone = Boolean.TRUE.equals(sendToEveryoneCheckbox.getValue());
+    boolean isSendingToEveryone = Boolean.TRUE.equals(sendToEveryoneSwitch.getValue());
     recipientComboBox.setEnabled(!isSendingToEveryone);
     recipientComboBox.setVisible(!isSendingToEveryone);
     recipientComboBox

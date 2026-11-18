@@ -9,6 +9,8 @@
   nur die Markierung des geänderten Feldes zurücknehmen. Keine Empfänger und
   zwischenzeitlich geänderte Empfänger unterscheiden. Senden bleibt ohne aktuelle
   gültige Vorschau gesperrt. JUnit deckt den Ablauf ab; kein Browserlauf freigegeben.
+  „Alle aktiven Konten“ ist ein nativer Switch. Umschalten muss die manuelle
+  Empfängerauswahl entsprechend deaktivieren/reaktivieren und die Vorschau verwerfen.
 
 - **Ticketsystem: konkrete Eingabefehler beim Absenden — offen.**
   In DE/EN neue Anfrage, öffentliche Antwort und internen Vermerk prüfen:

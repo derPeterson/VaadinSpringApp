@@ -297,6 +297,9 @@ Schriftgestaltung und die nativen Abstände bleiben erhalten; Umschalten ändert
 zunächst den Entwurf, erst Speichern übernimmt ihn.
 Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
 Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
+Auch „Alle aktiven Konten“ im Benachrichtigungsentwurf verwendet einen nativen
+Switch mit bisheriger Beschriftung und Untertext. Er verändert die Auswahl für
+die nächste Vorschau; die Freigabe zum Senden entsteht weiterhin erst durch Prüfung.
 
 **Zeitfelder:** Aufrufer verwenden `CosmosDurationCustomField`. Die Hülle trägt
 Label sowie Enabled/Read-only/Invalid; in der Konfiguration stehen Fehlertexte
