@@ -18,9 +18,9 @@ Die Gesamtumsetzung bleibt offen; aktueller Branch ist
 
 **Bestandsaufnahme und Vorschlag freigegeben; Gestaltung anschließend abstimmen.**
 
-- [ ] Projektweit die Badge-Einsatzstellen und ihre aktuellen Höhen erfassen und
+- [x] Projektweit die Badge-Einsatzstellen und ihre aktuellen Höhen erfassen und
       eine verständliche Übersicht erstellen.
-- [ ] Einen Vorschlag für zentrale Größen-Tokens mit benannten Abstufungen
+- [x] Einen Vorschlag für zentrale Größen-Tokens mit benannten Abstufungen
       (beispielsweise XS, S, M und L) vorlegen, nahe an den bisherigen Größen.
       Nur tatsächlich sinnvolle Größen vorsehen; weitere Abstufungen bei Bedarf begründen.
 - [ ] Als projektweite Vorgabe berücksichtigen: Badges innerhalb eines fachlich
@@ -32,6 +32,63 @@ Die Gesamtumsetzung bleibt offen; aktueller Branch ist
       Limitangabe bei „Geräte und Sitzungen“. Größen nach fachlicher Funktion und
       Gewichtung zuordnen; gleichartige Badges im jeweiligen Themenbereich gleich gestalten.
 - [ ] Vorschlag gemeinsam abstimmen; die Umsetzung erst nach Freigabe beginnen.
+
+### Ergebnis und Vorschlag zu Punkt 1
+
+Bestandsaufnahme anhand des aktuellen Java-/CSS-Codes und der installierten
+Vaadin-Version 25.3.5. 22 Java-Dateien verwenden native Badges, darunter zwei
+Badge-Unterklassen. Die folgende Tabelle gruppiert deren Einsatzstellen nach
+Gestaltungsregeln. Keine Browsermessung: feste Höhen sind CSS-Vorgaben; errechnete
+Werte setzen die vorhandenen Schrift-/Zeilenhöhen voraus. Native Höhen sind
+gerundet und können bei abweichender Vererbung variieren.
+
+Der native Badge setzt bereits eine Höhe aus Zeilenhöhe plus Rahmen, gerundet
+auf 0,125 rem, sowie negative Rahmen-Außenabstände. Lokale Regeln überschreiben
+teils nur Padding oder Schrift, teils zusätzlich Höhe und Boxmodell. Daher darf
+man nicht generell Zeilenhöhe plus Padding als tatsächliche Außenhöhe angeben.
+
+| Einsatzstellen / Klassen | Aktuelle Höhenregel | Zuständige CSS-Datei |
+| --- | --- | --- |
+| Quellen „Administration“ und „System“, Vorschau/Inbox/Detail/Entwurf: `cosmos-notification-preview-source` innerhalb `message-meta` | `height:auto`, mindestens 20; bei 16 px Zeilenhöhe + 2 × 2 px Padding + Rahmen rechnerisch 22 px | `cosmos-notifications.css` |
+| „Ungelesen“ und „Gelesen“: `cosmos-notification-preview-state[data-read]` | Fest 19 px, Border-Box | `cosmos-notifications.css` |
+| Ticketbezogene Relevanz „Bereits übernommen“ usw.: `preview-state[data-relevance]` | Content-Box, 2 px Padding je Seite; native Höhe bei 16 px Zeilenhöhe ca. 18 px, mit Padding/Rahmen außen ca. 24 px | `cosmos-notifications.css` |
+| Notification-Filterzähler: `portal-filter-count` | Fest 18 px | `cosmos-notifications.css` |
+| Glocke, Kontonavigation und Startseiten-Zähler: `cosmos-notification-count`, `account-nav-count`, `portal-home-unread` | Fest 20 px | `cosmos-shell.css`, Grundregel auch `cosmos-notifications.css` |
+| Anwesenheit in Kontokarte und Benutzermenü: `account-summary-presence`, `portal-menu-presence` | Mindestens 21 px; 16 px Zeilenhöhe, 2 px Padding je Seite, native Höhe zusätzlich aktiv | `cosmos-shell.css` |
+| Verifikation, Reaktivierung, Portalpasswort, 2FA-Einrichtung und verbundene Anmeldeanbieter | 16 px Zeilenhöhe und 2 px Padding je Seite, native Höhenregel nicht zurückgesetzt (typisch ca. 18 px statt automatisch 22 px) | `cosmos-account.css`, `cosmos-mfa.css`, `cosmos-external-login.css` |
+| Sitzungskennzeichnungen: aktuelles Gerät, aktive/gespeicherte Anmeldung | Gleiche kompakte Schrift-/Padding-Regeln und native Höhe wie oben | `cosmos-account.css` |
+| Sitzungslimit `account-sessions-limit` | `height:auto`, 16 + 8 + 2 = rechnerisch 26 px | `cosmos-account.css` |
+| Sitzungsübersicht `account-session-count` | `height:auto`, 20 + 8 + 2 = mindestens rechnerisch 30 px; größere eingebettete Ziffern möglich | `cosmos-account.css` |
+| Benutzerdialog: Registrierung über, Kontotyp, Anmeldemethoden | 16 px Zeilenhöhe, 2 px Padding je Seite, native Höhe aktiv | `admin-users.css` |
+| Benutzertabelle: „Sie“ / Rollen | „Sie“ rechnerisch 22 px; Rollen rechnerisch 24 px, beide `height:auto` | `admin-users.css` |
+| Benutzertabelle: Zugang / Anwesenheit | Native Badges als rahmenlose Text-/Iconanzeige, `height:auto`, 18 px Zeilenhöhe; keine gerahmten Statuschips | `admin-users.css` |
+| Konfigurationsanzahl, Versandstatus und Versandhistorien-Zähler: `cosmos-config-setting-count`, `cosmos-panel-meta` | `height:auto`, 16 + 12 + 2 = rechnerisch 30 px | `cosmos-admin.css` |
+| Filterzähler im Benutzer-Filterdialog | Fest 36 px; andere Filterkontexte haben eigene Regeln bzw. native Höhe | `admin-users.css`, `cosmos-admin.css` |
+| Anmeldeanbieter-Konfiguration: `provider-status` mit Logo | Fest 30 px | `cosmos-provider-settings.css` |
+| Bereinigungsstatus `admin-mail-queue-status` | 16 px Zeilenhöhe, 2 px Padding je Seite, native Höhe aktiv | `cosmos-mailqueue-assistant.css` |
+| Ticketstatus in Liste, Kopf und Verlauf; „Sie“; Abschnittszähler; interner Vermerk | Meist 16 px Zeilenhöhe, 2 px Padding je Seite und native Höhe; allgemeine Ticketstatus-Regel hat 10 px Padding, das konkrete Kontexte wieder reduzieren | `cosmos-mfa-confirmation.css` |
+| Ticket-Ungelesenzähler | Mindestens 22 px breit, keine feste lokale Höhe; native Rundung bei Zeilenhöhe 1 | `cosmos-mfa.css` |
+| Ticket-Aktivität in Navigation | 8 px hoher Punkt, kein beschriftetes Badge | `cosmos-admin.css` |
+| Nummerierte Anleitungsschritte | Fest 20 × 20 px | `cosmos-mfa-confirmation.css` |
+| Mitteilungsentwurf und Versandarchiv: `cosmos-notification-compose-status`, `cosmos-notification-sent-status` | Native Höhe; Entwurfsstatus hat 11 px Schrift / 1,5 Zeilenhöhe und 14-px-Icon, Archivstatus zusätzlich vererbte Typografie | `cosmos-notifications.css` |
+
+**Vorschlag, noch nicht umgesetzt:** vier Außenhöhen mit `box-sizing:border-box`.
+
+| Geplantes Token | Höhe | Vorgeschlagener Einsatz |
+| --- | --- | --- |
+| `--cosmos-badge-height-xs` | 20 px | Kompakte Zähler, nummerierte Schritte |
+| `--cosmos-badge-height-s` | 22 px | Normale Quellen-/Statusbadges; alle vier Kennzeichnungen der Benachrichtigungen ebenso wie gleichartige Statusgruppen |
+| `--cosmos-badge-height-m` | 24 px | Rollen bzw. bewusst etwas größere Kennzeichnungen, wenn als Gruppe sinnvoll |
+| `--cosmos-badge-height-l` | 30 px | Hervorgehobene Kopf-/Limitangaben, Konfigurationsanzahl, Anbieterstatus |
+
+Schriftgröße und Zeilenhöhe aus den vorhandenen Typografie-Tokens beziehen;
+ergänzende Padding-/Radius-Zuordnung zentral halten. Farben bleiben fachlich.
+Die native Höhenformel für diese Größen gezielt ersetzen, statt pro Status
+unterschiedliche Boxmodelle zu verwenden. Kein XL/XXL ohne tatsächlichen Bedarf:
+der 36-px-Filterzähler ist an die Werkzeugzeile gekoppelt und kann vorerst eine
+begründete Control-Ausnahme bleiben. Der 8-px-Aktivitätspunkt bleibt separat.
+Die beiden zusammengehörigen Sitzungslimit-/Anzahl-Anzeigen wären ein Kandidat
+für gemeinsam L; die Entscheidung erfolgt bei der Abstimmung.
 
 ## Neue Nachbearbeitung – Punkt 2: Eingaben, Buttons und Formularschrift erfassen
 
