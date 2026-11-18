@@ -119,8 +119,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Wortlaut und Gestaltung beibehalten; die gleiche inhaltliche Trennung in Englisch
   umsetzen. Die Änderung betrifft den Hinweis bei internen Vermerken.
 
-- [ ] Umsetzung und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 6. Ticketsystem: deaktiviertes „Anleitung senden“ untersuchen
 

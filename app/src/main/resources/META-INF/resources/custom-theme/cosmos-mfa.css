@@ -522,3 +522,7 @@ vaadin-badge.support-ticket-unread {
     color: var(--cosmos-text-color);
     font-weight: 500;
 }
+/* Getrennte Aussagen im Hinweis für interne Vermerke behalten ihren Textkatalog-Umbruch. */
+.support-security-text {
+    white-space: pre-line;
+}

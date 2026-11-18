@@ -7,7 +7,9 @@
   Leeren/Blur ohne Rotmarkierung, erst Absenden markiert leeren oder zu langen Text
   und erklärt konkret die nötige Korrektur. Keine Inline-Fehler oder Feldnamen-Zeile.
   Bearbeitung entfernt die alte Markierung; Rechte, Ticketstatus und Versionskonflikte
-  bleiben wirksam. JUnit prüft die Komponenten; kein Browserlauf freigegeben.
+  bleiben wirksam. Beim internen Vermerk trennt ein Zeilenumbruch die Warnung vor
+  sensiblen Daten von der Erklärung der Leserechte. JUnit prüft die Komponenten;
+  kein Browserlauf freigegeben.
 
 - **Mail-Test: Prüfung erst beim Senden — offen.**
   In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem
