@@ -345,6 +345,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("AURA-02: Kalenderstil und erneut geöffnete Zeitauswahl bleiben konsistent")
+  @Tag("aura-fields")
   void calendarAndTimePickerKeepTheirCosmosPresentation(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     AdminUsersPage usersPage = login();
@@ -358,7 +359,12 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         browserPage.locator("vaadin-month-calendar [part~=date][part~=selected]");
     assertThat(selectedDateLocator).isVisible();
     assertThat(datePickerLocator.locator("[part=overlay]")).hasCSS("outline-style", "none");
-    assertThat(selectedDateLocator).hasCSS("width", "36px");
+    if (viewportWidth >= 768) {
+      assertThat(selectedDateLocator).hasCSS("width", "36px");
+    } else {
+      // Der native mobile Kalender verteilt die sieben Spalten über seine volle Breite.
+      assertTrue(selectedDateLocator.boundingBox().width >= 36);
+    }
     assertThat(selectedDateLocator).hasCSS("height", "36px");
     assertThat(browserPage.locator("vaadin-date-picker-month-scroller"))
         .hasCSS("background-color", "rgba(0, 0, 0, 0)");

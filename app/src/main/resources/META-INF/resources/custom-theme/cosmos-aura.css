@@ -173,7 +173,7 @@ vaadin-date-picker-year:is([current], [selected])::part(year-number) {
     opacity: 1;
 }
 
-/* „Heute“ und „Abbrechen“ wie bisher als umrandete Tertiärbuttons ohne Füllung. */
-vaadin-date-picker-overlay-content > vaadin-button {
+/* Die native Tertiärvariante überstimmt die allgemeinere Cosmos-Buttonfläche. */
+vaadin-date-picker-overlay-content > vaadin-button[theme~="tertiary"] {
     background: transparent;
 }

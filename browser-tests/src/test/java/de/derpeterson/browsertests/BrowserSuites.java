@@ -206,6 +206,8 @@ final class BrowserSuites {
           List.of(CosmosComponentsBrowserTest.class, VerificationBrowserTest.class);
       case "cosmos-components", "cosmos-scrollbars", "duration-field" ->
           List.of(CosmosComponentsBrowserTest.class);
+      case "aura-fields" ->
+          List.of(CosmosComponentsBrowserTest.class, UserFiltersBrowserTest.class);
       case "login-layout" -> List.of(LoginLayoutBrowserTest.class);
       case "login-checks" ->
           List.of(

@@ -54,6 +54,7 @@ class BrowserExecutionPlanTest {
         "profile-notification",
         "notification-variants",
         "duration-custom-field",
+        "aura-fields",
         "avatar-group",
         "avatars",
         "profile-form",
@@ -155,6 +156,10 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "aura-fields" ->
+              Set.of(
+                  "nativeFieldsShareDisabledColorsAndErrorPresentation",
+                  "calendarAndTimePickerKeepTheirCosmosPresentation");
           case "avatar-group" ->
               Set.of("recipientAvatarGroupPreservesPreviewAndExposesNativeOverflow");
           case "duration-custom-field" ->

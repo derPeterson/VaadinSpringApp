@@ -146,6 +146,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
 | `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 6 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
+| `aura-fields` | Gezielt deaktivierte native Feldtypen, Fehlertexte, Kalenderstil und erneut geöffnete Zeitauswahl bei 1280/390 px | 4 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |

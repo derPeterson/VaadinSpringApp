@@ -1547,6 +1547,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("AURA-01: Native Felder teilen Deaktiviert-Zustand und kleine Fehlertexte")
+  @Tag("aura-fields")
   void nativeFieldsShareDisabledColorsAndErrorPresentation(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     signIn();
