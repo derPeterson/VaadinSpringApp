@@ -72,6 +72,7 @@ vaadin-tabs.cosmos-equal-width-tabs > vaadin-tab {
 
 .cosmos-notification-message {
     margin: 0;
+    white-space: pre-line;
 }
 
 /* Konfigurationsfelder und Statusbeschreibung im Benutzermenü. */

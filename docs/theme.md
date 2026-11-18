@@ -289,11 +289,19 @@ verwenden ihre vorhandenen lokalen Größenvarianten.
 FormLayout nutzt die vorhandenen Breakpoints und öffentlichen Variablen, keine
 privaten Vaadin-Layoutvariablen. `FieldHelpRowLayout` lässt das Feld wachsen und
 schrumpfen, während die Feldhilfe ihren Platz behält.
+In der Benutzeranlage/-bearbeitung steht „Zugang gesperrt“ unter der Rollen-Auswahl.
+Bei der Anlage durch Superadmins folgen Verifikation und Entwicklerkonto. Alle drei
+Checkboxen verwenden dieselbe vorhandene Gestaltung und stehen untereinander;
+es gibt keine besondere Positionierung neben der Rollen-Auswahl.
+Ihre Host-, Kästchen- und Beschriftungsabstände kommen aus Aura beziehungsweise
+dem vorhandenen FormLayout. Lokale Checkbox-Paddings und Margins entfallen;
+Cosmos-Farben, Kästchengröße und Schriftgestaltung bleiben erhalten.
 Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
 Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
 
 **Zeitfelder:** Aufrufer verwenden `CosmosDurationCustomField`. Die Hülle trägt
-Label, Enabled/Read-only/Invalid und die sichtbare Fehlermeldung;
+Label sowie Enabled/Read-only/Invalid; in der Konfiguration stehen Fehlertexte
+in der Notification statt unter dem Feld.
 `CosmosDurationField` liefert innen Zahl und Einheit.
 
 - Speicherformate bleiben Sekunden, ISO-Duration oder ganze Tage.
@@ -361,6 +369,12 @@ Die gemeinsamen Titel lauten „Erfolgreich“/„Fehlgeschlagen“ beziehungswe
 „Successful“/„Failed“. Statusseiten mit Erfolgs-/Fehlersymbol verwenden ebenfalls
 diese Titel. Nachrichtensätze, Links wie „Passwort vergessen?“ und echte Fragen
 in Bestätigungsdialogen behalten ihre bisherigen Satzzeichen.
+
+Nachrichtentexte können gezielte Zeilenumbrüche aus dem Textkatalog enthalten;
+`cosmos-notification-message` erhält sie mit `white-space: pre-line`. Zum Beispiel
+trennt die Passwortmeldung der Benutzerverwaltung die Fehlerbeschreibung von den
+Passwortanforderungen. Keine automatische Trennung nach jedem Satz und kein HTML
+im Nachrichtentext.
 
 Die Notifications im Cosmos-Referenzstil verwenden den nativen Aura-Innenabstand
 der äußeren Karte. Der Inhaltsbereich erhält kein zusätzliches Padding; seine

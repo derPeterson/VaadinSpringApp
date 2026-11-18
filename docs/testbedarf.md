@@ -2,6 +2,38 @@
 
 ## Browser-Tests
 
+- **Konfiguration: konkrete Notifications statt Inline-Fehler — offen.**
+  In DE/EN auf Desktop und Smartphone alle Konfigurationsgruppen einschließlich
+  Mailqueue-Assistenten, Anmeldeanbietern und 2FA prüfen. Ungültige Text-, E-Mail-,
+  Zahlen- und Dauerwerte bleiben vor dem Speichern unmarkiert; danach passende
+  rote Markierungen und konkrete Notifications ohne Fehlertext unter dem Feld.
+  Bei der allgemeinen Konfiguration nennt die Meldung das erste betroffene Feld
+  und darunter die Regel. Änderungen entfernen jeweils die alte Markierung;
+  Sprachwechsel erhält Werte und übersetzt die offene Notification.
+  Unlesbare Zahlen bei leerem Modellwert dürfen weder Standardwerte noch
+  unbegrenzte Aufbewahrung speichern. Wirklich leere Felder behalten ihren bisherigen
+  Standard-/Leerwertvertrag. Fehlerhafte 2FA-Inaktivitätswerte vor der
+  Identitätsbestätigung melden; gültiges Speichern bleibt entsprechend geschützt.
+  JUnit prüft Komponenten und Regeln; kein Browserlauf freigegeben.
+
+- **Benutzer anlegen/bearbeiten: Prüfung beim Speichern — offen.**
+  In DE/EN auf Desktop und Smartphone Pflichtfelder leeren, E-Mail-Format,
+  schwaches/nicht bestätigtes Passwort, Rollen und ungültiges Geburtsdatum prüfen:
+  Eingabe und Blur zunächst ohne rote Markierung; Speichern bleibt anklickbar.
+  Beim Speichern konkrete Notification und passende Feldmarkierungen ohne
+  zusätzliche Fehlertexte unter den Feldern. Änderungen entfernen jeweils die alte
+  Markierung; ein leeres neues Passwort beim Bearbeiten bleibt erlaubt. Unlesbares
+  Datum ohne Modellwert muss Speichern verhindern und den Änderungsschutz auslösen.
+  Die Passwortnotification trennt Fehlerbeschreibung und Regeln durch einen
+  Zeilenumbruch; Sprachwechsel erhält Werte und übersetzt die Meldung.
+  Unter der Rollen-Auswahl steht „Zugang gesperrt“ im gleichen Stil wie die weiteren
+  Checkboxen. Bei Anlage durch Superadmins folgen Verifikation und Entwicklerkonto
+  als zwei weitere Zeilen; auf Desktop und Smartphone keine seitliche Sonderposition.
+  Alle drei verwenden native Aura-Checkboxabstände ohne lokale Padding-/Margin-
+  Korrekturen; Farben und Schrift bleiben im Cosmos-Stil.
+  JUnit prüft den Server-/Komponentenablauf; der Benutzer übernimmt die Sichtprüfung,
+  kein Browserlauf für diesen Auftrag freigegeben.
+
 - **Native Löschkreuze in bearbeitbaren Texteingaben und TextAreas — offen.**
   In DE/EN auf Desktop und Smartphone Benutzeranlage/-bearbeitung, externen
   Registrierungsabschluss, Konto-/Passwortdialoge, Anmeldeanbieter, Mail-Test,

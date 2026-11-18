@@ -207,6 +207,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         CosmosDurationField.Unit.HOURS,
         CosmosDurationField.Unit.DAYS);
     inactivityDurationField.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
+    inactivityDurationField.addInputChangeListener(() -> inactivityDurationField.setInvalid(false));
     inactivityDurationLabelSpan.setId("two-factor-inactivity-label");
     inactivityDurationLabelSpan.addClassName("provider-field-label");
     inactivityDurationField.setId("two-factor-inactivity-duration");
@@ -492,9 +493,26 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       return;
     }
 
+    TwoFactorPolicy draftTwoFactorPolicy;
     try {
-      TwoFactorPolicy draftTwoFactorPolicy = readTwoFactorPolicyDraft();
+      draftTwoFactorPolicy = readTwoFactorPolicyDraft();
+    } catch (IllegalArgumentException _) {
+      inactivityDurationField.setInvalid(true);
+      NotificationHelper.getInstance()
+          .showTextNotification(
+              messageProperties::getBaseFailedTitle,
+              () ->
+                  messageProperties.getTwoFactorInactivityDuration()
+                      + "\n"
+                      + messageProperties.getTwoFactorInactivityRange(),
+              NotificationHelper.NotificationType.ERROR);
+      return;
+    } catch (RuntimeException failure) {
+      showTwoFactorPolicyFailure(failure);
+      return;
+    }
 
+    try {
       long loadedPolicyRevision = twoFactorPolicySnapshot.revision();
       if (twoFactorAuthorization.requires(
           httpServletRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {

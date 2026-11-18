@@ -681,7 +681,7 @@ class AdminUserManagementSectionTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void alreadyVisibleFieldErrorsRefreshWithoutWritingAndClosedDialogsReleaseRefreshers(
+  void fieldMarkersSurviveLanguageChangesWithoutInlineTextAndClosedDialogsReleaseRefreshers(
       boolean german) {
     LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
     ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(false));
@@ -695,13 +695,24 @@ class AdminUserManagementSectionTest {
             .findFirst()
             .orElseThrow();
     firstName.setValue(" ");
+    assertFalse(firstName.isInvalid());
+    Button save =
+        descendants(dialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
+            .findFirst()
+            .orElseThrow();
+    save.click();
 
     assertTrue(firstName.isInvalid());
-    assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
+    assertNull(firstName.getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationRequiredMessage());
     LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
 
     assertTrue(firstName.isInvalid());
-    assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
+    assertNull(firstName.getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationRequiredMessage());
     verify(userService, never()).updateAdminUser(any(), any(), any());
     dialog.close();
 
@@ -800,25 +811,20 @@ class AdminUserManagementSectionTest {
     }
     email.setValue("other@example.com");
 
-    assertTrue(email.isInvalid());
-    assertEquals(
-        technical
-            ? messageProperties.getAdminUsersErrorSaveFailed()
-            : messageProperties.getBaseValidationEmailExistsMessage(),
-        email.getErrorMessage());
-    assertFalse(email.getErrorMessage().contains("secret"));
-    assertFalse(save.isEnabled());
-    verify(userService, atLeastOnce())
-        .emailExistsForOtherUser("other@example.com", create ? null : 2L);
-    // Exercise the server callback as well, not merely the disabled button.
-    save.setEnabled(true);
+    assertFalse(email.isInvalid());
+    assertTrue(save.isEnabled());
+    verify(userService, never()).emailExistsForOtherUser(anyString(), any());
     save.click();
 
-    assertFalse(save.isEnabled());
+    assertTrue(email.isInvalid());
+    assertNull(email.getErrorMessage());
+    assertTrue(save.isEnabled());
+    verify(userService, atLeastOnce())
+        .emailExistsForOtherUser("other@example.com", create ? null : 2L);
     assertNotification(
         technical
             ? messageProperties.getAdminUsersErrorSaveFailed()
-            : messageProperties.getAdminUsersValidationCheckFields());
+            : messageProperties.getBaseValidationEmailExistsMessage());
     Object notification =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
@@ -829,15 +835,11 @@ class AdminUserManagementSectionTest {
     assertNotification(
         technical
             ? messageProperties.getAdminUsersErrorSaveFailed()
-            : messageProperties.getAdminUsersValidationCheckFields());
+            : messageProperties.getBaseValidationEmailExistsMessage());
 
-    assertEquals(
-        technical
-            ? messageProperties.getAdminUsersErrorSaveFailed()
-            : messageProperties.getBaseValidationEmailExistsMessage(),
-        email.getErrorMessage());
+    assertNull(email.getErrorMessage());
     assertTrue(email.isInvalid());
-    assertFalse(save.isEnabled());
+    assertTrue(save.isEnabled());
     verify(userService, never()).updatePassword(any(), any());
     verify(userService, never()).createAdminUser(any(), any());
     verify(userService, never()).updateAdminUser(any(), any(), any());
@@ -884,9 +886,10 @@ class AdminUserManagementSectionTest {
     when(userService.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL"));
     email.setValue("unavailable@example.com");
+    save.click();
 
     assertTrue(email.isInvalid());
-    assertFalse(save.isEnabled());
+    assertTrue(save.isEnabled());
     doReturn(false).when(userService).emailExistsForOtherUser(anyString(), any());
     email.setValue("available@example.com");
 
@@ -954,14 +957,6 @@ class AdminUserManagementSectionTest {
     when(userService.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL"));
     email.setValue("unavailable@example.com");
-    clearInvocations(userService);
-    email.setValue("invalid");
-
-    assertTrue(email.isInvalid());
-    // Flow's pre-existing default EmailField validator rejects this value
-    // before the custom validators, with its default empty error text.
-    assertEquals("", email.getErrorMessage());
-    verify(userService, never()).emailExistsForOtherUser(anyString(), any());
     Button save =
         descendants(dialog)
             .filter(Button.class::isInstance)
@@ -969,9 +964,18 @@ class AdminUserManagementSectionTest {
             .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
-    save.setEnabled(true);
     save.click();
-    assertNotification(messageProperties.getAdminUsersValidationCheckFields());
+    assertTrue(email.isInvalid());
+    clearInvocations(userService);
+    email.setValue("invalid");
+
+    assertFalse(email.isInvalid());
+    assertNull(email.getErrorMessage());
+    verify(userService, never()).emailExistsForOtherUser(anyString(), any());
+    save.click();
+    assertTrue(email.isInvalid());
+    assertNotification(messageProperties.getBaseValidationEmailInvalidMessage());
+    verify(userService, never()).emailExistsForOtherUser(anyString(), any());
 
     verify(userService, never()).updateAdminUser(any(), any(), any());
   }
@@ -1003,7 +1007,7 @@ class AdminUserManagementSectionTest {
     save.click();
     assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
 
-    assertFalse(save.isEnabled());
+    assertTrue(save.isEnabled());
     assertTrue(dialog.isOpened());
     LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
@@ -1015,7 +1019,7 @@ class AdminUserManagementSectionTest {
             .orElseThrow();
 
     assertTrue(email.isInvalid());
-    assertEquals(messageProperties.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
+    assertNull(email.getErrorMessage());
     verify(userService, never()).updatePassword(any(), any());
     verify(userService, never()).createAdminUser(any(), any());
     verify(userService, never()).updateAdminUser(any(), any(), any());

@@ -10,6 +10,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
+import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
@@ -38,15 +39,15 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.HasAllowedCharPattern;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Binder.Binding;
-import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.time.UserActivityTime;
@@ -92,6 +93,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
+import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -842,12 +844,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Span technicalInfoSpan;
     private Div securityNoteDiv;
 
-    // Validierungszustand und Formularaktionen
-    private AtomicBoolean emailCheckFailed;
-    private AtomicBoolean showPasswordErrors;
-    private AtomicBoolean showConfirmPasswordErrors;
-    private Binding<AdminUserFormData, String> passwordBinding;
-    private Binding<AdminUserFormData, String> confirmPasswordBinding;
+    // Formularaktionen und geladener Stand für den Änderungsschutz
     private Button saveUserButton;
     private Button cancelUserEditButton;
     private List<Object> loadedUserFormValues;
@@ -878,6 +875,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private void open() {
       configureEditorDialogHeader();
       configureUserFormFields();
+      configureManualValidation();
       bindUserFormFields();
       loadedUserFormValues = readUserFormValues();
       configurePasswordFeedback();
@@ -892,7 +890,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               () ->
                   editUserDialog.isOpened()
                       && (!loadedUserFormValues.equals(readUserFormValues())
-                          || birthDatePicker.isInvalid()));
+                          || hasInvalidBirthDateInput()));
       editUserDialog.addOpenedChangeListener(event -> browserChangesGuard.refresh());
       editUserDialog.open();
     }
@@ -1094,24 +1092,25 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void bindUserFormFields() {
+      // Der Binder überträgt Werte. Die Eingabeprüfung erfolgt ausdrücklich erst beim Speichern.
+      userFormBinder.setDefaultValidatorsEnabled(false);
       userFormBinder
           .forField(firstNameField)
-          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-          .withValidator(
-              ValidationHelper::isRequiredTextValid,
-              context -> messageProperties.getBaseValidationRequiredMessage())
           .bind(AdminUserFormData::getFirstName, AdminUserFormData::setFirstName);
 
       userFormBinder
           .forField(lastNameField)
-          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-          .withValidator(
-              ValidationHelper::isRequiredTextValid,
-              context -> messageProperties.getBaseValidationRequiredMessage())
           .bind(AdminUserFormData::getLastName, AdminUserFormData::setLastName);
 
-      bindEmailField();
-      bindPasswordFields();
+      userFormBinder
+          .forField(emailField)
+          .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
+      userFormBinder
+          .forField(passwordField)
+          .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
+      userFormBinder
+          .forField(confirmPasswordField)
+          .bind(AdminUserFormData::getConfirmPassword, AdminUserFormData::setConfirmPassword);
 
       userFormBinder
           .forField(genderComboBox)
@@ -1119,9 +1118,6 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       userFormBinder
           .forField(birthDatePicker)
-          .withValidator(
-              ValidationHelper::isBirthDateValid,
-              context -> messageProperties.getBaseValidationBirthDatePastMessage())
           .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
 
       userFormBinder
@@ -1132,77 +1128,25 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       userFormBinder
           .forField(rolesComboBox)
-          .withValidator(
-              selectedRoles -> selectedRoles != null && !selectedRoles.isEmpty(),
-              context -> messageProperties.getBaseValidationRequiredMessage())
           .bind(AdminUserFormData::getRoles, AdminUserFormData::setRoles);
 
       userFormBinder.readBean(userFormData);
     }
 
-    private void bindEmailField() {
-      emailCheckFailed = new AtomicBoolean();
-      userFormBinder
-          .forField(emailField)
-          .asRequired(context -> messageProperties.getBaseValidationRequiredMessage())
-          .withValidator(
-              ValidationHelper::isEmailValid,
-              context -> messageProperties.getBaseValidationEmailInvalidMessage())
-          .withValidator((submittedEmailAddress, context) -> {
-            emailCheckFailed.set(false);
-            try {
-              return userService.emailExistsForOtherUser(
-                      ValidationHelper.normalize(submittedEmailAddress), userFormData.getId())
-                  ? ValidationResult.error(messageProperties.getBaseValidationEmailExistsMessage())
-                  : ValidationResult.ok();
-            } catch (RuntimeException emailCheckException) {
-              log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(emailCheckException));
-              emailCheckFailed.set(true);
-              return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
-            }
-          })
-          .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
-    }
-
-    private void bindPasswordFields() {
-      showPasswordErrors = new AtomicBoolean();
-      showConfirmPasswordErrors = new AtomicBoolean();
-      passwordBinding =
-          userFormBinder
-              .forField(passwordField)
-              .withValidationStatusHandler(status -> {
-                boolean showError = showPasswordErrors.get() && status.isError();
-                passwordField.setErrorMessage(showError ? status.getMessage().orElse("") : "");
-                passwordField.setInvalid(showError);
-              })
-              .withValidator(
-                  value -> ValidationHelper.isPasswordSecure(value, editMode),
-                  context ->
-                      editMode
-                          ? messageProperties.getAdminUsersPasswordValidationEdit()
-                          : messageProperties.getAdminUsersPasswordValidationCreate())
-              .bind(AdminUserFormData::getPassword, AdminUserFormData::setPassword);
-
-      confirmPasswordBinding =
-          userFormBinder
-              .forField(confirmPasswordField)
-              .withValidationStatusHandler(status -> {
-                boolean showError = showConfirmPasswordErrors.get() && status.isError();
-                confirmPasswordField.setErrorMessage(
-                    showError ? status.getMessage().orElse("") : "");
-                confirmPasswordField.setInvalid(showError);
-              })
-              .withValidator(
-                  value ->
-                      !ValidationHelper.isRequiredTextValid(passwordField.getValue())
-                          || ValidationHelper.isRequiredTextValid(value),
-                  context -> messageProperties.getBaseValidationRequiredMessage())
-              .withValidator(
-                  value ->
-                      !ValidationHelper.isRequiredTextValid(passwordField.getValue())
-                          || Objects.equals(passwordField.getValue(), value),
-                  context -> messageProperties.getBaseValidationPasswordConfirmMessage())
-              .bind(AdminUserFormData::getConfirmPassword, AdminUserFormData::setConfirmPassword);
+    private void configureManualValidation() {
+      for (TextFieldBase<?, ?> inputField :
+          List.of(firstNameField, lastNameField, emailField, passwordField, confirmPasswordField)) {
+        inputField.setManualValidation(true);
+        inputField.setValueChangeMode(ValueChangeMode.EAGER);
+        inputField.addValueChangeListener(_ -> inputField.setInvalid(false));
+      }
+      genderComboBox.setManualValidation(true);
+      rolesComboBox.setManualValidation(true);
+      rolesComboBox.addValueChangeListener(_ -> rolesComboBox.setInvalid(false));
+      birthDatePicker.setManualValidation(true);
+      birthDatePicker.addValueChangeListener(_ -> birthDatePicker.setInvalid(false));
+      // Unlesbarer Text kann den Modellwert null unverändert lassen.
+      birthDatePicker.addValidationStatusChangeListener(_ -> birthDatePicker.setInvalid(false));
     }
 
     private void configurePasswordFeedback() {
@@ -1214,33 +1158,9 @@ public class AdminUserManagementSection extends VerticalLayout {
         confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
 
         if (!passwordEntered) {
-          showConfirmPasswordErrors.set(false);
           confirmPasswordField.clear();
+          confirmPasswordField.setInvalid(false);
         }
-
-        confirmPasswordBinding.validate();
-      });
-
-      // Sofort prüfen, aber Fehlermeldungen erst nach dem Verlassen des Feldes anzeigen.
-      passwordField.addFocusListener(event -> {
-        showPasswordErrors.set(false);
-        passwordField.setInvalid(false);
-        passwordField.setErrorMessage("");
-      });
-
-      passwordField.addBlurListener(event -> {
-        showPasswordErrors.set(true);
-        passwordBinding.validate();
-      });
-      confirmPasswordField.addFocusListener(event -> {
-        showConfirmPasswordErrors.set(false);
-        confirmPasswordField.setInvalid(false);
-        confirmPasswordField.setErrorMessage("");
-      });
-
-      confirmPasswordField.addBlurListener(event -> {
-        showConfirmPasswordErrors.set(true);
-        confirmPasswordBinding.validate();
       });
     }
 
@@ -1257,11 +1177,6 @@ public class AdminUserManagementSection extends VerticalLayout {
       saveUserButton = new Button(messageProperties.getAdminUsersSave());
       saveUserButton.setPrefixComponent(AppIcon.CHECK.create());
       saveUserButton.addThemeVariants(ButtonVariant.PRIMARY);
-      saveUserButton.setEnabled(userFormBinder.isValid());
-
-      userFormBinder.addStatusChangeListener(
-          event -> saveUserButton.setEnabled(userFormBinder.isValid()));
-
       saveUserButton.addClickListener(event -> saveUser());
 
       cancelUserEditButton =
@@ -1279,7 +1194,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void requestCloseUserEditor() {
-      if (loadedUserFormValues.equals(readUserFormValues()) && !birthDatePicker.isInvalid()) {
+      if (loadedUserFormValues.equals(readUserFormValues()) && !hasInvalidBirthDateInput()) {
         editUserDialog.close();
         return;
       }
@@ -1324,16 +1239,14 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       Div roleSelectionDiv = new Div(rolesComboBox, rolesSummarySpan);
       roleSelectionDiv.addClassName("admin-user-role-field");
-      FormLayout permissionsFormLayout =
-          createPairedEditorFormLayout(roleSelectionDiv, administrativelyBlockedCheckbox);
-      permissionsFormLayout.addClassName("admin-user-permissions");
       FormLayout editorFormLayout =
           new FormLayout(
               userNameFormLayout,
               emailField,
               passwordFieldsDiv,
               personalDetailsFormLayout,
-              permissionsFormLayout);
+              roleSelectionDiv,
+              administrativelyBlockedCheckbox);
       if (!editMode && userService.canManageSuperadmins()) {
         editorFormLayout.add(emailVerificationRequiredCheckbox, developmentAccountCheckbox);
       }
@@ -1678,14 +1591,6 @@ public class AdminUserManagementSection extends VerticalLayout {
           editMode
               ? messageProperties.getAdminUsersTechnicalInfoEdit()
               : messageProperties.getAdminUsersTechnicalInfoCreate());
-
-      if (userFormBinder
-          .getFields()
-          .anyMatch(field ->
-              field instanceof com.vaadin.flow.component.shared.HasValidationProperties validation
-                  && validation.isInvalid())) {
-        userFormBinder.validate();
-      }
     }
 
     private void saveUser() {
@@ -1710,26 +1615,65 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private boolean validateUserForm() {
-      try {
-        emailCheckFailed.set(false);
-        showPasswordErrors.set(true);
-        showConfirmPasswordErrors.set(true);
-        userFormBinder.writeBean(userFormData);
-      } catch (ValidationException _) {
-        showError(
-            emailCheckFailed.get()
-                ? messageProperties::getAdminUsersErrorSaveFailed
-                : messageProperties::getAdminUsersValidationCheckFields);
+      List<AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>>
+          requiredInputs = new ArrayList<>(List.of(firstNameField, lastNameField, emailField));
+      if (!editMode || ValidationHelper.isRequiredTextValid(passwordField.getValue())) {
+        requiredInputs.add(passwordField);
+        requiredInputs.add(confirmPasswordField);
+      }
+
+      if (!ValidationHelper.validateRequiredInputs(requiredInputs, messageProperties)
+          || !ValidationHelper.validateEmailValidInputs(List.of(emailField), messageProperties)
+          || !validatePasswordInputs()
+          || !ValidationHelper.validateBirthDateBeforeInput(birthDatePicker, messageProperties)) {
         return false;
       }
-      // Status listeners may recheck validity during writeBean. Never
-      // proceed if such a check failed technically either.
-      if (emailCheckFailed.get()) {
-        showError(messageProperties::getAdminUsersErrorSaveFailed);
+      if (rolesComboBox.isEmpty()) {
+        rolesComboBox.setInvalid(true);
+        showError(messageProperties::getAdminUsersRolesHelper);
+        return false;
+      }
+      if (!validateUniqueEmail()) {
         return false;
       }
 
-      return true;
+      return userFormBinder.writeBeanIfValid(userFormData);
+    }
+
+    private boolean validatePasswordInputs() {
+      if (editMode && !ValidationHelper.isRequiredTextValid(passwordField.getValue())) {
+        return true;
+      }
+      if (!ValidationHelper.isPasswordSecure(passwordField.getValue())) {
+        passwordField.setInvalid(true);
+        showError(messageProperties::getAdminUsersPasswordValidationCreate);
+        return false;
+      }
+      return ValidationHelper.validatePasswordConfirmInputs(
+          passwordField, confirmPasswordField, messageProperties);
+    }
+
+    private boolean hasInvalidBirthDateInput() {
+      return birthDatePicker
+          .getDefaultValidator()
+          .apply(birthDatePicker.getValue(), new ValueContext(birthDatePicker))
+          .isError();
+    }
+
+    private boolean validateUniqueEmail() {
+      try {
+        if (!userService.emailExistsForOtherUser(
+            ValidationHelper.normalize(emailField.getValue()), userFormData.getId())) {
+          return true;
+        }
+        emailField.setInvalid(true);
+        showError(messageProperties::getBaseValidationEmailExistsMessage);
+      } catch (RuntimeException emailCheckException) {
+        log.error("Admin user email precheck failed", safeFailure(emailCheckException));
+        emailField.setInvalid(true);
+        showError(messageProperties::getAdminUsersErrorSaveFailed);
+      }
+      return false;
     }
 
     private boolean validateAccountChange(Set<RoleEntity> roleEntities) {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
@@ -23,6 +24,32 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class CosmosDurationCustomFieldTest {
+  @ParameterizedTest
+  @CsvSource({"de,SECONDS", "en,SECONDS", "de,DURATION", "en,DURATION", "de,DAYS", "en,DAYS"})
+  void unparseableNumberRemainsInvalidInsteadOfBecomingAnEmptyDefault(
+      String language, CosmosDurationField.Storage storage) {
+    MessageProperties messages =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+    CosmosDurationCustomField customField = new CosmosDurationCustomField(messages, storage);
+    customField.setValue(storage == CosmosDurationField.Storage.DURATION ? "PT1S" : "1");
+    CosmosDurationField innerField =
+        (CosmosDurationField) ReflectionTestUtils.getField(customField, "durationField");
+    AbstractSinglePropertyField<?, ?> numberField =
+        storage == CosmosDurationField.Storage.DURATION
+            ? (BigDecimalField)
+                ReflectionTestUtils.getField(innerField, "preciseDurationBigDecimalField")
+            : amount(innerField);
+    numberField.getElement().setProperty("_inputElementValue", "1e");
+    ReflectionTestUtils.invokeMethod(numberField, "setModelValue", null, true);
+
+    assertFalse(customField.isInvalid());
+    assertEquals("invalid", customField.getValue());
+    assertEquals(messages.getAdminConfigDurationInvalid(), customField.getDisplayValue());
+    assertEquals(messages.getAdminConfigDurationInvalid(), customField.getEquivalentValue());
+    customField.clear();
+    assertEquals("", customField.getValue());
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void preciseStepButtonsRecoverAfterReadOnlyChangesWhileDisabled(String language) {

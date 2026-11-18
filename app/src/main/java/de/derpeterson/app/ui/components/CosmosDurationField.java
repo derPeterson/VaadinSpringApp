@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -82,17 +83,24 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
         event -> publishDurationChange(event.isFromClient()));
     preciseDurationBigDecimalField.addValueChangeListener(
         event -> publishDurationChange(event.isFromClient()));
+    // Auch unlesbarer Text ohne neuen Zahlenwert muss den Entwurf und Änderungsschutz
+    // aktualisieren.
+    durationAmountIntegerField.addValidationStatusChangeListener(_ -> publishDurationChange(false));
+    preciseDurationBigDecimalField.addValidationStatusChangeListener(
+        _ -> publishDurationChange(false));
     refreshTexts();
     updateDurationMaximumAndPlaceholder();
   }
 
   private void configureDurationAmountFields() {
     durationAmountIntegerField.setWidthFull();
+    durationAmountIntegerField.setManualValidation(true);
     durationAmountIntegerField.setMin(1);
     durationAmountIntegerField.setStepButtonsVisible(true);
     durationAmountIntegerField.setClearButtonVisible(true);
 
     preciseDurationBigDecimalField.setWidthFull();
+    preciseDurationBigDecimalField.setManualValidation(true);
     preciseDurationBigDecimalField.setClearButtonVisible(true);
 
     decreaseDurationButton.addClassName("cosmos-duration-step");
@@ -247,6 +255,19 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   public String getStoredValue() {
     BigDecimal currentDurationAmount = readDurationAmount();
     if (currentDurationAmount == null) {
+      boolean invalidNumberInput =
+          durationStorage == Storage.DURATION
+              ? preciseDurationBigDecimalField
+                  .getDefaultValidator()
+                  .apply(null, new ValueContext(preciseDurationBigDecimalField))
+                  .isError()
+              : durationAmountIntegerField
+                  .getDefaultValidator()
+                  .apply(null, new ValueContext(durationAmountIntegerField))
+                  .isError();
+      if (invalidNumberInput) {
+        return "invalid";
+      }
       return "";
     }
     if (durationStorage == Storage.SECONDS) {
@@ -384,6 +405,9 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   }
 
   public String getDisplayValue() {
+    if (getStoredValue().equals("invalid")) {
+      return messageProperties.getAdminConfigDurationInvalid();
+    }
     BigDecimal currentDurationAmount = readDurationAmount();
     if (currentDurationAmount == null) {
       if (durationStorage == Storage.DAYS) {
@@ -399,6 +423,9 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   }
 
   public String getEquivalentValue() {
+    if (getStoredValue().equals("invalid")) {
+      return messageProperties.getAdminConfigDurationInvalid();
+    }
     if (readDurationAmount() == null && durationStorage == Storage.DAYS) {
       return messageProperties.getAdminConfigUnlimited();
     }

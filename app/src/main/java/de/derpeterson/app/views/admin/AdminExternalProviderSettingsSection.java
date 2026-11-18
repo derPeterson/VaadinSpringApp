@@ -289,12 +289,14 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       redirectUriRowLayout.addClassName("provider-redirect");
 
       clientIdTextField.setWidthFull();
+      clientIdTextField.setManualValidation(true);
       clientIdTextField.setClearButtonVisible(true);
       clientIdTextField.setMaxLength(512);
       clientIdTextField.setId(PROVIDER_PREFIX + providerId + "-client-id");
       clientIdTextField.setValueChangeMode(ValueChangeMode.EAGER);
 
       clientSecretPasswordField.setWidthFull();
+      clientSecretPasswordField.setManualValidation(true);
       clientSecretPasswordField.setClearButtonVisible(true);
       clientSecretPasswordField.setMaxLength(2048);
       clientSecretPasswordField.setId(PROVIDER_PREFIX + providerId + "-secret");
@@ -351,9 +353,14 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       providerFormContentDiv.setId(PROVIDER_PREFIX + providerId + "-content");
       providerFormContentDiv.addClassName("provider-content");
 
-      clientIdTextField.addValueChangeListener(_ -> refreshProviderActivationAvailability());
-      clientSecretPasswordField.addValueChangeListener(
-          _ -> refreshProviderActivationAvailability());
+      clientIdTextField.addValueChangeListener(_ -> {
+        clientIdTextField.setInvalid(false);
+        refreshProviderActivationAvailability();
+      });
+      clientSecretPasswordField.addValueChangeListener(_ -> {
+        clientSecretPasswordField.setInvalid(false);
+        refreshProviderActivationAvailability();
+      });
       providerEnabledSwitch.addValueChangeListener(_ -> refreshProviderActivationAvailability());
     }
 
@@ -531,7 +538,9 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       } catch (IllegalArgumentException _) {
         NotificationHelper.getInstance()
             .showTextNotification(
-                messageProperties::getProviderSettingsIncomplete, null, NotificationType.ERROR);
+                messageProperties::getBaseFailedTitle,
+                messageProperties::getProviderSettingsIncomplete,
+                NotificationType.ERROR);
       } catch (OptimisticLockingFailureException _) {
         NotificationHelper.getInstance()
             .showTextNotification(

@@ -4,6 +4,7 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasAriaLabel;
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
@@ -29,6 +30,9 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.binder.ValueContext;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableConsumer;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
@@ -299,7 +303,6 @@ public class AdminConfigurationSection extends VerticalLayout {
     refreshInputLabels();
     refreshInputHelp();
     refreshCurrentGroupTitle();
-    refreshValidationMessagesForInvalidFields();
   }
 
   public void loadConfigValues() {
@@ -565,18 +568,6 @@ public class AdminConfigurationSection extends VerticalLayout {
     configInfoButtons.values().forEach(ConfigInfoButton::refreshText);
   }
 
-  private void refreshValidationMessagesForInvalidFields() {
-    for (ConfigEntry configEntry : getVisibleConfigEntries()) {
-      Component configInputComponent = configInputs.get(configEntry);
-      if (isInputInvalid(configInputComponent)) {
-        String errorMessage = validateValue(configEntry, extractInputValue(configEntry));
-        if (errorMessage != null) {
-          setValidationError(configInputComponent, errorMessage);
-        }
-      }
-    }
-  }
-
   private void updatePlaceholder(Component configInputComponent, String placeholder) {
     String safePlaceholder = placeholder == null ? "" : placeholder;
     switch (configInputComponent) {
@@ -667,6 +658,14 @@ public class AdminConfigurationSection extends VerticalLayout {
       configInputComponent = textField;
     }
 
+    if (configInputComponent instanceof TextFieldBase<?, ?> textField) {
+      textField.setManualValidation(true);
+      textField.setValueChangeMode(ValueChangeMode.EAGER);
+    } else if (configInputComponent instanceof IntegerField integerField) {
+      integerField.setManualValidation(true);
+      integerField.setValueChangeMode(ValueChangeMode.EAGER);
+      integerField.addValidationStatusChangeListener(_ -> clearValidationState(integerField));
+    }
     return configInputComponent;
   }
 
@@ -968,11 +967,6 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private void saveConfigValues() {
     if (!validateVisibleInputs()) {
-      NotificationHelper.getInstance()
-          .showTextNotification(
-              messageProperties::getBaseFailedTitle,
-              messageProperties::getAdminConfigValidationInvalidFields,
-              NotificationHelper.NotificationType.ERROR);
       return;
     }
 
@@ -1055,6 +1049,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     boolean allValid = true;
     Component firstInvalidConfigInput = null;
     ConfigEntry firstInvalidConfigEntry = null;
+    String firstInvalidSubmittedValue = null;
 
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
       ValidationResult inputValidationResult = validateInput(configEntry);
@@ -1063,6 +1058,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         if (firstInvalidConfigInput == null) {
           firstInvalidConfigInput = inputValidationResult.configInputComponent();
           firstInvalidConfigEntry = configEntry;
+          firstInvalidSubmittedValue = extractInputValue(configEntry);
         }
         allValid = false;
       }
@@ -1072,6 +1068,16 @@ public class AdminConfigurationSection extends VerticalLayout {
       logger.debug(
           "Configuration validation rejected field: key={}", firstInvalidConfigEntry.name());
       firstInvalidConfigInput.getElement().callJsFunction("focus");
+      ConfigEntry invalidConfigEntry = firstInvalidConfigEntry;
+      String invalidSubmittedValue = firstInvalidSubmittedValue;
+      NotificationHelper.getInstance()
+          .showTextNotification(
+              messageProperties::getBaseFailedTitle,
+              () ->
+                  messageProperties.getAdminConfigEntryLabel(invalidConfigEntry)
+                      + "\n"
+                      + validateValue(invalidConfigEntry, invalidSubmittedValue),
+              NotificationHelper.NotificationType.ERROR);
     }
 
     return allValid;
@@ -1092,8 +1098,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       return ValidationResult.valid();
     }
 
-    setValidationError(configInputComponent, validationErrorMessage);
-    logger.debug("Configuration validation rejected field: key={}", configEntry.name());
+    setValidationError(configInputComponent);
     return ValidationResult.invalid(configInputComponent);
   }
 
@@ -1250,6 +1255,12 @@ public class AdminConfigurationSection extends VerticalLayout {
       if (submittedIntegerValue != null) {
         return String.valueOf(submittedIntegerValue);
       }
+      if (integerField
+          .getDefaultValidator()
+          .apply(null, new ValueContext(integerField))
+          .isError()) {
+        return "invalid";
+      }
       return isNotificationRetention(configEntry) ? "" : configuredDefault(configEntry);
     }
 
@@ -1348,61 +1359,17 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void clearValidationState(Component configInputComponent) {
-    if (configInputComponent instanceof CosmosDurationCustomField durationField) {
-      durationField.setInvalid(false);
-      durationField.setErrorMessage(null);
-    } else if (configInputComponent instanceof EmailField emailField) {
-      emailField.setInvalid(false);
-      emailField.setErrorMessage(null);
-    } else if (configInputComponent instanceof PasswordField passwordField) {
-      passwordField.setInvalid(false);
-      passwordField.setErrorMessage(null);
-    } else if (configInputComponent instanceof TextField textField) {
-      textField.setInvalid(false);
-      textField.setErrorMessage(null);
-    } else if (configInputComponent instanceof IntegerField integerField) {
-      integerField.setInvalid(false);
-      integerField.setErrorMessage(null);
+    if (configInputComponent instanceof HasValidation validationInput) {
+      validationInput.setInvalid(false);
+      validationInput.setErrorMessage(null);
     }
   }
 
-  private void setValidationError(Component configInputComponent, String errorMessage) {
-    if (configInputComponent instanceof CosmosDurationCustomField durationField) {
-      durationField.setInvalid(true);
-      durationField.setErrorMessage(errorMessage);
-    } else if (configInputComponent instanceof EmailField emailField) {
-      emailField.setInvalid(true);
-      emailField.setErrorMessage(errorMessage);
-    } else if (configInputComponent instanceof PasswordField passwordField) {
-      passwordField.setInvalid(true);
-      passwordField.setErrorMessage(errorMessage);
-    } else if (configInputComponent instanceof TextField textField) {
-      textField.setInvalid(true);
-      textField.setErrorMessage(errorMessage);
-    } else if (configInputComponent instanceof IntegerField integerField) {
-      integerField.setInvalid(true);
-      integerField.setErrorMessage(errorMessage);
+  private void setValidationError(Component configInputComponent) {
+    if (configInputComponent instanceof HasValidation validationInput) {
+      validationInput.setErrorMessage(null);
+      validationInput.setInvalid(true);
     }
-  }
-
-  private boolean isInputInvalid(Component configInputComponent) {
-    if (configInputComponent instanceof CosmosDurationCustomField durationField) {
-      return durationField.isInvalid();
-    }
-    if (configInputComponent instanceof EmailField emailField) {
-      return emailField.isInvalid();
-    }
-    if (configInputComponent instanceof PasswordField passwordField) {
-      return passwordField.isInvalid();
-    }
-    if (configInputComponent instanceof TextField textField) {
-      return textField.isInvalid();
-    }
-    if (configInputComponent instanceof IntegerField integerField) {
-      return integerField.isInvalid();
-    }
-
-    return false;
   }
 
   private boolean isValidCleanupDuration(String durationValue) {

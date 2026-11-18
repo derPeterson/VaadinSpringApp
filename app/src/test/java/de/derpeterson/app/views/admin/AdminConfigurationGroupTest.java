@@ -15,13 +15,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasValidation;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.BigDecimalField;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -29,6 +33,7 @@ import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.dom.Node;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -53,6 +58,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -898,6 +904,80 @@ class AdminConfigurationGroupTest {
 
   private List<?> visibleEntries() {
     return ReflectionTestUtils.invokeMethod(configurationSection, "getVisibleConfigEntries");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void unparseablePortCannotSilentlySaveTheConfiguredDefault(String language) {
+    localeReference.set(Locale.forLanguageTag(language));
+    configurationSection.showGroup(AdminConfigGroup.SMTP);
+    IntegerField port = (IntegerField) getConfigInputsByEntry().get(ConfigEntry.MAIL_PORT);
+    port.getElement().setProperty("_inputElementValue", "1e");
+    ReflectionTestUtils.invokeMethod(port, "setModelValue", null, true);
+    assertFalse(port.isInvalid());
+    ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
+    assertTrue(port.isInvalid());
+    assertConfigurationError(new MessageProperties(i18nProvider), ConfigEntry.MAIL_PORT, "invalid");
+    verify(configService, never()).saveSmtpSettings(any());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "de,SERVICE_NAME, ", "en,SERVICE_NAME, ",
+    "de,BASE_URL,invalid", "en,BASE_URL,invalid",
+    "de,EMAIL_FROM,invalid", "en,EMAIL_FROM,invalid",
+    "de,MAIL_PORT,0", "en,MAIL_PORT,0",
+    "de,REMEMBER_ME_SECRET_KEY,short", "en,REMEMBER_ME_SECRET_KEY,short",
+    "de,VERIFICATION_TOKEN_VALID_DURATION,PT0S", "en,VERIFICATION_TOKEN_VALID_DURATION,PT0S",
+    "de,USER_AUTO_ABSENT_TIMEOUT, ", "en,USER_AUTO_ABSENT_TIMEOUT, ",
+    "de,SELF_DEACTIVATION_RETENTION_DAYS,0", "en,SELF_DEACTIVATION_RETENTION_DAYS,0",
+    "de,USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,0", "en,USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,0",
+    "de,EMAIL_QUEUE_CAPACITY,0", "en,EMAIL_QUEUE_CAPACITY,0",
+    "de,EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,PT0S", "en,EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,PT0S"
+  })
+  void savingInvalidConfigurationNamesTheFieldAndRuleWithoutInlineText(
+      String language, ConfigEntry entry, String invalidValue) {
+    localeReference.set(Locale.forLanguageTag(language));
+    configurationSection.showGroup(ConfigurationCatalog.group(entry));
+    Component field = (Component) getConfigInputsByEntry().get(entry);
+    String submittedValue = invalidValue == null ? "" : invalidValue;
+    switch (field) {
+      case CosmosDurationCustomField durationField -> durationField.setValue(submittedValue);
+      case IntegerField integerField -> integerField.setValue(Integer.valueOf(submittedValue));
+      case EmailField emailField -> emailField.setValue(submittedValue);
+      case PasswordField passwordField -> passwordField.setValue(submittedValue);
+      case TextField textField -> textField.setValue(submittedValue);
+      default -> throw new AssertionError("Unsupported configuration input");
+    }
+    HasValidation validatedField = (HasValidation) field;
+    assertFalse(validatedField.isInvalid());
+    ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
+    assertTrue(validatedField.isInvalid());
+    assertTrue(
+        validatedField.getErrorMessage() == null || validatedField.getErrorMessage().isEmpty());
+    verify(configService, never()).set(any(), anyString());
+    verify(configService, never()).saveSmtpSettings(any());
+    MessageProperties messages = new MessageProperties(i18nProvider);
+    assertConfigurationError(messages, entry, submittedValue);
+    localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    configurationSection.refreshTexts();
+    NotificationHelper.getInstance().updateText();
+    assertConfigurationError(messages, entry, submittedValue);
+    assertTrue(validatedField.isInvalid());
+  }
+
+  private void assertConfigurationError(
+      MessageProperties messages, ConfigEntry entry, String submittedValue) {
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    String rule =
+        ReflectionTestUtils.invokeMethod(
+            configurationSection, "validateValue", entry, submittedValue);
+    assertEquals(
+        messages.getBaseFailedTitle(),
+        ((Span) ReflectionTestUtils.getField(notificationHelper, "titleText")).getText());
+    assertEquals(
+        messages.getAdminConfigEntryLabel(entry) + "\n" + rule,
+        ((Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText")).getText());
   }
 
   private Object durationMember(Object durationCustomField, String memberName) {

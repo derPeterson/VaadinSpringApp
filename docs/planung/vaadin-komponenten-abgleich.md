@@ -20,15 +20,17 @@ einheitlichen Warn-/Fehlersymbolen einschließlich der übrigen Einsatzstellen s
 umgesetzt und vom Benutzer abgenommen. Die automatisierten Browsernachtests bleiben
 zentral im [Testbedarf](../testbedarf.md) offen.
 
-Registrierung, Anmeldung und persönliche Daten verwenden die native manuelle
-Validierung: Fehler erscheinen erst beim Absenden, Änderungen nehmen die alte
-Feldmarkierung zurück. Die Benutzerabnahme steht noch aus. Der Client-/Blur-Nachtest
+Registrierung, Anmeldung, persönliche Daten, Benutzeranlage/-bearbeitung und Konfiguration verwenden
+die native manuelle Validierung: Fehler erscheinen erst beim Absenden, Änderungen nehmen die alte
+Feldmarkierung zurück. Die Benutzerabnahme der Validierungsabläufe steht noch aus.
+Die untereinanderstehenden Checkboxen der Benutzeranlage mit nativen Aura-Abständen
+sind vom Benutzer abgenommen. Der Client-/Blur-Nachtest
 bleibt zentral im Testbedarf offen.
 
 **Der Formularabgleich bleibt ausdrücklich offen; dies ist ein Zwischenstand.**
 Weitere Formulare auf vorzeitige rote Markierungen, erklärende Meldungen und
-konsistentes Zurücknehmen alter Fehler prüfen. Kandidaten sind Benutzeranlage und
--bearbeitung, externer Registrierungsabschluss, Konto-/Passwortdialoge, Konfiguration,
+konsistentes Zurücknehmen alter Fehler prüfen. Kandidaten sind
+externer Registrierungsabschluss, Konto-/Passwortdialoge,
 Mail-Test sowie Benachrichtigungs- und Ticketformulare. Den konkreten nächsten
 Umfang jeweils gemeinsam festlegen; noch keine pauschale Umstellung dieser Formulare.
 

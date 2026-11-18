@@ -70,8 +70,25 @@ berücksichtigt unlesbare Datumseingaben auch ohne roten Rahmen und ohne geände
 Datumswert. Die E-Mail-Adresse bleibt hier schreibgeschützt; Änderungen erfolgen im
 eigenen geschützten Dialog.
 
-Diese Einstellung gilt zunächst für Registrierung, Anmeldung und persönliche Daten.
-Andere Formulare wurden dadurch nicht umgestellt.
+Auch Benutzer anlegen und bearbeiten prüfen erst beim Speichern. Speichern bleibt
+bei unvollständigen Angaben bedienbar; die Prüfung markiert die betroffenen Felder
+ohne zusätzliche Fehlertexte unter den Eingaben und zeigt eine konkrete Notification.
+Pflichtangaben, E-Mail-Format, Passwort, Geburtsdatum und Rollen werden vor der
+E-Mail-Duplikatprüfung und dem Schreibzugriff geprüft. Beim Bearbeiten lässt ein
+leeres neues Passwort das bestehende unverändert. Änderungen nehmen jeweils die
+alte Feldmarkierung zurück. Unlesbare Datumseingaben bleiben vom Änderungsschutz erfasst.
+
+Die gesamte Konfiguration prüft Eingaben ebenfalls beim Speichern: Felder bleiben
+bis dahin ohne rote Fehlermarkierung. Bei ungültigen Werten stehen Feldbezeichnung
+und konkrete Regel in der Notification, ohne Fehlertext unter der Eingabe. Änderungen
+nehmen die jeweilige Markierung zurück. Das gilt auch für die Anmeldeanbieter und
+den Zeitraum der 2FA-Inaktivitätsregel. Ein unlesbarer Zahlenwert gilt nicht als
+leerer Wert; die vorhandenen Regeln für Standardwerte und unbegrenzte Aufbewahrung
+gelten weiterhin nur bei tatsächlich leeren Feldern. Berechtigungen und erforderliche
+Identitätsbestätigungen beim Speichern bleiben erhalten.
+
+Diese Einstellung gilt für Registrierung, Anmeldung, persönliche Daten,
+Benutzeranlage/-bearbeitung und Konfiguration. Weitere Formulare sind noch nicht umgestellt.
 
 ### Entwicklerkonten
 

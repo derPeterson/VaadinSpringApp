@@ -2,6 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -9,12 +10,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Switch;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -24,8 +30,58 @@ import java.util.Locale;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class AdminExternalProviderSettingsSectionTest {
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void incompleteCredentialsAreMarkedOnSaveAndCorrectionClearsTheMarker(String language) {
+    UI ui = new UI();
+    VaadinSession session = mock(VaadinSession.class);
+    when(session.hasLock()).thenReturn(true);
+    when(session.getLocale()).thenReturn(Locale.forLanguageTag(language));
+    ui.getInternals().setSession(session);
+    UI.setCurrent(ui);
+    VaadinSession.setCurrent(session);
+    try {
+      MessageProperties messages = new MessageProperties(new CustomI18NProvider());
+      ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
+      for (String provider : new String[] {"google", "microsoft"}) {
+        when(settings.load(provider))
+            .thenReturn(
+                new ExternalProviderSettings.Settings(
+                    provider, "saved-client", true, true, "revision"));
+      }
+      when(settings.save("google", "", "", true, "revision"))
+          .thenThrow(new IllegalArgumentException("Credentials required"));
+      ConfigService config = mock(ConfigService.class);
+      when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://portal.example.test/");
+      AdminExternalProviderSettingsSection section =
+          new AdminExternalProviderSettingsSection(messages, settings, config);
+      section.activate();
+      TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
+      Component form = tabs.getComponent(tabs.getTabAt(0));
+      TextField clientId = (TextField) find(form, "provider-google-client-id");
+      clientId.clear();
+      assertFalse(clientId.isInvalid());
+      ((Button) find(form, "provider-google-save")).click();
+      assertTrue(clientId.isInvalid());
+      assertNull(clientId.getErrorMessage());
+      assertEquals(
+          messages.getProviderSettingsIncomplete(),
+          ((Paragraph)
+                  ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"))
+              .getText());
+      clientId.setValue("corrected-client");
+      assertFalse(clientId.isInvalid());
+    } finally {
+      NotificationHelper.getInstance().closeAndClearAllNotifications();
+      UI.setCurrent(null);
+      VaadinSession.setCurrent(null);
+    }
+  }
+
   @ParameterizedTest
   @CsvSource({
     "de,true,true", "de,true,false", "de,false,false",

@@ -4,6 +4,7 @@ import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
@@ -16,16 +17,18 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.BlurNotifier;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.FocusNotifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.Autocomplete;
+import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
@@ -362,40 +365,44 @@ class AdminUserDialogValidationTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void typingDoesNotShowErrorsButBlurShowsRulesAndMismatchUntilCorrected(String languageTag) {
+  void passwordRulesAndMismatchAreReportedOnlyOnSaveWithoutInlineErrors(String languageTag) {
     openUserDialog(languageTag, false);
     findNewPasswordField().setValue("w");
+    findPasswordConfirmationField().setValue("w");
 
     assertTrue(findPasswordConfirmationField().isEnabled());
     assertTrue(findPasswordConfirmationField().isRequiredIndicatorVisible());
     assertFalse(findNewPasswordField().isInvalid());
     assertFalse(findPasswordConfirmationField().isInvalid());
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
     firePasswordBlurEvent(findNewPasswordField());
 
+    assertFalse(findNewPasswordField().isInvalid());
+    findSaveUserButton().click();
+
     assertTrue(findNewPasswordField().isInvalid());
-    assertEquals(
-        messageProperties.getAdminUsersPasswordValidationEdit(),
-        findNewPasswordField().getErrorMessage());
-    firePasswordFocusEvent(findNewPasswordField());
+    assertNull(findNewPasswordField().getErrorMessage());
+    assertNotification(messageProperties.getAdminUsersPasswordValidationCreate());
+    assertTrue(messageProperties.getAdminUsersPasswordValidationCreate().contains("\n"));
+    findNewPasswordField().setValue("ChangedPassword!");
 
     assertFalse(findNewPasswordField().isInvalid());
-    findNewPasswordField().setValue("ChangedPassword!");
     firePasswordBlurEvent(findNewPasswordField());
     findPasswordConfirmationField().setValue("DifferentPassword!");
 
     assertFalse(findPasswordConfirmationField().isInvalid());
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
     firePasswordBlurEvent(findPasswordConfirmationField());
 
+    assertFalse(findPasswordConfirmationField().isInvalid());
+    findSaveUserButton().click();
+
     assertTrue(findPasswordConfirmationField().isInvalid());
-    assertEquals(
-        messageProperties.getBaseValidationPasswordConfirmMessage(),
-        findPasswordConfirmationField().getErrorMessage());
-    firePasswordFocusEvent(findPasswordConfirmationField());
+    assertNull(findPasswordConfirmationField().getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationPasswordConfirmMessage());
+    findPasswordConfirmationField().setValue("ChangedPassword!");
 
     assertFalse(findPasswordConfirmationField().isInvalid());
-    findPasswordConfirmationField().setValue("ChangedPassword!");
     firePasswordBlurEvent(findPasswordConfirmationField());
 
     assertFalse(findPasswordConfirmationField().isInvalid());
@@ -411,7 +418,7 @@ class AdminUserDialogValidationTest {
     openUserDialog(languageTag, false);
     findNewPasswordField().setValue("ChangedPassword!");
     findPasswordConfirmationField().setValue("Wrong!");
-    firePasswordBlurEvent(findPasswordConfirmationField());
+    findSaveUserButton().click();
 
     assertTrue(findPasswordConfirmationField().isInvalid());
     findNewPasswordField().clear();
@@ -428,13 +435,21 @@ class AdminUserDialogValidationTest {
   void createRequiresAValidPasswordAndMatchingConfirmation(String languageTag) {
     openUserDialog(languageTag, true);
 
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
+    findSaveUserButton().click();
+    assertTrue(findNewPasswordField().isInvalid());
+    assertNotification(messageProperties.getBaseValidationRequiredMessage());
     findNewPasswordField().setValue("ValidPassword!");
 
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
+    findSaveUserButton().click();
+    assertTrue(findPasswordConfirmationField().isInvalid());
     findPasswordConfirmationField().setValue("validPassword!");
 
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
+    findSaveUserButton().click();
+    assertNotification(messageProperties.getBaseValidationPasswordConfirmMessage());
+    verify(userService, never()).createAdminUser(any(), any());
     findPasswordConfirmationField().setValue("ValidPassword!");
 
     assertTrue(findSaveUserButton().isEnabled());
@@ -444,6 +459,85 @@ class AdminUserDialogValidationTest {
         .createAdminUser(
             argThat(user -> Locale.forLanguageTag(languageTag).equals(user.getPreferredLocale())),
             eq("ValidPassword!"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"de,true", "de,false", "en,true", "en,false"})
+  void requiredFieldsAndEmailFormatAreCheckedOnSaveAndClearTheirOwnMarkers(
+      String languageTag, boolean create) {
+    openUserDialog(languageTag, create);
+    if (create) {
+      findNewPasswordField().setValue("ValidPassword!");
+      findPasswordConfirmationField().setValue("ValidPassword!");
+    }
+    TextField firstNameField = findTextField(messageProperties.getAdminUsersFieldFirstName());
+    TextField lastNameField = findTextField(messageProperties.getAdminUsersFieldLastName());
+    EmailField emailField =
+        streamDescendantComponents(userDialog)
+            .filter(EmailField.class::isInstance)
+            .map(EmailField.class::cast)
+            .findFirst()
+            .orElseThrow();
+    firstNameField.clear();
+    lastNameField.clear();
+    emailField.clear();
+
+    assertFalse(firstNameField.isInvalid());
+    assertFalse(lastNameField.isInvalid());
+    assertFalse(emailField.isInvalid());
+    assertTrue(findSaveUserButton().isEnabled());
+    findSaveUserButton().click();
+
+    assertTrue(firstNameField.isInvalid());
+    assertTrue(lastNameField.isInvalid());
+    assertTrue(emailField.isInvalid());
+    assertNull(firstNameField.getErrorMessage());
+    assertNull(lastNameField.getErrorMessage());
+    assertNull(emailField.getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationRequiredMessage());
+    firstNameField.setValue("Corrected");
+    assertFalse(firstNameField.isInvalid());
+    assertTrue(lastNameField.isInvalid());
+    lastNameField.setValue("User");
+    emailField.setValue("invalid");
+    assertFalse(emailField.isInvalid());
+    findSaveUserButton().click();
+
+    assertTrue(emailField.isInvalid());
+    assertNotification(messageProperties.getBaseValidationEmailInvalidMessage());
+    verify(userService, never()).emailExistsForOtherUser(any(), any());
+    verify(userService, never()).createAdminUser(any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"de,true", "de,false", "en,true", "en,false"})
+  void unparseableBirthdayBlocksSavingAndStillProtectsUnsavedInput(
+      String languageTag, boolean create) {
+    openUserDialog(languageTag, create, false, null);
+    if (create) {
+      findNewPasswordField().setValue("ValidPassword!");
+      findPasswordConfirmationField().setValue("ValidPassword!");
+    }
+    DatePicker birthDatePicker =
+        streamDescendantComponents(userDialog)
+            .filter(DatePicker.class::isInstance)
+            .map(DatePicker.class::cast)
+            .findFirst()
+            .orElseThrow();
+    birthDatePicker.clear();
+    birthDatePicker.getElement().setProperty("_inputElementValue", "31022026");
+    ReflectionTestUtils.invokeMethod(birthDatePicker, "setModelValue", null, true);
+
+    assertFalse(birthDatePicker.isInvalid());
+    findSaveUserButton().click();
+    assertTrue(birthDatePicker.isInvalid());
+    assertNull(birthDatePicker.getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationBirthDatePastMessage());
+    verify(userService, never()).createAdminUser(any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
+    findCancelUserEditButton().click();
+    assertTrue(findOpenUnsavedChangesDialog().isPresent());
   }
 
   @Test
@@ -494,9 +588,15 @@ class AdminUserDialogValidationTest {
         roleMultiSelectComboBox.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
     roleMultiSelectComboBox.clear();
 
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
+    assertFalse(roleMultiSelectComboBox.isInvalid());
+    findSaveUserButton().click();
+    assertTrue(roleMultiSelectComboBox.isInvalid());
+    assertNull(roleMultiSelectComboBox.getErrorMessage());
+    assertNotification(messageProperties.getAdminUsersRolesHelper());
     roleMultiSelectComboBox.setValue(Set.of(RoleType.ROLE_USER));
 
+    assertFalse(roleMultiSelectComboBox.isInvalid());
     assertTrue(findSaveUserButton().isEnabled());
   }
 
@@ -510,19 +610,20 @@ class AdminUserDialogValidationTest {
   }
 
   @Test
-  void languageChangesPreserveValuesAndTranslateAnAlreadyDisplayedConfirmationError() {
+  void languageChangesPreserveValuesAndTranslateTheNotificationWithoutInlineErrors() {
     openUserDialog("de", false);
     findNewPasswordField().setValue("ValidPassword!");
     findPasswordConfirmationField().setValue("Different!");
-    firePasswordBlurEvent(findPasswordConfirmationField());
+    findSaveUserButton().click();
     localeReference.set(Locale.ENGLISH);
     userManagementSection.refreshTexts();
+    NotificationHelper.getInstance().updateText();
 
     assertEquals("ValidPassword!", findNewPasswordField().getValue());
     assertEquals("Different!", findPasswordConfirmationField().getValue());
-    assertEquals(
-        messageProperties.getBaseValidationPasswordConfirmMessage(),
-        findPasswordConfirmationField().getErrorMessage());
+    assertNotification(messageProperties.getBaseValidationPasswordConfirmMessage());
+    assertNull(findPasswordConfirmationField().getErrorMessage());
+    assertTrue(findPasswordConfirmationField().isInvalid());
     assertEquals(
         messageProperties.getAccountConfirmPasswordPlaceholder(),
         findPasswordConfirmationField().getPlaceholder());
@@ -617,9 +718,10 @@ class AdminUserDialogValidationTest {
     assertNotSame(editingUserDialog, creatingUserDialog);
     findNewPasswordField().setValue("CreatedPassword!");
     findPasswordConfirmationField().setValue("DifferentPassword!");
-    firePasswordBlurEvent(findPasswordConfirmationField());
+    findSaveUserButton().click();
 
-    assertFalse(findSaveUserButton().isEnabled());
+    assertTrue(findSaveUserButton().isEnabled());
+    assertTrue(findPasswordConfirmationField().isInvalid());
 
     userDialog = editingUserDialog;
 
@@ -649,6 +751,11 @@ class AdminUserDialogValidationTest {
 
   private void openUserDialog(
       String languageTag, boolean createNewUser, boolean developmentAccount) {
+    openUserDialog(languageTag, createNewUser, developmentAccount, LocalDate.of(1990, 1, 1));
+  }
+
+  private void openUserDialog(
+      String languageTag, boolean createNewUser, boolean developmentAccount, LocalDate birthDate) {
     Dialog previouslyOpenedDialog = userDialog;
     localeReference.set(Locale.forLanguageTag(languageTag));
     UserEntity testUserEntity =
@@ -658,7 +765,7 @@ class AdminUserDialogValidationTest {
             .firstName("Test")
             .lastName("User")
             .email("test@example.test")
-            .birthDate(LocalDate.of(1990, 1, 1))
+            .birthDate(birthDate)
             .gender(Gender.OTHER)
             .enabled(true)
             .developmentAccount(developmentAccount)
@@ -695,12 +802,28 @@ class AdminUserDialogValidationTest {
     return findDialogFooterButton(userDialog, messageProperties.getAdminUsersSave());
   }
 
+  private TextField findTextField(String label) {
+    return streamDescendantComponents(userDialog)
+        .filter(TextField.class::isInstance)
+        .map(TextField.class::cast)
+        .filter(field -> field.getLabel().equals(label))
+        .findFirst()
+        .orElseThrow();
+  }
+
   private void firePasswordBlurEvent(PasswordField passwordField) {
     ComponentUtil.fireEvent(passwordField, new BlurNotifier.BlurEvent<>(passwordField, true));
   }
 
-  private void firePasswordFocusEvent(PasswordField passwordField) {
-    ComponentUtil.fireEvent(passwordField, new FocusNotifier.FocusEvent<>(passwordField, true));
+  private void assertNotification(String expectedMessage) {
+    assertEquals(
+        expectedMessage,
+        ((Paragraph) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"))
+            .getText());
+    assertEquals(
+        messageProperties.getBaseFailedTitle(),
+        ((Span) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "titleText"))
+            .getText());
   }
 
   private Stream<Component> streamDescendantComponents(Component rootComponent) {
