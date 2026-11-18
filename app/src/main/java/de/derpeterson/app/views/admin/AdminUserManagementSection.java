@@ -1512,7 +1512,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           new Span(messageProperties.getAdminUserScheduledDeletion(deletionDateText));
       deletionDeadlineSpan.setId("admin-user-deletion-deadline");
       Span deactivationWarningTextSpan = new Span(selfDeactivationLabelSpan, deletionDeadlineSpan);
-      SvgIcon deactivationWarningSvgIcon = AppIcon.ERROR.create();
+      SvgIcon deactivationWarningSvgIcon = AppIcon.WARNING_TRIANGLE.create();
       deactivationWarningSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       HorizontalLayout deactivationWarningLayout =
           new HorizontalLayout(deactivationWarningSvgIcon, deactivationWarningTextSpan);

@@ -857,7 +857,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     restartWarningHeadingSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout restartWarningLayout =
         new HorizontalLayout(
-            AppIcon.ERROR.create(),
+            AppIcon.WARNING_TRIANGLE.create(),
             new Span(
                 restartWarningHeadingSpan,
                 new Span(messageProperties.getAdminConfigRestartDetail())));

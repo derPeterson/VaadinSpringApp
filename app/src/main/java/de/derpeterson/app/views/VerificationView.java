@@ -185,7 +185,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   }
 
   private void showExpiredLinkCard(String verificationToken) {
-    SvgIcon expiredLinkWarningSvgIcon = AppIcon.WARNING.create();
+    SvgIcon expiredLinkWarningSvgIcon = AppIcon.WARNING_TRIANGLE.create();
     expiredLinkWarningSvgIcon.addClassNames(STATUS_ICON, "cosmos-status-icon--warning");
 
     expiredLinkH1 = new H1(messageProperties.getVerificationExpiredTitle());
@@ -232,8 +232,8 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   }
 
   private void showUnknownLinkCard() {
-    SvgIcon invalidLinkWarningSvgIcon = AppIcon.WARNING.create();
-    invalidLinkWarningSvgIcon.addClassNames(STATUS_ICON, CosmosCssClasses.TEXT_ERROR);
+    SvgIcon invalidLinkErrorSvgIcon = AppIcon.ERROR.create();
+    invalidLinkErrorSvgIcon.addClassNames(STATUS_ICON, CosmosCssClasses.TEXT_ERROR);
 
     unknownLinkH1 = new H1(messageProperties.getVerificationNotFoundTitle());
     unknownLinkH1.addClassName(HEADLINE_CSS_CLASS);
@@ -265,7 +265,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     PublicPanelComponent unknownLinkPanelComponent =
         new PublicPanelComponent(
-            invalidLinkWarningSvgIcon,
+            invalidLinkErrorSvgIcon,
             unknownLinkH1,
             messageProperties::getPublicVerificationSubtitle,
             new Component[] {unknownLinkTextVerticalLayout, verificationEmailField},

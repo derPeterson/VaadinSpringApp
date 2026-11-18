@@ -331,7 +331,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userWarningLabelSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout sensitiveNoticeLayout =
         new HorizontalLayout(
-            AppIcon.ERROR.create(), new Span(userWarningLabelSpan, securityWarningSpan));
+            AppIcon.WARNING_TRIANGLE.create(), new Span(userWarningLabelSpan, securityWarningSpan));
     sensitiveNoticeLayout.setPadding(false);
     sensitiveNoticeLayout.setSpacing(false);
     sensitiveNoticeLayout.setAlignItems(Alignment.START);

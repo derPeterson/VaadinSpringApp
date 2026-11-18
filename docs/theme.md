@@ -316,6 +316,28 @@ Schweregrad, Symbole, Dauer und Fensterisolation bleiben erhalten.
 URL-Rückmeldungen erst nach der Navigation öffnen, damit der Zielrahmen feststeht.
 Manuelles Laden meldet Erfolg oder Fehler; automatisches Laden bleibt ohne Erfolgstoast.
 
+Die Notifications im Cosmos-Referenzstil verwenden den nativen Aura-Innenabstand
+der äußeren Karte. Der Inhaltsbereich erhält kein zusätzliches Padding; seine
+Anordnung und die Cosmos-Farben, Rahmen und Icons bleiben separat gestaltet.
+
+Globale Meldungen erscheinen ab 768 px Fensterbreite nativ oben rechts
+(`TOP_END`), darunter unten mittig (`BOTTOM_CENTER`). Vaadins `windowSizeSignal`
+und ein an die konkrete Notification gebundener `Signal.effect` folgen auch
+Größenänderungen eines offenen Fensters. Bei noch unbekannter Fensterbreite gilt
+die untere Position. `cosmos-notification-top` koppelt den oberen Abstand an
+`--cosmos-topbar-height`; untere Meldungen reservieren keinen Headerabstand.
+Die nativen Bildschirmrandabstände berücksichtigen die Safe Area.
+
+Statussymbole im Cosmos-Referenzstil: Information als blauer Info-Kreis, Erfolg
+als grüner Haken im Kreis, Warnung als gelbes Dreieck mit Ausrufezeichen und Fehler
+als rotes Kreuz im Kreis. Dafür verwendet der Helper `INFO_CIRCLE`, `CHECK_CIRCLE`,
+`WARNING_TRIANGLE` und `ERROR`. Dieselbe Zuordnung gilt für die Statusanzeigen bei
+E-Mail-Verifikation, Passwort-Reset und E-Mail-Änderungsbestätigung: abgelaufen
+als Warnung, ungültig oder technisch fehlgeschlagen als Fehler. Feste Sicherheits-,
+Fristen- und Neustarthinweise verwenden ausdrücklich `WARNING_TRIANGLE` und
+behalten ihre freigegebenen Farben, einschließlich roter Löschwarnungen.
+`CLOSE_CIRCLE` bleibt das Symbol für Schließen-Aktionen.
+
 ## Seitenrahmen und Navigation
 
 ### Übernahme des angemeldeten Benutzerportals

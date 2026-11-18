@@ -15,6 +15,11 @@ Die Gesamtumsetzung bleibt ausdrücklich offen. Der bisherige Komponentenstand
 liegt auf `main`; die Integration war kein Featureabschluss.
 Aktueller Folgebranch: `codex/vaadin-komponenten-folgearbeiten-5`, angelegt von
 main bei `b4502e6fb73c72a389677702fefa9f5e7ee24b6b`.
+Globale Notifications mit responsiver nativer Position, Aura-Innenabstand und
+einheitlichen Warn-/Fehlersymbolen einschließlich der übrigen Einsatzstellen sind
+umgesetzt und vom Benutzer abgenommen. Die automatisierten Browsernachtests bleiben
+zentral im [Testbedarf](../testbedarf.md) offen.
+
 Die Inbox-Seitennavigation mit `CosmosPagination` und die Korrektur verschobener
 Seitenzahlen sind nach den isolierten DE-/EN-Vergleichen bei 1280/390 px vom
 Benutzer abgenommen. Daraus bleibt kein offenes Paket.

@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ComponentTestTree.streamComponentTree;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,11 +19,13 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -94,6 +97,19 @@ class PasswordResetViewsTest {
     return type.cast(ReflectionTestUtils.getField(view, name));
   }
 
+  private void assertStatusIcon(Component view, String iconName, String colorClass) {
+    SvgIcon statusSvgIcon =
+        streamComponentTree(view)
+            .filter(SvgIcon.class::isInstance)
+            .map(SvgIcon.class::cast)
+            .filter(svgIcon -> svgIcon.hasClassName("cosmos-status-icon"))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals("icons/lucide/" + iconName + ".svg", statusSvgIcon.getSrc());
+    assertTrue(statusSvgIcon.hasClassName(colorClass));
+  }
+
   private void createResetForm() {
     when(passwordResetService.inspectToken("link-token")).thenReturn(LinkState.VALID);
     resetView =
@@ -132,6 +148,8 @@ class PasswordResetViewsTest {
     when(passwordResetService.inspectToken("used-or-expired")).thenReturn(LinkState.INVALID);
     resetView.setParameter(null, "used-or-expired");
 
+    assertStatusIcon(resetView, "circle-x", "cosmos-text-error");
+
     assertNull(ReflectionTestUtils.getField(resetView, "saveNewPasswordButton"));
     assertEquals(
         messageProperties.getResetPasswordInvalidTitle(),
@@ -169,6 +187,8 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     resetView.setParameter(null, "expired");
+
+    assertStatusIcon(resetView, "triangle-alert", "cosmos-status-icon--warning");
 
     assertEquals(
         messageProperties.getResetPasswordExpiredTitle(),
@@ -229,6 +249,7 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     view.setParameter(null, "expired-link");
+    assertStatusIcon(view, "triangle-alert", "cosmos-status-icon--warning");
     Button resend = field(view, "resendVerificationLinkButton", Button.class);
     Button home = field(view, "verificationHomeButton", Button.class);
 
@@ -263,6 +284,7 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     view.setParameter(null, "unknown-link");
+    assertStatusIcon(view, "circle-x", "cosmos-text-error");
     Button request = field(view, "requestVerificationLinkButton", Button.class);
 
     assertEquals(messageProperties.getVerificationRequestActivationLink(), request.getText());
@@ -493,6 +515,8 @@ class PasswordResetViewsTest {
             accountConfig());
     assertLogged(
         ResetPasswordView.class, failure, () -> resetView.setParameter(null, "link-token"));
+
+    assertStatusIcon(resetView, "circle-x", "cosmos-text-error");
 
     assertNull(ReflectionTestUtils.getField(resetView, "saveNewPasswordButton"));
     assertEquals(

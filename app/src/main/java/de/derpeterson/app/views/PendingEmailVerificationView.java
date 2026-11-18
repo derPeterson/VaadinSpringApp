@@ -163,7 +163,7 @@ public class PendingEmailVerificationView extends VerticalLayout
     verificationWarningTextLayout.addClassName("pending-verification-warning-text");
 
     HorizontalLayout verificationWarningLayout =
-        new HorizontalLayout(AppIcon.ERROR.create(), verificationWarningTextLayout);
+        new HorizontalLayout(AppIcon.WARNING_TRIANGLE.create(), verificationWarningTextLayout);
     verificationWarningLayout.setWidthFull();
     verificationWarningLayout.setPadding(false);
     verificationWarningLayout.setSpacing(false);

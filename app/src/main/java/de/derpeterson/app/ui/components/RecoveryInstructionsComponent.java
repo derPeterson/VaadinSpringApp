@@ -42,7 +42,8 @@ public final class RecoveryInstructionsComponent extends VerticalLayout {
     warningTitleSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout warningNoticeLayout =
         new HorizontalLayout(
-            AppIcon.ERROR.create(), new Span(warningTitleSpan, new Span(warningSectionLines[1])));
+            AppIcon.WARNING_TRIANGLE.create(),
+            new Span(warningTitleSpan, new Span(warningSectionLines[1])));
     warningNoticeLayout.setSpacing(false);
     warningNoticeLayout.setPadding(false);
     warningNoticeLayout.setAlignItems(Alignment.START);

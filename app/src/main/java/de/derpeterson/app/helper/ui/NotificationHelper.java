@@ -17,6 +17,8 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.WindowSize;
+import com.vaadin.flow.signals.Signal;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.AppIcon;
@@ -33,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 @NoArgsConstructor
 public class NotificationHelper implements Serializable {
+  private static final int DESKTOP_NOTIFICATION_MIN_WIDTH = 768;
 
   private Span titleText = null;
   // Request-/Service-Supplier nicht mit einer passivierten UI serialisieren.
@@ -169,12 +172,31 @@ public class NotificationHelper implements Serializable {
           .getThemeList()
           .add("cosmos-reference-" + notificationType.name().toLowerCase(Locale.ROOT));
     }
-    currentNotification.setPosition(Notification.Position.TOP_CENTER);
+    configureResponsivePosition(currentNotification);
     currentNotification.setDuration(displayDurationMillis);
 
     buildNotificationContent(
         notificationTitle, notificationMessage, notificationType, usesReferenceTheme);
     currentNotification.open();
+  }
+
+  private void configureResponsivePosition(Notification notification) {
+    Signal<WindowSize> windowSizeSignal = UI.getCurrent().getPage().windowSizeSignal();
+    updateNotificationPosition(notification, windowSizeSignal.peek().width());
+    // Der native Effekt folgt der Lebensdauer genau dieser Meldung und ihres Browserfensters.
+    Signal.effect(
+        notification,
+        () -> updateNotificationPosition(notification, windowSizeSignal.get().width()));
+  }
+
+  private void updateNotificationPosition(Notification notification, int viewportWidth) {
+    if (viewportWidth >= DESKTOP_NOTIFICATION_MIN_WIDTH) {
+      notification.setPosition(Notification.Position.TOP_END);
+      notification.addThemeName("cosmos-notification-top");
+    } else {
+      notification.setPosition(Notification.Position.BOTTOM_CENTER);
+      notification.removeThemeName("cosmos-notification-top");
+    }
   }
 
   private void buildNotificationContent(
@@ -234,7 +256,7 @@ public class NotificationHelper implements Serializable {
         titleText.addClassName(CosmosCssClasses.TEXT_SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
-      statusSvgIcon = AppIcon.WARNING.create();
+      statusSvgIcon = AppIcon.WARNING_TRIANGLE.create();
       statusSvgIcon.addClassName(CosmosCssClasses.TEXT_WARNING);
       if (titleText != null) {
         titleText.addClassName(CosmosCssClasses.TEXT_WARNING);
@@ -250,7 +272,7 @@ public class NotificationHelper implements Serializable {
           switch (notificationType) {
             case ERROR -> AppIcon.ERROR;
             case SUCCESS -> AppIcon.CHECK_CIRCLE;
-            case WARNING -> AppIcon.WARNING;
+            case WARNING -> AppIcon.WARNING_TRIANGLE;
             case NORMAL -> AppIcon.INFO_CIRCLE;
           };
       SvgIcon referenceStatusSvgIcon = statusAppIcon.create();

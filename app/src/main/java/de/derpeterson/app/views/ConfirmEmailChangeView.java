@@ -181,11 +181,12 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   private void updateConfirmationStatusSvgIcon() {
     AppIcon confirmationAppIcon =
         hasConfirmationTechnicalFailure
-            ? AppIcon.WARNING
+            ? AppIcon.ERROR
             : switch (confirmationState) {
               case READY -> AppIcon.ENVELOPE;
               case SUCCESS -> AppIcon.CHECK_CIRCLE;
-              case EXPIRED, INVALID, CONFLICT -> AppIcon.WARNING;
+              case EXPIRED -> AppIcon.WARNING_TRIANGLE;
+              case INVALID, CONFLICT -> AppIcon.ERROR;
             };
     String confirmationColorCssClass =
         hasConfirmationTechnicalFailure

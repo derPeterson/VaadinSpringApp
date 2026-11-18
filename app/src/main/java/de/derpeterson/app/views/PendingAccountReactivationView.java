@@ -129,7 +129,7 @@ public final class PendingAccountReactivationView extends VerticalLayout
     warningTextLayout.setSpacing(false);
     warningTextLayout.addClassName("pending-verification-warning-text");
     HorizontalLayout reactivationWarningLayout =
-        new HorizontalLayout(AppIcon.ERROR.create(), warningTextLayout);
+        new HorizontalLayout(AppIcon.WARNING_TRIANGLE.create(), warningTextLayout);
     reactivationWarningLayout.setPadding(false);
     reactivationWarningLayout.setSpacing(false);
     reactivationWarningLayout.setAlignItems(Alignment.CENTER);

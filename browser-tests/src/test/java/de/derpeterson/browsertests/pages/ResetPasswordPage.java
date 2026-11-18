@@ -112,7 +112,8 @@ public final class ResetPasswordPage {
     assertRejectedLink(
         uiTexts.getResetPasswordInvalidTitle(),
         uiTexts.getResetPasswordInvalidText(),
-        "cosmos-text-error");
+        "cosmos-text-error",
+        "circle-x");
   }
 
   @Step("Abgelaufener Link zeigt einen gelben Hinweis und kein Resetformular")
@@ -120,10 +121,11 @@ public final class ResetPasswordPage {
     assertRejectedLink(
         uiTexts.getResetPasswordExpiredTitle(),
         uiTexts.getResetPasswordExpiredText(),
-        "cosmos-status-icon--warning");
+        "cosmos-status-icon--warning",
+        "triangle-alert");
   }
 
-  private void assertRejectedLink(String title, String text, String iconClass) {
+  private void assertRejectedLink(String title, String text, String iconClass, String iconName) {
     assertThat(browserPage).hasURL(urlPattern(RESET_PASSWORD_ROUTE, "/[0-9a-f-]+"));
     assertThat(browserPage).hasTitle(RESET_PAGE_TITLE);
     assertThat(
@@ -141,7 +143,7 @@ public final class ResetPasswordPage {
     assertThat(browserPage.locator("vaadin-password-field")).hasCount(0);
     assertThat(
             browserPage.locator(
-                ".cosmos-card vaadin-icon[src='icons/lucide/circle-alert.svg']." + iconClass))
+                ".cosmos-card vaadin-icon[src='icons/lucide/" + iconName + ".svg']." + iconClass))
         .isVisible();
   }
 

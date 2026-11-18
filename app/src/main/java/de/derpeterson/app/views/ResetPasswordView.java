@@ -318,12 +318,11 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     resetPageContentLayout.removeAll();
     clearResetPasswordFormReferences();
 
-    SvgIcon resetLinkProblemSvgIcon = AppIcon.WARNING.create();
+    boolean expiredLink = !hasResetLinkInspectionFailure && resetLinkState == LinkState.EXPIRED;
+    AppIcon resetLinkProblemAppIcon = expiredLink ? AppIcon.WARNING_TRIANGLE : AppIcon.ERROR;
+    SvgIcon resetLinkProblemSvgIcon = resetLinkProblemAppIcon.create();
     resetLinkProblemSvgIcon.addClassNames(
-        STATUS_ICON,
-        !hasResetLinkInspectionFailure && resetLinkState == LinkState.EXPIRED
-            ? "cosmos-status-icon--warning"
-            : CosmosCssClasses.TEXT_ERROR);
+        STATUS_ICON, expiredLink ? "cosmos-status-icon--warning" : CosmosCssClasses.TEXT_ERROR);
 
     this.resetLinkProblemTitleH1 = new H1(resolveResetLinkProblemTitleText());
     resetLinkProblemTitleH1.addClassName(COSMOS_HEADLINE_CLASS);

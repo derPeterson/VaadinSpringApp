@@ -196,7 +196,8 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     warningLabelSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout warningLayout =
         new HorizontalLayout(
-            AppIcon.ERROR.create(), new Span(warningLabelSpan, new Span(accountActionExplanation)));
+            AppIcon.WARNING_TRIANGLE.create(),
+            new Span(warningLabelSpan, new Span(accountActionExplanation)));
     warningLayout.setPadding(false);
     warningLayout.setSpacing(false);
     warningLayout.setAlignItems(Alignment.START);

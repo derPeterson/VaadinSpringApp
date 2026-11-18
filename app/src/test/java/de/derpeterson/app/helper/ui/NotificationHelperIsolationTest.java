@@ -10,13 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.ExtendedClientDetails;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PageFrameComponent;
@@ -27,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -45,11 +50,25 @@ class NotificationHelperIsolationTest {
   }
 
   private UI window(VaadinSession vaadinSession) {
+    UI.setCurrent(null);
+    VaadinSession.setCurrent(vaadinSession);
     UI ui = new UI();
     ui.getInternals().setSession(vaadinSession);
     windows.add(ui);
     select(ui);
+    setViewportWidth(ui, 1280);
     return ui;
+  }
+
+  private void setViewportWidth(UI ui, int viewportWidth) {
+    ExtendedClientDetails.updateFromValues(
+        ui,
+        key ->
+            switch (key) {
+              case "v-ww", "v-bw", "v-sw" -> Integer.toString(viewportWidth);
+              case "v-wh", "v-bh", "v-sh" -> "900";
+              default -> null;
+            });
   }
 
   private void select(UI ui) {
@@ -68,6 +87,102 @@ class NotificationHelperIsolationTest {
 
   private Paragraph message(NotificationHelper helper) {
     return (Paragraph) ReflectionTestUtils.getField(helper, "messageText");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "0,BOTTOM_CENTER",
+    "390,BOTTOM_CENTER",
+    "767,BOTTOM_CENTER",
+    "768,TOP_END",
+    "1280,TOP_END"
+  })
+  void notificationPositionFollowsTheAvailableViewportWidth(
+      int viewportWidth, Notification.Position expectedPosition) {
+    UI ui = window(session());
+    setViewportWidth(ui, viewportWidth);
+    show("Gespeichert");
+    Notification notice = notification(NotificationHelper.getInstance());
+
+    assertEquals(expectedPosition, notice.getPosition());
+    assertEquals(
+        expectedPosition == Notification.Position.TOP_END,
+        notice.getThemeNames().contains("cosmos-notification-top"));
+  }
+
+  @Test
+  void resizingAnOpenNoticePreservesItsLifetimeAndTheOtherWindowsPosition() {
+    UI firstWindow = window(session());
+    NotificationHelper firstHelper = NotificationHelper.getInstance();
+    firstHelper.showTextNotification(
+        () -> "Title", () -> "Details", 4200, NotificationHelper.NotificationType.WARNING);
+    Notification firstNotice = notification(firstHelper);
+    firstWindow.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+    UI secondWindow = window(session());
+    setViewportWidth(secondWindow, 390);
+    show("Anderes Fenster");
+    Notification secondNotice = notification(NotificationHelper.getInstance());
+    select(firstWindow);
+    setViewportWidth(firstWindow, 390);
+    firstWindow.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+
+    assertEquals(Notification.Position.BOTTOM_CENTER, firstNotice.getPosition());
+    assertFalse(firstNotice.getThemeNames().contains("cosmos-notification-top"));
+    assertEquals(4200, firstNotice.getDuration());
+    assertTrue(firstNotice.isOpened());
+    assertEquals("Details", message(firstHelper).getText());
+
+    setViewportWidth(firstWindow, 1024);
+    firstWindow.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+
+    assertEquals(Notification.Position.TOP_END, firstNotice.getPosition());
+    assertTrue(firstNotice.getThemeNames().contains("cosmos-notification-top"));
+    assertEquals(Notification.Position.BOTTOM_CENTER, secondNotice.getPosition());
+    assertTrue(secondNotice.isOpened());
+    firstHelper.closeAndClearAllNotifications();
+    show("Neue Meldung");
+    Notification replacementNotice = notification(firstHelper);
+    setViewportWidth(firstWindow, 390);
+    firstWindow.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+
+    assertFalse(firstNotice.isOpened());
+    assertTrue(replacementNotice.isOpened());
+    assertEquals(Notification.Position.BOTTOM_CENTER, replacementNotice.getPosition());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "false,ERROR,circle-x",
+    "false,WARNING,triangle-alert",
+    "false,SUCCESS,circle-check",
+    "true,ERROR,circle-x",
+    "true,WARNING,triangle-alert",
+    "true,SUCCESS,circle-check",
+    "true,NORMAL,info"
+  })
+  void notificationStatusIconsUseDistinctShapesAcrossBothPresentations(
+      boolean usesReferenceTheme,
+      NotificationHelper.NotificationType notificationType,
+      String expectedIconName) {
+    UI ui = window(session());
+    if (usesReferenceTheme) {
+      Div frame = new Div();
+      frame.addClassNames("cosmos-theme", "cosmos-reference-portal");
+      ui.add(frame);
+    }
+    NotificationHelper helper = NotificationHelper.getInstance();
+    helper.showTextNotification(() -> "Title", () -> "Message", 0, notificationType);
+    List<SvgIcon> statusIcons =
+        notification(helper)
+            .getChildren()
+            .filter(HorizontalLayout.class::isInstance)
+            .flatMap(Component::getChildren)
+            .filter(SvgIcon.class::isInstance)
+            .map(SvgIcon.class::cast)
+            .toList();
+
+    assertEquals(1, statusIcons.size());
+    assertEquals(expectedIconName, statusIcons.getFirst().getElement().getAttribute("data-lucide"));
   }
 
   @AfterEach
@@ -160,7 +275,7 @@ class NotificationHelperIsolationTest {
 
     assertTrue(referenceNotice.getElement().getThemeList().contains("cosmos-reference"));
     assertEquals(4200, referenceNotice.getDuration());
-    assertEquals(Notification.Position.TOP_CENTER, referenceNotice.getPosition());
+    assertEquals(Notification.Position.TOP_END, referenceNotice.getPosition());
     assertTrue(message(helper).getText().contains("Message"));
     window(session());
     NotificationHelper.getInstance().showTextNotification(() -> "Other window", type);
@@ -230,7 +345,7 @@ class NotificationHelperIsolationTest {
     assertEquals(messageText.get(), messageParagraph.getText());
     assertEquals(0, messageParagraph.getChildren().count());
     assertEquals(3000, textNotification.getDuration());
-    assertEquals(Notification.Position.TOP_CENTER, textNotification.getPosition());
+    assertEquals(Notification.Position.TOP_END, textNotification.getPosition());
     window(session());
     show("Hinweis im anderen Fenster");
     Notification otherNotification = notification(NotificationHelper.getInstance());

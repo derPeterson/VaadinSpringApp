@@ -997,7 +997,9 @@ vaadin-combo-box-item.portal-pagination-option {
 vaadin-notification-card[theme~="cosmos-reference"] {
     --account-notification-color: var(--cosmos-primary-text-color);
     max-width: calc(100vw - 24px);
-    margin-top: 61px;
+}
+vaadin-notification-card[theme~="cosmos-notification-top"] {
+    margin-top: var(--cosmos-topbar-height, 0px);
 }
 vaadin-notification-card[theme~="cosmos-reference-error"] {
     --account-notification-color: var(--cosmos-error-color);
@@ -1012,7 +1014,7 @@ vaadin-notification-card[theme~="cosmos-reference"]::part(overlay) {
     box-sizing: border-box;
     width: 520px;
     max-width: calc(100vw - 24px);
-    max-height: calc(100dvh - 89px);
+    max-height: calc(100dvh - 24px);
     overflow: auto;
     border: 1px solid var(--cosmos-border-color);
     border-left: 3px solid var(--account-notification-color);
@@ -1020,11 +1022,13 @@ vaadin-notification-card[theme~="cosmos-reference"]::part(overlay) {
     background: var(--cosmos-raised-background);
     box-shadow: 0 12px 30px color-mix(in srgb, var(--cosmos-color-black) 60%, transparent);
 }
+vaadin-notification-card[theme~="cosmos-reference"][theme~="cosmos-notification-top"]::part(overlay) {
+    max-height: calc(100dvh - var(--cosmos-topbar-height) - 24px);
+}
 vaadin-notification-card[theme~="cosmos-reference"]::part(content) {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 12px 14px 16px;
 }
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-horizontal-layout {
     flex: 1;
