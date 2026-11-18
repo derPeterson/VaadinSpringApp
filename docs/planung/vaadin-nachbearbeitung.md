@@ -81,8 +81,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Vorhandene JUnit-Erwartungen und offenen Browser-Testbedarf an die neue Meldungsform
   anpassen; keine bisherigen Prüfregeln abschwächen.
 
-- [ ] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 3. Mail-Test: Prüfung erst bei „Test-E-Mail senden“
 

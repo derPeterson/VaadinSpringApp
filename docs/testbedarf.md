@@ -7,8 +7,8 @@
   Mailqueue-Assistenten, Anmeldeanbietern und 2FA prüfen. Ungültige Text-, E-Mail-,
   Zahlen- und Dauerwerte bleiben vor dem Speichern unmarkiert; danach passende
   rote Markierungen und konkrete Notifications ohne Fehlertext unter dem Feld.
-  Bei der allgemeinen Konfiguration nennt die Meldung das erste betroffene Feld
-  und darunter die Regel. Änderungen entfernen jeweils die alte Markierung;
+  Die Meldung enthält direkt die konkrete Regel des ersten betroffenen Feldes,
+  ohne zusätzliche Feldnamen-Zeile. Änderungen entfernen jeweils die alte Markierung;
   Sprachwechsel erhält Werte und übersetzt die offene Notification.
   Unlesbare Zahlen bei leerem Modellwert dürfen weder Standardwerte noch
   unbegrenzte Aufbewahrung speichern. Wirklich leere Felder behalten ihren bisherigen

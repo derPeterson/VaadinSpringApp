@@ -935,7 +935,7 @@ class AdminConfigurationGroupTest {
     "de,EMAIL_QUEUE_CAPACITY,0", "en,EMAIL_QUEUE_CAPACITY,0",
     "de,EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,PT0S", "en,EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,PT0S"
   })
-  void savingInvalidConfigurationNamesTheFieldAndRuleWithoutInlineText(
+  void savingInvalidConfigurationReportsTheConcreteRuleWithoutInlineText(
       String language, ConfigEntry entry, String invalidValue) {
     localeReference.set(Locale.forLanguageTag(language));
     configurationSection.showGroup(ConfigurationCatalog.group(entry));
@@ -976,7 +976,7 @@ class AdminConfigurationGroupTest {
         messages.getBaseFailedTitle(),
         ((Span) ReflectionTestUtils.getField(notificationHelper, "titleText")).getText());
     assertEquals(
-        messages.getAdminConfigEntryLabel(entry) + "\n" + rule,
+        rule,
         ((Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText")).getText());
   }
 

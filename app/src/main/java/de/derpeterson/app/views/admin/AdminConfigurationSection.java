@@ -1073,10 +1073,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       NotificationHelper.getInstance()
           .showTextNotification(
               messageProperties::getBaseFailedTitle,
-              () ->
-                  messageProperties.getAdminConfigEntryLabel(invalidConfigEntry)
-                      + "\n"
-                      + validateValue(invalidConfigEntry, invalidSubmittedValue),
+              () -> validateValue(invalidConfigEntry, invalidSubmittedValue),
               NotificationHelper.NotificationType.ERROR);
     }
 

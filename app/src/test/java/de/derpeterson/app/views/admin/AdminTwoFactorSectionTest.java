@@ -116,9 +116,7 @@ class AdminTwoFactorSectionTest {
 
   private void assertRangeNotification() {
     assertEquals(
-        messageProperties.getTwoFactorInactivityDuration()
-            + "\n"
-            + messageProperties.getTwoFactorInactivityRange(),
+        messageProperties.getTwoFactorInactivityRange(),
         ((Paragraph) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"))
             .getText());
   }

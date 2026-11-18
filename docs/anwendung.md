@@ -79,8 +79,8 @@ leeres neues Passwort das bestehende unverändert. Änderungen nehmen jeweils di
 alte Feldmarkierung zurück. Unlesbare Datumseingaben bleiben vom Änderungsschutz erfasst.
 
 Die gesamte Konfiguration prüft Eingaben ebenfalls beim Speichern: Felder bleiben
-bis dahin ohne rote Fehlermarkierung. Bei ungültigen Werten stehen Feldbezeichnung
-und konkrete Regel in der Notification, ohne Fehlertext unter der Eingabe. Änderungen
+bis dahin ohne rote Fehlermarkierung. Bei ungültigen Werten steht die konkrete Regel
+in der Notification, ohne zusätzliche Feldnamen-Zeile oder Fehlertext unter der Eingabe. Änderungen
 nehmen die jeweilige Markierung zurück. Das gilt auch für die Anmeldeanbieter und
 den Zeitraum der 2FA-Inaktivitätsregel. Ein unlesbarer Zahlenwert gilt nicht als
 leerer Wert; die vorhandenen Regeln für Standardwerte und unbegrenzte Aufbewahrung

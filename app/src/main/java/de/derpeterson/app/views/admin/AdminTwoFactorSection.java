@@ -501,10 +501,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       NotificationHelper.getInstance()
           .showTextNotification(
               messageProperties::getBaseFailedTitle,
-              () ->
-                  messageProperties.getTwoFactorInactivityDuration()
-                      + "\n"
-                      + messageProperties.getTwoFactorInactivityRange(),
+              messageProperties::getTwoFactorInactivityRange,
               NotificationHelper.NotificationType.ERROR);
       return;
     } catch (RuntimeException failure) {
