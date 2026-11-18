@@ -225,11 +225,19 @@ Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 
 **Ursachenanalyse und Korrektur freigegeben.**
 
-- [ ] Den fehlerhaften Fokusrahmen der TextArea untersuchen und mit dem korrekt
+- [x] Den fehlerhaften Fokusrahmen der TextArea untersuchen und mit dem korrekt
       dargestellten Fokusrahmen des TextField vergleichen.
-- [ ] Die Ursache klären und die TextArea-Fokusdarstellung an den bestehenden
+- [x] Die Ursache klären und die TextArea-Fokusdarstellung an den bestehenden
       TextField-Standard angleichen. Relevante TextArea-Einsatzstellen berücksichtigen.
-- [ ] Den TextField-Standard als Referenz erhalten; keine neue Fokusgestaltung einführen.
+- [x] Den TextField-Standard als Referenz erhalten; keine neue Fokusgestaltung einführen.
+
+Technisch umgesetzt, Sichtung offen: Mail-Test, Mitteilungsentwurf und Tickettext
+hatten `resize:vertical` zusammen mit `overflow:hidden` am TextArea-Host. Das
+beschneidet den außerhalb der inneren Fläche gezeichneten Fokusrahmen. Der Griff
+liegt nun am öffentlichen `input-field`-Part, dessen native Scrollfunktion erhalten
+bleibt; die Host-Beschneidung entfällt. Mindesthöhen, Farben und gemeinsame
+Fokusregeln bleiben erhalten. Prettier und Stylelint erfolgreich. Größenänderung
+und sichtbarer Rahmen sind im zentralen Browser-Testbedarf nachzuprüfen.
 
 Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 

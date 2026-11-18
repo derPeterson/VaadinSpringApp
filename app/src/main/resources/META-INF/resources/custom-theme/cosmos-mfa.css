@@ -450,11 +450,10 @@
 
 .cosmos-theme vaadin-text-area.support-message-input {
     min-height: 144px;
-    overflow: hidden;
-    resize: vertical;
 }
 
 .cosmos-theme vaadin-text-area.support-message-input::part(input-field) {
+    resize: vertical;
     box-sizing: border-box;
     min-height: 122px;
     padding: 10px 14px;

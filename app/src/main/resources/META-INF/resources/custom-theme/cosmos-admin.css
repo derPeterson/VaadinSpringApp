@@ -1267,13 +1267,13 @@ vaadin-app-layout.cosmos-reference-admin #admin-notifications-recipients::part(c
     color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
-/* Die native Textarea bleibt bedienbar; nur ihr Host bekommt den vertikalen Griff. */
+/* Der Griff gehört zur Eingabefläche. Ein abschneidender Host würde den äußeren
+ * Fokusrahmen der nativen Fläche verbergen. */
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field {
-    resize: vertical;
-    overflow: hidden;
     min-height: 144px;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field::part(input-field) {
+    resize: vertical;
     box-sizing: border-box;
     min-height: 122px;
     padding: 10px 14px;
@@ -1711,13 +1711,12 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-field::pa
     box-sizing: border-box;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::part(input-field) {
+    resize: vertical;
     min-height: 144px;
     box-sizing: border-box;
     padding-block: 10px;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-field {
-    resize: vertical;
-    overflow: hidden;
     min-height: 168px;
 }
 

@@ -2,6 +2,14 @@
 
 ## Browser-Tests
 
+- **TextArea-Fokusrahmen und Größenänderung — offen.**
+  In DE/EN auf Desktop/Smartphone Mail-Test, Mitteilungsentwurf und Ticketnachricht
+  mit TextField vergleichen: Fokusrahmen vollständig außen sichtbar, ohne abgeschnittene
+  Seiten oder Ecken. Vertikale Größenänderung auf Desktop, längere Texte, Scrollen,
+  Löschen-Button, Fehlerzustand und unveränderte Mindesthöhen prüfen. Der Griff liegt
+  jetzt auf der nativen Eingabefläche statt auf einem abschneidenden Host.
+  Kein Browserlauf freigegeben; manuelle Abnahme steht aus.
+
 - **Einheitliche Schließen-Icons — offen.**
   In DE/EN auf Desktop/Smartphone Glockenvorschau, Nachrichtendialog,
   Sammel-Lesebestätigung, Passwort/E-Mail/Profilbild, Kontolöschung/-deaktivierung,
