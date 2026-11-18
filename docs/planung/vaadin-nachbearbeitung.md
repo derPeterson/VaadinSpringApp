@@ -1,178 +1,127 @@
-# Abarbeitungsliste: Formulare, Benachrichtigungen und AvatarGroup
+# Offene Nachbearbeitungen
 
-**Stand: Punkte 1–13 umgesetzt; manuelle Abnahme offen.**
+**Stand: Punkt 9 ist nicht vom Benutzer abgenommen; Nachbesserungen stehen aus.**
 
-Die Anwesenheitsauswahl bleibt auf Benutzerentscheidung in ihrer bisherigen
-Darstellung; der uncommittete Farbversuch wurde zurückgenommen.
+Die neue Nachbearbeitung ist zur Bearbeitung freigegeben. Punkte 1 und 2 liefern
+zunächst Bestandsaufnahme und Vorschläge; Gestaltungsänderungen daraus benötigen
+die gemeinsame Abstimmung. Die Korrekturen aus Punkten 3–5 sind beauftragt.
+Je Punkt Review und aussagekräftigen Commit durchführen. Keine Browserläufe;
+notwendigen Browsernachtest im zentralen Testbedarf erhalten.
 
-Diese Liste konkretisiert die nächsten vereinbarten Arbeiten des
-[Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md). Die Gesamtumsetzung
-bleibt offen. Ausgangsstand ist `86f9cb25` auf
+Die übrigen bisherigen Nachbearbeitungen sind abgeschlossen und abgenommen.
+Dieser Plan enthält den offenen Restpunkt und neu aufgenommene Aufgaben des
+[Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md).
+Die Gesamtumsetzung bleibt offen; aktueller Branch ist
 `codex/vaadin-komponenten-folgearbeiten-5`.
 
-## Gemeinsamer Ablauf
+## Neue Nachbearbeitung – Punkt 1: Badge-Größen analysieren und vereinheitlichen
 
-- Das ausdrückliche Go liegt vor. Zuerst diese Liste prüfen und committen,
-  anschließend die Pakete gemäß den folgenden Regeln abarbeiten.
-- Punkte 1–13 einzeln abarbeiten: Änderungen umsetzen, passende vorhandene
-  JUnit-Tests anpassen beziehungsweise sinnvolle Regressionen ergänzen und ausführen,
-  anschließend Review und **jeweils einen eigenen Commit** erstellen.
-- Commit-Messages auf Deutsch, aussagekräftig und in abgeschlossener Form schreiben.
-  Prüfungen und wesentliche Entscheidungen kurz berichten.
-- Verbindliche Formatierungs- und Stilprüfungen gemäß `AGENTS.md` ausführen.
-  Bei Reviews die Lesbarkeit der geänderten Klassen prüfen; keine nebenläufige
-  Projektbereinigung eröffnen.
-- **Keine Browserläufe starten.** Offene automatisierte Browserprüfungen zentral in
-  [Testbedarf](../testbedarf.md) ergänzen oder bestehende Einträge aktualisieren.
-  Menschliche Sichtung erfolgt später durch den Benutzer; Abnahmen im
-  [manuellen Katalog](../manual-tests/README.md#hum-01) festhalten.
-- Alle betroffenen Texte und dynamischen Meldungen auf Deutsch und Englisch pflegen.
-  Vorhandene Cosmos-Tokens und native Vaadin-Komponenten verwenden.
-- Bestehende Berechtigungen, serverseitige Sicherheitsprüfungen, Versand- und
-  Konsistenzregeln erhalten. Ein Komponentenwechsel allein erweitert keine Rechte.
-- Bei einer notwendigen fachlichen Entscheidung oder einer fehlenden nativen API
-  die konkrete Lücke erklären und vor der davon abhängigen Sonderlösung nachfragen.
-  Unabhängige freigegebene Punkte können weiterbearbeitet werden.
-- Kein automatischer Merge, Release oder Abschluss des gesamten Komponentenumbaus.
+**Bestandsaufnahme und Vorschlag freigegeben; Gestaltung anschließend abstimmen.**
 
-## Gemeinsames Validierungsverhalten für Punkte 2, 3, 4 und 7
+- [ ] Projektweit die Badge-Einsatzstellen und ihre aktuellen Höhen erfassen und
+      eine verständliche Übersicht erstellen.
+- [ ] Einen Vorschlag für zentrale Größen-Tokens mit benannten Abstufungen
+      (beispielsweise XS, S, M und L) vorlegen, nahe an den bisherigen Größen.
+      Nur tatsächlich sinnvolle Größen vorsehen; weitere Abstufungen bei Bedarf begründen.
+- [ ] Als projektweite Vorgabe berücksichtigen: Badges innerhalb eines fachlich
+      zusammengehörigen Bereichs erhalten eine einheitliche Größe, insbesondere
+      dieselbe Höhe. Unterschiedliche Beschriftungen oder Zustandsfarben allein
+      begründen keine Größenunterschiede. Die vier Badges im Benachrichtigungs-Overlay
+      sind ein Beispiel für diese allgemeine Regel.
+- [ ] Bewusste Hervorhebungen dürfen eine größere Größenstufe verwenden, etwa die
+      Limitangabe bei „Geräte und Sitzungen“. Größen nach fachlicher Funktion und
+      Gewichtung zuordnen; gleichartige Badges im jeweiligen Themenbereich gleich gestalten.
+- [ ] Vorschlag gemeinsam abstimmen; die Umsetzung erst nach Freigabe beginnen.
 
-- Vor der jeweiligen Aktion keine roten Markierungen allein durch Eingeben,
-  Leeren oder Verlassen eines Feldes.
-- Erst bei Speichern, Senden beziehungsweise Vorschau auf dem Server prüfen,
-  bevor die Fachaktion ausgeführt wird.
-- Betroffene Felder rot markieren, aber **keine Fehlertexte unter den Feldern**
-  anzeigen. Bestehende normale Feldhilfen bleiben erhalten.
-- Eine Notification mit der Überschrift **„Fehlgeschlagen“ / „Failed“** und
-  konkreter Erklärung anzeigen. Keine zusätzliche Zeile mit dem Feldnamen vor
-  dem Fehlertext einfügen. Eine fachlich sinnvolle Erwähnung im Satz bleibt möglich.
-- Prüfungen nachvollziehbar von oben nach unten führen. Beim Bearbeiten eines
-  Feldes dessen alte Markierung zurücknehmen; bei der nächsten Aktion erneut prüfen.
-- Gezielte Zeilenumbrüche nur dort verwenden, wo inhaltlich verschiedene Aussagen
-  getrennt werden. Nicht automatisch nach jedem Satz umbrechen.
-- Bereits passendes Verhalten beibehalten. Pflichtangaben, erlaubte Leerwerte,
-  technische Fehler, Rechte und fachliche Sperren weiterhin unterscheiden.
+## Neue Nachbearbeitung – Punkt 2: Eingaben, Buttons und Formularschrift erfassen
 
-## 1. Benutzer anlegen und bearbeiten: Rollen und Switches
+**Bestandsaufnahme und Vorschlag freigegeben; Änderungen anschließend abstimmen.**
 
-- Rollen-Auswahl auf Desktop nur in der **linken Spalte** anzeigen, wie Geschlecht
-  in der darüberliegenden Feldgruppe. Die rechte Spalte bleibt leer.
-- Zugang gesperrt, Verifikation und Entwicklerkonto durch native **Switches** ersetzen.
-- Jeder Switch steht in einer eigenen Zeile über **beide Spalten**: technisch
-  Spaltenüberspannung beziehungsweise Colspan 2, kein Rowspan.
-- Auf Smartphone die vorhandene einspaltige Anordnung beibehalten.
-- Beschriftungen, Untertexte und Fachregeln erhalten. Auf ausdrückliche Rückmeldung
-  bleiben die bisherigen Sichtbarkeitsregeln bestehen: Verifikation und Entwicklerkonto
-  sind nur bei der berechtigten Anlage verfügbar. Im Bearbeitungsdialog wird der
-  vorhandene Schalter für die administrative Sperre umgestellt.
+- [ ] Alle verwendeten Eingabekomponenten erfassen, nicht nur Textfelder:
+      unter anderem TextAreas, Passwort-, Zahlen-, Datums- und Dauerfelder,
+      ComboBox/Select, Mehrfachauswahl, Checkboxen, Switches und weitere vorhandene Typen.
+- [ ] Je Variante die aktuelle Höhe, Einsatzstellen und maßgeblichen Größenregeln
+      auflisten. Bei mehrzeiligen oder zusammengesetzten Komponenten die eigentliche
+      Eingabefläche von Beschriftung, Hilfetext und Gesamthöhe unterscheiden.
+- [ ] Alle gerahmten Buttons einschließlich reiner Icon-Buttons ebenso erfassen:
+      Höhe, Einsatzstellen und Größenregeln gegenüberstellen.
+- [ ] Prüfen, ob gleichartige Komponenten innerhalb zusammengehöriger Formularbereiche
+      einheitlich dimensioniert sind. Bewusste funktionale Größenunterschiede von
+      unbeabsichtigten Abweichungen unterscheiden.
+- [ ] Die Schriftgestaltung in Formularen und vergleichbaren Bedienbereichen mit
+      den vorhandenen Typografie-Tokens abgleichen und Abweichungen ausweisen,
+      insbesondere bei Schriftgröße, Schriftgewicht und Zeilenhöhe.
+      Individuelle Gestaltung auf der Startseite gehört nicht zu dieser Prüfung.
+- [ ] Eine verständliche Übersicht und einen Vorschlag zur Vereinheitlichung anhand
+      vorhandener Tokens vorlegen; nötige Ergänzungen gesondert begründen.
+      Änderungen erst nach gemeinsamer Abstimmung und Freigabe umsetzen.
 
-- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+## Neue Nachbearbeitung – Punkt 3: Positionssprung zwischen Zahlenwert und Placeholder
 
-## 2. Konfiguration: Fehlertexte ohne vorangestellten Feldnamen
+**Analyse einschließlich Screenshot-Messung und Korrektur freigegeben.**
 
-- Gesamte Konfiguration einschließlich eigener Speicherabläufe prüfen.
-- Die zusätzliche Feldnamen-Zeile aus Fehlernotifications entfernen. Beispiel:
-  nach „Fehlgeschlagen“ direkt „Bitte eine gültige URL mit http:// oder https:// eingeben.“
-  anzeigen; keine eigene Zeile „Basis-URL“ davor.
-- Ebenso beim Anwendungsnamen und allen übrigen Validierungen vorgehen.
-- Alle betroffenen Fehlertexte auf Verständlichkeit, fachliche Richtigkeit und
-  Wiederholungen prüfen. Rote Feldmarkierungen erhalten.
-- Vorhandene JUnit-Erwartungen und offenen Browser-Testbedarf an die neue Meldungsform
-  anpassen; keine bisherigen Prüfregeln abschwächen.
+- [ ] Den gemeldeten Rechtsversatz beim Löschen eines Zahlenwertes untersuchen:
+      Sowohl im Cosmos-Dauerfeld mit Einheitenauswahl als auch im normalen Zahlenfeld
+      springt die Darstellung beim Wechsel zum Placeholder nach rechts.
+- [ ] Bei der späteren Bearbeitung die beiden bereitgestellten Screenshots ausmessen
+      und die Positionen von Wert und Placeholder vergleichen. Die Aufnahmen haben
+      unterschiedliche Bildbreiten; die Lage im jeweiligen Feld berücksichtigen.
+- [ ] Ursache anhand der verwendeten Vaadin-Komponenten und unserer CSS-Regeln klären;
+      insbesondere den Einfluss des beim Leeren verschwindenden Löschen-Buttons prüfen.
+      Schriftgröße oder eine Vaadin-Eigenheit nicht ungeprüft als Ursache annehmen.
+- [ ] Den Positionssprung nach geklärter Ursache für beide Feldtypen beheben,
+      ohne Wert-, Placeholder- oder Bedienverhalten unbeabsichtigt zu ändern.
 
-- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 
-## 3. Mail-Test: Prüfung erst bei „Test-E-Mail senden“
+- Gefüllt: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-aea08c88-53e0-4a46-b859-1c5351f870b1.png`
+- Placeholder: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-6a8e74e0-d580-443e-80cf-28af9f8c5fc7.png`
 
-- Das gemeinsame Validierungsverhalten auf die gesamte Mail-Test-Eingabe anwenden.
-- Das Leeren eines Feldes darf vor dem Senden keine rote Markierung auslösen.
-- Bei „Test-E-Mail senden“ die jeweiligen Fehler markieren und konkret erklären,
-  beispielsweise „Bitte geben Sie einen Betreff ein.“
-- Keine Inline-Fehler oder zusätzliche Feldnamen-Zeile anzeigen. Änderungen nehmen
-  die jeweilige Markierung zurück.
-- Bestehende Versand-, Zugriffs- und Verfügbarkeitsbedingungen erhalten.
+## Neue Nachbearbeitung – Punkt 4: Fokusrahmen bei TextAreas korrigieren
 
-- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+**Ursachenanalyse und Korrektur freigegeben.**
 
-## 4. Ticketsystem: Formulare und Nachrichtensenden vereinheitlichen
+- [ ] Den fehlerhaften Fokusrahmen der TextArea untersuchen und mit dem korrekt
+      dargestellten Fokusrahmen des TextField vergleichen.
+- [ ] Die Ursache klären und die TextArea-Fokusdarstellung an den bestehenden
+      TextField-Standard angleichen. Relevante TextArea-Einsatzstellen berücksichtigen.
+- [ ] Den TextField-Standard als Referenz erhalten; keine neue Fokusgestaltung einführen.
 
-- Die Formulare und Eingaben des Ticketsystems vollständig gegen das gemeinsame
-  Validierungsverhalten prüfen. Bereits richtige Stellen beibehalten.
-- Insbesondere „Nachricht senden“ beziehungsweise „Antwort hinzufügen“ wie die
-  Sendeaktion im Mail-Test behandeln: Prüfung bei der Aktion, nicht schon beim Leeren.
-- Betroffene Felder markieren und konkrete Fehlernotifications ohne Inline-Texte
-  oder zusätzliche Feldnamen-Zeile anzeigen.
-- Rücknahme alter Markierungen, Sprachwechsel sowie fachliche Unterschiede zwischen
-  Antworten und internen Vermerken berücksichtigen. Sichtbarkeit und Rechte erhalten.
+Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 
-- [x] Prüfung, nötige Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+- TextArea mit Fehler: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-84763deb-e0ed-413b-8989-93da7d25cf51.png`
+- TextField als Soll: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-8834ddfe-7630-41a2-865d-b4a49cda3fdb.png`
 
-## 5. Ticketsystem: Sicherheitshinweis beim internen Vermerk
+## Neue Nachbearbeitung – Punkt 5: Empfänger-Overlay kompakter im gemeinsamen Stil gestalten
 
-- Nach dem ersten Satz des Sicherheitshinweises einen bewussten Zeilenumbruch setzen.
-- Die Warnung vor Passwörtern, Authenticator-Geheimschlüsseln und Ersatzcodes von
-  der Erklärung der Leserechte trennen.
-- Wortlaut und Gestaltung beibehalten; die gleiche inhaltliche Trennung in Englisch
-  umsetzen. Die Änderung betrifft den Hinweis bei internen Vermerken.
+**Umsetzung freigegeben; konkretisiert den bisherigen offenen Punkt 9. Abnahme bleibt offen.**
 
-- [x] Umsetzung und passende Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+- [ ] Das an der Avatargruppe verankerte Overlay beibehalten. Die zuletzt gewünschte
+      Variante ist kein mittiger Dialog mit abgedunkeltem Seitenhintergrund.
+- [ ] Den vorhandenen Dialogstil für die Gestaltung aufgreifen: Header mit dem
+      bestehenden Accounts-/Personengruppen-Icon (zwei Personen), Titel „Empfänger“
+      und gemeinsamem Schließen-Button; darunter eine Trennlinie.
+- [ ] Den Content-Bereich mit der dafür bestehenden, vom Header abgesetzten
+      Hintergrundfläche gestalten. Vorhandene Cosmos-Farben und Abstände verwenden.
+- [ ] Die Suche nach Name und E-Mail mit sichtbarer Lupe wie in den vorhandenen
+      Filtern gestalten. Reihenfolge: Header, Suche, Empfängerliste.
+- [ ] Die Größe am Inhalt ausrichten und eine Maximalbreite statt unnötig großer
+      fester Breite verwenden; auf kleinen Bildschirmen den verfügbaren Platz einhalten.
+- [ ] Höchstens fünf Empfängerzeilen gleichzeitig anzeigen, weitere Einträge innerhalb
+      der Liste scrollbar machen. Bei beispielsweise zwei Empfängern soll die Höhe
+      entsprechend schrumpfen; keinen leeren Listenbereich reservieren.
+- [ ] Die native Liste mit Avatar, Name und sekundärer E-Mail beibehalten und ihre
+      Zeilen an den bestehenden Tabellenfarben der Benutzerverwaltung ausrichten,
+      einschließlich abwechselnder Zeilenflächen. Details innerhalb dieses Rahmens
+      bei der späteren Bearbeitung sinnvoll abstimmen.
+- [ ] Nach Umsetzung gemeinsam sichten; die AvatarGroup bleibt bis zur ausdrücklichen
+      Abnahme offen.
 
-## 6. Ticketsystem: deaktiviertes „Anleitung senden“ untersuchen
+Screenshot-Referenz für die spätere Bearbeitung (lokale temporäre Datei):
 
-- Ausgangsfall: Ticket „Hilfe beim Authenticator-Zugriff“, Status „In Bearbeitung“,
-  angemeldete Person ist zugeordneter Bearbeiter, Button „Anleitung senden“ ist deaktiviert.
-- Die Aktivierungsbedingungen in Oberfläche und Fachlogik prüfen. Der Screenshot
-  allein bestätigt noch keinen Anwendungsfehler.
-- Einen berechtigten Sperrgrund erklären. Falls das Verhalten falsch ist, die Ursache
-  beheben und mit einer gezielten Regression absichern.
-- Aktuell freigegebener Vertrag: Entwicklerkonten dürfen die Anleitung als öffentliche
-  Ticketnachricht erhalten, ohne E-Mail-Auftrag. Die Vorschau warnt ganz oben vor
-  Überschrift und Einleitung der Anleitung gelb vor dem ausbleibenden Mailversand;
-  die Erfolgsmeldung bestätigt nur die Ticketablage.
-  Reguläre Konten behalten Ticketnachricht und E-Mail-Auftrag.
-- Wiederholung nach 60 Sekunden für beide Kontotypen mit erneuter Vorschau und
-  Bestätigung. Bei regulären Konten sperrt zusätzlich der eigene letzte offene
-  Mailauftrag; dieser Grund hat Vorrang. Der native Tooltip am umgebenden Layout
-  nennt den aktuellen Grund mit fett hervorgehobenem „Gesperrt:“ und bleibt auch bei
-  deaktiviertem Button erreichbar. Der Status wird während der Wartephase nachgeladen.
-- Zuweisung, Status, Kontofreigabe und Verifikation bleiben maßgeblich. JUnit prüft
-  die fachlichen Grenzen und Statuswechsel. Die automatische Freigabe nach der
-  Wartezeit wurde vom Benutzer bestätigt; weitere manuelle Varianten stehen im
-  Abnahmekatalog, der automatisierte Browsernachtest bleibt im Testbedarf.
-- Keine fachliche Sperre nur entfernen, um den Button anklickbar zu machen.
-  Nötige neue Vertragsentscheidungen mit dem Benutzer klären.
+`C:/Users/chris/AppData/Local/Temp/codex-clipboard-95e51db4-922e-4250-88ff-6a81ff700104.png`
 
-- [x] Ursache geklärt, Ergebnis erklärt und nötige Korrektur geprüft.
-- [x] Review abgeschlossen und eigener Commit erstellt; bei unverändert richtigem
-      Verhalten nur die erforderliche Dokumentation beziehungsweise Tests committen.
-
-## 7. Benachrichtigungen: Prüfung bei der Vorschau
-
-- Gemeinsames Validierungsverhalten auf den Benachrichtigungsentwurf anwenden.
-- Erst beim Klick auf **„Vorschau“** prüfen, dann die betroffenen Felder rot markieren
-  und konkret erklären, was zu korrigieren ist.
-- Keine vorzeitige Rotmarkierung, keine Inline-Fehler und keine zusätzliche
-  Feldnamen-Zeile. Beim Bearbeiten alte Markierungen zurücknehmen.
-- Die bestehende Bindung zwischen gültigem Entwurf, Vorschau und tatsächlichem
-  Senden erhalten; Änderungen dürfen eine veraltete Vorschau nicht weiter freigeben.
-
-- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
-
-## 8. Benachrichtigungen: „Alle Benutzer“ als Switch
-
-- Die Checkbox für das Senden an **„Alle Benutzer“** durch einen nativen
-  Switch ersetzen.
-- Beschriftung, erklärenden Untertext, Empfängerauswahl und Funktion erhalten.
-- Dieser Punkt betrifft Benachrichtigungen, nicht das Ticketsystem.
-
-- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+## Restpunkt aus der bisherigen Nachbearbeitung
 
 ## 9. AvatarGroup: vollständige Empfängerliste über die Avatarreihe
 
@@ -188,91 +137,29 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Je Person Avatar und Name anzeigen; darunter mit Zeilenumbruch die E-Mail-Adresse
   in sekundärer Schrift.
 - Oben eine Suche nach **Name und E-Mail-Adresse** anbieten.
-- Die Liste scrollen lassen und ihre Höhe begrenzen: etwa 600–700 px als grober
-  Desktop-Richtwert, bei kleineren Fenstern und auf Smartphone passend zur verfügbaren Höhe.
+- Die Liste bei mehr als fünf Einträgen scrollen lassen und bei weniger Einträgen
+  schrumpfen lassen. Der neue Punkt 5 konkretisiert die Gestaltung und ersetzt
+  den früheren groben Höhenrichtwert von 600–700 px.
 
-### Technische Prüfung und Abnahme
+### Bestehende technische Grundlage
 
-- Zuerst anhand der tatsächlich verwendeten Vaadin-Version prüfen, was über öffentliche
-  native APIs möglich ist. Keine unbestätigte Annahme über Renderer oder Überlaufaktionen.
-- Falls eine Sonderlösung erforderlich ist, konkrete Lücke und native Alternative
-  vorlegen und vor dem Ersatz die Benutzerentscheidung abwarten.
-- Zusätzlichen Empfänger-Button, „Details“ und die darunter aufgeklappte Liste nur
-  dann entfernen, wenn der neue Einstieg die vollständige Funktion abdeckt.
-- Das bestehende offene AvatarGroup-Paket erst nach technisch vollständiger Umsetzung
-  **und ausdrücklicher Benutzerabnahme** aus dem Komponenten-Abgleich entfernen.
-  Technischer Commit allein ist keine Abnahme; nötige Browsernachtests bleiben zentral offen.
+Die native AvatarGroup dient als Vorschau. Für die vollständige Liste sind
+Popover, Suchfeld und Grid sowie der kleine gekapselte Ereignis-Listener
+bereits ausdrücklich genehmigt und umgesetzt; private Vaadin-APIs werden
+nicht verwendet. Die bisherige Details-Liste und das native Überlaufmenü sind
+durch diesen gemeinsamen Einstieg ersetzt.
 
-- [x] Native Möglichkeiten geprüft; Popover, Suchfeld, Grid und gekapselter
-      Ereignis-Listener ausdrücklich freigegeben. Keine private Vaadin-API.
-- [x] Freigegebene Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
-- [ ] Benutzer hat ausdrücklich abgenommen; offenes AvatarGroup-Paket bereinigt.
+### Noch offen
 
-## 10. Benachrichtigungs-Overlay: Titel und Statuslinie
+- [ ] Die unter neuem Punkt 5 festgehaltenen Nachbesserungen nach Startfreigabe bearbeiten.
+- [ ] Vereinbarte Änderungen umsetzen, passende JUnit-Regressionen prüfen und reviewen.
+- [ ] Ausdrückliche Benutzerfreigabe der Avatar-/Empfängergruppe erhalten.
+- [ ] Erst nach dieser Freigabe das offene AvatarGroup-Paket im Komponentenplan schließen
+      und diesen dann erledigten Restplan entfernen.
 
-- Unnötigen Einzug der Titel entfernen. Titel, Nachrichtentext und Metadaten sollen
-  links bündig stehen; Ursache der Abweichung prüfen.
-- Die linke Rahmen-/Akzentlinie auch bei gelesenen Karten anzeigen:
-  **ungelesen Blau**, **gelesen Grau** passend zur vorhandenen grauen Statusgestaltung.
-- Lesestatus von Ticketzuständen wie „Bereits übernommen“ fachlich getrennt halten.
-- Weitere Farben für mögliche künftige Zustände nur als spätere Möglichkeit festhalten,
-  jetzt keine zusätzlichen Zustände einführen.
-
-- [x] Umsetzung und passende Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
-
-## 11. Benachrichtigungsdialog: „Als gelesen markieren“ als Primary-Button
-
-- Den Button im Mitteilungsinhalt als nativen **Primary-Button in Blau** darstellen.
-- Schriftgröße, Höhe und Innenabstände an die vorhandenen Standardbuttons angleichen.
-- Den Abstand zum Kartenrand korrigieren; ungewöhnlich große Schrift und zu knappe
-  Randabstände auf lokale Sonderregeln prüfen und unnötige Regeln entfernen.
-- Funktion und übersetzte Beschriftung erhalten.
-
-- [x] Umsetzung und passende Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
-
-## 12. Benachrichtigungsdialog: Metadaten und Innenabstände
-
-- Einheitliche Lesereihenfolge in Vorschau, Übersicht und Dialog:
-  **Titel → Nachricht → Metadaten**. Übersicht und Overlay verwenden dasselbe Raster:
-  Titel und Nachricht links, Werkzeuge rechts über beide Zeilen, Metadaten darunter.
-- Übersicht und Detaildialog: Titel zur Nachricht **S**, Nachricht zu Metadaten
-  **M**. Kompaktes Overlay: **XS** und **S**. Vorhandene Cosmos-Tokens verwenden;
-  keine zusätzlichen Layoutgaps oder Nachrichtenränder addieren. Nach den Metadaten
-  entsteht kein zusätzlicher Abstand zum äußeren Kartenpadding.
-- Individuelle Pixelwerte dort durch die vorhandenen Cosmos-Tokens ersetzen.
-- Die Herkunft des äußeren Paddings prüfen: Aura-Standard, gemeinsamer Cosmos-Baustein
-  oder lokale Sonderregel. Vergleichbare Mitteilungskarten einbeziehen.
-- Für die geöffnete Mitteilung **L** (`--cosmos-space-l`, 16 px) als Innenabstand
-  verwenden, abgestimmt mit Punkt 13.
-- Die Darstellung später gemeinsam sichten. XL ist eine mögliche Nachjustierung,
-  wenn L zu gedrängt wirkt; nicht schon vor der Sichtung pauschal vergrößern.
-
-- [x] Umsetzung und passende Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
-
-## 13. Gesamtübersicht und kompaktes Overlay: Abstände vereinheitlichen
-
-- Unter „Alle Benachrichtigungen anzeigen“ den großen Leerraum über einzelnen
-  Mitteilungstiteln untersuchen, einschließlich Titelbutton und oberer Werkzeugleiste.
-- Titel und Nachricht in der linken Rasterspalte zeigen, Werkzeuge rechts über
-  beide Zeilen und Metadaten darunter. Für die Trennung zur Nachricht **S** verwenden;
-  die endgültige Wirkung beurteilt der Benutzer.
-- Für das äußere Padding gelten die zuletzt vereinbarten Werte:
-
-  | Mitteilungsdarstellung | Innenabstand |
-  | --- | --- |
-  | Gesamtübersicht | **L**, 16 px |
-  | Geöffnete Nachricht im Dialog | **L**, 16 px, siehe Punkt 12 |
-  | Kompaktes Benachrichtigungs-Overlay | **M**, 12 px |
-
-- Den Einfluss der linken Statuslinie auf die gemessenen Abstände prüfen.
-  Keine prozentualen oder halbierten Paddingwerte berechnen.
-- Die zuvor diskutierten 18–20 px beziehungsweise pauschal XL sind durch diese
-  Startwerte ersetzt. Bei zu gedrängter Wirkung kann nach Sichtung auf **XL**, 20 px,
-  nachjustiert werden.
-
-- [x] Umsetzung und passende Prüfungen abgeschlossen.
-- [x] Review abgeschlossen und eigener Commit erstellt.
+Die bestehende Umsetzung ist ein Zwischenstand, keine fachliche Abnahme.
+Berechtigungen, Empfängerauswahl und Versandregeln bleiben erhalten.
+Texte und dynamische Meldungen auf Deutsch und Englisch pflegen.
+Keine Browserläufe starten; offene automatisierte Prüfungen bleiben zentral im
+[Testbedarf](../testbedarf.md). Die menschliche Abnahme steht im
+[manuellen Katalog](../manual-tests/README.md#hum-01).

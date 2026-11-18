@@ -97,8 +97,8 @@ eine Notification erklärt den ersten Fehler in der Reihenfolge Empfänger, Betr
 Text. Änderungen entfernen nur die jeweilige Markierung. Ein Sprachwechsel erhält
 auch bewusst geleerte Entwürfe. Auch das Ticketsystem prüft Anfragen, Antworten und
 interne Vermerke erst beim Absenden und erklärt fehlenden oder zu langen Text konkret.
-Weitere Formulare
-sind noch nicht umgestellt.
+Bei Mitteilungsentwürfen löst die Vorschau die Prüfung aus; betroffene Felder
+werden markiert und eine konkrete Notification erklärt den ersten Fehler.
 
 ### Entwicklerkonten
 

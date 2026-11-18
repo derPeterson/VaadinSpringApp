@@ -9,9 +9,14 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
   Die Gesamtumsetzung bleibt ausdrücklich offen und wird auf
   `codex/vaadin-komponenten-folgearbeiten-5` fortgesetzt.
-  Formularvalidierung und rote Fehlermarkierungen in weiteren Formularen abgleichen;
-  das Teilpaket bleibt nach dem Zwischencommit ausdrücklich offen. Nächste Ansichten
-  und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
+  Die vereinbarte Nachbearbeitung ist abgeschlossen; allein
+  [Punkt 9, Avatar-/Empfängergruppe](docs/planung/vaadin-nachbearbeitung.md),
+  benötigt Nachbesserungen und die ausdrückliche Benutzerfreigabe.
+  [Neue Nachbearbeitung, Punkte 1–5](docs/planung/vaadin-nachbearbeitung.md):
+  Badge-, Eingabe-, Button- und Typografie-Bestandsaufnahme mit Vorschlägen sowie
+  Korrekturen an Zahlenfeldern, TextArea-Fokusrahmen und Empfänger-Overlay bearbeiten.
+  Größen-/Gestaltungsvorschläge aus Punkten 1 und 2 vor Umsetzung gemeinsam abstimmen.
+  Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
   Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
   gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
   unten erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
