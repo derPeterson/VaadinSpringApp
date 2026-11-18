@@ -236,8 +236,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Die Darstellung später gemeinsam sichten. XL ist eine mögliche Nachjustierung,
   wenn L zu gedrängt wirkt; nicht schon vor der Sichtung pauschal vergrößern.
 
-- [ ] Umsetzung und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 13. Gesamtübersicht und kompaktes Overlay: Abstände vereinheitlichen
 

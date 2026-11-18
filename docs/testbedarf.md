@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Nachrichtendialog: Abstände der Mitteilung — offen.**
+  In DE/EN auf Desktop/Smartphone mit kurzen und langen Inhalten prüfen: Kartenpadding
+  L, Metadaten oben S/unten M; Button innerhalb des Kartenrands. Keine Addierung
+  zusätzlicher Layoutgaps oder horizontales Überlaufen. Reine Tokenanpassung;
+  keine Browserfreigabe.
+
 - **Nachrichtendialog: Primary-Leseaktion — offen.**
   In DE/EN auf Desktop/Smartphone „Als gelesen markieren“ blau mit Standardschrift,
   Standardhöhe und ausreichend Kartenrand prüfen. Aktion, Bestätigung und Verhalten

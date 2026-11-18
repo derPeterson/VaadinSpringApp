@@ -576,7 +576,7 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     display: grid;
     gap: var(--cosmos-space-s);
     min-width: 0;
-    padding: var(--cosmos-space-xl);
+    padding: var(--cosmos-space-l);
     background: var(--cosmos-card-background);
     border: var(--cosmos-border-width) solid var(--cosmos-card-border);
     border-radius: var(--cosmos-control-radius);
@@ -649,10 +649,6 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     vaadin-dialog.cosmos-notification-dialog::part(content),
     vaadin-dialog.cosmos-notification-dialog::part(footer) {
         padding: var(--cosmos-dialog-compact-padding);
-    }
-
-    .cosmos-notification-detail-message {
-        padding: var(--cosmos-space-l);
     }
 }
 
@@ -1729,7 +1725,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-message {
     display: block;
     margin: 0;
-    padding: 16px;
+    padding: var(--cosmos-space-l);
     border: 1px solid var(--cosmos-border-color);
     border-radius: 10px;
     background: var(--cosmos-base-color);
@@ -1740,7 +1736,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-meta {
-    margin: 14px 0 20px;
+    margin: var(--cosmos-space-s) 0 var(--cosmos-space-m);
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-title {

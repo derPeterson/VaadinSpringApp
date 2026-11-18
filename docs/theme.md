@@ -350,6 +350,12 @@ Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls m
 Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
 [Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
 
+Die Nachrichtenkarte im geöffneten Dialog ist eine fachliche `Div`-Zusammensetzung.
+Ihr äußerer Innenabstand stammt aus `cosmos-notifications.css`, nicht aus Aura oder
+der nativen Card. Er ist einheitlich L; die Metadaten erhalten S nach oben und M
+nach unten. Frühere lokale 14-/20-px-Metadatenabstände sind entfernt. Die Werte
+gelten unabhängig von der Fensterbreite; der Dialogaußenraum bleibt getrennt.
+
 „Als gelesen markieren“ in einer geöffneten Nachricht ist ein nativer Primary-Button.
 Er übernimmt Schrift, Höhe und Innenabstände der gemeinsamen Cosmos-Buttonregeln;
 keine lokale Inline-/Tertiary-Sondergestaltung. Die Aktionszeile bleibt rechtsbündig
