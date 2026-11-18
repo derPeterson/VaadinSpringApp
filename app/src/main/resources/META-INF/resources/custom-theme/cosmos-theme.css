@@ -592,7 +592,7 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
     border: 1px solid var(--cosmos-control-border-color);
     border-radius: 9px;
     background: var(--cosmos-base-color);
-    color: var(--cosmos-text-color);
+    color: var(--cosmos-heading-color);
     box-shadow: none;
     font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     --vaadin-button-label-wrap: nowrap;
