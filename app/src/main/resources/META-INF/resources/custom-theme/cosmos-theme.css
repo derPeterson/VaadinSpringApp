@@ -975,6 +975,13 @@ vaadin-combo-box-item.portal-pagination-option {
 }
 
 /* Globale Rückmeldungen: eigener Titelname verhindert Kollisionen mit Inbox-Titelbuttons. */
+@media (min-width: 768px) {
+    /* Reserve für Seiten- und AppLayout-Scrollleisten; die übrigen nativen Randabstände bleiben. */
+    vaadin-notification-container {
+        padding-inline-end: max(env(safe-area-inset-right, 0px), var(--cosmos-space-2xl));
+    }
+}
+
 vaadin-notification-card[theme~="cosmos-reference"] {
     --account-notification-color: var(--cosmos-primary-text-color);
     max-width: calc(100vw - 24px);

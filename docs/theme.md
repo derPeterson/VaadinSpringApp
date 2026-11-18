@@ -356,6 +356,12 @@ Schweregrad, Symbole, Dauer und Fensterisolation bleiben erhalten.
 URL-Rückmeldungen erst nach der Navigation öffnen, damit der Zielrahmen feststeht.
 Manuelles Laden meldet Erfolg oder Fehler; automatisches Laden bleibt ohne Erfolgstoast.
 
+Notification-Überschriften verzichten auf abschließende Ausrufe- und Fragezeichen.
+Die gemeinsamen Titel lauten „Erfolgreich“/„Fehlgeschlagen“ beziehungsweise
+„Successful“/„Failed“. Statusseiten mit Erfolgs-/Fehlersymbol verwenden ebenfalls
+diese Titel. Nachrichtensätze, Links wie „Passwort vergessen?“ und echte Fragen
+in Bestätigungsdialogen behalten ihre bisherigen Satzzeichen.
+
 Die Notifications im Cosmos-Referenzstil verwenden den nativen Aura-Innenabstand
 der äußeren Karte. Der Inhaltsbereich erhält kein zusätzliches Padding; seine
 Anordnung und die Cosmos-Farben, Rahmen und Icons bleiben separat gestaltet.
@@ -367,6 +373,12 @@ Größenänderungen eines offenen Fensters. Bei noch unbekannter Fensterbreite g
 die untere Position. `cosmos-notification-top` koppelt den oberen Abstand an
 `--cosmos-topbar-height`; untere Meldungen reservieren keinen Headerabstand.
 Die nativen Bildschirmrandabstände berücksichtigen die Safe Area.
+Am Desktop erhält der native `vaadin-notification-container` zusätzlich einen
+rechten Abstand von `--cosmos-space-2xl` (24 px), mindestens jedoch die rechte
+Safe Area. Damit bleibt Platz für eine Seiten- oder AppLayout-Scrollleiste. Die
+Reserve gilt auch ohne sichtbare Scrollleiste; eine zusätzliche JavaScript-Messung
+ist nicht nötig. Oberer und unterer Abstand sowie die Smartphoneposition bleiben
+unverändert. Zuständig ist `cosmos-theme.css`.
 
 Statussymbole im Cosmos-Referenzstil: Information als blauer Info-Kreis, Erfolg
 als grüner Haken im Kreis, Warnung als gelbes Dreieck mit Ausrufezeichen und Fehler

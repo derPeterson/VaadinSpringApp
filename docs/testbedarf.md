@@ -81,9 +81,14 @@
   nachprüfen: ab 768 px oben rechts unter dem Header, darunter unten mittig ohne
   oberen Leerraum. Bei offenem Toast über den Grenzwert verkleinern/vergrößern;
   Inhalt, Dauer und Schließen bleiben erhalten. Header und System-/Bedienleisten
-  berücksichtigen, auch bei langen Meldungen und kleiner Fensterhöhe. Nur der
+  berücksichtigen, auch bei langen Meldungen und kleiner Fensterhöhe. Der
+  rechte Desktopabstand ist auf 24 px erweitert: mit und ohne Seiten-/AppLayout-
+  Scrollleiste ausreichend Abstand zur sichtbaren Leiste prüfen; oberer Abstand
+  und Smartphoneposition bleiben gleich. Nur der
   native Aura-Innenabstand bleibt; Warnung zeigt ein gelbes Dreieck, Fehler ein
-  rotes Kreuz im Kreis. JUnit prüft Position, Umschaltung, Icons und Fensterisolation;
+  rotes Kreuz im Kreis. Gemeinsame DE-/EN-Titel ohne Ausrufezeichen anzeigen;
+  Nachrichtentexte und Links wie „Passwort vergessen?“ bleiben unverändert.
+  JUnit prüft Position, Umschaltung, Icons und Fensterisolation;
   der sichtbare Browsernachtest ist für diesen Auftrag nicht freigegeben.
 
 - **Link-Statusseiten und Sicherheitshinweise: vereinheitlichte Icons — offen.**

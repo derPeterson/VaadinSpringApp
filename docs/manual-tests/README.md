@@ -154,7 +154,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Native AvatarGroup | Rahmen und Cosmos-Überlaufliste warten laut Katalog noch auf Sichtung; vollständige Details-Liste bleibt erhalten |
 | Gemeinsame Inbox-Pagination und zentrierte Seitenzahlen | Vom Benutzer nach den Vorher-/Nachher-Vergleichen von Benutzerverwaltung, Versandhistorie und Inbox in DE/EN auf Desktop/Smartphone abgenommen |
 | Löschsymbol in der Glockenvorschau nach Aura-Umstellung | Vom Benutzer in der laufenden Anwendung wieder sichtbar bestätigt und abgenommen; automatisierter DE-/EN-Nachtest separat offen |
-| Responsive globale Notifications und Statussymbole | Responsive Position, Aura-Innenabstand und vereinheitlichte Warn-/Fehlersymbole vom Benutzer abgenommen; automatisierte Browsernachtests separat offen |
+| Responsive globale Notifications und Statussymbole | Responsive Position, Aura-Innenabstand und Warn-/Fehlersymbole abgenommen; rechter Desktop-Randabstand von 24 px und Titel ohne Ausrufezeichen einschließlich Statusseiten warten auf Sichtung, automatisierte Browsernachtests separat offen |
 | DatePicker-Overlay | Rahmenlose Akzentaktionen und abgedunkelte Jahresspalte mit Trennlinie und nativer seitlicher Markierung vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | Checkbox-Markierung | Weiße Haken und Teilauswahlstriche in aktiven Checkboxen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | ComboBox-Overlayabstände | Gemeinsamer Außenabstand von 8 px für Einfach-/Mehrfachauswahl samt Pagination und 2 px zwischen Auswahlflächen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
