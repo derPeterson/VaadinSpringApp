@@ -783,7 +783,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     try {
       browserPage.waitForCondition(
           () -> (Boolean) area.evaluate("element => (" + scrollbarStyleValues + ")(element).ok"));
-    } catch (TimeoutError timeoutError) {
+    } catch (TimeoutError _) {
       // Die Einzelwerte machen sichtbar, welche Bedingung der gemeinsamen Leiste fehlt.
       fail("Cosmos-Scrollleiste nicht wie erwartet: " + area.evaluate(scrollbarStyleValues));
     }

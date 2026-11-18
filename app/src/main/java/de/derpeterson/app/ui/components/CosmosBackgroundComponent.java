@@ -12,6 +12,7 @@ public class CosmosBackgroundComponent extends Div {
 
   private static final String STARS_CLASS = "cosmos-stars";
   private static final String SPARK_CLASS = "cosmos-spark";
+  private static final String SHOOT_CLASS = "cosmos-shoot";
 
   public CosmosBackgroundComponent() {
     addClassName("cosmos-sky");
@@ -24,9 +25,9 @@ public class CosmosBackgroundComponent extends Div {
         createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--third"),
         createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--fourth"),
         createBackgroundLayerDiv("cosmos-moon"),
-        createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--first"),
-        createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--second"),
-        createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--third"),
+        createBackgroundLayerDiv(SHOOT_CLASS, "cosmos-shoot--first"),
+        createBackgroundLayerDiv(SHOOT_CLASS, "cosmos-shoot--second"),
+        createBackgroundLayerDiv(SHOOT_CLASS, "cosmos-shoot--third"),
         createBackgroundLayerDiv("cosmos-satellite"),
         createBackgroundLayerDiv("cosmos-drift"),
         createBackgroundLayerDiv("cosmos-nova"),

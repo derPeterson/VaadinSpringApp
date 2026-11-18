@@ -1646,14 +1646,10 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-panel-title {
-    font-size: var(--cosmos-font-size-title);
-    line-height: var(--cosmos-line-height-xl);
     font: 600 var(--cosmos-font-size-2xl)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-panel-description {
-    font-size: var(--cosmos-font-size-s);
-    line-height: var(--cosmos-line-height-s);
     margin: 3px 0 0;
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
