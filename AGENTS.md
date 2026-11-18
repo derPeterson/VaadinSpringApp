@@ -8,6 +8,11 @@
 - Aussagen der Dokumentation mit dem aktuellen Code abgleichen, soweit die Aufgabe
   davon abhängt. Abhängigkeiten (`node_modules/`), generierte Dateien, `data/` und
   `logs/` nicht pauschal durchsuchen.
+- Für Spring- und andere Bibliotheksfragen Context7 gezielt als Dokumentationszugang
+  nutzen und Quellen samt Version mit unseren Abhängigkeiten abgleichen. Die lokalen
+  Spring Tools ergänzen bei Bedarf Projekt-, Bean- und Konfigurationsdiagnosen;
+  Hinweise sind keine Freigabe für Quickfixes oder Versionsänderungen. Einrichtung
+  und Grenzen: [Spring-Dokumentation und lokale Diagnose](docs/codex-skills.md#spring-dokumentation-und-lokale-diagnose).
 - Zugangsdaten, `.env`, Datenbanken und Logs nicht ungefragt lesen.
 - Auf Deutsch kommunizieren.
 
@@ -212,6 +217,12 @@
   verwendeten Vaadin-Version prüfen. Passende native Flow-Komponenten bevorzugen
   und über deren öffentliche APIs, Theme-Varianten, Parts und vorhandene Cosmos-Tokens
   gestalten. Das gilt auch für Badges, Avatare, Karten und Auswahl-/Bestätigungsbausteine.
+- Für Vaadin-API-, Komponenten- und Theme-Fragen den eingerichteten Vaadin-Dokumentations-MCP
+  bevorzugen: Version aus `app/pom.xml` ermitteln, die passende stabile Minor-Reihe
+  sowie Java/Flow und Aura verwenden. Offizielle Vaadin-Skills ergänzen die Projektregeln;
+  ihre [Einordnung und Grenzen](docs/codex-skills.md#vaadin-dokumentationszugang-und-offizielle-skills)
+  beachten. Bei fehlendem MCP offizielle Versionsdokumentation oder lokale API-Quellen
+  verwenden und die Einschränkung benennen, keine API aus dem Gedächtnis erfinden.
 - Einfache Zeilen, Spalten und Formanordnungen bevorzugt mit passenden Vaadin-Layouts
   wie `HorizontalLayout`, `VerticalLayout` und `FormLayout` aufbauen, damit Anordnung,
   Abstände und Ausrichtung im Java-Code gut lesbar bleiben. Div-Container mit CSS

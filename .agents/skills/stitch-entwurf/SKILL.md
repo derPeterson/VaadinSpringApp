@@ -19,10 +19,15 @@ Nur wesentliche ungeklärte Entscheidungen erfragen, sonst mit dem vorhandenen S
 
 ## Zusammenarbeit mit Stitch
 
-Die vorhandene Stitch-CLI für Projektverwaltung, Uploads, Generierung und Downloads
-verwenden. Vor Aufrufen bei Bedarf die CLI-Hilfe beziehungsweise Payloadschemas prüfen.
-Fehlende Anmeldung oder ein CLI-Fehler erlauben keinen stillen Wechsel zur
-Webseitensteuerung. Bei einer tatsächlich fehlenden CLI-Funktion den nötigen
+Für Projektabfragen, Generierung und Bearbeitung den eingerichteten Stitch-MCP
+oder die vorhandene offizielle Stitch-CLI verwenden. Der MCP läuft über dieselbe
+CLI und deren Anmeldung; Uploads und Downloads weiterhin über die CLI erledigen.
+Vor Aufrufen den tatsächlich verfügbaren Werkzeugkatalog bzw. die CLI-Hilfe und
+Payloadschemas prüfen. Die offiziellen Design-Skills ergänzen diesen Ablauf;
+[Einrichtung und Grenzen](../../../docs/codex-skills.md#stitch-github-und-browserwerkzeuge)
+beachten. Keine zusätzlichen Frameworks, Browseragenten oder Zugangsschlüssel aus
+den Beispielen übernehmen. Fehlende Anmeldung oder ein Werkzeugfehler erlauben
+keinen stillen Wechsel zur Webseitensteuerung. Bei einer tatsächlich fehlenden CLI-Funktion den nötigen
 Browserfallback begründen und vorher mit dem Benutzer abstimmen.
 Auf Wunsch die CLI-Anmeldung selbst mit `stitch login` starten. Kontoauswahl und
 interaktive Freigaben führt der Benutzer durch. Danach den Canvas-Zugriff mit einem
