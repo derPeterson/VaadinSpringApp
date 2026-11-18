@@ -2137,6 +2137,7 @@ vaadin-combo-box-item.portal-pagination-option {
     min-width: 28px;
     height: 28px;
     min-height: 28px;
+    padding: 0;
     border-radius: 6px;
     background: var(--cosmos-base-color);
 }
