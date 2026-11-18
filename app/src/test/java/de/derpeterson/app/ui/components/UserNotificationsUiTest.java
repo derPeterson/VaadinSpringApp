@@ -4,7 +4,6 @@ import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -2923,8 +2922,8 @@ class UserNotificationsUiTest {
     notificationTitleTextField.setValue("Changed");
 
     assertFalse(notificationTitleTextField.isInvalid());
-    assertFalse(notificationBodyTextArea.isInvalid());
-    assertFalse(recipientMultiSelectComboBox.isInvalid());
+    assertTrue(notificationBodyTextArea.isInvalid());
+    assertTrue(recipientMultiSelectComboBox.isInvalid());
 
     notificationTitleTextField.clear();
     ReflectionTestUtils.invokeMethod(notificationTitleTextField, "validate");
@@ -2949,7 +2948,8 @@ class UserNotificationsUiTest {
   @EnumSource(
       value = Problem.class,
       names = {"NO_RECIPIENTS", "RECIPIENTS_CHANGED"})
-  void rejectedPreviewKeepsRecipientDetailsAtFieldAndUsesGeneralHint(Problem previewProblem) {
+  void rejectedPreviewMarksRecipientsAndExplainsTheProblemWithoutInlineText(
+      Problem previewProblem) {
     AdminUserNotificationsSection adminNotificationsSection =
         createAndActivateAdminNotificationsSection();
     ((TextField) readComponentField(adminNotificationsSection, "notificationTitleField"))
@@ -2963,12 +2963,13 @@ class UserNotificationsUiTest {
     ((Button) readComponentField(adminNotificationsSection, "previewButton")).click();
 
     assertTrue(recipientMultiSelectComboBox.isInvalid());
-    assertEquals(
+    assertTrue(
+        recipientMultiSelectComboBox.getErrorMessage() == null
+            || recipientMultiSelectComboBox.getErrorMessage().isEmpty());
+    assertPreviewValidationHint(
         previewProblem == Problem.NO_RECIPIENTS
             ? messageProperties.getNotificationsNoRecipients()
-            : messageProperties.getNotificationsRecipientsChanged(),
-        recipientMultiSelectComboBox.getErrorMessage());
-    assertPreviewValidationHint();
+            : messageProperties.getNotificationsRecipientsChanged());
 
     assertFalse(
         ((Button) readComponentField(adminNotificationsSection, "sendNotificationButton"))
@@ -3165,30 +3166,29 @@ class UserNotificationsUiTest {
     assertTrue(notificationTitleTextField.isInvalid());
     assertTrue(notificationBodyTextArea.isInvalid());
     assertTrue(recipientMultiSelectComboBox.isInvalid());
-    assertEquals(
-        messageProperties.getNotificationsInvalidSubject(),
-        notificationTitleTextField.getErrorMessage());
-    assertEquals(
-        messageProperties.getNotificationsInvalidBody(),
-        notificationBodyTextArea.getErrorMessage());
-    assertNotEquals(
-        notificationTitleTextField.getErrorMessage(), notificationBodyTextArea.getErrorMessage());
-    assertEquals(
-        messageProperties.getNotificationsNoRecipients(),
-        recipientMultiSelectComboBox.getErrorMessage());
+    assertTrue(
+        notificationTitleTextField.getErrorMessage() == null
+            || notificationTitleTextField.getErrorMessage().isEmpty());
+    assertTrue(
+        notificationBodyTextArea.getErrorMessage() == null
+            || notificationBodyTextArea.getErrorMessage().isEmpty());
+    assertTrue(
+        recipientMultiSelectComboBox.getErrorMessage() == null
+            || recipientMultiSelectComboBox.getErrorMessage().isEmpty());
   }
 
   private void assertPreviewValidationHint() {
+    assertPreviewValidationHint(messageProperties.getNotificationsNoRecipients());
+  }
+
+  private void assertPreviewValidationHint(String expectedMessage) {
     NotificationHelper notificationHelper = NotificationHelper.getInstance();
     Span validationHintTitleSpan = readComponentField(notificationHelper, "titleText");
     Paragraph validationHintMessageParagraph =
         readComponentField(notificationHelper, "messageText");
 
-    assertEquals(
-        messageProperties.getNotificationsPreviewFailedTitle(), validationHintTitleSpan.getText());
-    assertEquals(
-        messageProperties.getNotificationsPreviewFailedMessage(),
-        validationHintMessageParagraph.getText());
+    assertEquals(messageProperties.getBaseFailedTitle(), validationHintTitleSpan.getText());
+    assertEquals(expectedMessage, validationHintMessageParagraph.getText());
   }
 
   // Empfängerauswahl und geprüfte Versandvorschau

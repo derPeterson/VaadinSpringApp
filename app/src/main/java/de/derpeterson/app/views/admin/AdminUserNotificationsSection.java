@@ -205,16 +205,20 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       notificationInputField.setRequiredIndicatorVisible(true);
       notificationInputField.setValueChangeMode(ValueChangeMode.EAGER);
       notificationInputField.addValueChangeListener(_ -> {
+        notificationInputField.setInvalid(false);
         refreshNotificationCharacterCounts();
         invalidatePreview();
       });
     }
 
     sendToEveryoneCheckbox.addValueChangeListener(_ -> {
+      recipientComboBox.setInvalid(false);
+      everyoneRecipientsTextField.setInvalid(false);
       refreshRecipientSelectionControls();
       invalidatePreview();
     });
     recipientComboBox.addValueChangeListener(_ -> {
+      recipientComboBox.setInvalid(false);
       refreshRecipientSummaryText();
       invalidatePreview();
     });
@@ -438,7 +442,6 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void invalidatePreview() {
-    clearComposeValidationErrors();
     reviewedRecipientPreview = null;
     if (notificationPreviewDiv.isVisible()) {
       previewStatusBadge.setText(messageProperties.getNotificationsPreviewNeedsReview());
@@ -452,6 +455,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private void clearPreview() {
+    clearComposeValidationErrors();
     invalidatePreview();
     notificationPreviewDiv.removeAll();
     notificationPreviewDiv.setVisible(false);
@@ -469,6 +473,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   private boolean validateNotificationDraft() {
+    clearComposeValidationErrors();
     notificationTitleField.setInvalid(
         notificationTitleField.getValue().isBlank()
             || notificationTitleField.getValue().length() > UserNotificationService.TITLE_LIMIT);
@@ -481,32 +486,36 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             ? eligibleTargets.isEmpty()
             : recipientComboBox.getSelectedItems().isEmpty();
     if (hasNoRecipients) {
-      markRecipientInputInvalid(messageProperties.getNotificationsNoRecipients());
+      markRecipientInputInvalid();
     }
 
     if (notificationTitleField.isInvalid()
         || notificationBodyField.isInvalid()
         || hasNoRecipients) {
-      showPreviewValidationFailureNotification();
+      Supplier<String> errorMessageSupplier = messageProperties::getNotificationsInvalidBody;
+      if (hasNoRecipients) {
+        errorMessageSupplier = messageProperties::getNotificationsNoRecipients;
+      } else if (notificationTitleField.isInvalid()) {
+        errorMessageSupplier = messageProperties::getNotificationsInvalidSubject;
+      }
+      showPreviewValidationFailureNotification(errorMessageSupplier);
       return false;
     }
     return true;
   }
 
-  private void showPreviewValidationFailureNotification() {
+  private void showPreviewValidationFailureNotification(Supplier<String> errorMessageSupplier) {
     NotificationHelper.getInstance()
         .showTextNotification(
-            messageProperties::getNotificationsPreviewFailedTitle,
-            messageProperties::getNotificationsPreviewFailedMessage,
+            messageProperties::getBaseFailedTitle,
+            errorMessageSupplier,
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private void markRecipientInputInvalid(String recipientErrorText) {
+  private void markRecipientInputInvalid() {
     if (Boolean.TRUE.equals(sendToEveryoneCheckbox.getValue())) {
-      everyoneRecipientsTextField.setErrorMessage(recipientErrorText);
       everyoneRecipientsTextField.setInvalid(true);
     } else {
-      recipientComboBox.setErrorMessage(recipientErrorText);
       recipientComboBox.setInvalid(true);
     }
   }
@@ -538,11 +547,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       if (failure instanceof Rejected rejected
           && (rejected.problem() == UserNotificationService.Problem.NO_RECIPIENTS
               || rejected.problem() == UserNotificationService.Problem.RECIPIENTS_CHANGED)) {
-        markRecipientInputInvalid(
+        markRecipientInputInvalid();
+        showPreviewValidationFailureNotification(
             rejected.problem() == UserNotificationService.Problem.NO_RECIPIENTS
-                ? messageProperties.getNotificationsNoRecipients()
-                : messageProperties.getNotificationsRecipientsChanged());
-        showPreviewValidationFailureNotification();
+                ? messageProperties::getNotificationsNoRecipients
+                : messageProperties::getNotificationsRecipientsChanged);
       } else {
         showNotificationActionFailure(failure);
       }
@@ -912,10 +921,6 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     everyoneRecipientsTextField.setLabel(messageProperties.getNotificationsRecipients());
     notificationTitleField.setLabel(messageProperties.getNotificationsSubject());
     notificationBodyField.setLabel(messageProperties.getNotificationsBody());
-    recipientComboBox.setErrorMessage(messageProperties.getNotificationsNoRecipients());
-    everyoneRecipientsTextField.setErrorMessage(messageProperties.getNotificationsNoRecipients());
-    notificationTitleField.setErrorMessage(messageProperties.getNotificationsInvalidSubject());
-    notificationBodyField.setErrorMessage(messageProperties.getNotificationsInvalidBody());
     previewButton.setText(messageProperties.getNotificationsPreview());
     sendNotificationButton.setText(messageProperties.getNotificationsSend());
     recipientRecheckHintSpan.setText(messageProperties.getNotificationsRecheckHint());

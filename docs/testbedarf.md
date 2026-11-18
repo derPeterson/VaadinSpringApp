@@ -2,6 +2,14 @@
 
 ## Browser-Tests
 
+- **Benachrichtigungsentwurf: konkrete Vorschauvalidierung — offen.**
+  In DE/EN Empfänger, Titel und Nachricht leeren/ändern/verlassen: vor „Vorschau“
+  ohne Rotmarkierung. Vorschau markiert die fehlerhaften Felder ohne Inline-Texte
+  und zeigt direkt den konkreten Fehler unter „Fehlgeschlagen“. Beim Bearbeiten
+  nur die Markierung des geänderten Feldes zurücknehmen. Keine Empfänger und
+  zwischenzeitlich geänderte Empfänger unterscheiden. Senden bleibt ohne aktuelle
+  gültige Vorschau gesperrt. JUnit deckt den Ablauf ab; kein Browserlauf freigegeben.
+
 - **Ticketsystem: konkrete Eingabefehler beim Absenden — offen.**
   In DE/EN neue Anfrage, öffentliche Antwort und internen Vermerk prüfen:
   Leeren/Blur ohne Rotmarkierung, erst Absenden markiert leeren oder zu langen Text

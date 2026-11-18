@@ -152,8 +152,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Die bestehende Bindung zwischen gültigem Entwurf, Vorschau und tatsächlichem
   Senden erhalten; Änderungen dürfen eine veraltete Vorschau nicht weiter freigeben.
 
-- [ ] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 8. Benachrichtigungen: „Alle aktiven Konten“ als Switch
 
