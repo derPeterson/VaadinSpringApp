@@ -20,7 +20,7 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -119,22 +119,22 @@ class AdminUserDialogValidationTest {
     AdminAccountMailService adminAccountMailService = mock(AdminAccountMailService.class);
     userManagementSection.configureAccountMailActions(adminAccountMailService);
     openUserDialog(languageTag, true);
-    Checkbox verificationCheckbox =
+    Switch verificationSwitch =
         streamDescendantComponents(userDialog)
             .filter(component ->
                 component.getId().orElse("").equals("admin-email-verification-required"))
-            .map(Checkbox.class::cast)
+            .map(Switch.class::cast)
             .findFirst()
             .orElseThrow();
 
-    assertTrue(verificationCheckbox.getValue());
+    assertTrue(verificationSwitch.getValue());
     assertTrue(
-        streamDescendantComponents(verificationCheckbox)
+        streamDescendantComponents(verificationSwitch)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
             .anyMatch(
                 span -> span.getText().equals(messageProperties.getAdminEmailVerificationHint())));
-    verificationCheckbox.setValue(requireVerification);
+    verificationSwitch.setValue(requireVerification);
     findNewPasswordField().setValue("CreatedPassword!");
     findPasswordConfirmationField().setValue("CreatedPassword!");
 
@@ -150,10 +150,9 @@ class AdminUserDialogValidationTest {
     when(userService.canManageSuperadmins()).thenReturn(true);
     openUserDialog(languageTag, true);
 
-    Checkbox developmentAccountCheckbox =
-        (Checkbox) findUserDialogComponent("admin-development-account");
+    Switch developmentAccountSwitch = (Switch) findUserDialogComponent("admin-development-account");
     List<Span> developmentAccountLabelSpans =
-        streamDescendantComponents(developmentAccountCheckbox)
+        streamDescendantComponents(developmentAccountSwitch)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
             .toList();
@@ -165,7 +164,7 @@ class AdminUserDialogValidationTest {
             messageProperties.getDevelopmentAccountLabel(),
             messageProperties.getDevelopmentAccountHint()),
         developmentAccountLabelSpans.stream().map(Span::getText).toList());
-    assertTrue(developmentAccountCheckbox.hasClassName("admin-user-option-checkbox"));
+    assertTrue(developmentAccountSwitch.hasClassName("admin-user-option-switch"));
     assertTrue(developmentAccountLabelSpans.get(1).hasClassName("admin-user-option-hint"));
   }
 

@@ -30,7 +30,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.details.Details;
@@ -269,14 +269,14 @@ class AdminUserManagementSectionTest {
         descendants(signInDetails)
             .filter(component -> component.hasClassName("cosmos-security-warning"))
             .count());
-    Checkbox administrativeBlockCheckbox =
+    Switch administrativeBlockSwitch =
         descendants(editorDialog)
-            .filter(Checkbox.class::isInstance)
-            .map(Checkbox.class::cast)
-            .filter(checkbox -> checkbox.hasClassName("admin-user-enabled-checkbox"))
+            .filter(Switch.class::isInstance)
+            .map(Switch.class::cast)
+            .filter(checkbox -> checkbox.hasClassName("admin-user-blocked-switch"))
             .findFirst()
             .orElseThrow();
-    assertFalse(administrativeBlockCheckbox.getValue());
+    assertFalse(administrativeBlockSwitch.getValue());
 
     Button signInDetailsToggleButton =
         descendants(editorDialog)
@@ -919,9 +919,9 @@ class AdminUserManagementSectionTest {
         .map(PasswordField.class::cast)
         .forEach(field -> field.setValue("Password!"));
     descendants(dialog)
-        .filter(Checkbox.class::isInstance)
-        .map(Checkbox.class::cast)
-        .filter(field -> field.hasClassName("admin-user-enabled-checkbox"))
+        .filter(Switch.class::isInstance)
+        .map(Switch.class::cast)
+        .filter(field -> field.hasClassName("admin-user-blocked-switch"))
         .findFirst()
         .orElseThrow()
         .setValue(true);

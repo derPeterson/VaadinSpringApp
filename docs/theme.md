@@ -289,13 +289,12 @@ verwenden ihre vorhandenen lokalen Größenvarianten.
 FormLayout nutzt die vorhandenen Breakpoints und öffentlichen Variablen, keine
 privaten Vaadin-Layoutvariablen. `FieldHelpRowLayout` lässt das Feld wachsen und
 schrumpfen, während die Feldhilfe ihren Platz behält.
-In der Benutzeranlage/-bearbeitung steht „Zugang gesperrt“ unter der Rollen-Auswahl.
-Bei der Anlage durch Superadmins folgen Verifikation und Entwicklerkonto. Alle drei
-Checkboxen verwenden dieselbe vorhandene Gestaltung und stehen untereinander;
-es gibt keine besondere Positionierung neben der Rollen-Auswahl.
-Ihre Host-, Kästchen- und Beschriftungsabstände kommen aus Aura beziehungsweise
-dem vorhandenen FormLayout. Lokale Checkbox-Paddings und Margins entfallen;
-Cosmos-Farben, Kästchengröße und Schriftgestaltung bleiben erhalten.
+In der Benutzeranlage/-bearbeitung belegt die Rollen-Auswahl auf Desktop nur die
+linke Feldspalte; rechts bleibt frei. Zugang gesperrt sowie bei der Anlage durch
+Superadmins Verifikation und Entwicklerkonto sind native Switches. Sie stehen
+jeweils in einer eigenen Zeile über die gesamte Formularbreite. Die bestehende
+Schriftgestaltung und die nativen Abstände bleiben erhalten; Umschalten ändert
+zunächst den Entwurf, erst Speichern übernimmt ihn.
 Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
 Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
 

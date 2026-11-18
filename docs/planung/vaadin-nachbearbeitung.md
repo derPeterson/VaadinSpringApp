@@ -61,14 +61,13 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Jeder Switch steht in einer eigenen Zeile über **beide Spalten**: technisch
   Spaltenüberspannung beziehungsweise Colspan 2, kein Rowspan.
 - Auf Smartphone die vorhandene einspaltige Anordnung beibehalten.
-- Beschriftungen, Untertexte und bestehende Fachregeln erhalten. Der Darstellungsauftrag
-  betrifft Anlegen und Bearbeiten. Verifikation und Entwicklerkonto sind bisher nur
-  bei bestimmten Anlageberechtigungen vorhanden: vor einer zusätzlichen Bearbeitbarkeit
-  im Bearbeitungsdialog die fachlichen Möglichkeiten und geltenden Einschränkungen
-  abgleichen und nötige neue Entscheidungen klären.
+- Beschriftungen, Untertexte und Fachregeln erhalten. Auf ausdrückliche Rückmeldung
+  bleiben die bisherigen Sichtbarkeitsregeln bestehen: Verifikation und Entwicklerkonto
+  sind nur bei der berechtigten Anlage verfügbar. Im Bearbeitungsdialog wird der
+  vorhandene Schalter für die administrative Sperre umgestellt.
 
-- [ ] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 2. Konfiguration: Fehlertexte ohne vorangestellten Feldnamen
 

@@ -26,11 +26,11 @@
   Datum ohne Modellwert muss Speichern verhindern und den Änderungsschutz auslösen.
   Die Passwortnotification trennt Fehlerbeschreibung und Regeln durch einen
   Zeilenumbruch; Sprachwechsel erhält Werte und übersetzt die Meldung.
-  Unter der Rollen-Auswahl steht „Zugang gesperrt“ im gleichen Stil wie die weiteren
-  Checkboxen. Bei Anlage durch Superadmins folgen Verifikation und Entwicklerkonto
-  als zwei weitere Zeilen; auf Desktop und Smartphone keine seitliche Sonderposition.
-  Alle drei verwenden native Aura-Checkboxabstände ohne lokale Padding-/Margin-
-  Korrekturen; Farben und Schrift bleiben im Cosmos-Stil.
+  Rollen stehen auf Desktop nur links; die rechte Feldspalte bleibt leer. Darunter
+  stehen native Switches für Zugang gesperrt sowie bei berechtigter Anlage
+  Verifikation und Entwicklerkonto, jeweils über die gesamte Breite. Auf Smartphone
+  bleiben alle Zeilen einspaltig. Aktivierung verändert nur den Entwurf; vorhandene
+  Rechte und das Zusammenspiel zwischen Verifikation und Entwicklerkonto bleiben erhalten.
   JUnit prüft den Server-/Komponentenablauf; der Benutzer übernimmt die Sichtprüfung,
   kein Browserlauf für diesen Auftrag freigegeben.
 

@@ -87,7 +87,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     min-width: 0;
 }
 
-.admin-user-dialog .admin-user-option-checkbox::part(label),
+.admin-user-dialog .admin-user-option-switch::part(label),
 .admin-user-dialog vaadin-checkbox-group vaadin-checkbox::part(label) {
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-bold);
@@ -1107,7 +1107,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     --vaadin-form-layout-row-spacing: var(--admin-user-group-spacing);
 }
 /* Verschachtelte Feldpaare dürfen den Außenabstand ihrer Formulargruppe nicht verkürzen. */
-.admin-user-dialog.admin-reference-dialog vaadin-form-layout.cosmos-dialog-form > :not(.admin-user-option-checkbox) {
+.admin-user-dialog.admin-reference-dialog vaadin-form-layout.cosmos-dialog-form > :not(.admin-user-option-switch) {
     margin-block: calc(0.5 * var(--admin-user-group-spacing));
 }
 .admin-user-dialog vaadin-form-layout.admin-user-paired-form {

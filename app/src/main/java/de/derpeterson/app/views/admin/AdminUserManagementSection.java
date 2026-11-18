@@ -16,8 +16,8 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -127,7 +127,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private static final String COSMOS_PANEL_HEADING_CLASS = PANEL_HEADING;
   private static final String ARIA_LABEL_PROPERTY = "ariaLabel";
   private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
-  private static final String OPTION_CHECKBOX_CLASS = "admin-user-option-checkbox";
+  private static final String OPTION_SWITCH_CLASS = "admin-user-option-switch";
   private static final String OPTION_HINT_CLASS = "admin-user-option-hint";
   private static final String OPTION_LABEL_CLASS = "admin-user-option-label";
   private static final String SIGN_IN_DETAIL_CLASS = "admin-user-sign-in-detail";
@@ -830,13 +830,13 @@ public class AdminUserManagementSection extends VerticalLayout {
     private PasswordField confirmPasswordField;
     private ComboBox<Gender> genderComboBox;
     private DatePicker birthDatePicker;
-    private Checkbox administrativelyBlockedCheckbox;
+    private Switch administrativelyBlockedSwitch;
     private Span blockedCaptionSpan;
     private Span blockedHintSpan;
-    private final Checkbox emailVerificationRequiredCheckbox = new Checkbox();
+    private final Switch emailVerificationRequiredSwitch = new Switch();
     private final Span emailVerificationCaptionSpan = new Span();
     private final Span emailVerificationHintSpan = new Span();
-    private final Checkbox developmentAccountCheckbox = new Checkbox();
+    private final Switch developmentAccountSwitch = new Switch();
     private final Span developmentAccountCaptionSpan = new Span();
     private final Span developmentAccountHintSpan = new Span();
     private MultiSelectComboBox<RoleType> rolesComboBox;
@@ -1007,19 +1007,18 @@ public class AdminUserManagementSection extends VerticalLayout {
       birthDatePicker.setClearButtonVisible(true);
       birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
 
-      administrativelyBlockedCheckbox = new Checkbox();
-      administrativelyBlockedCheckbox.addClassNames(
-          OPTION_CHECKBOX_CLASS, "admin-user-enabled-checkbox");
+      administrativelyBlockedSwitch = new Switch();
+      administrativelyBlockedSwitch.addClassNames(OPTION_SWITCH_CLASS, "admin-user-blocked-switch");
       blockedCaptionSpan = new Span(messageProperties.getAdminUsersFieldBlocked());
       blockedHintSpan = new Span(messageProperties.getAdminUsersBlockedHint());
       blockedHintSpan.addClassName(OPTION_HINT_CLASS);
       blockedHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div blockedLabelDiv = new Div(blockedCaptionSpan, blockedHintSpan);
       blockedLabelDiv.addClassName(OPTION_LABEL_CLASS);
-      administrativelyBlockedCheckbox.setLabelComponent(blockedLabelDiv);
-      administrativelyBlockedCheckbox.setAriaDescribedBy(blockedHintSpan);
+      administrativelyBlockedSwitch.setLabelComponent(blockedLabelDiv);
+      administrativelyBlockedSwitch.setAriaDescribedBy(blockedHintSpan);
 
-      configureEmailVerificationCheckbox();
+      configureEmailVerificationSwitch();
 
       rolesComboBox = new MultiSelectComboBox<>(messageProperties.getAdminUsersFieldRoles());
       rolesComboBox.addClassName("admin-user-roles");
@@ -1050,10 +1049,10 @@ public class AdminUserManagementSection extends VerticalLayout {
       securityNoteDiv.addClassNames("cosmos-panel-hint", "admin-user-security-note");
     }
 
-    private void configureEmailVerificationCheckbox() {
-      emailVerificationRequiredCheckbox.setId("admin-email-verification-required");
-      emailVerificationRequiredCheckbox.setValue(true);
-      emailVerificationRequiredCheckbox.addClassName(OPTION_CHECKBOX_CLASS);
+    private void configureEmailVerificationSwitch() {
+      emailVerificationRequiredSwitch.setId("admin-email-verification-required");
+      emailVerificationRequiredSwitch.setValue(true);
+      emailVerificationRequiredSwitch.addClassName(OPTION_SWITCH_CLASS);
 
       emailVerificationCaptionSpan.setText(messageProperties.getAdminEmailVerificationRequired());
       emailVerificationHintSpan.setText(messageProperties.getAdminEmailVerificationHint());
@@ -1061,11 +1060,11 @@ public class AdminUserManagementSection extends VerticalLayout {
       emailVerificationHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div verificationLabelDiv = new Div(emailVerificationCaptionSpan, emailVerificationHintSpan);
       verificationLabelDiv.addClassName(OPTION_LABEL_CLASS);
-      emailVerificationRequiredCheckbox.setLabelComponent(verificationLabelDiv);
-      emailVerificationRequiredCheckbox.setAriaDescribedBy(emailVerificationHintSpan);
+      emailVerificationRequiredSwitch.setLabelComponent(verificationLabelDiv);
+      emailVerificationRequiredSwitch.setAriaDescribedBy(emailVerificationHintSpan);
 
-      developmentAccountCheckbox.setId("admin-development-account");
-      developmentAccountCheckbox.addClassName(OPTION_CHECKBOX_CLASS);
+      developmentAccountSwitch.setId("admin-development-account");
+      developmentAccountSwitch.addClassName(OPTION_SWITCH_CLASS);
       developmentAccountCaptionSpan.setText(messageProperties.getDevelopmentAccountLabel());
       developmentAccountHintSpan.setText(messageProperties.getDevelopmentAccountHint());
       developmentAccountHintSpan.addClassName(OPTION_HINT_CLASS);
@@ -1073,11 +1072,11 @@ public class AdminUserManagementSection extends VerticalLayout {
       Div developmentAccountLabelDiv =
           new Div(developmentAccountCaptionSpan, developmentAccountHintSpan);
       developmentAccountLabelDiv.addClassName(OPTION_LABEL_CLASS);
-      developmentAccountCheckbox.setLabelComponent(developmentAccountLabelDiv);
-      developmentAccountCheckbox.setAriaDescribedBy(developmentAccountHintSpan);
-      developmentAccountCheckbox.addValueChangeListener(event -> {
-        emailVerificationRequiredCheckbox.setEnabled(!event.getValue());
-        emailVerificationRequiredCheckbox.setValue(!event.getValue());
+      developmentAccountSwitch.setLabelComponent(developmentAccountLabelDiv);
+      developmentAccountSwitch.setAriaDescribedBy(developmentAccountHintSpan);
+      developmentAccountSwitch.addValueChangeListener(event -> {
+        emailVerificationRequiredSwitch.setEnabled(!event.getValue());
+        emailVerificationRequiredSwitch.setValue(!event.getValue());
       });
     }
 
@@ -1121,7 +1120,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
 
       userFormBinder
-          .forField(administrativelyBlockedCheckbox)
+          .forField(administrativelyBlockedSwitch)
           .bind(
               AdminUserFormData::isAdministrativelyBlocked,
               AdminUserFormData::setAdministrativelyBlocked);
@@ -1188,8 +1187,8 @@ public class AdminUserManagementSection extends VerticalLayout {
       List<Object> currentFormValues =
           new ArrayList<>(
               userFormBinder.getFields().map(field -> (Object) field.getValue()).toList());
-      currentFormValues.add(emailVerificationRequiredCheckbox.getValue());
-      currentFormValues.add(developmentAccountCheckbox.getValue());
+      currentFormValues.add(emailVerificationRequiredSwitch.getValue());
+      currentFormValues.add(developmentAccountSwitch.getValue());
       return currentFormValues;
     }
 
@@ -1245,10 +1244,10 @@ public class AdminUserManagementSection extends VerticalLayout {
               emailField,
               passwordFieldsDiv,
               personalDetailsFormLayout,
-              roleSelectionDiv,
-              administrativelyBlockedCheckbox);
+              createPairedEditorFormLayout(roleSelectionDiv, new Span()),
+              administrativelyBlockedSwitch);
       if (!editMode && userService.canManageSuperadmins()) {
-        editorFormLayout.add(emailVerificationRequiredCheckbox, developmentAccountCheckbox);
+        editorFormLayout.add(emailVerificationRequiredSwitch, developmentAccountSwitch);
       }
       if (editMode && externalIdentityService != null) {
         externalIdentityService
@@ -1712,7 +1711,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               .enabled(true)
               .administrativelyBlocked(userFormData.isAdministrativelyBlocked())
               .verificationPending(false)
-              .developmentAccount(!editMode && developmentAccountCheckbox.getValue())
+              .developmentAccount(!editMode && developmentAccountSwitch.getValue())
               .preferredLocale(CustomI18NProvider.getCurrentLocale())
               .roleEntities(roleEntities)
               .build();
@@ -1756,7 +1755,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           adminAccountMailService.createUser(
               newUserEntity,
               userFormData.getPassword(),
-              !emailVerificationRequiredCheckbox.getValue());
+              !emailVerificationRequiredSwitch.getValue());
         } catch (IOException failure) {
           throw new IllegalStateException(
               "Initial verification mail could not be prepared", failure);
