@@ -94,24 +94,96 @@ für gemeinsam L; die Entscheidung erfolgt bei der Abstimmung.
 
 **Bestandsaufnahme und Vorschlag freigegeben; Änderungen anschließend abstimmen.**
 
-- [ ] Alle verwendeten Eingabekomponenten erfassen, nicht nur Textfelder:
+- [x] Alle verwendeten Eingabekomponenten erfassen, nicht nur Textfelder:
       unter anderem TextAreas, Passwort-, Zahlen-, Datums- und Dauerfelder,
       ComboBox/Select, Mehrfachauswahl, Checkboxen, Switches und weitere vorhandene Typen.
-- [ ] Je Variante die aktuelle Höhe, Einsatzstellen und maßgeblichen Größenregeln
+- [x] Je Variante die aktuelle Höhe, Einsatzstellen und maßgeblichen Größenregeln
       auflisten. Bei mehrzeiligen oder zusammengesetzten Komponenten die eigentliche
       Eingabefläche von Beschriftung, Hilfetext und Gesamthöhe unterscheiden.
-- [ ] Alle gerahmten Buttons einschließlich reiner Icon-Buttons ebenso erfassen:
+- [x] Alle gerahmten Buttons einschließlich reiner Icon-Buttons ebenso erfassen:
       Höhe, Einsatzstellen und Größenregeln gegenüberstellen.
-- [ ] Prüfen, ob gleichartige Komponenten innerhalb zusammengehöriger Formularbereiche
+- [x] Prüfen, ob gleichartige Komponenten innerhalb zusammengehöriger Formularbereiche
       einheitlich dimensioniert sind. Bewusste funktionale Größenunterschiede von
       unbeabsichtigten Abweichungen unterscheiden.
-- [ ] Die Schriftgestaltung in Formularen und vergleichbaren Bedienbereichen mit
+- [x] Die Schriftgestaltung in Formularen und vergleichbaren Bedienbereichen mit
       den vorhandenen Typografie-Tokens abgleichen und Abweichungen ausweisen,
       insbesondere bei Schriftgröße, Schriftgewicht und Zeilenhöhe.
       Individuelle Gestaltung auf der Startseite gehört nicht zu dieser Prüfung.
-- [ ] Eine verständliche Übersicht und einen Vorschlag zur Vereinheitlichung anhand
+- [x] Eine verständliche Übersicht und einen Vorschlag zur Vereinheitlichung anhand
       vorhandener Tokens vorlegen; nötige Ergänzungen gesondert begründen.
       Änderungen erst nach gemeinsamer Abstimmung und Freigabe umsetzen.
+
+### Ergebnis und Vorschlag zu Punkt 2
+
+Quellprüfung der verwendeten Komponenten und Theme-Regeln, keine Browsermessung.
+Die Höhen beziehen sich auf die Bedienfläche ohne Label/Hilfetext; Gesamthöhen
+mehrzeiliger Komponenten hängen zusätzlich vom Inhalt ab. Die individuelle
+Startseitengestaltung wurde nicht als Abweichung bewertet.
+
+| Eingaben / Einsatz | Aktuelle Höhe / Besonderheit | CSS-Quelle |
+| --- | --- | --- |
+| TextField, EmailField, PasswordField: öffentliche Formulare, Konto und Referenzdialoge | Meist 40 px; gemeinsamer älterer Basiswert nur mindestens 36 px | `cosmos-theme.css`, `admin-users.css` |
+| Konfigurationsfelder und Mail-Test | Einzeilig 40 px | `cosmos-admin.css` |
+| ComboBox, DatePicker, Select | Meist 40 px in Formularen; Datumskalender-Tage 36 px sind ein anderer Baustein | `cosmos-theme.css`, `cosmos-mfa.css`, `cosmos-aura.css` |
+| TimePicker | Gemeinsame Mindesthöhe 36 px, Filterdialog überschreibt auf 40 px; nicht überall dieselbe explizite Referenzregel | `cosmos-theme.css`, `admin-users.css` |
+| IntegerField / vorhandene Zahlenfelder | Konfiguration mindestens 40 px; gemeinsame Basis mindestens 36 px | `cosmos-admin.css`, `cosmos-theme.css` |
+| CosmosDurationField mit IntegerField/BigDecimalField und Einheit | Zahlenteil 40 px; Einheit integriert, Aktionen 28 px; äußeres CustomField ergänzt keine zweite Eingabefläche | `cosmos-duration-field.css` |
+| MultiSelectComboBox: Rollen und Empfänger | Mindestens 40 px; Rollenfeld im Benutzerdialog zusätzlich feste Eingabefläche 40 px, ausgewählte Chips/Empfängerzusammenfassung gesondert | `admin-users.css`, `cosmos-admin.css` |
+| TextArea: Mailnachricht | Mindestens 144 px Eingabefläche | `cosmos-admin.css` |
+| TextArea: Mitteilungsentwurf / Ticketnachricht | Mindestens 122 px Eingabefläche; Ticket-Host mindestens 144 px inklusive Umgebung | `cosmos-admin.css`, `cosmos-mfa.css` |
+| Checkbox / CheckboxGroup | Kästchen meist 16 px; spezifischere Benutzerdialog-Regel 17 px. Gruppenhöhe folgt Anzahl/Layout; Filterauswahl hat 38-px-Zeilen | `cosmos-public.css`, `cosmos-admin.css`, `admin-users.css` |
+| RadioButtonGroup | Native Radio-Geometrie und Anzahl/Layout; Filterlabel separat gestaltet, keine projektweit festgelegte Gruppenhöhe | `admin-users.css`, Aura/native Radio-Komponente |
+| Switch | Zentral 34 × 20 px, Griff 14 × 14 px. Konfiguration reserviert mindestens 40 px Zeilenhöhe, andere Labels/Untertexte bestimmen ihre Zeilenhöhe | `cosmos-theme.css`, `cosmos-admin.css` |
+| OTP-Feld | 44 px pro Ziffernfläche, Breite responsiv; kein normales Textfeld | `cosmos-mfa.css` |
+| Seitengrößenauswahl in Pagination | 32 px, bewusst kompakter als Formulareingaben | `cosmos-theme.css`, `admin-users.css`, `cosmos-notifications.css` |
+
+| Gerahmte Buttons / Einsatz | Aktuelle Höhe | CSS-Quelle |
+| --- | --- | --- |
+| Normale Formular-/Dialogaktionen und Schließen-Icon | 36 px; Textbuttons bei langen mobilen Beschriftungen teils automatische Höhe ab Mindesthöhe 36 px | `cosmos-theme.css`, `cosmos-notifications.css`, `cosmos-mfa.css` |
+| Benutzer-Tabellenaktionen | 32 px (lokale Regel), Mindesthöhe 30 px | `admin-users.css` |
+| Pagination / Seitenzahlen | 28 px | `cosmos-admin.css`, `cosmos-notifications.css` |
+| Werkzeuge in der Benachrichtigungsvorschau | 32 × 32 px; einzelne Zeilenaktionen erben sonst Basisgrößen | `cosmos-notifications.css` |
+| Such-/Sprungaktion im Ticketfilter | 40 px, passend zum Eingabefeld | `cosmos-mfa.css` |
+| Feldhilfe-Konfiguration | Basis 44 px, Konfigurations-/Mailbereiche überschreiben auf 36 px; daneben 40-px-Felder | `cosmos-admin.css` |
+| Avatar-Zuschneideaktionen | Automatische Höhe, mindestens 36 px | `cosmos-account.css` |
+| Kleine Sprachauswahl im Kontomenü | 24 px; bewusst kompakter Umschalter | `cosmos-shell.css` |
+
+**Typografie-Befunde:**
+
+- Formularlabel überwiegend 12 px / Gewicht 500, Hilfen 11 px; diese Größen sind
+  bereits über Tokens abgebildet. Native Basis-Eingaben verwenden 13 px / Gewicht
+  700, die Referenzregeln setzen überwiegend 14 px / 400. Der Benutzerdialog setzt
+  Eingabetext wiederum auf 13 px / 400. Das ist eine tatsächliche bereichsabhängige
+  Abweichung; den gemeinsamen Zielwert vor einer Änderung abstimmen.
+- Dauerwerte verwenden 14 px, ihr Placeholder ausdrücklich 13 px. Diese bereits
+  gewünschte Unterscheidung erhalten; sie erklärt nicht allein den Positionssprung.
+- Referenzbuttons verwenden überwiegend 12 px / 600, die allgemeine Basis nennt
+  13 px für normale Buttons bzw. 14 px für andere Varianten. Auch hier überlagern
+  sich Basis und Referenzgestaltung.
+- Direkte, aber bereits tokenfähige Werte stehen unter anderem in
+  `cosmos-theme.css` (14 px / 400), `cosmos-admin.css` (14 px / 400 sowie Switchlabel
+  12 px / 500), `admin-users.css` (Switchlabel 12 px / 400, einzelne Gewichte 600)
+  und `cosmos-duration-field.css` (14/13 px / 400). OTP verwendet direkt 18 px.
+  Numerische Gewichte innerhalb von `font:`-Kurzformen sind ebenfalls verbreitet.
+  Diese Werte entsprechen bestehenden Tokens, umgehen aber deren zentrale Pflege.
+
+**Vorschlag, noch nicht umgesetzt:**
+
+1. Einzeilige Formulareingaben gemeinsam mit einem semantischen 40-px-Token
+   versehen; vorhandene 36-px-Buttons nicht ohne gestalterischen Grund vergrößern.
+2. Buttonhöhen 28/32/36/40 px als benannte Größen zentral zuordnen. Den bereits
+   vorhandenen 28-px-Pagination- und 36-px-Controlwert wiederverwenden; 24-px-
+   Sprachumschalter und OTP bewusst getrennt halten.
+3. Checkbox-Kästchen einheitlich 16 px, Switch-Grundmaße wie bisher. Mehrzeilige
+   Beschriftungen und Gruppen nicht künstlich auf die Höhe eines Textfeldes zwingen.
+4. TextAreas nach Aufgabe mehrzeilig lassen; unterschiedliche Mindesthöhen 122/144
+   ausdrücklich zuordnen. Feldhilfe-Aktionen neben Eingaben als gemeinsame Zeile
+   betrachten und den gewünschten 36-/40-px-Abgleich gemeinsam sichten.
+5. Bestehende Schrift-Tokens konsequent referenzieren. Den Zielwert für Eingabetext
+   (13 oder 14 px) und normale Buttonschrift (12 oder 13 px) gemeinsam entscheiden;
+   keinen globalen Schriftwechsel aus dieser Bestandsaufnahme ableiten.
+
+- [ ] Vorschläge aus Punkt 2 gemeinsam abstimmen und konkrete Umstellungen freigeben.
 
 ## Neue Nachbearbeitung – Punkt 3: Positionssprung zwischen Zahlenwert und Placeholder
 
