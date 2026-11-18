@@ -14,6 +14,12 @@ ohne Bibliotheksversionen zu ersetzen.
   die Patch-Stelle; neue Funktionen bzw. Vertragsänderungen bewusst als Minor
   einordnen. `1.0.0` oder spätere Major-Sprünge werden ausdrücklich entschieden.
 
+`prepare` entfernt den Snapshotzusatz der bereits gewählten Entwicklungslinie;
+es erhöht nicht ungefragt die Versionsbasis. Für einen bewusst freigegebenen
+Minor-/Major-Schritt zuerst die Projektversionen aller fünf POMs gemeinsam auf
+den gewünschten Snapshot setzen, prüfen und separat committen. Bibliotheksversionen
+bleiben dabei unverändert. Danach die Vorschau und den normalen Release-Ablauf verwenden.
+
 Ein Commit ist keine neue Releaseversion. Maven-Snapshots erhalten erst beim
 Veröffentlichen in ein entsprechendes Maven-Repository Zeitstempel/Buildnummer;
 lokal genügen Projektversion und Git-Revision. Jenkins und öffentliches Hosting
@@ -49,7 +55,8 @@ Python aus der Projektumgebung verwenden. Die Befehle laufen im Root:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/release/release.py preview
-.\.venv\Scripts\python.exe scripts/release/release.py prepare --version 0.1.0
+# Beispiel: nächster Patch aus 0.1.1-SNAPSHOT, mit gepflegten Unreleased-Notizen.
+.\.venv\Scripts\python.exe scripts/release/release.py prepare --version 0.1.1
 # Kandidaten-Diff prüfen und bewusst committen, danach bauen und vollständig prüfen.
 .\.venv\Scripts\python.exe scripts/release/release.py verify
 .\.venv\Scripts\python.exe scripts/release/release.py tag

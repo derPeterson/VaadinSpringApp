@@ -23,6 +23,10 @@ keine fachliche Abnahme und erlaubt nicht automatisch die große Browserrunde.
 2. Vorgeschlagene Version und Begründung nennen. Explizite Versionswünsche beachten;
    bei einem neuen wesentlichen Kompatibilitätsbruch die Entscheidung erfragen.
    Nach dem ersten `0.1.0` kleine Korrekturen als Patch behandeln.
+   Weicht die gewählte Versionsbasis vom aktuellen Snapshot ab, zuerst die
+   Projektversionen aller fünf POMs gemeinsam auf diesen Snapshot setzen, prüfen
+   und separat committen. Keine Bibliotheksversionen ändern; danach erneut die
+   Vorschau prüfen. `prepare` erhöht die Basis nicht selbst.
 3. Bei passendem sauberen Snapshotstand `prepare --version X.Y.Z` ausführen.
    Der Helfer aktualisiert alle Projekt-POMs und DE-/EN-Notizen; er committet nicht.
    Den tatsächlichen Diff reviewen und den Kandidaten lokal committen.

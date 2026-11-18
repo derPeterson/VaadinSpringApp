@@ -2,22 +2,12 @@
 
 ## Laufende Umsetzung
 
-- [ ] [Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme](docs/planung/aura-umstellung.md)
-  nach der Versionierungsumsetzung mit der großen DE/EN-Testrunde abschließen.
-  Offene Nachtests aus BUGS und Testbedarf einschließen; erst nach belegbar grünem
-  Ergebnis erledigte Einträge und den Aura-Plan entfernen.
-
-- [ ] [Release-Ablauf und Versionierung](docs/planung/releases.md) auf
-  `codex/release-versionierung` vorbereiten und umsetzen; danach große Testrunde,
-  bedingter Aura-Abschluss und kleiner lokaler Erst-Release mit folgendem
-  Patch-Snapshot. Releasevorschau und genaue Startversion stehen im Plan.
-
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Der aktuelle Stand wird als Zwischenstand nach `main` übernommen;
+  Der aktuelle Zwischenstand liegt auf `main`;
   die Gesamtumsetzung bleibt ausdrücklich offen. Weitere Arbeiten später
   auf einem Folgebranch fortsetzen.
   Als nächste Kandidaten die Inbox-Seitennavigation mit `CosmosPagination`,

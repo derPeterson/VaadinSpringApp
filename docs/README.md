@@ -46,13 +46,8 @@ hier stehen Bedienung, Entwicklungsregeln und wesentliche Entscheidungen.
 Offene Umsetzungen stehen unter `docs/planung/`; sie sind von der gültigen
 Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Testauftrag.
 
-- [Aura-Umstellung](planung/aura-umstellung.md): Die technische Umstellung und
-  CSS-Bereinigung sind umgesetzt. Die gemeinsame DE/EN-Browserrunde steht noch aus
-  und ist nach der Versionierungsumsetzung beauftragt.
 - [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
   mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
-- [Versionierung](planung/releases.md): Release-Werkzeuge umsetzen, anschließend
-  Gesamt-QA und bedingt erster lokaler Release.
 - Zurückgestellte Planungen: [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
   [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
 - Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).
