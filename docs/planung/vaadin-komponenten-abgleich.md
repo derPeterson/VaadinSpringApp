@@ -83,26 +83,19 @@ oder erledigt die betreffenden Aufgaben nicht.
 
 ## Offen: AvatarGroup und Empfängerliste gemeinsam sichten
 
-Die einzige gruppierte Empfängeranzeige unter Administration → Benachrichtigungen
-verwendet jetzt die native `AvatarGroup` im Cosmos-Avatarstil. Bei bis zu fünf
-Empfängern alle anzeigen, bei genau sechs entsprechend dem freigegebenen nativen
-Standard ebenfalls alle sechs. Ab sieben fünf Avatare plus „+N“; bei Platzmangel
-greift der native responsive Überlauf. Der sichtbare Außenrahmen ist an die übrigen
-Avatare angeglichen; das native Overlay verwendet die Cosmos-Gestaltung.
-Die bestehenden Statuspunkte an anderen Stellen bleiben erhalten; die Gruppe
-erhält keine zusätzlichen Statuspunkte.
-Die bisherige ausführliche Details-Liste bleibt auf ausdrücklichen Benutzerwunsch
-als Zugang zu allen Namen und E-Mail-Adressen erhalten. Die native „+N“-Liste
-enthält weiterhin nur die ausgeblendeten Namen und bleibt nativ; keine zusätzliche
-Empfängeransicht oder E-Mail-Zeile im Überlauf aufbauen.
-Keine Versand-/Rechteänderung.
-Die technische Übernahme einschließlich Rahmen und Overlay ist gezielt mit JUnit
-sowie isoliert in DE/EN bei 1280/390 px geprüft. Auch die begrenzte Overlayhöhe,
-Scrollen bis zum letzten Eintrag und Tastatur/Rückfokus mit 200 synthetischen
-Widgeteinträgen sind geprüft; dafür wurden keine 200 Datenbankkonten angelegt.
-Vergleichsaufnahmen liegen vor. Offen bleibt die gemeinsame Sichtung der Rahmen-
-und Menügestaltung; keine weitere Grundsatzentscheidung zur Liste offen.
-Ergebnisse und Grenzen stehen im [Prüfstand](../status.md).
+Die Empfängervorschau unter Administration → Benachrichtigungen verwendet die
+native `AvatarGroup` im Cosmos-Avatarstil: bis sechs alle, ab sieben fünf plus
+„+N“, bei Platzmangel früherer nativer Überlauf. Namen-Tooltips bleiben erhalten.
+Die freigegebene Folgearbeit ersetzt die bisherige Details-Liste und das native
+Überlaufmenü durch eine gemeinsame vollständige Empfängerliste: natives Popover,
+Suchfeld und Grid mit Namen/E-Mail, scrollbar und ohne Auswahlzustand. Die gesamte
+Avatarreihe öffnet diese Liste auch ohne Überlauf; der genehmigte kleine
+Ereignis-Listener verwendet keine private Vaadin-API. Keine Versand-/Rechteänderung.
+
+Offen bleiben die menschliche Abnahme der neuen Liste und die gezielten
+Browsernachtests im [Testbedarf](../testbedarf.md). Ältere Vergleichsaufnahmen
+belegen die bisherige Variante, nicht diese neue Bedienung. Das Paket erst nach
+ausdrücklicher Benutzerabnahme schließen.
 
 ## Grundlage für weitere Pakete
 

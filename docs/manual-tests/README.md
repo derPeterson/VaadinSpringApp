@@ -151,7 +151,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Neun Nachbearbeitungen | Warnsymbole, Texte, lange Identitäten, mobile Aktionen und Reiterüberlauf nach Screenshots am 15.11.2026 abgenommen |
 | Native Notification-Texte | Repräsentative Varianten in DE/EN auf Desktop/Smartphone abgenommen; übrige Aufrufer auf Wunsch ohne eigene Browserrunde übernommen |
 | Einheitliche Dauerfelder | 2FA-Pilot mit Vergleichsaufnahmen; übrige Felder vom Benutzer gesichtet und ohne weitere Screenshotrunde übernommen |
-| Native AvatarGroup | Rahmen und Cosmos-Überlaufliste warten laut Katalog noch auf Sichtung; vollständige Details-Liste bleibt erhalten |
+| Native AvatarGroup | Vollständige suchbare Popover-Liste über die gesamte Avatarreihe wartet auf Sichtung; ersetzt Details und natives Überlaufmenü |
 | Gemeinsame Inbox-Pagination und zentrierte Seitenzahlen | Vom Benutzer nach den Vorher-/Nachher-Vergleichen von Benutzerverwaltung, Versandhistorie und Inbox in DE/EN auf Desktop/Smartphone abgenommen |
 | Löschsymbol in der Glockenvorschau nach Aura-Umstellung | Vom Benutzer in der laufenden Anwendung wieder sichtbar bestätigt und abgenommen; automatisierter DE-/EN-Nachtest separat offen |
 | Responsive globale Notifications und Statussymbole | Responsive Position, Aura-Innenabstand und Warn-/Fehlersymbole abgenommen; rechter Desktop-Randabstand von 24 px und Titel ohne Ausrufezeichen einschließlich Statusseiten warten auf Sichtung, automatisierte Browsernachtests separat offen |

@@ -40,6 +40,7 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -3381,67 +3382,63 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void reviewedPreviewRecipientDetailsKeepLabelsAriaAndAllRecipients(String languageTag) {
-    AdminDraftFixture adminDraftFixture = createAdminDraftFixture(languageTag);
-    AdminUserNotificationsSection adminNotificationsSection =
-        adminDraftFixture.adminNotificationsSection();
-    List<Target> recipientTargets = adminDraftFixture.recipientTargets();
-    ((Button) readComponentField(adminNotificationsSection, "previewButton")).click();
-    Div notificationPreviewDiv =
-        readComponentField(adminNotificationsSection, "notificationPreviewDiv");
-    Details recipientDetails =
-        streamComponentTree(notificationPreviewDiv)
-            .filter(Details.class::isInstance)
-            .map(Details.class::cast)
+  void reviewedPreviewRecipientPopoverShowsAllRecipientsAndFiltersNameOrEmail(String languageTag) {
+    AdminDraftFixture fixture = createAdminDraftFixture(languageTag);
+    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
+    NotificationRecipientPopover recipientPopover =
+        streamComponentTree(fixture.adminNotificationsSection())
+            .filter(NotificationRecipientPopover.class::isInstance)
+            .map(NotificationRecipientPopover.class::cast)
             .findFirst()
             .orElseThrow();
+    AvatarGroup recipientAvatarGroup = (AvatarGroup) recipientPopover.getTarget();
+    TextField searchTextField = readComponentField(recipientPopover, "searchTextField");
+    Grid<Target> recipientGrid = readComponentField(recipientPopover, "recipientGrid");
 
-    assertFalse(recipientDetails.isOpened());
-    Button recipientDetailsToggleButton =
-        streamComponentTree(notificationPreviewDiv)
-            .filter(Button.class::isInstance)
-            .map(Button.class::cast)
-            .filter(notificationButton ->
-                notificationButton.getId().orElse("").equals("admin-notifications-preview-details"))
-            .findFirst()
-            .orElseThrow();
-
+    assertFalse(recipientPopover.isOpened());
+    assertEquals("button", recipientAvatarGroup.getElement().getAttribute("role"));
+    assertEquals("0", recipientAvatarGroup.getElement().getAttribute("tabindex"));
     assertEquals(
-        messageProperties.getNotificationsRecipientDetails(),
-        recipientDetailsToggleButton.getText());
-    assertEquals("false", recipientDetailsToggleButton.getElement().getAttribute("aria-expanded"));
+        messageProperties.getNotificationsRecipientOpen(),
+        recipientAvatarGroup.getElement().getAttribute("aria-label"));
     assertEquals(
-        recipientDetails.getId().orElseThrow(),
-        recipientDetailsToggleButton.getElement().getAttribute("aria-controls"));
+        messageProperties.getNotificationsRecipientSearch(),
+        searchTextField.getAriaLabel().orElseThrow());
+    assertEquals(Grid.SelectionMode.NONE, recipientGrid.getSelectionMode());
+    assertEquals(fixture.recipientTargets(), recipientGrid.getListDataView().getItems().toList());
     assertTrue(
-        recipientDetailsToggleButton
-            .getParent()
-            .orElseThrow()
-            .hasClassName("cosmos-notification-compose-recipients"));
+        streamComponentTree(fixture.adminNotificationsSection())
+            .noneMatch(component ->
+                component.getId().orElse("").equals("admin-notifications-preview-details")));
 
-    recipientDetailsToggleButton.click();
+    Element avatarGroupElement = recipientAvatarGroup.getElement();
+    avatarGroupElement
+        .getNode()
+        .getFeature(ElementListenerMap.class)
+        .fireEvent(
+            new DomEvent(
+                avatarGroupElement, "recipient-list-open", JsonNodeFactory.instance.objectNode()));
+    assertTrue(recipientPopover.isOpened());
+    assertEquals("true", avatarGroupElement.getAttribute("aria-expanded"));
 
-    assertTrue(recipientDetails.isOpened());
+    searchTextField.setValue(" SECOND ");
     assertEquals(
-        messageProperties.getNotificationsRecipientDetails(),
-        recipientDetailsToggleButton.getText());
-    assertEquals("true", recipientDetailsToggleButton.getElement().getAttribute("aria-expanded"));
-
-    recipientDetailsToggleButton.click();
-
-    assertFalse(recipientDetails.isOpened());
+        List.of(fixture.recipientTargets().get(1)),
+        recipientGrid.getListDataView().getItems().toList());
+    searchTextField.setValue("THIRD@EXAMPLE.TEST");
     assertEquals(
-        messageProperties.getNotificationsRecipientDetails(),
-        recipientDetailsToggleButton.getText());
-
-    recipientDetailsToggleButton.click();
-    for (Target recipientTarget : recipientTargets) {
-      assertTrue(
-          streamComponentTree(recipientDetails)
-              .filter(Span.class::isInstance)
-              .map(Span.class::cast)
-              .anyMatch(candidateSpan -> candidateSpan.getText().equals(recipientTarget.email())));
-    }
+        List.of(fixture.recipientTargets().get(2)),
+        recipientGrid.getListDataView().getItems().toList());
+    searchTextField.setValue("no-match");
+    assertEquals(0, recipientGrid.getListDataView().getItemCount());
+    assertEquals(
+        messageProperties.getNotificationsRecipientSearchEmpty(),
+        recipientGrid.getEmptyStateText());
+    searchTextField.clear();
+    assertEquals(fixture.recipientTargets().size(), recipientGrid.getListDataView().getItemCount());
+    recipientPopover.close();
+    assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
+    verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
 
   @ParameterizedTest
@@ -3513,6 +3510,15 @@ class UserNotificationsUiTest {
             .map(AvatarGroup.class::cast)
             .findFirst()
             .orElseThrow();
+    NotificationRecipientPopover recipientPopover =
+        streamComponentTree(fixture.adminNotificationsSection())
+            .filter(NotificationRecipientPopover.class::isInstance)
+            .map(NotificationRecipientPopover.class::cast)
+            .findFirst()
+            .orElseThrow();
+    Grid<Target> recipientGrid = readComponentField(recipientPopover, "recipientGrid");
+    assertEquals(recipientTargets, recipientGrid.getListDataView().getItems().toList());
+    assertFalse(recipientGrid.isAllRowsVisible());
     assertEquals(6, recipientAvatarGroup.getMaxItemsVisible());
     assertEquals(
         recipientTargets.stream().map(Target::name).toList(),

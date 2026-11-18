@@ -3857,6 +3857,18 @@ public class MessageTexts {
     return getTranslation("notifications.reviewedPreview");
   }
 
+  public String getNotificationsRecipientOpen() {
+    return getTranslation("notifications.recipientOpen");
+  }
+
+  public String getNotificationsRecipientSearch() {
+    return getTranslation("notifications.recipientSearch");
+  }
+
+  public String getNotificationsRecipientSearchEmpty() {
+    return getTranslation("notifications.recipientSearchEmpty");
+  }
+
   public String getNotificationsRecipientDetails() {
     return getTranslation("notifications.recipientDetails");
   }

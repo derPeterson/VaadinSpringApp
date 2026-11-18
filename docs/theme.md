@@ -639,10 +639,16 @@ Menü, Tabelle und Tickets nutzen denselben Kern mit lokalen Größen.
 
 **AvatarGroup:** Die Empfängervorschau nutzt Initialen ohne zusätzliche Bildabfragen.
 Bis sechs Empfänger alle anzeigen; ab sieben fünf Avatare plus „+N“. Früherer Überlauf
-bei Platzmangel bleibt nativ. Rahmen/Farben entsprechen Cosmos. Das höhenbegrenzte
-Überlaufmenü zeigt nur die ausgeblendeten Namen und bleibt scrollbar. Es zeigt auf
-Benutzerwunsch keinen Fokus-/Klickrahmen; Hover und Tastaturbedienung bleiben nativ.
-Die Details-Liste bleibt der Zugang zu allen Namen und E-Mail-Adressen.
+bei Platzmangel bleibt nativ. Rahmen/Farben entsprechen Cosmos, die Namen-Tooltips bleiben.
+Die gesamte Reihe öffnet per Klick, Enter oder Leertaste die vollständige Liste,
+auch ohne „+N“. `NotificationRecipientPopover` setzt diese aus nativem Popover,
+Suchfeld und Grid zusammen: Name, darunter sekundäre E-Mail; Suche über beide Werte,
+keine Zeilenauswahl. Die Höhe bleibt auf 650 px beziehungsweise die verfügbare
+Fensterhöhe begrenzt; das Grid scrollt und virtualisiert seine Zeilen.
+Der freigegebene, gekapselte Listener in `notification-recipient-popover.js` fängt
+Klick/Tastatur vor dem nativen Überlaufmenü ab. Er nutzt nur DOM-Ereignisse und
+öffentliche Light-DOM-Slots, keine privaten Vaadin-Methoden. „Details“ entfällt.
+Gestaltung: `cosmos-notifications.css`, Klassen `cosmos-recipient-*`.
 
 ### Tooltips
 

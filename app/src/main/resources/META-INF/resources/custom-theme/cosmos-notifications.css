@@ -932,46 +932,74 @@ vaadin-app-layout.cosmos-reference-admin
     font-weight: var(--cosmos-font-weight-semibold);
 }
 
-.cosmos-notification-compose-avatar-group::part(overlay) {
-    box-sizing: border-box;
-    min-width: 220px;
-    max-width: calc(100vw - 32px);
-    max-height: min(360px, calc(100dvh - 32px));
-    border: 1px solid var(--cosmos-border-color);
-    border-radius: 10px;
-    background: var(--cosmos-base-color);
+/* Ein gemeinsamer Einstieg; Namen-Tooltips bleiben an den nativen Avataren. */
+.cosmos-notification-compose-avatar-group,
+.cosmos-notification-compose-avatar-group vaadin-avatar {
+    cursor: pointer;
+}
+
+.cosmos-notification-compose-avatar-group:focus-visible {
+    outline: var(--cosmos-border-width) solid var(--cosmos-primary-text-color);
+    outline-offset: var(--cosmos-space-xs);
+    border-radius: var(--cosmos-control-radius);
+}
+
+.cosmos-recipient-popover::part(overlay) {
+    width: min(480px, calc(100vw - 2 * var(--cosmos-space-l)));
+    background: var(--cosmos-dialog-background);
+    border: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
+    border-radius: var(--cosmos-control-radius);
     color: var(--cosmos-text-color);
-    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 
-.cosmos-notification-compose-avatar-group::part(content) {
-    padding: 4px 4px 0;
-}
-
-.cosmos-notification-compose-avatar-group vaadin-avatar-group-menu {
-    padding: 0;
-}
-
-.cosmos-notification-compose-avatar-group vaadin-avatar-group-menu-item {
+.cosmos-recipient-popover::part(content) {
     box-sizing: border-box;
-    min-height: 36px;
-    margin: 0 0 4px;
-    padding: 6px 8px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: var(--cosmos-label-color);
-    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
-    --vaadin-focus-ring-width: 0px;
-    outline: none;
+    display: flex;
+    padding: var(--cosmos-space-l);
 }
 
-.cosmos-notification-compose-avatar-group vaadin-avatar-group-menu-item:hover {
-    background: var(--cosmos-hover-background);
+.cosmos-recipient-content {
+    height: min(650px, calc(100dvh - 6 * var(--cosmos-space-l)));
+    min-height: 0;
+    gap: var(--cosmos-space-s);
 }
 
-.cosmos-notification-compose-avatar-group vaadin-avatar-group-menu-item vaadin-avatar {
-    --cosmos-avatar-size: 24px;
-    --vaadin-avatar-size: var(--cosmos-avatar-size);
+.cosmos-recipient-heading {
+    flex: none;
+    font-weight: var(--cosmos-font-weight-semibold);
+}
+
+.cosmos-recipient-grid {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    --vaadin-grid-cell-background: var(--cosmos-dialog-background);
+}
+
+.cosmos-recipient-grid::part(cell) {
+    padding: var(--cosmos-space-s);
+}
+
+.cosmos-recipient-row {
+    gap: var(--cosmos-space-s);
+    font-size: var(--cosmos-font-size-s);
+}
+
+.cosmos-recipient-identity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    line-height: var(--cosmos-line-height-copy);
+}
+
+.cosmos-recipient-name {
+    font-weight: var(--cosmos-font-weight-semibold);
+}
+
+.cosmos-recipient-email {
+    color: var(--cosmos-text-secondary-color);
+    font-size: var(--cosmos-font-size-xs);
 }
 
 .cosmos-notification-compose-status {
@@ -1016,60 +1044,6 @@ vaadin-app-layout.cosmos-reference-admin
     --vaadin-avatar-background: var(--cosmos-badge-background);
     color: var(--cosmos-badge-color);
     flex-shrink: 0;
-}
-
-.cosmos-notification-compose-recipient-list {
-    display: grid;
-    gap: var(--cosmos-space-s);
-    color: var(--cosmos-text-secondary-color);
-    font-size: var(--cosmos-font-size-xs);
-    line-height: var(--cosmos-line-height-copy);
-}
-
-.cosmos-notification-compose-recipient-list > div {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--cosmos-space-s);
-    overflow-wrap: anywhere;
-}
-
-.cosmos-notification-compose-recipient-list > div > span + span {
-    margin-inline-start: auto;
-    text-align: end;
-}
-
-.cosmos-notification-compose-details {
-    width: 100%;
-    margin: 0;
-}
-
-/* Wie bei den Benutzerfiltern steuert ein normaler Vaadin-Button das native Details. */
-
-.cosmos-notification-compose-details > vaadin-details-summary,
-.cosmos-notification-compose-details:not([opened]) {
-    display: none;
-}
-
-.cosmos-notification-compose-details[opened]::part(content) {
-    box-sizing: border-box;
-    padding: var(--cosmos-space-l);
-    background: var(--cosmos-card-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-card-border);
-    border-radius: var(--cosmos-control-radius);
-}
-
-.cosmos-notification-compose vaadin-button.cosmos-notification-compose-details-toggle {
-    margin: 0;
-    margin-inline-start: auto;
-    color: var(--cosmos-primary-text-color);
-    font-size: var(--cosmos-font-size-s);
-    font-weight: var(--cosmos-font-weight-label);
-}
-
-.cosmos-notification-compose-details-toggle > vaadin-icon {
-    width: var(--cosmos-icon-size-xs);
-    height: var(--cosmos-icon-size-xs);
 }
 
 .cosmos-notification-compose-preview-content {

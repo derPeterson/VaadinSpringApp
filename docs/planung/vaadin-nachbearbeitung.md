@@ -194,9 +194,10 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   **und ausdrücklicher Benutzerabnahme** aus dem Komponenten-Abgleich entfernen.
   Technischer Commit allein ist keine Abnahme; nötige Browsernachtests bleiben zentral offen.
 
-- [ ] Native Möglichkeiten geprüft; nötige Sonderentscheidung geklärt.
-- [ ] Freigegebene Umsetzung und passende JUnit-Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Native Möglichkeiten geprüft; Popover, Suchfeld, Grid und gekapselter
+      Ereignis-Listener ausdrücklich freigegeben. Keine private Vaadin-API.
+- [x] Freigegebene Umsetzung und passende JUnit-Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 - [ ] Benutzer hat ausdrücklich abgenommen; offenes AvatarGroup-Paket bereinigt.
 
 ## 10. Benachrichtigungs-Overlay: Titel und Statuslinie

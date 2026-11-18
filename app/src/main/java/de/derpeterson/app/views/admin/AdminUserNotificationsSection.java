@@ -48,10 +48,10 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosContentCardComponent;
-import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.NotificationEmptyState;
+import de.derpeterson.app.ui.components.NotificationRecipientPopover;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.HashSet;
@@ -631,14 +631,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     recipientLabelSpan.addClassName("admin-notification-preview-recipient-label");
     Div recipientAvatarsDiv = new Div(recipientLabelSpan);
     recipientAvatarsDiv.addClassName("cosmos-notification-compose-recipients");
-    recipientAvatarsDiv.add(createRecipientAvatarGroup(selectedRecipientTargets));
-
-    Div recipientListDiv = new Div();
-    recipientListDiv.addClassName("cosmos-notification-compose-recipient-list");
-    selectedRecipientTargets.forEach(recipientTarget ->
-        recipientListDiv.add(
-            new Div(new Span(recipientTarget.name()), new Span(recipientTarget.email()))));
-    Details recipientDetails = buildPreviewRecipientDetails(recipientListDiv, recipientAvatarsDiv);
+    AvatarGroup recipientAvatarGroup = createRecipientAvatarGroup(selectedRecipientTargets);
+    NotificationRecipientPopover recipientPopover =
+        new NotificationRecipientPopover(
+            recipientAvatarGroup, selectedRecipientTargets, messageProperties);
+    recipientAvatarsDiv.add(recipientAvatarGroup, recipientPopover);
 
     Badge previewSourceBadge = new Badge(messageProperties.getNotificationsSourceAdministration());
     previewSourceBadge.addClassNames(
@@ -659,8 +656,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div messagePreviewDiv = new Div(previewMetadataDiv, previewSubjectSpan, previewBodyDiv);
     messagePreviewDiv.addClassName("cosmos-notification-compose-preview-content");
 
-    notificationPreviewDiv.add(
-        previewHeaderDiv, messagePreviewDiv, recipientAvatarsDiv, recipientDetails);
+    notificationPreviewDiv.add(previewHeaderDiv, messagePreviewDiv, recipientAvatarsDiv);
     emptyPreviewDiv.setVisible(false);
     notificationPreviewDiv.setVisible(true);
     previewStatusBadge.setText(messageProperties.getNotificationsPreviewUpdated());
@@ -687,40 +683,6 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             .map(recipientTarget -> new AvatarGroupItem(recipientTarget.name()))
             .toList());
     return recipientAvatarGroup;
-  }
-
-  private Details buildPreviewRecipientDetails(Div recipientListDiv, Div recipientAvatarsDiv) {
-    Details recipientDetails = new Details("", recipientListDiv);
-    recipientDetails.setId("admin-notifications-preview-recipients");
-    recipientDetails.addClassName("cosmos-notification-compose-details");
-    recipientDetails.setOpened(false);
-
-    Button recipientDetailsButton =
-        new Button(
-            messageProperties.getNotificationsRecipientDetails(), AppIcon.ANGLE_DOWN.create());
-    recipientDetailsButton.setId("admin-notifications-preview-details");
-    recipientDetailsButton.addThemeVariants(ButtonVariant.TERTIARY);
-    recipientDetailsButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
-    recipientDetailsButton.addClassName("cosmos-notification-compose-details-toggle");
-    recipientDetailsButton.setIconAfterText(true);
-    recipientDetailsButton
-        .getElement()
-        .setAttribute("aria-controls", recipientDetails.getId().orElseThrow());
-    recipientDetailsButton.getElement().setAttribute(ARIA_EXPANDED, "false");
-    recipientDetailsButton.addClickListener(
-        _ -> recipientDetails.setOpened(!recipientDetails.isOpened()));
-    recipientDetails.addOpenedChangeListener(detailsOpenedChangeEvent -> {
-      recipientDetailsButton.setIcon(
-          detailsOpenedChangeEvent.isOpened()
-              ? AppIcon.ANGLE_UP.create()
-              : AppIcon.ANGLE_DOWN.create());
-      recipientDetailsButton
-          .getElement()
-          .setAttribute(ARIA_EXPANDED, Boolean.toString(detailsOpenedChangeEvent.isOpened()));
-    });
-
-    recipientAvatarsDiv.add(recipientDetailsButton);
-    return recipientDetails;
   }
 
   private void sendReviewedNotification() {
