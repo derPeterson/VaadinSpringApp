@@ -95,7 +95,11 @@
   Rollen stehen auf Desktop nur links; die rechte Feldspalte bleibt leer. Darunter
   stehen native Switches für Zugang gesperrt sowie bei berechtigter Anlage
   Verifikation und Entwicklerkonto, jeweils über die gesamte Breite. Auf Smartphone
-  bleiben alle Zeilen einspaltig. Aktivierung verändert nur den Entwurf; vorhandene
+  bleiben alle Zeilen einspaltig. Bahn und runder Griff müssen dem vorhandenen
+  Login-Schalter „Login speichern“ entsprechen: Zentrierung, Labelabstand und Fokus
+  ohne 1-px-Korrektur; Beschriftung und Untertext unverändert. Jeder Switch erhält
+  oben und unten S. Ein/Aus, Tastaturfokus und deaktivierte Verifikation beim
+  Entwicklerkonto prüfen. Aktivierung verändert nur den Entwurf; vorhandene
   Rechte und das Zusammenspiel zwischen Verifikation und Entwicklerkonto bleiben erhalten.
   JUnit prüft den Server-/Komponentenablauf; der Benutzer übernimmt die Sichtprüfung,
   kein Browserlauf für diesen Auftrag freigegeben.

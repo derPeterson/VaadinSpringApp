@@ -1,6 +1,9 @@
 # Abarbeitungsliste: Formulare, Benachrichtigungen und AvatarGroup
 
-**Stand: Umsetzung aller 14 Punkte nach Review und Commit dieser Liste freigegeben.**
+**Stand: Punkte 1–13 umgesetzt; manuelle Abnahme offen.**
+
+Die Anwesenheitsauswahl bleibt auf Benutzerentscheidung in ihrer bisherigen
+Darstellung; der uncommittete Farbversuch wurde zurückgenommen.
 
 Diese Liste konkretisiert die nächsten vereinbarten Arbeiten des
 [Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md). Die Gesamtumsetzung
@@ -30,9 +33,6 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Bei einer notwendigen fachlichen Entscheidung oder einer fehlenden nativen API
   die konkrete Lücke erklären und vor der davon abhängigen Sonderlösung nachfragen.
   Unabhängige freigegebene Punkte können weiterbearbeitet werden.
-- **Punkt 14 erst nach den abgeschlossenen und committeten Punkten 1–13 bearbeiten.**
-  Dafür den sauberen Ausgangsstand und Commit festhalten. Punkt 14 bleibt vollständig
-  uncommittet; danach keinen Sammel- oder Abschlusscommit anlegen.
 - Kein automatischer Merge, Release oder Abschluss des gesamten Komponentenumbaus.
 
 ## Gemeinsames Validierungsverhalten für Punkte 2, 3, 4 und 7
@@ -261,28 +261,3 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 
 - [x] Umsetzung und passende Prüfungen abgeschlossen.
 - [x] Review abgeschlossen und eigener Commit erstellt.
-
-## 14. Anwesenheitsstatus: Designversuch zuletzt, ohne Commit
-
-**Ausnahme von der Commit-Regel: Änderungen dieses Punkts nicht committen.**
-
-- Erst nach den Punkten 1–13 am sauberen, committeten Stand beginnen.
-- Nur den jeweils ausgewählten Anwesenheitsstatus verändern:
-  - Überschrift bleibt weiß.
-  - Rahmen erhält die jeweilige Statusfarbe.
-  - Hintergrund wird dezent in der Statusfarbe getönt.
-  - Icon bleibt kräftig und klar erkennbar, Beschreibung weiterhin sekundär.
-- Eine kräftige identische Hintergrund- und Iconfarbe vermeiden, damit das Icon
-  nicht mit der Fläche verschwimmt. Die bestehenden Statusfarben verwenden.
-- Auf die Anwesenheitsauswahl begrenzen; keine anwendungsweite Änderung des
-  gemeinsamen Auswahlrahmens ableiten.
-- Passende Stilprüfungen und bei Bedarf gezielte JUnit-Prüfungen ausführen,
-  Browserbedarf zentral festhalten. Keine Browserrunde starten.
-- Versuch und Reviewergebnis zeigen. Benutzer entscheidet anschließend über Behalten
-  oder Zurücknehmen; keine eigenmächtige Rücknahme fremder Änderungen.
-- Auch nach dem Review **keinen Commit** erstellen. Den Versuch einschließlich
-  zugehöriger Änderungen zur Entscheidung im Arbeitsbaum lassen.
-
-- [ ] Sauberer Ausgangscommit nach Punkt 13 festgehalten.
-- [ ] Designversuch und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen; Versuch uncommittet zur Benutzerentscheidung bereit.

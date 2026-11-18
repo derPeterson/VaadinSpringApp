@@ -292,9 +292,14 @@ schrumpfen, während die Feldhilfe ihren Platz behält.
 In der Benutzeranlage/-bearbeitung belegt die Rollen-Auswahl auf Desktop nur die
 linke Feldspalte; rechts bleibt frei. Zugang gesperrt sowie bei der Anlage durch
 Superadmins Verifikation und Entwicklerkonto sind native Switches. Sie stehen
-jeweils in einer eigenen Zeile über die gesamte Formularbreite. Die bestehende
-Schriftgestaltung und die nativen Abstände bleiben erhalten; Umschalten ändert
-zunächst den Entwurf, erst Speichern übernimmt ihn.
+jeweils in einer eigenen Zeile über die gesamte Formularbreite. Die lokale Regel
+in `admin-users.css` übernimmt die vollständige Schaltergestaltung von „Login
+speichern“ aus `cosmos-public.css`: Geometrie, Grid-Zentrierung, Labelabstand,
+Zustandsfarben und Fokusrahmen. Keine zusätzliche Pixelverschiebung des Griffs.
+Jeder Switch erhält oben und unten S (`--cosmos-space-s`); zwischen zwei
+Switches ergeben sich damit 16 px.
+Beschriftung und Untertext behalten ihre bisherige Typografie und dürfen umbrechen.
+Umschalten ändert zunächst den Entwurf, erst Speichern übernimmt ihn.
 Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
 Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
 Auch „Alle aktiven Konten“ im Benachrichtigungsentwurf verwendet einen nativen
