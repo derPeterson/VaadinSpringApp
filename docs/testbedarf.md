@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Nachrichtendialog: Primary-Leseaktion — offen.**
+  In DE/EN auf Desktop/Smartphone „Als gelesen markieren“ blau mit Standardschrift,
+  Standardhöhe und ausreichend Kartenrand prüfen. Aktion, Bestätigung und Verhalten
+  nach erneutem Öffnen erhalten; nach Lesen verschwindet der Button. JUnit deckt
+  Varianten und Ablauf ab, keine Browserfreigabe.
+
 - **Glockenvorschau: Titelausrichtung und Lesestatuslinie — offen.**
   In DE/EN auf Desktop/Smartphone Titel bündig mit Nachricht und Metadaten prüfen.
   Ungelesen blaue, gelesen graue linke Linie; Ticketrelevanz wie „Bereits übernommen“

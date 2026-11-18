@@ -221,8 +221,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   Randabstände auf lokale Sonderregeln prüfen und unnötige Regeln entfernen.
 - Funktion und übersetzte Beschriftung erhalten.
 
-- [ ] Umsetzung und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 12. Benachrichtigungsdialog: Metadaten und Innenabstände
 

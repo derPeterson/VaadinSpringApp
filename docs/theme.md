@@ -350,6 +350,11 @@ Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls m
 Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
 [Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
 
+„Als gelesen markieren“ in einer geöffneten Nachricht ist ein nativer Primary-Button.
+Er übernimmt Schrift, Höhe und Innenabstände der gemeinsamen Cosmos-Buttonregeln;
+keine lokale Inline-/Tertiary-Sondergestaltung. Die Aktionszeile bleibt rechtsbündig
+innerhalb des Kartenpaddings.
+
 Die kompakten Benachrichtigungskarten richten ihren Titelbutton linksbündig zum
 Text aus. Ihre linke Linie zeigt unabhängig von der Ticketrelevanz den Lesestatus:
 Blau bei ungelesen, sekundäres Grau bei gelesen. Fachliche Statusbadges und

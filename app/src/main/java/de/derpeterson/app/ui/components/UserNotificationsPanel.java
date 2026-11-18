@@ -932,8 +932,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
             AppIcon.CHECK.create(),
             e -> confirmMarkRead(openedNotification));
     markNotificationReadButton.addClassName("cosmos-notification-detail-mark-read");
-    markNotificationReadButton.addThemeVariants(ButtonVariant.TERTIARY);
-    markNotificationReadButton.addClassName(CosmosCssClasses.INLINE_BUTTON);
+    markNotificationReadButton.addThemeVariants(ButtonVariant.PRIMARY);
     markNotificationReadButton.setVisible(openedNotification.unread());
 
     HorizontalLayout readActionsLayout = new HorizontalLayout(markNotificationReadButton);

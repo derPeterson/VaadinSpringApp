@@ -1152,6 +1152,9 @@ class UserNotificationsUiTest {
     Button markNotificationReadButton =
         findDetailActionButton(notificationDetailDialog, "cosmos-notification-detail-mark-read");
 
+    assertTrue(markNotificationReadButton.getThemeNames().contains("primary"));
+    assertFalse(markNotificationReadButton.getThemeNames().contains("tertiary"));
+    assertFalse(markNotificationReadButton.hasClassName(CosmosCssClasses.INLINE_BUTTON));
     assertEquals(!isNotificationRead, markNotificationReadButton.isVisible());
     assertEquals(
         "icons/lucide/check.svg", ((SvgIcon) markNotificationReadButton.getIcon()).getSrc());
