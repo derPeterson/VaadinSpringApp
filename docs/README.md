@@ -48,6 +48,9 @@ Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Te
 
 - [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
   mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
+- [Abarbeitungsliste mit 14 Punkten](planung/vaadin-nachbearbeitung.md): vereinbarte
+  freigegebene Nachbearbeitung; Punkte 1–13 mit Review und Commit,
+  Punkt 14 zuletzt als uncommitteter Designversuch.
 - Zurückgestellte Planungen: [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
   [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
 - Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).

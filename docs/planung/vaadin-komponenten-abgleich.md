@@ -11,6 +11,12 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
+Die nächsten 14 vereinbarten Punkte stehen in der
+[Abarbeitungsliste zur Nachbearbeitung](vaadin-nachbearbeitung.md).
+Die Umsetzung ist nach Review und Commit der Liste ausdrücklich freigegeben.
+Punkte 1–13 erhalten jeweils Review und Commit, Punkt 14 bleibt als letzter
+Designversuch uncommittet.
+
 Die Gesamtumsetzung bleibt ausdrücklich offen. Der bisherige Komponentenstand
 liegt auf `main`; die Integration war kein Featureabschluss.
 Aktueller Folgebranch: `codex/vaadin-komponenten-folgearbeiten-5`, angelegt von
