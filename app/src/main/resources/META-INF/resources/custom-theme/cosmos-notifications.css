@@ -1979,13 +1979,9 @@ vaadin-tab[selected] .portal-filter-count {
     border: 1px solid color-mix(in srgb, var(--cosmos-color-white) 15%, transparent);
     border-radius: 8px;
     background: var(--cosmos-base-color);
-    padding: 4px;
 }
 
 vaadin-combo-box-item.portal-pagination-option {
-    height: 32px;
-    min-height: 32px;
-    padding: 0;
     border-radius: 5px;
 }
 

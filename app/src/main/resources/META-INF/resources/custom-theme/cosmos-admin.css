@@ -1271,12 +1271,7 @@ vaadin-app-layout.cosmos-reference-admin #admin-notifications-recipients::part(o
     border-radius: 9px;
 }
 vaadin-app-layout.cosmos-reference-admin #admin-notifications-recipients::part(content) {
-    padding: 0;
     overflow: hidden;
-}
-vaadin-app-layout.cosmos-reference-admin #admin-notifications-recipients vaadin-multi-select-combo-box-scroller {
-    box-sizing: border-box;
-    padding: 7px;
 }
 .admin-notification-recipient-option {
     min-height: 56px;

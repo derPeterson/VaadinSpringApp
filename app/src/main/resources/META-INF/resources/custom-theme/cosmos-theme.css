@@ -866,22 +866,16 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) [focused]::part(reveal-button) {
     color: var(--cosmos-primary-text-color);
 }
-.cosmos-reference-portal .cosmos-reference-choice {
-    --vaadin-item-overlay-padding: 0;
-}
 .cosmos-reference-portal .cosmos-reference-choice::part(overlay) {
     border: 1px solid var(--cosmos-border-color);
     border-radius: 10px;
 }
-.cosmos-reference-portal .cosmos-reference-choice::part(content) {
-    box-sizing: border-box;
-    padding: 4px 4px 0;
-}
 vaadin-combo-box-item.cosmos-reference-option {
     box-sizing: border-box;
-    height: 46px;
-    min-height: 46px;
-    padding: 0 0 4px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid transparent;
     background: transparent;
     color: var(--cosmos-label-color);
 }
@@ -918,8 +912,8 @@ vaadin-combo-box-item.cosmos-reference-option::before {
 .cosmos-reference-option[selected] .cosmos-reference-option-check {
     opacity: 1;
 }
-/* Der native Virtualizer misst keine Außenabstände. Die transparente Host-Border
-   hält zwischen den innen gezeichneten Auswahlflächen zwei Pixel frei. */
+/* Wie bei der Einfachauswahl hält die transparente Host-Border zwischen den
+ * Auswahlflächen zwei Pixel frei, die der native Virtualizer mitmisst. */
 .cosmos-theme vaadin-multi-select-combo-box-item {
     --cosmos-option-background: transparent;
     --cosmos-option-border: transparent;
@@ -977,8 +971,8 @@ vaadin-combo-box-item.cosmos-reference-option::before {
     min-width: 88px;
 }
 vaadin-combo-box-item.portal-pagination-option {
-    height: 36px;
-    min-height: 36px;
+    height: 34px;
+    min-height: 34px;
 }
 .portal-pagination-option .cosmos-reference-option-row {
     height: 32px;

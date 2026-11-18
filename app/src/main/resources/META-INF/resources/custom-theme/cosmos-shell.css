@@ -393,10 +393,20 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
     background: var(--vaadin-input-field-background, var(--cosmos-base-color));
 }
 
+/* Der native Scroller hält den Außenabstand auch beim ersten und letzten Eintrag frei.
+ * Zusätzliche Abstände am Overlay oder Inhalt würden ihn doppelt vergrößern. */
+.cosmos-theme :is(vaadin-combo-box, vaadin-multi-select-combo-box) {
+    --vaadin-item-overlay-padding: var(--cosmos-choice-overlay-padding);
+}
+
+.cosmos-theme :is(vaadin-combo-box, vaadin-multi-select-combo-box)::part(content) {
+    box-sizing: border-box;
+    padding: 0;
+}
+
 /* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
 
-.cosmos-notification-compose vaadin-multi-select-combo-box::part(content),
-.cosmos-theme :is(vaadin-combo-box, vaadin-time-picker)::part(content) {
+.cosmos-theme :is(vaadin-combo-box, vaadin-multi-select-combo-box, vaadin-time-picker)::part(content) {
     font-size: var(--cosmos-font-size-m);
 }
 

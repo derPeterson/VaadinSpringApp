@@ -1087,16 +1087,9 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
 .admin-user-dialog.admin-reference-dialog input[slot="input"] {
     font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
-.admin-user-dialog.admin-reference-dialog .cosmos-reference-choice {
-    --vaadin-item-overlay-padding: 0;
-}
 .admin-user-dialog.admin-reference-dialog .cosmos-reference-choice::part(overlay) {
     border: 1px solid var(--cosmos-border-color);
     border-radius: 10px;
-}
-.admin-user-dialog.admin-reference-dialog .cosmos-reference-choice::part(content) {
-    box-sizing: border-box;
-    padding: 4px 4px 0;
 }
 .admin-user-dialog.admin-reference-dialog .admin-user-option-checkbox {
     padding: 2px 0 0;
@@ -1208,12 +1201,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     border-radius: 9px;
 }
 .admin-user-dialog .admin-user-roles::part(content) {
-    padding: 0;
     overflow: hidden;
-}
-.admin-user-dialog .admin-user-roles vaadin-multi-select-combo-box-scroller {
-    box-sizing: border-box;
-    padding: 7px;
 }
 .admin-user-role-option {
     min-height: 36px;

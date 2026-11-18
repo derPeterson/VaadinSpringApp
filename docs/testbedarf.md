@@ -2,6 +2,21 @@
 
 ## Browser-Tests
 
+- **ComboBox-Overlays: gemeinsame Außen- und Eintragsabstände — offen.**
+  In DE/EN auf Desktop und Smartphone Geschlecht/Sprache in Registrierung und
+  Profil, Auswahlfelder in Benutzerbearbeitung und Konfiguration, Rollen- und
+  Empfänger-Mehrfachauswahl sowie Pagination in Benutzerverwaltung, Inbox und
+  Versandhistorie prüfen. Außen überall 8 px nativer Scrollerabstand, zwischen
+  Auswahlflächen 2 px; insbesondere letzte ausgewählte Zeile berührt keinen
+  Overlayrahmen. Filterung, Scrollen, Tastaturauswahl, Haken und kompakte
+  Pagination bleiben bedienbar. Kein Browserlauf für diesen Auftrag freigegeben.
+
+- **Checkboxen: weiße Auswahlmarkierung — offen.**
+  In DE/EN auf Desktop und Smartphone Einzelcheckboxen, Checkbox-Gruppen und die
+  Tabellen-Gesamtauswahl prüfen: aktive Haken und Teilauswahlstriche weiß, bisherige
+  Auswahlflächen und Fokus-/Hoverdarstellung erhalten. Disabled und Readonly
+  behalten ihre native Unterscheidbarkeit. Kein Browserlauf für diesen Auftrag freigegeben.
+
 - **DatePicker-Overlay: Textaktionen und Jahresspalte — offen.**
   Vorhandene Datumsauswahl in DE/EN auf Desktop und Smartphone prüfen: „Heute“ und
   „Abbrechen“ als rahmenlose Aktionen in Cosmos-Akzenttextfarbe, Jahresspalte mit

@@ -156,6 +156,8 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Löschsymbol in der Glockenvorschau nach Aura-Umstellung | Vom Benutzer in der laufenden Anwendung wieder sichtbar bestätigt und abgenommen; automatisierter DE-/EN-Nachtest separat offen |
 | Responsive globale Notifications und Statussymbole | Responsive Position, Aura-Innenabstand und vereinheitlichte Warn-/Fehlersymbole vom Benutzer abgenommen; automatisierte Browsernachtests separat offen |
 | DatePicker-Overlay | Rahmenlose Akzentaktionen und abgedunkelte Jahresspalte mit Trennlinie und nativer seitlicher Markierung vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
+| Checkbox-Markierung | Weiße Haken und Teilauswahlstriche in aktiven Checkboxen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
+| ComboBox-Overlayabstände | Gemeinsamer Außenabstand von 8 px für Einfach-/Mehrfachauswahl samt Pagination und 2 px zwischen Auswahlflächen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 
 Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
 kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem

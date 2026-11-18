@@ -76,6 +76,8 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-control-border-color: color-mix(in srgb, var(--cosmos-color-white) 12%, transparent);
     --cosmos-text-color: var(--cosmos-color-text);
     --cosmos-label-color: var(--cosmos-color-label);
+    /* Weißer Haken auf aktiven Auswahlflächen; Disabled/Readonly behalten ihre nativen Farben. */
+    --vaadin-checkbox-marker-color: var(--cosmos-heading-color);
     --vaadin-checkbox-background-hover: var(--cosmos-hover-background);
     --vaadin-radio-button-background-hover: var(--cosmos-hover-background);
     --cosmos-heading-color: var(--cosmos-color-white);
@@ -306,6 +308,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-overlay-radius: var(--cosmos-card-radius);
     --cosmos-overlay-background: var(--cosmos-card-background);
     --cosmos-overlay-shadow: var(--cosmos-card-shadow);
+    --cosmos-choice-overlay-padding: var(--cosmos-space-s);
 
     /* Alle Cosmos-Dialoge verwenden diese vier Werte. Header und Footer sind
      * bewusst getrennt: hier lassen sich ihre Farben unabhängig ändern. */

@@ -196,6 +196,26 @@ Hover und akzentblau bei Fokus beziehungsweise geöffnetem Picker.
 Disabled ist auch an Label, Wert und Platzhalter erkennbar. Read-only, Fehler und
 Tastaturfokus bleiben unterscheidbar.
 
+Checkboxen verwenden für den Haken und den Strich einer Teilauswahl die weiße
+Überschriftenfarbe über `--vaadin-checkbox-marker-color` in `cosmos-tokens.css`.
+Dies gilt auch innerhalb von Checkbox-Gruppen. Deaktivierte und schreibgeschützte
+Checkboxen behalten Auras eigene Markerfarben; Radio-Buttons und Switches sind davon unabhängig.
+
+#### ComboBox-Auswahllisten
+
+Einfach- und Mehrfachauswahl verwenden denselben Außenabstand von 8 px:
+`--cosmos-choice-overlay-padding` verweist auf `--cosmos-space-s`.
+`cosmos-shell.css` übergibt ihn an Vaadins `--vaadin-item-overlay-padding`; der native
+Scroller berücksichtigt ihn an allen vier Seiten. Inhalt und Overlay erhalten keinen
+zusätzlichen Innenabstand. Das gilt auch für Rollen, Geschlecht, Sprache und Pagination.
+
+Zwischen Auswahlflächen bleiben 2 px frei: eine transparente Host-Border von 1 px
+je Eintrag wird vom Virtualizer mitgemessen. `cosmos-theme.css` verwendet dieselbe
+Abstandsbildung für die gerenderten Einfachauswahlen und die nativen Mehrfachauswahlen.
+Kompakte Pagination-Einträge behalten ihre 32 px hohe innere Zeile; normale
+Einfachauswahlen ihre 42 px hohe Zeile. Mehrzeilige Empfänger bleiben entsprechend höher.
+Fachdateien gestalten Beschriftung und Zeileninhalt, nicht den gemeinsamen Außenabstand.
+
 #### Hinweise und Warnungen
 
 - Gerahmte Infoboxen verwenden `--cosmos-info-box-padding` und `--cosmos-info-box-gap`.
