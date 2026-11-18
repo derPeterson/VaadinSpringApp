@@ -9,6 +9,8 @@ Das Projekt läuft lokal mit austauschbaren Entwicklungsdaten. Vor einem später
 Livebetrieb müssen Sicherung, Datenerhalt, Identitätsprüfung und Verantwortlichkeiten
 erneut vereinbart werden.
 
+## Vorgehen
+
 1. Anwendung und zugehörige Instanzen stoppen. Unabhängig vom offenen Ticket
    feststellen, welches konkrete eigene Superadminkonto repariert werden soll.
    Kontokennung, Aktivierung, bestätigte E-Mail und explizite Superadminrolle prüfen.
@@ -51,6 +53,8 @@ erneut vereinbart werden.
 5. Einrichtung mit erstem TOTP abschließen und neue Ersatzcodes sichern. Alte
    Sitzungen, Ersatzcodes und Freigaben dürfen danach nicht funktionieren. Erst
    die erfolgreiche Einrichtung entfernt den besonderen Wiederherstellungszustand.
+
+## Nachkontrolle und Dokumentation
 
 Den Eingriff mit interner Kontokennung, Grund und Ergebnis außerhalb sensibler
 Zugangsdaten dokumentieren. Niemals Schlüssel, Codes oder Passworthashes protokollieren.

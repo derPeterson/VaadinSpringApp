@@ -1,5 +1,14 @@
 # Tests
 
+| Ich möchte … | Abschnitt |
+| --- | --- |
+| die passende Testebene wählen | [Testarten](#testarten) |
+| einen konkreten Fehler absichern | [JUnit-Regressionsprüfungen](#junit-regressionsprüfungen) |
+| lokale Tests ausführen | [Java und Frontend](#java-und-frontend) |
+| die vollständige Oberfläche prüfen | [Browserrunde](#vollständige-browserrunde) |
+| offene Prüfungen übergeben | [Testbedarf](#übergabe-offener-testaufgaben) |
+| echte Mailprogramme oder Geräte beurteilen | [Manueller Katalog](manual-tests/README.md) |
+
 ## Testarten
 
 | Ebene | Prüft |
@@ -100,6 +109,8 @@ und der normalen Browser-Helfertests für App und Shared; Browsercode wird nicht
 zu Anwendungscode umklassifiziert. Die optionale serverseitige Browsermessung
 aus dem Runner bleibt separat.
 
+### Coverage-Prüfer
+
 Die Offline-Regressionen des Coverage-Prüfers gehören zu den gepflegten Helfern:
 
 ```powershell
@@ -112,6 +123,8 @@ gemessener Null. Ein neuer Bericht darf keine vor der Neukompilierung erhobenen
 Messdaten verdecken; beide Testmodule benötigen Messdaten passend zu Shared.
 Sie starten weder Maven noch Anwendung, Docker oder Sonar.
 
+### Browser-Helfer ohne Journeys
+
 `BrowserBootstrapTest` prüft unter Windows den echten PowerShell-Einstieg mit einem
 eigenen Maven-Ersatz: abhängige Modulauswahl, Abbruch bei Buildfehlern und Ablehnung
 eines falschen JDK vor dem Build. `BrowserCoverageTest` prüft App-/Shared-Extraktion
@@ -119,6 +132,8 @@ aus den Imagearchiven, zugehörige Quellen, fehlende Module/Archive, Pfadgrenzen
 die Ablehnung vorhandener Extraktionsstände. Die Helfer starten keine Journeys,
 Anwendungscontainer oder Windows-Trustimporte. Der frische Docker-Build samt eigener
 Start-/Coverageprüfung ist ein gesonderter, ausdrücklich freizugebender Nachweis.
+
+### Abgrenzung und gezielte Auswahl
 
 Der eingefrorene OpenCode-Workflow einschließlich seiner Python-/JavaScript-
 Werkzeugtests gehört nicht zum gepflegten Standardprüflauf. Keine Anpassungen für
@@ -128,6 +143,8 @@ ebenfalls nicht ausgeführt. Eine gezielte Wiederaufnahme braucht einen eigenen 
 Gezielte Regressionen verwenden `-Dtest=KlasseA,KlasseB`; in PowerShell das ganze
 Argument zitieren. Datenbanktests verwenden ausschließlich eigene isolierte H2-Datenbanken.
 Frisches Schema und Wiederanlauf desselben Schemas werden separat geprüft.
+
+### Optionaler echter HTTPS-Startertest
 
 `IdeHttpsProxyTest` prüft den IDE-Starter mit eigenen kurzlebigen Prozessen,
 einschließlich hartem Besitzerabbruch mit aktiviertem Java-Debugger. Der optionale

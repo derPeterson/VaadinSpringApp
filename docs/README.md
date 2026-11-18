@@ -1,81 +1,59 @@
-# Dokumentation
+# Dokumentation und Einstieg
 
-Diese Dokumentation beschreibt den aktuellen Entwicklungsstand. Die Anwendung läuft
-lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angelegt.
+Die Dokumentation beschreibt den aktuellen lokalen Entwicklungsstand mit
+austauschbaren Testdaten. **Versionen und Implementierungsdetails stehen im Code**;
+hier stehen Bedienung, Entwicklungsregeln und wesentliche Entscheidungen.
 
-| Thema | Inhalt |
+## Funktionen und Sicherheit
+
+| Thema | Was du dort findest |
 | --- | --- |
-| [Anwendung](anwendung.md) | Funktionen, Konto, Administration und Benachrichtigungen |
-| [Externe Anmeldung](externe-anmeldung.md) | Google-/Microsoft-Einrichtung, Kontoverknüpfung und Sicherheitsnachweise |
-| [Sicherheit](sicherheit.md) | Anmeldung, Rollen, Tokens, Sitzungen, CSRF und Datenverträge |
-| [Rollen und Berechtigungen](rollen.md) | Zusätzliche Befugnisse je Rolle, gemeinsame Kontorechte und Grenzen |
-| [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md) | Authenticator, Ersatzcodes, Regeln, Entwicklungsoptionen und Wiederherstellung |
-| [Entwicklung](entwicklung.md) | Voraussetzungen, Aufbau, Konfiguration, Build und Codestil |
-| [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
-| [Docker](docker/README.md) | Lokale Testanwendung und Mailpit |
-| [Theme](theme.md) | Verbindliche Gestaltung, CSS-Zuständigkeiten und Themewechsel |
-| [Mailqueue](mailqueue.md) | Versand, Wiederholungen und unklare Versandausgänge |
-| [Logging](logging.md) | Logpegel, zulässige Inhalte und Diagnose |
-| [Entscheidungen](entscheidungen.md) | Wesentliche technische Entscheidungen, Vorteile und Grenzen |
-| [Tests](tests.md) | Testarten und Ausführung |
-| [Offener Testbedarf](testbedarf.md) | Gemeinsame Aufgabenliste für fehlende oder anzupassende automatisierte Tests |
-| [Aktueller Stand](status.md) | Funktionsstand und Ergebnisse der letzten vollständigen Testrunde |
-| [Manuelle Sonderprüfungen](manual-tests/README.md) | Menschliche Abnahmen, Mailbeispiele und Anleitungen für Sonderfälle |
-| [Offene Fehler](../BUGS.md) | Kurze priorisierte Liste bestätigter Anwendungsfehler |
-| [Offene Aufgaben](../TODO.md) | Vereinbarte nächste Arbeiten |
+| [Anwendung](anwendung.md) | Konto, Profil, Benachrichtigungen und Administration |
+| [Rollen und Berechtigungen](rollen.md) | Zusätzliche Rechte je Rolle und gemeinsame Kontofunktionen |
+| [Sicherheit](sicherheit.md) | Anmeldung, Kontosperren, Tokens, Sitzungen und Datenverträge |
+| [Externe Anmeldung](externe-anmeldung.md) | Google/Microsoft einrichten und mit dem Konto verbinden |
+| [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md) | Authenticator, Ersatzcodes, Regeln und Wiederherstellungsanfragen |
+| [Betreiber-Notfallweg](betrieb/2fa-notfall.md) | Eng begrenzter Eingriff bei verlorenem Superadmin-Faktor |
+| [Mailqueue](mailqueue.md) | Versand, Wiederholungen und Bereinigung unklarer Versandausgänge |
 
-Details zu automatisierten Browserfällen stehen bei deren Testbeschreibungen und
-in der [Browser-Testanleitung](../browser-tests/README.md).
+## Entwickeln und gestalten
+
+| Thema | Was du dort findest |
+| --- | --- |
+| [Entwicklung](entwicklung.md) | Aufbau, Konfiguration, Start, Build und verbindlicher Codestil |
+| [Startkonten](bootstrap.md) | Bootstrap, Entwicklerkonten und E-Mail-Nachweis |
+| [Theme](theme.md) | Aura/Cosmos, gemeinsame Komponenten, Tokens und CSS-Zuständigkeiten |
+| [Logging](logging.md) | Logpegel, erlaubte Inhalte und sichere Diagnose |
+| [Technische Entscheidungen](entscheidungen.md) | Gründe, Vorteile und Grenzen des geltenden Modells |
+| [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, passende Aufträge und Ausführungsgrenzen |
+| [Docker](docker/README.md) | Eigene lokale Testanwendung, HTTPS und Mailpit |
+
+## Prüfen und nachschlagen
+
+| Thema | Zweck |
+| --- | --- |
+| [Tests](tests.md) | Testarten und technische Ausführung |
+| [Browser-Testanleitung](../browser-tests/README.md) | Auswahl, Isolation, Runner und Berichte |
+| [Manuelle Sonderprüfungen](manual-tests/README.md) | Menschliche Abnahmen, echte Geräte und Mailprogramme |
+| [Aktueller Prüfstand](status.md) | Letzte große Testrunde und Grenzen späterer Teilprüfungen |
+| [Offener Testbedarf](testbedarf.md) | Noch nötige automatisierte Prüfungen |
+| [Offene Fehler](../BUGS.md) | Bestätigte Fehler mit erforderlichem Nachtest |
+| [Offene Aufgaben](../TODO.md) | Vereinbarte nächste Arbeiten |
 
 ## Offene Arbeiten
 
-Die [Umstellung auf Vaadin Aura](planung/aura-umstellung.md) mit neu gegliedertem
-Cosmos-Theme läuft auf dem Branch `design/aura-theme`; der umgesetzte Stand steht
-im [Theme-Standard](theme.md), offen sind noch zwei Aura-Folgefehler und Restpunkte.
+Offene Umsetzungen stehen unter `docs/planung/`; sie sind von der gültigen
+Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Testauftrag.
 
-Die geplante [Versionierung mit Release-Ablauf](planung/releases.md) und der
-darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind durchgelesen;
-ihre Umsetzung ist zurückgestellt. Ob am Ende der laufenden Gesamtumsetzung ein
-erster Release erstellt wird, wird dann entschieden. Noch kein Releaseauftrag.
+- [Aura-Umstellung](planung/aura-umstellung.md): Die technische Umstellung und
+  CSS-Bereinigung sind umgesetzt. Die gemeinsame DE/EN-Browserrunde steht noch aus
+  und wartet auf den ausdrücklichen Startauftrag.
+- [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
+  mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
+- Zurückgestellte Planungen: [Releases](planung/releases.md),
+  [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
+  [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
+- Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).
 
-Die [Passkey-Analyse](planung/passkeys.md) bewertet die Einbindung in vorhandene
-2FA und empfiehlt vorerst eine Zurückstellung. Die Planung ist durchgelesen;
-eine Umsetzung ist nicht freigegeben.
-
-Der [öffentliche Testbetrieb](planung/oeffentlicher-testbetrieb.md) ist mit
-Kostenvergleich, konkreten Voraussetzungen und Deploymentvorschlag geplant und
-durchgelesen. Die Umsetzung ist zurückgestellt. Domain, Dienste und Datenhaltung
-sind vor einer späteren Bereitstellung gemeinsam festzulegen.
-
-Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
-umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md).
-Für neue Designaufgaben dient die laufende Vaadin-Oberfläche als Ausgangspunkt.
-Die früheren HTML-Referenzen sind über den Git-Tag `archiv/html-referenzen` abrufbar.
-Der Stand ist lokal nach `main` integriert. Die Sonar-Bereinigung und die vollständige
-große Testrunde in Deutsch und Englisch sind bestanden. Aktuelle Ergebnisse und
-verbleibende Grenzen stehen im [Prüfstand](status.md).
-
-Weitere vereinbarte Arbeiten stehen in [TODO](../TODO.md); gültige Bedienung und
-Konfiguration in den obigen Fachdokumenten.
-
-Die [Google-/Microsoft-Anmeldung](externe-anmeldung.md) und freiwillige Angaben zu
-Geschlecht/Geburtsdatum sind umgesetzt und vom Benutzer abschließend abgenommen.
-Die gewählten Designkorrekturen stehen im [Theme-Standard](theme.md).
-Die [2FA-Erweiterung](zwei-faktor-authentifizierung.md) umfasst konfigurierbare
-Rollen-/Funktionsregeln, eine Superadmin-Konfiguration, TOTP und Wiederherstellung.
-Sie ersetzt die frühere Google-Zwischenlösung für sensible Aktionen durch einen
-Faktornachweis. Der geschützte Ersteinrichtungsweg und seine Grenzen stehen in der
-[Sicherheitsdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).
-Die gewünschte gewarnte
-Entwicklungs-Ausnahme ist vom sicheren Betrieb getrennt. Die
-Anbieterverwaltung ausschließlich für Superadmins gehört verbindlich zum Paket.
-Für die erste Google-2FA-Einrichtung sind erneute Anbieterbestätigung, E-Mail-Code
-und erster TOTP mit ausdrücklich akzeptiertem Restrisiko abgestimmt. Bestehende
-2FA kann dadurch nicht ersetzt werden. Die Umsetzung ist fachlich und gestalterisch
-abgenommen. Die automatisierten Ergebnisse stehen im [Prüfstand](status.md).
-Weitere bewertete Möglichkeiten stehen in der
-[Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
-Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
-Einordnung der Flow-Oberfläche sowie noch offene Komponentenpakete und
-Abnahmen. Bereits freigegebene Anpassungen stehen
-im Theme-Standard; zurückgestellte Pakete benötigen einen neuen Umsetzungsauftrag.
+Ausführungsfreigaben und offene Abnahmen nicht aus einem Planlink ableiten.
+Tatsächliche Prüfergebnisse stehen ausschließlich im Prüfstand.

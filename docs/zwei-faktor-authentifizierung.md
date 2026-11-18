@@ -7,26 +7,20 @@ und Microsoft Authenticator sowie 2fast für Windows werden als Beispiele verlin
 Die Wahl der App ist unabhängig davon, ob das Portalpasswort, Google oder Microsoft
 zur Anmeldung dient.
 
+**Direkt zu:** [Einrichtung](#einrichtung-und-eigene-verwaltung) ·
+[Regeln und Fristen](#konfiguration-und-standardwerte) ·
+[Schlüssel](#schlüssel-und-entwicklungsoptionen) · [Hilfe](#verlust-und-kontakt) ·
+[Ticketregeln](#ticketzustände-zähler-und-glocke)
+
 ## Einrichtung und eigene Verwaltung
 
-Die Ersatzcodeausgabe bleibt beim PDF-Download auf derselben Seite. Fehler werden
-als Standardmeldung angezeigt. Anzeigen, Kopieren und PDF-Download bleiben bis
-„Codes gesichert“ oder bis zum Ende der berechtigten Sitzung möglich. Es gibt für
-diese Ausgabe keine zusätzliche Fünf-Minuten-Frist. Herunterladen verbraucht sie nicht.
-Die zehn Codes sind beim Betreten bereits aufgeklappt. Der PDF-Dateiname enthält
-den auf sichere ASCII-Zeichen bereinigten Servicenamen, beispielsweise
-`derPeter-recovery-codes.pdf`. Ohne verwendbaren Namen bleibt es bei `recovery-codes.pdf`.
-Erst der Switch „Ich habe meine Ersatzcodes sicher gespeichert“ schaltet den
-Abschlussbutton „Codes gesichert“ frei. Die Bestätigung bleibt beim Sprachwechsel für denselben
-Codesatz erhalten, gilt aber nicht für einen neuen Codesatz. Sie dokumentiert die
-bewusste Bestätigung, kann die tatsächliche sichere Ablage jedoch nicht nachweisen.
-Die aktuellen Konto-, Sitzungs-, Faktor- und Berechtigungsprüfungen bleiben erhalten.
-Status, Inhaltstyp und PDF-Signatur werden vor dem Dateidownload geprüft.
-Eine Fehlerantwort wird nicht als TXT-Datei angeboten. „Codes gesichert“ verwirft
-die Ausgabe endgültig und erteilt keinen neuen Sicherheitsnachweis. Abmeldung,
-Sitzungsablauf oder Sitzungswiderruf sperren den Zugriff ebenfalls. Die automatische
-Bereinigung entfernt bestätigte Ausgaben und Ausgaben ohne aktive Sitzung.
-Die fünf Minuten gelten weiterhin für Sicherheitsbestätigungen und Einrichtungsschritte.
+Unter **Mein Konto → Sicherheit → Portalzugang** stehen Einrichtung,
+Authenticatorwechsel, neue Ersatzcodes und Entfernen zur Verfügung. Eine
+verpflichtende Anmeldung führt vor dem Portalzugriff direkt zur Einrichtung bzw.
+Codeabfrage. Die QR-Grafik entsteht lokal. Für die manuelle Eingabe gibt es einen
+geschützten Einrichtungsschlüssel.
+
+### QR-Code oder manueller Schlüssel
 
 Der Einrichtungsschritt bietet wahlweise den QR-Code oder einen manuellen
 Schlüssel. Die Schlüsselanzeige ist eine native schreibgeschützte Vaadin-TextArea
@@ -42,11 +36,7 @@ Anmeldebestätigung; der Bestätigungsbutton bleibt zusätzlich verfügbar. Unvo
 Codes werden nicht automatisch abgesendet. Nach einem falschen Code kann erneut
 eingegeben und bestätigt werden.
 
-Unter **Mein Konto → Sicherheit → Portalzugang** stehen Einrichtung,
-Authenticatorwechsel, neue Ersatzcodes und Entfernen zur Verfügung. Eine
-verpflichtende Anmeldung führt vor dem Portalzugriff direkt zur Einrichtung bzw.
-Codeabfrage. Die QR-Grafik entsteht lokal. Für die manuelle Eingabe gibt es einen
-geschützten Einrichtungsschlüssel.
+### Verpflichtende Ersteinrichtung
 
 Bei verpflichtender Ersteinrichtung erklärt zunächst eine kompakte Karte die
 Anforderung. „Abmelden“ beendet die Anmeldung, „Einrichten“ führt zur Einrichtung.
@@ -59,6 +49,8 @@ bisher nie geschütztes Konto mit Einrichtungspflicht, nicht für freiwillige
 Einrichtung, frühere Faktoren oder Betreiber-Wiederherstellungen. Ein erster
 gültiger TOTP ist in jedem Fall nötig, bevor Portalzugriff freigegeben wird.
 
+### Identitätsnachweis für die Einrichtung
+
 Eine Einrichtung beginnt mit dem aktuellen Portalpasswort oder einer frischen,
 kontogebundenen Microsoft-Bestätigung. Google bestätigt keine ausreichend frische
 aktive Anmeldung. Ausschließlich für die erstmalige Einrichtung eines bisher nie
@@ -69,6 +61,8 @@ Sitzung unterliegen. Dieses verbleibende Risiko wird nicht als unabhängige 2FA
 von Google dargestellt. Der Mailcode gilt fünf Minuten. Pro Konto sind höchstens
 fünf Anfragen in 15 Minuten und eine pro Minute erlaubt.
 
+### Authenticator wechseln oder entfernen
+
 Ein vorhandener oder früher entfernter Authenticator wird durch diesen Google-/
 Mailweg niemals ersetzt. Für den Authenticatorwechsel muss ein aktueller TOTP oder
 Ersatzcode bestätigt werden. Der alte Faktor bleibt bis zum bestätigten Abschluss
@@ -78,6 +72,8 @@ gesperrt. Ein reines Google-Konto benötigt vor dem Entfernen zusätzlich ein
 Portalpasswort oder eine nutzbare Microsoft-Verbindung, damit eine sichere spätere
 Neueinrichtung möglich bleibt. Der direkte geschützte Authenticatorwechsel bleibt
 auch für reine Google-Konten verfügbar.
+
+### Verlorene App mit Ersatzcode wiederherstellen
 
 Bei verlorener App nach der regulären Anmeldung **Authenticator wiederherstellen**
 wählen, bevor ein Ersatzcode zur reinen Anmeldung verbraucht wird. Ein unbenutzter
@@ -94,6 +90,8 @@ verwendet, darf der vorbereitete Wechsel nicht mehr abschließen. Von zwei
 gleichzeitigen Wechseln mit demselben Code kann nur einer gewinnen. Danach werden
 neue Ersatzcodes ausgegeben und andere Sitzungen widerrufen.
 
+### Ersatzcodes sichern
+
 Bei der Einrichtung und beim Erzeugen neuer Ersatzcodes werden zehn zufällige
 Codes einmalig angeboten. Alle Codes kopieren oder als PDF herunterladen und
 ausdrucken. Das Dokument enthält Logo, Servicename, Konto, Datum und Erläuterungen.
@@ -102,6 +100,23 @@ Das Erneuern der Codes erhält Art und Zeitpunkt des vorhandenen Sitzungsnachwei
 Nach „Codes gesichert“ oder dem Ende der Sitzung werden sie nicht erneut angezeigt.
 Die Anwendung speichert die PDF nicht als Datei. Der Ablauf der Sitzungsausgabe
 ändert die Gültigkeit bereits gesicherter Ersatzcodes nicht.
+
+Die Ausgabe beginnt aufgeklappt. Anzeigen, Kopieren und PDF-Download bleiben bis
+„Codes gesichert“ oder bis zum Ende der berechtigten Sitzung möglich; es gibt keine
+zusätzliche Fünf-Minuten-Frist. Erst der Sicherungs-Switch schaltet den Abschlussbutton
+frei. Der Sprachwechsel erhält diese Bestätigung für denselben Codesatz, nicht für
+einen neuen. Sie belegt eine bewusste Bestätigung, nicht die tatsächliche sichere Ablage.
+
+Der Download bleibt auf derselben Seite und prüft Status, Inhaltstyp und PDF-Signatur.
+Fehler erscheinen als Standardmeldung, nicht als heruntergeladene Fehlerdatei.
+Der Dateiname enthält den auf sichere ASCII-Zeichen begrenzten Servicenamen,
+sonst `recovery-codes.pdf`. Kopieren und Download verbrauchen die Ausgabe nicht.
+
+Abschluss, Logout, Sitzungsablauf oder Widerruf sperren den Abruf. Die automatische
+Bereinigung entfernt bestätigte Ausgaben und solche ohne aktive Sitzung.
+Die Fünf-Minuten-Frist gilt weiterhin für Sicherheitsbestätigungen und Einrichtungsschritte.
+
+### Sitzungsbindung
 
 Einrichtung, Wiederherstellung und 2FA-Hilfe begrenzen den Zugriff der gesamten
 aktuellen Sitzung auf den jeweiligen Ablauf. Direktlinks und alte Tabs führen zum
@@ -137,6 +152,8 @@ Faktor- und Ersatzcodeverwaltung sowie Sicherheitskonfiguration. Änderungen der
 Sicherheitskonfiguration werden nach der vorherigen Regel bestätigt. Ein noch
 nicht gespeicherter Wert kann seine eigene Bestätigung nicht abschalten.
 
+### Inaktivität und Gültigkeit
+
 Die zusätzliche Inaktivitätsfrist ist standardmäßig aus. Bei Bedarf sind Minuten,
 Stunden oder Tage einstellbar, insgesamt eine Minute bis 365 Tage. Ausschalten
 erhält den Zeitwert. Nur echte Eingaben zählen als Aktivität. Hintergrundanfragen,
@@ -152,6 +169,8 @@ Anmeldenachweis. Es überspringt keine geltende 2FA-Regel. Sensible Aktionen ver
 nach der Voreinstellung jeweils eine eigene, einmalige Bestätigung. Eine solche
 Freigabe gilt höchstens fünf Minuten für genau Konto, Sitzung, Faktor-, Zugangs-
 und Regelstand und den angeforderten Zweck.
+
+### Zweckgebundene Aktionsbestätigung
 
 Auch Passwort- und Anbieterbestätigungen sind an den Faktor- und Regelstand
 gebunden. Beim Verbinden eines Anbieters wird die Freigabe erst nach dem
@@ -228,6 +247,8 @@ Der Tooltip lautet „Neue Aktivitäten im Ticketsystem“. Das bloße Öffnen d
 Ticketsystems entfernt den Punkt nicht, erst das Lesen oder der Wegfall aller
 relevanten ungelesenen Nachrichten.
 
+#### Liste und Ticketsprung
+
 Die Adminliste zeigt standardmäßig 10 Vorgänge pro Seite. Im Footer lassen sich
 20 oder 50 Einträge wählen. Die Pfeile wechseln jeweils zur vorherigen oder
 nächsten Seite. Kategorie, Status, Zuständigkeit und „Alle / Ungelesen“ filtern
@@ -243,6 +264,8 @@ wie die Liste.
 Im Filter „Ungelesen“ verschwindet ein gelesener Vorgang aus der Liste. Seine
 geöffnete Detailansicht und der Antwortentwurf bleiben zur Bearbeitung erhalten.
 Ein geänderter Status- oder Zuständigkeitsfilter kann ihn weiterhin ausblenden.
+
+#### Zuständigkeit und Ungelesen-Zähler
 
 | Ticketstatus | Ungelesen-Zähler in der Administration | Was noch zu tun ist |
 | --- | --- | --- |
@@ -260,6 +283,8 @@ Zuständigkeit beziehungsweise Beobachtung das vorsehen.
 Die [Rollenübersicht](rollen.md) ordnet die administrativen Zusatzrechte und die
 gemeinsamen Kontofunktionen ein. Die folgenden Ticketregeln präzisieren deren
 Verhalten für Zuständigkeit und Benachrichtigungen.
+
+#### Glockenhinweise
 
 | Ereignis | Glockenhinweis und Empfänger |
 | --- | --- |
@@ -281,6 +306,8 @@ Historische Benachrichtigungen bleiben im Postfach sichtbar. Fachlich erledigt,
 persönlich gelesen und persönlich entfernt sind getrennte Zustände. Der Filter
 „Ungelesen“ und „Alle als gelesen markieren“ berücksichtigen nur weiterhin relevante
 Hinweise; die Gesamtansicht enthält auch erledigte Hinweise.
+
+#### Sichtbares Lesen und Live-Aktualisierung
 
 Beim sichtbaren Lesen eines Ticketverlaufs werden nur bereits dargestellte
 Nachrichtenbenachrichtigungen und bereits dargestellte Abschlusszustände quittiert.
@@ -308,6 +335,8 @@ Ticket zeigt ungelesene Nachrichten und wird auch in anderen geöffneten Tabs
 desselben Kontos aktualisiert. Sie wird pro
 Konto, Ticket und Ansicht geführt und berücksichtigt nur Nachrichten, die in
 der jeweiligen Ansicht sichtbar sind.
+
+#### Administrative Bearbeitung und interne Vermerke
 
 Die Administration bündelt die Bearbeitung unter „Tickets“. Die Tabs „Alle
 Tickets“ und „Wiederherstellung“ verwenden die vorhandene Ticketart. Weitere
@@ -346,6 +375,9 @@ Tickets abonnieren. Neue öffentliche Nachrichten lösen für berechtigte Abonne
 außer dem Absender eine interne Benachrichtigung mit der Vorgangsnummer aus.
 Sie verweist auf den Nachrichtenverlauf in der Administration. Interne Vermerke
 sind nur in der Administration lesbar und lösen keine Abo-Benachrichtigung aus.
+
+#### Direktlinks und URL-Zustand
+
 Ticketbezogene Benachrichtigungen speichern die öffentliche Vorgangsnummer.
 Ihre Sprungziele verwenden beispielsweise `/admin?section=support&ticket=10003`:
 den Bereich und die sichtbare Ticketnummer ohne Raute. Die Reihenfolge der Parameter
@@ -362,6 +394,8 @@ für jeden Auswahlwechsel einen zusätzlichen Zurück-Schritt anzulegen.
 in der bestehenden Ticketliste. Der Sprung übernimmt das Ticket nicht und markiert
 die Benachrichtigung nicht direkt als gelesen. Sobald der Verlauf sichtbar ist,
 greift die beschriebene Lesequittierung für die dargestellten Nachrichten.
+
+#### Anleitung und Grenzen der Hilfe
 
 „Anleitung senden“ zeigt die Anleitung in der aktuellen Oberflächensprache vorab.
 Ein Sprachwechsel aktualisiert auch die bereits geöffnete Vorschau. Beim Senden

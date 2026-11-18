@@ -1,5 +1,17 @@
 # Entwicklung
 
+Diese Anleitung führt von Projektaufbau und Start bis zu den verbindlichen
+Entwicklungsregeln. Konkrete Bibliotheksversionen stehen in den Builddateien.
+
+| Aufgabe | Abschnitt |
+| --- | --- |
+| Projekt verstehen | [Voraussetzungen und Aufbau](#voraussetzungen-und-aufbau) |
+| Startwerte oder Schema ändern | [Konfiguration und Datenbank](#konfiguration-und-datenbank) |
+| Bauen und starten | [Build](#build-und-änderungen-übernehmen), [HTTPS](#lokales-https) |
+| Java, Python oder CSS bearbeiten | [Codestil und Prüfwerkzeuge](#codestil) |
+| Übersetzungen oder E-Mails ändern | [Übersetzungen und Ressourcen](#übersetzungen-und-ressourcen) |
+| Coverage oder Sonar prüfen | [Coverage](#gemeinsame-java-coverage), [Sonar](#sonarqube-und-codex) |
+
 ## Voraussetzungen und Aufbau
 
 JDK 25 und der Maven Wrapper sind verbindlich. Die tatsächlichen Bibliotheksversionen
@@ -51,13 +63,13 @@ Shared vor seinen Verbrauchern; kein vorheriges manuelles Shared-Install nötig:
 
 Stilprüfungen laufen einmal zentral im Root mit `-N` über alle Modulquellen;
 Anwendungsartefakte liegen unter `app/target/`. IDE-/HTTPS-Start, Docker-Build und
-Browserstarter sind an die Modulstruktur angepasst. Gemeinsamer Java-Analyseumfang
-und JUnit-Coverage sind konfiguriert. Der geschützte Sonar-Ablauf verwendet ebenfalls
-den vollständigen Reactor. Gemeinsame Funktionsprüfung, lokale Main-Integration und
-Servernachweis mit grünem Gate sind im [Prüfstand](status.md) belegt. Der Multi-Modul-
-Umbau ist insgesamt abgenommen.
+Browserstarter sind an die Modulstruktur angepasst. Der geschützte Sonar-Ablauf
+verwendet ebenfalls den vollständigen Reactor. Tatsächlich geprüfte Stände und
+Ergebnisse stehen im [Prüfstand](status.md).
 
 ## Konfiguration und Datenbank
+
+### Startvorgaben und gespeicherte Werte
 
 Spring lädt `application.properties` sowie optional die lokale, nicht versionierte
 `.env`. `app.config.defaults.*` bzw. die vorgesehenen `APP_CFG_*`-Variablen liefern
@@ -116,6 +128,8 @@ Hintergrundprüfungen und die Grenzen des 2FA-Protokolls bleiben im Code.
 Die Bootstrap-Kontolisten und die Netz- und Datenbankparameter bleiben in der
 Startkonfiguration, da sie den Aufbau der Anwendung steuern.
 
+### Bootstrap und Datenbankschema
+
 Bootstrap ist standardmäßig aus. Die optionalen Listen `app.bootstrap.superadmins`,
 `admins`, `users` und `guests` legen explizite lokale Testkonten mit genau ihrer
 vorgesehenen Rolle an. Alle Einträge werden vor der ersten Anlage geprüft; die
@@ -144,7 +158,7 @@ als Build-Eingaben oder Dokumentationsarchiv übernehmen.
 
 ### E-Mail-Bestätigung für Startkonten
 
-`development-account=true` kennzeichnet ein Startkonto ausdrücklich als Entwicklungskonto.
+`development-account=true` kennzeichnet ein Startkonto ausdrücklich als Entwicklerkonto.
 Für solche Konten ist sämtlicher kontobezogener Mailversand ausgeschaltet. Deshalb
 ist die Kombination mit `email-verification-required=true` ungültig und wird vor
 der Kontoanlage abgewiesen. Die Beispielkonten setzen den Entwicklungsschalter
@@ -226,6 +240,12 @@ bleibt bei Maven-Clean erhalten.
 Die im Repository gespeicherte `.run/Application HTTPS.run.xml` erscheint nach
 Projektaktualisierung in der Run-/Debug-Auswahl als **Application HTTPS**.
 
+**Kurzablauf:** Maven-Projekt aktualisieren, JDK 25 und das Modul `app` wählen,
+**Application HTTPS** starten und `https://localhost:8443/` öffnen.
+Der folgende technische Aufbau erklärt Klassenpfad, Prozessaufsicht und Fehlersuche.
+
+#### Geschützter Start und Klassenpfad
+
 Die Prozessaufsicht übergibt ihren Java-Klassenpfad über eine kurzlebige Argumentdatei
 unter `data/https/ide-launcher/start-*/launcher.args`. Verzeichnis und Datei erhalten
 bereits bei der Anlage ausschließlich Benutzerrechte (Windows-ACL bzw. POSIX-Rechte).
@@ -263,6 +283,8 @@ wird auch die Entwicklungsanwendung beendet. Bestehende Prozesse werden weder
 übernommen noch beendet; insbesondere vor dem IDE-Start einen über die BAT-Datei
 gestarteten Caddy mit Strg+C stoppen. Die Konfiguration erlaubt nur eine Instanz.
 
+#### Debug und eigene Caddy-Datei
+
 Java-Breakpoints und HotSwap bleiben nutzbar. Der automatische Spring-DevTools-
 Neustart ist in diesem Einstieg deaktiviert, damit er keinen zweiten Proxy
 startet. Bei Änderungen, die HotSwap nicht übernehmen kann, über IntelliJ neu starten.
@@ -295,6 +317,8 @@ ignorierten `data/https/ide/`; automatisches Speichern der Konfiguration im
 allgemeinen Caddy-Benutzerverzeichnis ist deaktiviert. Der Zugriff über `http://localhost:8081` leitet
 GET/HEAD auf HTTPS um; andere HTTP-Methoden werden abgewiesen.
 
+#### Zertifikatsvertrauen und Rückbau
+
 Nach dem ersten Proxystart die **eigene** CA bewusst für den Windows-Benutzer
 freigeben; dieser Schritt verändert dessen Zertifikatsspeicher und bleibt bis zum
 ausdrücklichen Entfernen wirksam:
@@ -310,6 +334,8 @@ Der Marker `root.crt.owned` bindet den Rückbau an die tatsächlich aufgenommene
 Fingerabdrücke. Das Skript übernimmt keine bereits vorhandenen Trust-Einträge.
 Nur öffentliche CA-Zertifikate an Clients weitergeben; CA-Schlüssel verbleiben
 lokal. Ohne bestätigtes Vertrauen sind Zertifikatsfehler erwartbar; nicht umgehen.
+
+#### Anwendung ohne gemeinsamen Starter starten
 
 Beim direkten IntelliJ-Start der Klasse `Application` im Feld **Program arguments**
 `--spring.profiles.active=https` eintragen. Alternativ gehört
@@ -378,6 +404,8 @@ Das Berichtsmodul benötigt keine transitiven Framework-/Browserbibliotheken;
 die dortigen Maven-Abhängigkeitsausschlüsse verändern nicht die Anwendung oder
 den Sonar-Quellumfang. Die bereits vorhandene JaCoCo-Version bleibt erhalten.
 
+### Bericht erzeugen und prüfen
+
 Aus dem Projektroot den frischen Bericht und das dazu passende wirksame Maven-Modell
 erzeugen und offline prüfen:
 
@@ -418,7 +446,9 @@ Python-Projektumgebung (Python 3.11 oder neuer), Docker Desktop und den vorhande
 SonarQube Community Build unter `http://localhost:9000`. Die Versionen von MCP-Image
 und Maven-Scanner sind im Helfer festgelegt; das Image ist zusätzlich per Digest gebunden.
 
-Einmalige Einrichtung im Projektroot:
+### Einmalige Einrichtung
+
+Im Projektroot:
 
 ```powershell
 # Offizielles Image in der im Helfer festgelegten Version bereitstellen:
@@ -439,6 +469,8 @@ Windows-Benutzer gebunden und liegt außerhalb des Repositorys. Zum Ersetzen das
 Fenster erneut aufrufen. Alternativ ist `SONARQUBE_TOKEN` im aufrufenden Prozess
 möglich. Keine Werte in Chat, Skript, Konfiguration oder Befehlsargumente kopieren.
 
+### MCP-Verbindung und lokaler Zugang
+
 `configure` erzeugt die ignorierte `.codex/config.toml` mit lokalen absoluten Pfaden.
 Nach einem Umzug die vorhandene lokale Konfiguration bewusst abgleichen; fremde
 Konfiguration wird nicht überschrieben. In Codex das tatsächliche Repository als
@@ -455,7 +487,9 @@ Projekt, Findings, Regeln, Gate, Metriken und Hotspots benötigten Werkzeuggrupp
 Schreibende Werkzeuge ausschließlich im freigegebenen Sonar-Ausführungsmodus nutzen;
 Einrichtung, Analyseplanung und große QA verändern keine Issue-Status.
 
-Zusätzliche technische Leseprüfung, ohne Scan oder Statusänderung:
+### Lesen ohne Scan
+
+Technische Leseprüfung, ohne Scan oder Statusänderung:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/sonar/sonar.py read
@@ -468,7 +502,9 @@ Stand; `null` bedeutet fehlende Revision. Fehlende Coverage bleibt fehlend. Ein
 Verbindungs-/Seitenfehler ist kein erfolgreicher Abruf mit null Findings.
 Im normalen Skill-Ablauf werden die einzelnen Codestellen über MCP abgerufen.
 
-Vollständigen Scan nur als beauftragten Analyseschritt auf sauberem **main** starten:
+### Vollständiger Scan
+
+Nur als beauftragten Analyseschritt auf sauberem **main** starten:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/sonar/sonar.py scan
@@ -495,7 +531,9 @@ einen Fehlerstatus. Task-Metadaten stehen nur aktuell unter `.codex/sonar/`;
 kein Berichtarchiv und kein manueller JSON-Export sind nötig. Eine gelesene frühere
 Analyse ersetzt keinen neuen Scan.
 
-Die manuellen BAT-Einstiege im Projektroot verwenden denselben geschützten Helfer
+### Manuelle Starter und Findings-Export
+
+Die BAT-Einstiege im Projektroot verwenden denselben geschützten Helfer
 und die Python-Projektumgebung, unabhängig vom aufrufenden Arbeitsverzeichnis:
 
 ```powershell
@@ -557,7 +595,9 @@ Methodennamen benennen die Aktion und die Art ihres Ziels oder Ergebnisses,
 etwa `closeAccountDialog()` oder `buildAccountHeaderLayout()`. Das soll auch am
 Aufruf erkennbar sein.
 
-**Namen enthalten Zweck und Typ.** Felder, Konstruktorparameter, andere
+#### Zweck und Typ im Namen
+
+Felder, Konstruktorparameter, andere
 Methodenparameter und lokale Variablen enthalten den Typnamen, etwa
 `closeDialogButton` für einen `Button`, `emailTextField` für ein `TextField`,
 `twoFactorStore` für einen `TwoFactorStore` und `messageProperties` für
@@ -575,7 +615,9 @@ Bezeichner, die direkt an bestehende Konfigurationsschlüssel gebunden sind.
 Auch Schleifenindizes benennen ihren Bezug, etwa `ticketIndex` oder
 `columnIndex`.
 
-**Zusammengehörige Namen immer als Block prüfen.** Bei einer Java-Änderung oder
+#### Zusammengehörige Namen als Block prüfen
+
+Bei einer Java-Änderung oder
 einem Review die Namen im betroffenen fachlichen Block vollständig prüfen, etwa
 die Abhängigkeiten einer Klasse samt Konstruktorparametern oder die Felder und
 Aktionen eines Dialogs. Eine Textsuche nach bekannten Beispielen dient nur zum
@@ -603,6 +645,8 @@ Speicher, der tatsächlich verwendet wird.
 | `close` für ein UI-Element | `closeDialogButton`, `closeDialogIcon` oder `closeDialogLabel` |
 | `refresh()` für die Sitzungsliste | `refreshSessionList()` |
 | `process()` | `markNotificationsAsRead()` |
+
+#### Methodenaufgabe und Sichtbarkeit
 
 Eine Methode hat eine klar erkennbare Aufgabe. Ihr Name passt zum Ergebnis und zu
 wichtigen Seiteneffekten. Beim Wechsel der Aufgabe eine fachlich benannte Teilmethode
@@ -810,16 +854,16 @@ npm-Entwicklungsabhängigkeiten in `app/package.json`; `npm install` im Modul `a
 `app/stylelint.config.js`. Nach jeder eigenen CSS-Änderungsrunde im Verzeichnis `app`:
 
 ```powershell
-npm run format:css
-npm run format:css:check
-npm run lint:css
+npm.cmd run format:css
+npm.cmd run format:css:check
+npm.cmd run lint:css
 ```
 
 Stylelint verlangt:
 
 - Farben nur aus `cosmos-palette.css`: keine Hexwerte und keine `rgb()`/`rgba()`/`hsl()`-Literale.
   Ausnahmen mit eigenen Farbwerten sind die dekorative Hintergrundszene
-  (`cosmos-background-*.css`) und die Google-Markenfarben in `cosmos-external-login.css`.
+  (`cosmos-background.css`) und die Google-Markenfarben in `cosmos-external-login.css`.
 - keine `--lumo-*`-Variablen, weder als Definition noch in Werten;
 - keine doppelten Selektoren im selben Kontext einer Datei (`no-duplicate-selectors`) und
   keine doppelten Eigenschaften in einem Block (`declaration-block-no-duplicate-properties`,
@@ -832,6 +876,11 @@ gemeldeter Doppelungen die Kaskade beachten: Deklarationen nur verschieben, wenn
 dazwischenliegende Regel gleicher Spezifität dasselbe Element mit derselben Eigenschaft
 gestaltet. Prettier und Stylelint sind nicht an den Maven-Build gekoppelt; generierte
 Frontenddateien (`vite.generated.ts`, `src/main/frontend/generated/`) prüfen sie nicht.
+
+Bei fremden CSS-Änderungen den Prettier-Schreiblauf auf die eigenen Dateien begrenzen,
+beispielsweise mit `npx.cmd --no-install prettier --write PFAD`. Die reine Formatprüfung
+und Stylelint bleiben erforderlich. Einstellungen oder Prüfregeln nicht abschalten,
+um eine Meldung zu umgehen.
 
 Verbindliche Agentenregeln: [AGENTS.md](../AGENTS.md).
 Für sinnvolle Ereignisse, Logpegel und sichere Diagnose gilt der [Logging-Vertrag](logging.md).

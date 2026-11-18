@@ -21,7 +21,9 @@ Einrichtung und technische Sonar-Bedienung: [Entwicklungsanleitung](entwicklung.
 
 Alle Abläufe beachten den gemeinsamen Root-Reactor: Anwendung/Frontend liegen in
 `app/`, gemeinsame Java-Regeln in `shared/`, Browser-Testcode in `browser-tests/`.
-Stilprüfungen laufen zentral mit `-N`. Gesamt-Java-Prüfungen bei großer Testrunde
+Java-Stilprüfungen laufen zentral mit `-N`; CSS wird mit Prettier und Stylelint
+geprüft. Die verbindlichen Schritte stehen unter [Codestil](entwicklung.md#codestil).
+Gesamt-Java-Prüfungen bei großer Testrunde
 und Merge nutzen das Profil `coverage` samt technischem Berichtsmodul und gemeinsamem
 Offline-Prüfer; die Befehle stehen in der Entwicklungsanleitung. Einzelaufträge
 behalten ihren begrenzten Umfang. Eine Skill-Anpassung startet keine QA oder Scans.

@@ -4,12 +4,6 @@ Bei Loggingarbeiten diesen Vertrag einschließlich der Beispiele lesen und anwen
 Eigene Logmeldungen sind einheitlich **Englisch**, unabhängig von der UI-Sprache.
 Keine Übersetzung über `MessageProperties`; Dokumentation und Kommunikation bleiben Deutsch.
 
-Beim eigenen IDE-HTTPS-Supervisor ist stdout ausschließlich das maschinenlesbare
-`READY <pid>`-Startprotokoll samt Flush. Das ist keine Logmeldung. Die vom eigenen
-Caddy bereits erzeugte Diagnose wird als Prozessausgabe unverändert an stderr
-weitergeleitet. Normale eigene Lifecyclemeldungen verwenden den Logger; die beiden
-Prozesskanäle nicht durch zusätzliche Loggerformatierung verändern.
-
 ## Pegel und Diagnose
 
 Normalbetrieb ist INFO. Die Dateiausgabe steht in `app/src/main/resources/logback-spring.xml`;
@@ -88,3 +82,11 @@ Ausgeschöpfte Mailwiederholungen können als WARN gemeldet werden; jeder normal
 Scheduler-Durchlauf oder dieselbe weiterbestehende Störung braucht keine neue Meldung.
 Queueaufnahme bedeutet nur vorgemerkten Versand, SMTP-Annahme noch keine bestätigte
 Posteingangszustellung. Logtexte müssen diese Unterschiede ausdrücklich erhalten.
+
+## Sonderfall: IDE-HTTPS-Startprotokoll
+
+Beim eigenen IDE-HTTPS-Supervisor ist stdout ausschließlich das maschinenlesbare
+`READY <pid>`-Startprotokoll samt Flush. Das ist keine Logmeldung. Die vom eigenen
+Caddy erzeugte Diagnose wird unverändert an stderr weitergeleitet.
+Normale eigene Lifecyclemeldungen verwenden den Logger. Die beiden Prozesskanäle
+nicht durch zusätzliche Loggerformatierung verändern.

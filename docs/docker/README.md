@@ -40,6 +40,13 @@ Compose bindet die äußeren Zugänge nur an Loopback. SMTP ist intern `mailpit:
 Die Compose-Datei definiert die lokalen Bootstrap-Testkonten; sie überschreibt
 beim Wiederanlauf keine bestehenden Konten. Keine echten SMTP-Ziele erforderlich.
 
+**2FA und Anmeldeanbieter:** Compose hinterlegt keine Verschlüsselungsschlüssel.
+Für die standardmäßig geforderte Admin-2FA ist vor der Einrichtung ein eigener
+TOTP-Schlüssel nötig; für gespeicherte Anbieter-Secrets ein separater Schlüssel.
+Die erforderlichen Werte und Grenzen stehen unter [2FA](../zwei-faktor-authentifizierung.md#schlüssel-und-entwicklungsoptionen)
+und [Anmeldeanbieter](../externe-anmeldung.md#verschlüsselungsschlüssel).
+Die [manuelle Testvorlage](../manual-tests/README.md#eigene-testumgebung) führt beide Werte auf.
+
 ## Konfiguration
 
 Vor dem ersten Browserzugriff das eigene CA-Vertrauen einrichten:
@@ -59,11 +66,16 @@ Normales `down` erhält auch die Proxy-CA. `down --volumes` entfernt sie; vor de
 nächsten Start altes Trustmaterial entfernen und danach die neue CA einrichten.
 Hintergrund und IDE-Bedienung: [Lokales HTTPS](../entwicklung.md#lokales-https).
 
-`APP_CFG_*` liefert Startvorgaben; gespeicherte Adminwerte haben Vorrang.
-SMTP, Remember-me und Workerzahl benötigen nach Änderung einen Appneustart.
-Nach Compose-/Portänderungen `up` verwenden: `restart` übernimmt keine neue
-Containerkonfiguration. Nach Java-/CSS-/Ressourcenänderungen mit `--build` bauen.
+`APP_CFG_*` liefert nur Vorgaben für fehlende Datenbankeinträge; gespeicherte
+Adminwerte haben Vorrang. Änderungen über die Adminoberfläche gelten gemäß Feldhilfe:
+neue SMTP-Verbindungen und Queue-Durchläufe übernehmen ihren gespeicherten Stand
+ohne Neustart. Der Schlüssel für gespeicherte Anmeldungen benötigt einen Neustart.
+Nach Änderungen an Compose-Umgebung oder Ports `up` verwenden: `restart` übernimmt
+keine neue Containerkonfiguration. Ein Neustart überschreibt keine vorhandenen Adminwerte.
+Nach Java-/CSS-/Ressourcenänderungen mit `--build` bauen.
 Die lokale Entwickler-`.env` wird nicht ins Image übernommen.
+
+### Testdaten behalten oder zurücksetzen
 
 Die Appdatei liegt im Volume `vaadinspringapp-test_app-data`, Mailpit im separaten
 `vaadinspringapp-test_mailpit-data`. Sie sind unabhängig von der IntelliJ-Datenbank.
@@ -74,7 +86,9 @@ docker compose down --volumes
 docker compose up -d --build --wait
 ```
 
-Der erste Befehl entfernt die Testkonten und aufgefangenen Mails dieses Projekts.
+Der erste Befehl entfernt Testkonten, aufgefangene Mails und die Proxy-CA dieses
+Compose-Projekts. **Vorher das Vertrauen in die alte CA wie oben beschrieben entfernen**;
+nach dem frischen Start die neue CA bewusst einrichten.
 Normales Stoppen, Neubauen und Neustarten behält sie. Das aktuelle Schema wird
 bei leerem Datenbestand neu angelegt und anschließend durch JPA validiert.
 

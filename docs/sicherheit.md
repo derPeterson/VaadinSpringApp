@@ -1,5 +1,14 @@
 # Sicherheit und Datenverträge
 
+**Direkt zu:** [Anmeldung](#anmeldung-und-rollen) ·
+[Kontoverwaltung](#eigenes-konto-deaktivieren-und-löschen) ·
+[Tokens und E-Mail](#verifikation-passwortreset-und-e-mail-änderung) ·
+[Sitzungen](#sitzungslimit-und-remember-me) · [Neustart](#serverneustart-und-oberfläche) ·
+[Transportschutz](#csrf-cookies-und-entwicklungswerkzeuge)
+
+Diese Regeln beschreiben den aktuellen Eininstanzbetrieb. Sichtbare UI-Aktionen
+ersetzen keine Prüfung in den zuständigen Diensten.
+
 ## Anmeldung und Rollen
 
 E-Mail-Identitäten werden zentral getrimmt und kleingeschrieben. Die Datenbank
@@ -16,6 +25,8 @@ Datenbanksperre geschützt, auch bei konkurrierenden Änderungen verschiedener K
 Die [Rollenübersicht](rollen.md) beschreibt die zusätzlichen Befugnisse jeder
 Rolle, gemeinsame Kontofunktionen und die Grenzen der Rollenvererbung im Detail.
 
+### Fehlversuche
+
 Fehlversuche werden je kanonisierter Identität unter einem Hash gespeichert.
 Versuchslimit und Zeitfenster sind konfigurierbar und gelten ab dem nächsten
 Versuch. Das Fenster beträgt standardmäßig 15 Minuten und kann bis zu 24 Stunden
@@ -31,6 +42,8 @@ Ein ausschließlich extern angemeldetes Konto kann zuvor ein Portalpasswort oder
 einen Authenticator einrichten. Die Aktion ist an die aktuelle Sitzung und den
 nachgewiesenen Kontostand gebunden. Der letzte aktive Superadmin bleibt geschützt.
 
+### Selbstdeaktivierung und Fristen
+
 Die Selbstdeaktivierung widerruft Sitzungen und gespeicherte Anmeldungen. Sie
 reserviert ein Löschdatum und verschickt einen Reaktivierungslink an die
 Kontoadresse. Unter „Konfiguration → Kontoverwaltung“ stellen ausschließlich
@@ -39,6 +52,8 @@ Standardwerte betragen 30 und 7 Tage. Ein Vorlauf von null deaktiviert die
 Erinnerung. Der tatsächliche Vorlauf lässt mindestens einen Tag nach der
 Deaktivierung frei. Bereits festgelegte Termine ändern sich durch spätere
 Konfigurationsänderungen nicht.
+
+### Administrative Sperre und Kontofreigabe
 
 Die administrative Sperre (`administrativelyBlocked`) ist davon unabhängig.
 „Zugang gesperrt“ in der Benutzerverwaltung verhindert Anmeldung, Bestätigungsmails
@@ -54,6 +69,8 @@ Der effektive Kontozugang berücksichtigt zusätzlich die administrative Sperre 
 eine vorhandene Selbstdeaktivierung. Ein ausstehender E-Mail-Nachweis bleibt eine
 weitere, getrennte Zugangsvoraussetzung.
 
+### Reaktivierung
+
 Der Link aktiviert das Konto erst nach einer ausdrücklichen Bestätigung und ist
 bis zum Löschdatum gültig. Eine erfolgreiche Aktivierung macht alle bisherigen
 Links dieses Vorgangs ungültig. Ein gültiges Portalpasswort oder ein bestätigter
@@ -68,8 +85,10 @@ Ein erneut angeforderter Link ersetzt den vorherigen zusätzlich angeforderten
 Link. Der ursprüngliche Deaktivierungslink und ein bereits zugestellter
 Erinnerungslink bleiben bis zur Reaktivierung beziehungsweise Löschfrist gültig.
 Administrativ gesperrte Konten, abgelaufene Fristen und veränderte Kontonachweise
-lassen diesen Weg nicht zu. Entwicklungskonten zeigen keine Versandzusage und
+lassen diesen Weg nicht zu. Entwicklerkonten zeigen keine Versandzusage und
 haben keinen Mailversand. Nach Linkbestätigung ist eine reguläre Anmeldung nötig.
+
+### Endgültige Löschung
 
 Die Löschung wird direkt bestätigt oder nach Ablauf der Deaktivierungsfrist
 automatisch ausgeführt. Sie entfernt das Konto, Anmeldeverknüpfungen,
@@ -83,6 +102,8 @@ fremde Antworten bleiben erhalten. Nur persönlich adressierte sowie selbst
 verfasste Benachrichtigungen werden gelöscht. Gemeinsam empfangene Nachrichten
 bleiben für die anderen Empfänger mit korrigierter Empfängerzahl bestehen.
 Globale Rollen und Konfiguration bleiben erhalten.
+
+### Transaktionsgrenze und Löschmail
 
 Ein Fehler vor dem Commit rollt die gesamte persistente Bereinigung zurück.
 Lokale Avatar-/Sitzungscaches werden erst nach Commit entfernt. Die aktuelle
@@ -150,6 +171,8 @@ Bestätigungs-/Resetmails. Bereits laufende Mailaufträge werden nicht erneut ge
 Eine bestätigte eigene Adressänderung trägt ihren Nachweis dagegen auf die neue
 Adresse ein. Der Schutz des letzten nutzbaren Superadmins bleibt bestehen.
 
+### Token- und Transaktionsregeln
+
 Tokens sind begrenzt gültig und werden bei Verwendung verbraucht. Statuswechsel
 verlaufen aus ACTIVE in einen terminalen Zustand; verbrauchte/abgelaufene Tokens
 werden nicht wieder aktiviert. Gültigkeit verlangt einen Zeitpunkt vor dem Ablauf.
@@ -182,6 +205,8 @@ gespeicherte Sprache vor der Anmeldung. Ohne gültiges Cookie greift die bisheri
 Spracherkennung anhand der Browsereinstellungen. Bei der Anmeldung hat die
 Kontosprache Vorrang.
 
+### Aktive Sitzungen und gespeicherte Anmeldungen
+
 Eine zugelassene HTTP-Sitzung belegt einen Platz. Zusätzliche Tabs teilen diesen Platz.
 Gespeicherte Remember-me-Zugänge ohne aktive Sitzung belegen keinen Platz. Logout,
 Widerruf und Inaktivitätsablauf geben Plätze frei. Browserfenster schließen ist kein Logout.
@@ -213,6 +238,8 @@ Dazu zählen auch Sitzungen, die der Aufruf der Anmeldeseite bereits vor dem
 Speichern angelegt hat. `APP_CFG_SESSION_TIMEOUT_SECONDS`
 setzt den Standard in Sekunden.
 Ohne diese Variable kann `app.sessions.timeout-seconds` weiterhin den Standard vorgeben.
+
+### Widerruf und verspätete Antworten
 
 Ein abschließender HTTP-Commit einer inzwischen gelöschten Sitzung schreibt nichts
 mehr zurück. Sicherheitsattribute einer gelöschten Sitzung bleiben unzugänglich.

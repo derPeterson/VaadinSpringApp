@@ -14,6 +14,14 @@ SMTP-, Sprachwechsel- und Offlinefälle stehen im Browserkatalog. AUTO-08 ist ei
 optionale Prüfung eines tatsächlich vorgesehenen externen SMTP-Anbieters.
 Keine menschliche Abnahme durch einen Screenshot allein ersetzen.
 
+| Fragestellung | Fälle |
+| --- | --- |
+| Gestaltung, Sprache und Bedienbarkeit | HUM-01 bis HUM-05 |
+| Echte Mailprogramme und Versandentscheidung | HUM-06 und HUM-07 |
+| Konkreter externer SMTP-Anbieter | AUTO-08 |
+| Google/Microsoft, Authenticator und Ersatzcodes | HUM-08 und HUM-09 |
+| Systemscrollleisten und Passwortmanager | HUM-10 und HUM-11 |
+
 Das kurze eigene Protokoll nennt Code-/Änderungsstand, Sprache, Gerät/Browser,
 ausgewählte IDs, Schritte und tatsächliche Beobachtung. Status pro Variante:
 OFFEN, BESTANDEN, FEHLER, BLOCKIERT, NICHT AUSGEFÜHRT oder NICHT ZUTREFFEND mit
@@ -27,8 +35,18 @@ Die [Docker-Testumgebung](../docker/README.md) stellt Anwendung und Mailpit bere
 Für lokale Sonderprüfungen eine eigene IDE-Startkonfiguration und neue Dateidatenbank
 verwenden. [properties.example](properties.example) nach
 `data/manual-tests/EIGENER-LAUF/manual-tests.properties` kopieren, `__LAUF__`
-ersetzen und ausschließlich erfundene Kontodaten sowie einen eigenen Testschlüssel
+ersetzen und ausschließlich erfundene Kontodaten sowie eigene Testschlüssel
 eintragen. Bestehende Entwicklerdaten und fremde Prozesse erhalten.
+
+| Vor dem Start ausfüllen | Zweck |
+| --- | --- |
+| Bootstrap-Passwort und Remember-me-Schlüssel | Eigener erster Zugang und gespeicherte Anmeldung |
+| `app.security.totp-encryption-key` | Eigener 32-Byte-Base64-Schlüssel für die standardmäßig geforderte Admin-2FA |
+| `app.security.provider-secrets-encryption-key` | Separater 32-Byte-Base64-Schlüssel, falls Google/Microsoft geprüft werden |
+
+Die Schlüssel für TOTP und Anbieter nicht wiederverwenden. Erzeugung und Grenzen:
+[2FA-Schlüssel](../zwei-faktor-authentifizierung.md#schlüssel-und-entwicklungsoptionen)
+und [Anbieterschlüssel](../externe-anmeldung.md#verschlüsselungsschlüssel).
 
 Als Programmargument der separaten IDE-Konfiguration verwenden:
 
@@ -37,8 +55,8 @@ Als Programmargument der separaten IDE-Konfiguration verwenden:
 ```
 
 Java25 und Projektroot als Arbeitsverzeichnis verwenden. Geerbte DB-/SMTP-Overrides
-dürfen die eigene Testdatei nicht übersteuern. Auf frischer Maven-Einbindung zuerst
-Shared installieren. Der Dateiimport bleibt verpflichtend, damit ein falscher Pfad
+dürfen die eigene Testdatei nicht übersteuern. Die Root-POM mit ihren Modulen gemeinsam in der IDE importieren;
+Klassenpfad und Quellen des Anwendungsmoduls `app` verwenden. Der Dateiimport bleibt verpflichtend, damit ein falscher Pfad
 abgebrochen wird. `server.port` und `base.url` müssen zusammenpassen; vorbereitet
 ist 18090. SMTP ist für eigenes Mailpit auf 18125 vorbereitet, Weboberfläche 18126.
 Nur das selbst bereitgestellte Mailpit stoppen; keine Weiterleitung an reale Postfächer.
@@ -47,8 +65,10 @@ Für Superadmin-Funktionen ein eigenes Bootstrapkonto über `app.bootstrap.super
 vorbereiten; ein gewöhnlicher Admin kann sich diese Rolle nicht selbst vergeben.
 Für Neustartfälle denselben eigenen Datenbankpfad verwenden. Bei deaktiviertem
 Bootstrap muss das nötige Testkonto bereits über die UI angelegt sein. Gespeicherte
-Admin-Konfiguration hat Vorrang vor `app.config.defaults.*`; startgebundene
-SMTP-Änderungen brauchen einen Neustart. Ausgangswerte vor Teständerungen notieren.
+Admin-Konfiguration hat Vorrang vor `app.config.defaults.*`. Änderungen an der
+Startkonfiguration brauchen einen Neustart; neue SMTP-Verbindungen übernehmen
+dagegen die über die Oberfläche gespeicherten Einstellungen ohne Neustart.
+Ausgangswerte vor Teständerungen notieren.
 
 Für ein echtes Mobilgerät muss die eigene Testinstanz gezielt im lokalen Netz
 erreichbar sein: Testadresse und `base.url` anpassen, Bindeadresse/Firewall nur für
@@ -120,39 +140,24 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 2. Benutzer bearbeiten und Löschbestätigung öffnen, ohne zu löschen. Tabelle, Filter, Overlays und Dialogkopf/-fuß zusammen beurteilen.
 3. Lesbarkeit, Kontraste, Abstände, Ausrichtung, Iconwirkung und verständliche Hervorhebung aktiver/gefährlicher Aktionen bewerten. Auffälligkeiten konkret benennen.
 
-Auswahlfelder, Kalender, Formularschutz, Konto verwalten, Konfigurationsfristen,
-Kennzahlkarten, Avatare, Formulare, Seitenpfade und segmentierte Umschalter sind
-bereits vom Benutzer abgenommen und dienen als Vergleichsstandard.
-Die neuen nativen Kartenhüllen in Konto, geschützten Zwischenansichten,
-Administration und Tickets einschließlich Innen-, Vorschau- und Kontextkarten
-sowie die weiteren nativen Bestätigungen sind vom Benutzer am 15.11.2026 anhand
-der bereitgestellten Vergleichsaufnahmen abgenommen. Nicht jeder Dialog wurde
-zusätzlich einzeln in der laufenden Anwendung geöffnet und ausgeführt.
-Den Mailqueue-Assistenten hat der Benutzer selbst geprüft und einschließlich
-F5 abgenommen. Das ist eine ausdrückliche menschliche Abnahme; automatisierte
-Prüfergebnisse und bloß erzeugte Screenshots allein hätten sie nicht ersetzt.
-Die neun anschließenden Nachbearbeitungen an Warnsymbolen, Texten, langen
-Benutzerangaben, mobilen Aktionen und Reiterüberlauf sind am 15.11.2026 nach
-ausdrücklicher Sichtung der Vorher-/Nachher-Aufnahmen ebenfalls vom Benutzer
-abgenommen. Diese Sichtung ersetzt keine Prüfung mit echtem Mobilgerät oder
-Screenreader. Der separat zurückgestellte Scrollpunkt bleibt offen.
-Auch die native Textdarstellung der Erfolgsmeldung beim Speichern persönlicher
-Daten ist nach Sichtung der Vorher-/Nachher-Aufnahmen vom Benutzer abgenommen.
-Auch die repräsentativen Varianten für Fehler, Warnung mit Aufzählung,
-Information, reine Titel und Registrierung mit hervorgehobener Adresse sind
-anhand der DE-/EN-Vergleichsaufnahmen auf Desktop und Smartphone vom Benutzer
-abgenommen. Die übrigen Aufrufer verwenden dieselben Methoden; auf ausdrücklichen
-Benutzerwunsch gibt es dafür keine eigene Screenshot- oder Browserrunde je Stelle.
-Die einheitlichen nativen Zeitfelder einschließlich der 2FA-Inaktivitätsdauer
-und aller 17 übrigen Konfigurationszeitfelder sind vom Benutzer gesichtet und
-abgenommen. Die übrigen Felder wurden auf Benutzerwunsch ohne zusätzliche
-Screenshot-/Browserrunde übernommen; gezielte JUnit-/Stilprüfungen sichern
-die Übernahme ab.
+#### Stand der menschlichen Abnahme
 
-Die native AvatarGroup in der administrativen Benachrichtigungsvorschau wartet
-noch auf Sichtung: sichtbaren Avatarrahmen und native Überlaufliste im Cosmos-Stil
-auf Desktop und Smartphone prüfen. Die bestehende ausführliche Details-Liste
-bleibt auf Benutzerwunsch für alle Namen und E-Mail-Adressen erhalten.
+| Bereich | Vorhandene Abnahme / offene Sichtung |
+| --- | --- |
+| Auswahlfelder, Kalender, Formularschutz, Kontoverwaltung und Fristen | Vom Benutzer abgenommen |
+| Kennzahlkarten, Avatare, Formulare, Seitenpfade und segmentierte Umschalter | Vom Benutzer abgenommen; dienen als Vergleichsstandard |
+| Native Cards einschließlich Innen-/Kontextkarten und weitere ConfirmDialogs | Vergleichsaufnahmen am 15.11.2026 abgenommen; nicht jeder Dialog zusätzlich live ausgeführt |
+| Mailqueue-Assistent | Direkt vom Benutzer einschließlich F5 geprüft und abgenommen |
+| Neun Nachbearbeitungen | Warnsymbole, Texte, lange Identitäten, mobile Aktionen und Reiterüberlauf nach Screenshots am 15.11.2026 abgenommen |
+| Native Notification-Texte | Repräsentative Varianten in DE/EN auf Desktop/Smartphone abgenommen; übrige Aufrufer auf Wunsch ohne eigene Browserrunde übernommen |
+| Einheitliche Dauerfelder | 2FA-Pilot mit Vergleichsaufnahmen; übrige Felder vom Benutzer gesichtet und ohne weitere Screenshotrunde übernommen |
+| Native AvatarGroup | Rahmen und Cosmos-Überlaufliste warten laut Katalog noch auf Sichtung; vollständige Details-Liste bleibt erhalten |
+
+Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
+kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem
+Mobilgerät oder Screenreader. Systemscrollleisten und Kontrastmodi bleiben
+gesondert unter [HUM-10](#hum-10) zu beurteilen; der technische Stand steht im
+[Prüfstand](../status.md#abnahme-offene-nachbearbeitung-und-grenzen).
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
@@ -261,9 +266,12 @@ keine fehlende Funktion. Der Mail-Sichttest prüft Vorlagen und SMTP-Annahme sep
 
 **Voraussetzung:** Nur falls dieser Transport eingesetzt werden soll: ausdrücklich freigegebenes eigenes SMTP-Testziel und Empfängerpostfach; Zugangsdaten ausschließlich lokal.
 
-1. Für die isolierte Anwendung Host, Port, Absender, Auth und TLS gemäß dem eigenen Testziel einstellen und vollständig neu starten; bisherige lokale Werte notieren.
+1. Host, Port, Absender, Auth und TLS für das eigene Testziel einstellen; bisherige
+   Werte notieren. Änderungen der Startkonfiguration verlangen einen Neustart.
+   Über die Oberfläche gespeicherte SMTP-Werte gelten für neue Verbindungen ohne Neustart.
 2. Eine eindeutige Admin-Testmail sowie einen Queue-Mailablauf an das freigegebene Testpostfach auslösen. Transportannahme und tatsächliche Postfachzustellung getrennt dokumentieren.
-3. Server-/Postfachbelege zuordnen; Links müssen auf die eigene erreichbare Testinstanz zeigen. Danach lokale SMTP-Werte wiederherstellen und neu starten.
+3. Server-/Postfachbelege zuordnen; Links müssen auf die eigene erreichbare Testinstanz
+   zeigen. Danach die lokalen SMTP-Werte auf demselben Konfigurationsweg wiederherstellen.
 
 **Erwartet:** Der tatsächlich vorgesehene Transport arbeitet mit den vereinbarten Auth-/TLS-Einstellungen; beide Nachrichten treffen zuordenbar ein. Nur SMTP-Annahme genügt nicht als Postfachnachweis. Ohne freigegebenes Ziel BLOCKIERT, bei rein lokalem Einsatz NICHT ZUTREFFEND.
 

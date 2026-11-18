@@ -1,5 +1,13 @@
 # Anwendung
 
+Diese Übersicht erklärt die vorhandenen Funktionen. Technische Schutzregeln stehen
+unter [Sicherheit](sicherheit.md), die Rechteverteilung unter [Rollen](rollen.md).
+
+**Direkt zu:** [Benutzerkonto](#benutzerkonto) · [Mein Konto](#mein-konto) ·
+[Formularschutz](#ungespeicherte-formularänderungen) ·
+[Profilbild](#profilbild-und-verfügbarkeit) · [Benachrichtigungen](#benachrichtigungen) ·
+[Administration](#administration)
+
 ## Benutzerkonto
 
 - Registrierung mit Vor-/Nachname, E-Mail und bestätigtem Passwort. Geschlecht und Geburtstag sind freiwillig.
@@ -34,7 +42,9 @@ keine Verifikationsmail; administrative Sperren bleiben wirksam. Unveränderte A
 lösen keinen Versand aus. Der manuelle Button verwendet weiterhin die gespeicherte
 Adresse. Ein Mailauftrag ist keine Zustellbestätigung.
 
-Ein **Entwicklungskonto** ist davon unabhängig ausdrücklich gekennzeichnet. Nur
+### Entwicklerkonten
+
+Ein **Entwicklerkonto** ist davon unabhängig ausdrücklich gekennzeichnet. Nur
 Superadmins können dieses Merkmal bei der Kontoanlage setzen; beim Anwendungsstart
 ist es je Startkonto konfigurierbar. Es unterdrückt sämtliche kontobezogenen Mails,
 auch Sicherheits- und Löschmails. Es ersetzt keine Rollen- oder Identitätsprüfung.
@@ -57,10 +67,14 @@ Bereich in der URL. Unter Sicherheit merkt sich `tab=portal`, `tab=providers` od
 Auswahl öffnen sich das Profil beziehungsweise der Portalzugang. Alte Links mit `tab=security` und
 den anderen bisherigen Bereichswerten bleiben nutzbar.
 
+### Persönliche Daten
+
 Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern.
 Geschlecht und Geburtstag dürfen leer bleiben oder wieder geleert werden. Die E-Mail-Adresse
 wird über den Sicherheitsablauf geändert. Parallele Änderungen werden mit einem
 Versionskonflikt gemeldet, statt ein anderes geöffnetes Formular zu überschreiben.
+
+### Sicherheit und Anmeldewege
 
 Passwortwechsel verlangen den nach der aktuellen Regel erforderlichen,
 zweckgebundenen Identitätsnachweis. Bei eingerichteter 2FA ist dies standardmäßig
@@ -83,6 +97,8 @@ angeboten. Eine verpflichtende Einrichtung bzw. Bestätigung erfolgt vor dem
 vollständigen Kontozugriff. Auch eine gespeicherte Anmeldung überspringt diesen
 Schritt nicht. Details: [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
 
+### Konto verwalten
+
 Der Tab **Konto verwalten** bietet die vorübergehende Deaktivierung und die
 endgültige Löschung. Beide verlangen einen ausdrücklichen Klick nach dem
 Identitätsnachweis. Nach erfolgreichem Abschluss erscheint auf der Anmeldeseite
@@ -91,10 +107,12 @@ Anmeldung stattdessen zur Reaktivierungshilfe mit festem Löschdatum. Administra
 Sperren erlauben keine Selbstreaktivierung.
 In der Benutzerverwaltung heißt der unabhängige administrative Schalter
 „Zugang gesperrt“. Unter dem standardmäßig eingeklappten Bereich „Anmeldung“
-zeigen selbst deaktivierte Konten ein Status-Badge und ihren endgültigen Löschtermin.
+zeigen selbst deaktivierte Konten einen gelben Warnhinweis mit ihrem endgültigen Löschtermin.
 Die Anzeige ist schreibgeschützt. Aufklappen verändert keine Formulardaten.
 Fristen, Mailversand und Löschumfang stehen unter
 [Kontodeaktivierung und Löschung](sicherheit.md#eigenes-konto-deaktivieren-und-löschen).
+
+### Portalpasswort und Sitzungen
 
 Beim Passwort zeigt ein natives Badge „Eingerichtet“ in Grün oder „Nicht eingerichtet“
 in Blau. Ein ausschließlich über Google oder Microsoft angelegtes Konto hat zunächst
@@ -205,10 +223,11 @@ Nach dem ersten Anmeldenachweis können ausgesperrte Benutzer ausschließlich ih
 eigenen Anfragen erreichen. Eine Antwort oder ein Ticketabschluss setzt keinen
 Authenticator zurück und gibt keinen gesperrten Kontozugriff frei.
 
-Die Benutzerverwaltung bietet sofortige Namens-/E-Mail-Suche, Sortierung und Paging.
-Weitere Filter sind Entwürfe bis zum Anwenden; Badges zeigen angewandte Kriterien.
-Reset leert Entwürfe und aktive Kriterien. Datum und Uhrzeit bilden einen gemeinsamen
-Aktivitätsfilter; Uhrzeit ist ohne gültiges Datum deaktiviert.
+Die Benutzerverwaltung bietet Sortierung und Paging sowie ein seitliches Filterpanel.
+Suche nach Name/E-Mail, Zugangsstatus, Rollen, Anwesenheit und Aktivitätsgrenze bilden
+einen Entwurf. Erst **Anwenden** übernimmt ihn; **Zurücksetzen** leert nur den Entwurf,
+Abbrechen und Escape erhalten die bisherigen Kriterien. Der Zähler nennt ausgewählte
+Filtergruppen. Datum und Uhrzeit bilden eine Gruppe; Uhrzeit ist ohne gültiges Datum deaktiviert.
 
 Unter „Wann gilt die Änderung?“ erklärt jede Feldhilfe in der Konfiguration den
 Zeitpunkt und relevante Folgen für bestehende Sitzungen, Einträge oder laufende

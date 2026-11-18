@@ -1,1172 +1,26 @@
 # Silent Cosmos: Theme und Gestaltung
 
-## Native Kartenhüllen für bestehende Ansichten
-
-`CosmosCardComponent` verwendet die native Vaadin-`Card` für die gemeinsamen
-Konto-, Konfigurations-, Verwaltungs- und Ticketpanels. Die vorhandenen
-Cosmos-Klassen bestimmen weiterhin Rahmen, Flächen und Abstände.
-`cosmos-cards.css` setzt nur die zusätzlichen nativen Zwischenräume zurück;
-die öffentlichen Content-/Footer-Parts geben die bestehende fachliche Anordnung
-frei. `AccountPanelComponent` ordnet Kopf und Footer den Card-Slots zu und bindet
-die sichtbare Überschrift als zugängliche Beschriftung ein.
-
-Die öffentliche Standardcard und `CosmosMetricCard` behalten ihre bereits
-abgenommenen, getrennt begrenzten Regeln. Vorher-/Nachher-Prüfungen sichern die
-unveränderte Gestaltung; ein Wechsel der Java-Basis erlaubt keine Neugestaltung.
-
-`CosmosContentCardComponent` verwendet die native Card auch für kleine Konto-,
-Sitzungs-, Anbieter-, Vorschau- und Kontextkarten. Bestehende Fachklassen bestimmen
-weiterhin Rahmen und Anordnung; `cosmos-cards.css` neutralisiert nur die
-zusätzlichen nativen Abstände und Flächen mit bewusst niedriger Selektorgewichtung.
-Vorschauen ordnen Kopf und Footer den öffentlichen Card-Slots zu. Tabellenzeilen
-und illustrative Seitenkompositionen erhalten dadurch keinen zusätzlichen Rahmen.
-
-`ConfirmDialogInitialFocus` erhält den vorgesehenen Anfangsfokus der nativen
-Bestätigung. Der native ConfirmDialog setzt seinen Bestätigungsbutton erst beim
-abgeschlossenen Overlay-Öffnen in den Fokus. Deshalb reagiert der kleine Adapter
-auf das öffentliche `vaadin-overlay-open`-Ereignis an der ShadowRoot-Ereignisgrenze
-und fokussiert anschließend den vorgegebenen nativen Button. Er verwendet keine
-internen Element-IDs oder privaten Komponentenmethoden. Ein Serveraufruf bereits
-bei `opened-changed` genügt wegen der späteren nativen Fokusvergabe nicht.
-
-Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffenen
-CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
-und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
-
-Die blaue Bereichszeile ist der gemeinsame `CosmosBreadcrumbsComponent` auf Basis
-nativer Vaadin-`Breadcrumbs` im manuellen Modus. `ParentPath` definiert die fachlichen
-Elternstufen unabhängig von Übersetzungen: Portal, Mein Konto, Sicherheit sowie
-Administration und Konfiguration. Die große Überschrift nennt die aktuelle Seite;
-bei Konfiguration ist dies die ausgewählte Gruppe. Panelüberschriften bleiben erhalten.
-`cosmos-breadcrumbs.css` übernimmt die vorhandene blaue Großschreibung und die
-Trennung mit `/`, ohne die Headerpositionen zu ändern. Elternlinks behalten den
-nativen Tastaturfokus, den Handzeiger und den responsiven Überlauf. Der Überlaufknopf
-und das Navigationslabel sind übersetzt. Konfiguration führt zur ersten allgemein
-zugänglichen Gruppe, nicht zu einer Superadmin-Gruppe.
-In gesperrten 2FA-, Wiederherstellungs-, Hilfe-, Verifikations- und Reaktivierungsabläufen
-haben alle Pfaditems keinen Navigationspfad. Die Serverprüfungen und die expliziten
-Zurück-/Abmeldeaktionen bleiben erhalten. Sprachwechsel aktualisieren die Labels.
-
-Bearbeitbare Formulare verwenden für den Verlust eines Entwurfs die Variante
-`UNSAVED_CHANGES` des nativen `PortalConfirmationDialog` über `UnsavedChangesDialog`.
-„Weiter bearbeiten“ erhält die Eingaben
-und erhält den initialen Fokus. „Änderungen verwerfen“ setzt die bestätigte
-Navigation oder Aktion fort. Verglichen wird mit dem geladenen oder zuletzt
-erfolgreich gespeicherten Stand. Die Warnung greift bei der internen Navigation
-in Kontoprofil und Konfiguration, beim erneuten Laden der Konfiguration über ihre
-Schaltfläche und beim Schließen der Benutzerformulare. Filter haben eigene,
-unveränderte Bedienabläufe.
-`BrowserUnsavedChangesGuard` ergänzt dieselben gespeicherten Änderungsvergleiche
-für Neuladen, Schließen und externe Navigation um den nativen Browserdialog.
-Texteingaben werden sofort an den Server übertragen. Speichern, vollständiges
-Zurücksetzen und bewusstes Schließen entfernen den Schutz des jeweiligen Formulars.
-Mehrere offene Formulare beeinflussen sich nicht gegenseitig. Filter, Suchfelder
-und Codeeingaben sind nicht beteiligt. Der Browser bestimmt Text und Darstellung.
-Nach einer Benutzereingabe und dem Serverabgleich greift der Hinweis, nicht jedoch
-zuverlässig bei Verbindungsverlust, Browserabsturz oder erzwungenem Beenden auf
-Mobilgeräten. Es werden keine Entwürfe automatisch gespeichert.
-Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` ergänzt
-die gemeinsamen Dialogregeln um die Aktionsanordnung und die Textgröße.
-Die Aktionen sind native Vaadin-Buttons mit dem gemeinsamen Primär- und Warnstil.
-
-Die Übersicht „Konto verwalten“ verwendet die freigegebene Stitch-Variante A:
-zwei native Inhaltskarten untereinander in den bestehenden
-Sicherheitskarten (`account-entry` in `account-security-cards`), jeweils mit
-einer `VerticalLayout`-Textspalte, vorhandenem Tabler-Icon in der gemeinsamen
-Icon-Box und zugehörigem Vaadin-Button rechts. Fläche, Rahmen, Radius und Abstände
-kommen aus derselben Gestaltung wie Passwort und E-Mail. Die Texte übernehmen die bestehenden
-Sicherheits-Textstile, die Beschreibung die reguläre kleine Textgröße.
-`account-lifecycle-overview` und `account-lifecycle-action` sind lokal in
-`cosmos-account.css` gestaltet.
-Deaktivierungsicons verwenden die Warnpalette, Löschicons die rote Gefahrpalette.
-Auf schmalen Ansichten rückt der Button rechtsbündig unter seinen Text, innerhalb
-der bestehenden Kartenabstände. Header und Tabs
-bleiben unverändert. Bei Entwicklerkonten nennt die Deaktivierungsbeschreibung nur
-die Folgen der Aktion, ohne technische Kontotypdetails oder Zusage eines Reaktivierungslinks.
-Alle drei Sicherheitsreiter verwenden unten `cosmos-panel-hint` mit
-`account-security-hint`: eigene Footerfläche, obere Trennlinie, blaues Info-Icon
-und sekundärer Text. Portalzugang erklärt die Identitätsbestätigung bei Änderungen,
-Anmeldeanbieter den Erhalt des Anbieterkontos beim Trennen und Kontoverwaltung
-die nachfolgende Sicherheitsbestätigung. Die Hinweise folgen dem Sprachwechsel.
-`account-security-hint` verwendet `flex: none`, damit die für seitliche Footer
-gedachte gemeinsame Flex-Basis im senkrechten Aufbau keine hohe Leerfläche erzeugt.
-Die Höhe ergibt sich aus Inhalt und den vorhandenen Footer-Innenabständen.
-
-Die ausstehende E-Mail-Verifikation und die Konto-Reaktivierung verwenden gelbe
-Header-Iconboxen über `cosmos-status-icon--warning`. Die Reaktivierungsseite
-übernimmt die beschriftete E-Mail-Zeile und die kompakte gerahmte Badge-Gestaltung
-der Verifikation (`pending-reactivation-status-badge` in `cosmos-account.css`).
-`cosmos-email-verification.css` hält die gemeinsame Anordnung und die fette
-Hervorhebung des Spam-/Junkordners; Versandhinweise bleiben kurz und dürfen auf
-schmalen Ansichten natürlich umbrechen.
-
-Der Anmeldungsbereich im Benutzereditor verwendet native Vaadin-`Details`
-(`#admin-user-sign-in-details`) und startet eingeklappt. Die blaue Überschrift und
-das Info-Icon stehen links, rechts der gemeinsame `DetailsToggleButton` wie bei 2FA.
-Der native Summary ist ausgeblendet. Der Details-Host hat innerhalb des kompakten
-Rahmens keinen eigenen Außenabstand; die Inhaltsabstände legt der vorhandene
-Cosmos-Bereich fest. Die gemeinsame lokale Gestaltung liegt
-in `admin-users.css`; darunter erscheinen die bisherigen Angaben, Mailaktionen und
-bei Selbstdeaktivierung der gemeinsame gelbe Warnhinweis mit oben ausgerichtetem
-Icon: „Selbst deaktiviert:“ fett in Gelb, der schreibgeschützte UTC-Löschtermin
-direkt anschließend in normaler Textschrift. Eine Trennlinie oberhalb grenzt den
-Hinweis ab; Linie und Abstand erscheinen nur mit dem sichtbaren Hinweis.
-Ein separates Status-Badge entfällt.
-
-Details-Schalter bleiben anwendungsweit bei Hover in ihrer Grundgestaltung.
-`cosmos-theme.css` nimmt `.two-factor-details-toggle`,
-`.cosmos-notification-compose-details-toggle` und `.cosmos-notification-sent-toggle`
-von den allgemeinen Button-Hoverregeln aus und unterdrückt deren Interaktionsflächen.
-Das gilt für 2FA, Benutzereditor, Anwesenheitsmenü, Ticketanleitung sowie
-Empfängervorschau und Versandhistorie. Handzeiger, Pfeilwechsel und sichtbarer
-Tastaturfokus bleiben erhalten.
-
-Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
-nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse
-`account-lifecycle-explanation` in `cosmos-account.css` hält den Erklärungstext
-auf der gemeinsamen Textgröße `--cosmos-font-size-s`.
-Der Passworthinweis über dem Eingabefeld verwendet in beiden Kontoaktionen
-`.account-lifecycle-password-hint` mit der sekundären Textfarbe, 12 px und Gewicht
-400, entsprechend dem Hinweis bei der OTP-Eingabe.
-
-Die laufende Vaadin-Anwendung ist die verbindliche Vorlage für Besucherbereich,
-Portal und Administration. Für Stitch kann die betroffene Ansicht in einer
-isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst werden.
-Der frühere Bestand statischer Referenzen liegt im Git-Tag `archiv/html-referenzen`.
-
-Scrollleisten verwenden anwendungsweit `cosmos-scrollbars.css` (vom Benutzer gewählte
-Variante „Himmelblau-Strich“): ein abgerundeter Strich im Akzentblau, ohne Richtungspfeile
-und ohne sichtbare Bahn. Die zentralen `--cosmos-scrollbar-*`-Tokens in `cosmos-tokens.css`
-gelten auch am Dokument: Fläche 10 px mit 3 px transparentem Abstand (sichtbar 4 px),
-Griff Himmelblau 55 %, Hover 80 %, beim Ziehen voll `--cosmos-color-sky`, Bahn transparent.
-
-Zwei Wege sorgen für dieselbe Leiste überall:
-
-| Bereich | Technik | Ergebnis |
-| --- | --- | --- |
-| Dokument, eigene Container, Vaadin-Parts `content`, `overlay`, `drawer`, `items`, TextArea-`input-field` | `::-webkit-scrollbar` (Chrome/Edge) | Strich wie beschrieben, Hover-/Ziehfarbe |
-| Inneres Grid-Raster (`vaadin-grid`, `vaadin-grid-pro`), kein öffentlicher Part | vererbtes `scrollbar-color` am Grid | Farbe wie oben; Breite und Form zeichnet der Browser (normale Breite, ggf. Pfeile) |
-| Firefox | `scrollbar-width: thin` und `scrollbar-color` | schmale Leiste in denselben Farben |
-
-`scrollbar-width` wird nicht vererbt; deshalb lässt sich die Breite im Grid-Inneren mit
-öffentlichen Mitteln nicht verringern. Im erzwungenen Systemkontrast bleiben native Farben
-und Breite erhalten. Private Element-IDs sind nicht Teil der Gestaltung.
-Scrollfunktionen und Innenabstände werden nicht geändert.
-Nur Chatverläufe reservieren zusätzlich Platz für die Scrollbahn und Abstand zu den
-Sprechblasenspitzen; diese lokalen Regeln bleiben in `cosmos-mfa-confirmation.css`.
-
-Systemkennzeichnungen verwenden die gemeinsamen Tokens `--cosmos-system-*` aus
-`cosmos-tokens.css`: Akzent `#a855f7`, Fläche `#241638`, Rahmen `#a855f759`
-und Text `#d8b4fe`. System-Badges in Benachrichtigungen und interne Ticketvermerke
-teilen diese warme Violett-Palette. Die Kennzeichnung ergänzt Text und Icons;
-fachliche Statusfarben, blaue Adminantworten und Statusereignis-Icons bleiben erhalten.
-
-Im Anmeldungsbereich des Benutzereditors steht „Kontotyp“ neben dem E-Mail-Nachweis.
-Beide Angaben verwenden die vorhandene responsive Formularzeile; bei schmaler
-Ansicht stehen sie untereinander. Das native Badge `#admin-user-account-type`
-zeigt Standardkonten in Blau und Entwicklerkonten in der violetten Systempalette.
-Die lokale Gestaltung steht in `admin-users.css`, die gemeinsamen Rahmenregeln
-bleiben in `cosmos-theme.css`.
-
-Textbuttons zusammengehöriger Dialogaktionen verwenden `EqualButtonWidths.configure`
-am vorhandenen nativen Layoutcontainer. `equal-button-widths.js` lädt über den
-Anwendungskontext und misst nur sichtbare Beschriftungen einschließlich Präfix,
-Padding und Rahmen. Die größte natürliche Breite gilt für die sichtbaren Textbuttons
-dieser Gruppe. Versteckte oder entfernte Buttons und reine Iconbuttons zählen nicht.
-Bei Sprachwechsel, geändertem Text, Sichtbarkeit oder verfügbarer Breite wird neu
-gemessen. Öffnungsanimationen verfälschen die Layoutmessung nicht. Die Aktionsleisten
-brechen bei Platzmangel um.
-Die optionale CSS-Eigenschaft `--cosmos-equal-button-width` ersetzt bei ausdrücklich
-freigegebenen Gruppen die gemessene Breite. Ohne diese Eigenschaft bleibt die
-bisherige natürliche gemeinsame Breite erhalten. Mobile Vollbreite wird gezielt
-am zuständigen Container gesetzt, ohne globale Buttonbreiten zu ändern.
-
-Der Benachrichtigungsdetaildialog trennt Leseaktion, Nebenaktionen und Zielaktion.
-Erledigte Tickethinweise zeigen ihren fachlichen Zustand („Bereits übernommen“,
-„Vom Nutzer geschlossen“, „Abgeschlossen“) als neutrales natives `Badge` mit der
-vorhandenen Klasse `cosmos-notification-preview-state`. Sie erhalten keine blaue
-Ungelesen-Markierung oder Leseaktion. Der persönliche Lesestatus bleibt separat
-gespeichert; ein geöffneter Dialog übernimmt Statusänderungen auch dann, wenn der
-Eintrag aus dem aktiven Ungelesen-Filter fällt.
-Die Leseaktion steht in der Nachrichtenkarte. Ein nativer `Button` öffnet
-`Popover` mit beschrifteten Standardbuttons unter „Weitere Aktionen“.
-Der Footer nutzt native `HorizontalLayout`-Komponenten und ordnet die Zielaktion
-mobil über CSS Grid in einer eigenen vollen Zeile an. Die unabhängig angeordneten
-Aktionen erhalten deshalb keine gemeinsame Breitenmessung.
-Lokale Anordnungsregeln stehen unter `.cosmos-notification-detail-*` in
-`cosmos-notifications.css`; die Menüfläche unter
-`.cosmos-notification-actions-popover` nutzt die vorhandenen Cosmos-Farben und
-Standardbuttons einschließlich des gemeinsamen Löschstils.
-
-Anbieterlogos in der Identitätsbestätigung haben eigene Klassen direkt am Bild:
-`external-proof-provider-mark` für die Aktionsbuttons und
-`external-proof-heading-mark` für den Dialogkopf. Die Regeln liegen in
-`cosmos-external-login.css`, das die Kontoroute ausdrücklich einbindet, auch beim
-direkten Seitenaufruf. Die Iconregeln benötigen keinen Vorfahren außerhalb des
-nativen Dialoginhalts, da dessen Darstellung die Komponentengrenze überschreitet.
-
-Feldicons sind neutral in Ruhe, heller bei Hover, Cyan bei Fokus oder geöffnetem
-Picker und gedämpft bei Disabled. Dies betrifft Feldaktionen, keine normalen
-Aktionsbuttonicons. Beschriftete Formularfelder haben keine dekorativen
-Präfix-Icons links. Suchfelder behalten ihre Lupe, rechte Passwort-, Kalender-
-und Auswahlaktionen bleiben erhalten. Platzhalter verwenden vorhandene
-Anwendungstexte und bleiben dezent und normal gewichtet. Öffentliche Eingaben
-verwenden einschließlich Passwort dieselbe 14-px-Schrift, Platzhalter Gewicht 400.
-
-„Login speichern“ verwendet auf der Anmeldung einen nativen Vaadin-`Switch`.
-Die lokale Gestaltung in `cosmos-public.css` setzt eine 34 × 20 px große Bahn
-mit 14-px-Marker, 9 px Labelabstand und 12 px / Gewicht 400 für die Beschriftung.
-Aus ist dunkel mit grauem Marker, an verwendet die bestehende Primärfarbe und
-einen weißen Marker. Der Tastaturfokus bleibt cyan.
-
-Der Tabellenkopf der Benutzerverwaltung folgt Stitch-Variante 2: Versalien in
-Secondary, weiße Beschriftung bei Hover beziehungsweise aktiver Sortierung,
-nur der aktive Richtungspfeil in Cyan. Hover ändert allein die Schriftfarbe.
-Die Regeln liegen in `admin-users.css`. Die Seitengrößenauswahl verwendet die
-native, im Theme gestaltete ComboBox.
-
-Das feste Servicezeichen ist `icons/service-logo.svg`, das gewählte Pulsarmotiv.
-Header und Browser-Favicon laden das SVG. `icons/service-logo.png` ist die
-transparente 512-px-Ausgabe desselben Motivs für eingebettete E-Mail-Logos und
-PWA-Installationssymbole. `EmailLogo` lädt sie per Classpath-Stream und behält
-seinen bisherigen CID-/Fehlervertrag. Alternativen und altes PNG liegen bewusst
-in `icons/service-logo-alternatives/`. Sprachumschaltung verwendet ausschließlich
-DE-/EN-Textbuttons, keine Flaggenbilder.
-
-„Bild löschen“ im Profilbildeditor öffnet den gemeinsamen
-`PortalConfirmationDialog` mit destruktivem Stil und einer `PortalContextCard`.
-Abbrechen erhält das Bild. Bestätigen merkt die Entfernung nur im aktuellen
-Editorentwurf vor; erst dessen „Speichern“ übernimmt sie. Der Hinweis im Dialog
-erklärt diese Grenze.
-
-Die Symbolkarten in Profilbild-, Benachrichtigungs- und Gerätebestätigungen
-verwenden den bestehenden rechteckigen `cosmos-panel-icon`-Rahmen mit abgerundeten
-Ecken. Die Kontextkarte enthält dafür einen Rahmen um das unveränderte Lucide-Icon,
-keine Kreisfläche direkt am SVG. Echte Benutzeravatare bleiben rund.
-Gerahmte Info-Boxen verwenden 14 px umlaufenden Innenabstand und 10 px zwischen
-Icon und Text. Die gemeinsamen Tokens `--cosmos-info-box-padding` und
-`--cosmos-info-box-gap` stehen in `cosmos-tokens.css`. Hinweise ohne eigene Box,
-etwa im Panel-Footer, folgen den Abständen ihres Layouts.
-Die gelben Sicherheitswarnungen im Mailqueue-Assistenten und in seiner manuellen
-Bereinigungsbestätigung verwenden das bestehende
-Dreiecks-SVG über `AppIcon.WARNING_TRIANGLE`; ihre gemeinsamen Warnfarben und
-Abstände bleiben erhalten. Der Brush im Kopf der manuellen Bereinigungsbestätigung
-erbt die gemeinsame rote Gefahrenvariante; die Assistentenkarte behält ihr blaues Icon.
-Fest eingebundene Info- und Warnboxen mit **fetter Einleitung und Doppelpunkt**
-richten das Icon an der ersten Textzeile aus. Die Erklärung läuft direkt nach
-der Einleitung weiter. Native `HorizontalLayout`-Container verwenden dafür
-`Alignment.START`; vorhandene kleine Iconabstände gleichen die Iconhöhe an die
-erste Zeilenhöhe an. Bei reinem Fließtext ohne solche Einleitung bleibt das
-Icon mit `Alignment.CENTER` zur gesamten Texthöhe vertikal zentriert. Das gilt
-auch für Hinweise in Bestätigungen. Tooltip- und Notification-Gestaltung bleiben
-unverändert.
-Die Auswahl „Initialen / Eigenes Bild“ verwendet `CosmosSegmentedTabs` mit nativen
-Tabs. Der native Vaadin-Upload unterstützt
-Dateiauswahl und Drag-and-drop im selben Bereich mit derselben Validierung.
-Zwischen Modusauswahl, Profilbildvorschau und Uploadbereich liegen jeweils 24 px.
-Beim Speichern ist auch das Ablegen gesperrt.
-
-## Tooltips
-
-Anwendungsweit gilt die freigegebene Stitch-Variante A: kompakte dunkle Fläche,
-feiner Rahmen, ruhige helle Schrift und kein Pfeil. Die Tokens
-`--cosmos-tooltip-*` in `cosmos-tokens.css` setzen Hintergrund `#0f172a`,
-Rahmen `#334155`, Text `#e2e8f0`, Radius 4 px, Inter 11 px / 1.4 bei Gewicht 400,
-Padding 7 px 11 px, maximale Breite 220 px und Abstand 8 px. Der Schatten ist
-`0 4px 14px rgba(0,0,0,.65)`. Schmale Viewports behalten seitlich Platz.
-`cosmos-theme.css` gestaltet die nativen Vaadin-Tooltip-Parts `overlay` und
-`content`. Bestehende Hinweise, Tastaturbedienung und Sprachwechsel bleiben erhalten.
-Tooltips fangen keine Mausereignisse ab und ändern den Mauszeiger des auslösenden
-Elements nicht. Reine Identitätsavatare und Anbieterstatus behalten den normalen
-Zeiger; Avatare innerhalb nativer Buttons erben dessen Mauszeiger. Eingabefelder
-behalten ihren Textzeiger.
-Bedienbare native Komponenten verwenden zentral den Handzeiger über
-`--vaadin-clickable-cursor` in `cosmos-tokens.css`.
-Das gilt auch für Iconbuttons, Tabs, Pagination und native Auswahlaktionen.
-Bei Checkboxen und Radiobuttons ergänzt `cosmos-theme.css` die äußere Fläche und
-den Label-Part, die das Basistheme mit dem normalen Pfeil zeigt. Eigene Labelinhalte
-wie die Filterbeschriftung mit Zähler erben den Cursor. Disabled und Readonly
-sind von dieser Ergänzung ausgenommen.
-Deaktivierte Komponenten behalten ihren nativen Disabled-Zeiger. Eine pauschale
-Cursorregel auf allen Buttons wird deshalb nicht verwendet.
-Reine Avatare bleiben Anzeigeelemente; in Buttons, Links und Tabs erben sie den
-Zeiger ihres bedienbaren Containers. Die Avatarregeln stehen in `cosmos-shell.css`.
-Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
-
-Name und E-Mail im Benutzerkopf, in der Profilkarte, im geöffneten Benutzermenü
-und in der administrativen Löschbestätigung bleiben anhand der verfügbaren
-Breite begrenzt. Der Kopf verwendet maximal `min(220px, 22vw)` für die
-Identitätszeilen; Avatar, Statuspunkt und Pfeil bleiben unverändert.
-Die Angaben bleiben grundsätzlich einzeilig mit Ellipse. Im Smartphone-
-Löschdialog sind bei der bestehenden mobilen Dialogbreite höchstens zwei
-Zeilen je Angabe erlaubt. Gespeicherte Daten werden nicht gekürzt.
-`cosmos-shell.css`, `cosmos-account.css` und `admin-users.css`
-halten die jeweiligen Regeln lokal an den vorhandenen Identitätsklassen.
-Native `Tooltip`-Ziele zeigen die vollständigen Werte per Hover und
-Tastaturfokus; Namensänderungen aktualisieren auch den Tooltip. Der native
-Anfangsfokus des Benutzermenüs bleibt erhalten. Zusätzliche Info-Buttons
-oder eine Touch-Sonderlösung sind nicht eingebaut; der allgemeine Umgang
-mit Smartphone-Tooltips bleibt eine eigene Aufgabe in [TODO](../TODO.md).
-
-## Native Vaadin-Bausteine zuerst
-
-Reiterleisten behalten ihre freigegebene Gestaltung und nutzen bei Platzmangel
-die native horizontale Überlaufsteuerung mit Vor-/Zurück-Pfeilen. Das gilt für
-Smartphone und schmale Desktopfenster. Einzelne Reiter bleiben breit genug für
-ihre Beschriftung; sie werden nicht in mehrere Zeilen gedrückt. Bei ausreichendem
-Platz bleibt die bisherige Anordnung erhalten. `cosmos-account.css` gestaltet die
-Kontosicherheitsreiter, `cosmos-provider-settings.css` die übrigen Panelreiter.
-`cosmos-segmented-tabs.css` erhält den segmentierten Stil mit gleichen Breiten,
-solange der Platz reicht, und lässt andernfalls native Überlaufnavigation zu.
-`CosmosSegmentedTabs` blendet die nativen Scrollpfeile daher nicht aus.
-
-Bei Komponenten-Umstellungen Vorher-/Nachher-Aufnahmen für Desktop und Smartphone
-direkt im Chat zeigen. Bei freigegebenen Browserläufen beide Sprachen isoliert
-prüfen; die Aufnahmen bleiben temporäre Vergleichsbelege im Browserlauf.
-
-`PortalConfirmationDialog` und `NotificationReadAllConfirmationDialog` verwenden
-nativen `ConfirmDialog` mit öffentlichen Header-/Inhalts-/Button-Slots und den
-vorhandenen Cosmos-Inhalten. Auch die administrative Benutzerlöschung verwendet
-diese native Grundlage. `.cosmos-native-confirmation` in `cosmos-confirmation.css`
-gestaltet die öffentlichen Parts mit den bestehenden Dialogfarben und Abständen;
-lokale Nachrichtenregeln behalten ausschließlich ihre besonderen Aktionsmaße.
-Die Inhaltszone nutzt eine automatische Flexbasis und eigenen Overflow, damit
-lange Vorschauen innerhalb der maximalen Dialoghöhe scrollen und der Footer
-vollständig sichtbar bleibt.
-Close, Abbrechen und Escape verwerfen die vorgemerkte Aktion. Der öffentliche
-Backdrop-Part erhält bei normalen Aktionen den bisherigen Außenklick-Abbruch;
-beim Formularschutz bleibt Außenklick ohne Wirkung. Der Anfangsfokus liegt auf
-Schließen beziehungsweise beim Formularschutz auf „Weiter bearbeiten“.
-
-Nur das native Bestätigungsereignis führt die beim Öffnen erfasste Aktion einmal
-aus. Beim Formularschutz ist das auf Desktop links „Verwerfen“; rechts bleibt die primäre
-Aktion „Weiter bearbeiten“. Die nativen Slots sind entsprechend zugeordnet, ohne
-ihre sichtbare Reihenfolge zu ändern. `opened=false` darf die folgende Bestätigung
-nicht vorzeitig verwerfen; expliziter Abbruch oder ein endgültiges `ClosedEvent`
-räumen auf. Ein verspätetes Schließereignis lässt eine erneut geöffnete Bestätigung
-unberührt. Sprachwechsel verändert den erfassten Snapshot nicht.
-
-Nach einem fachlichen Fehler bei der administrativen Benutzerlöschung wird die
-native Bestätigung mit demselben Kontext wieder geöffnet. Erst eine neue
-ausdrückliche Bestätigung versucht die Löschung erneut. Formular-, Bearbeitungs-
-und Identitätsdialoge verwenden weiterhin `Dialog`.
-
-Vor neuen Oberflächenelementen einschließlich Layouts die tatsächlich verwendete
-Vaadin-Version prüfen. Passende native Flow-Komponenten haben Vorrang und werden mit öffentlichen APIs,
-Theme-Varianten und Parts an Cosmos angepasst. Ein eigener Div-/Span-/JavaScript-
-Ersatz für eine spezialisierte Komponente benötigt vorher eine ausdrückliche
-Freigabe mit Begründung. Normale Layoutcontainer und Zusammensetzungen vorhandener
-nativer Komponenten bleiben möglich. Vereinbarte Sonderlösungen, insbesondere
-die Lucide-Anwendungsicons und der Bildausschnitt, bleiben gültig.
-
-Für einfache Zeilen, Spalten und Formanordnungen bevorzugt `HorizontalLayout`,
-`VerticalLayout` und `FormLayout` verwenden. Anordnung, Abstände und Ausrichtung
-sollen im Java-Code gut nachvollziehbar sein. Div-Container mit CSS Grid/Flex
-gezielt einsetzen, wenn konkrete responsive Anforderungen damit klarer und
-einfacher umzusetzen sind, beispielsweise mehrere Spalten auf breiten Bildschirmen
-und dieselben Bereiche untereinander auf schmalen Displays. Die Unterstützung
-mehrerer Bildschirmgrößen allein rechtfertigt keinen Ersatz der Vaadin-Layouts.
-Diese Regel ist kein Auftrag, bestehende Ansichten nachträglich umzubauen.
-
-Das Profilformular in `AccountSettingsComponent` verwendet natives `FormLayout`.
-Die vorhandenen Eingabekomponenten behalten ihre Beschriftungen und Reihenfolge;
-`setColspan` lässt die E-Mail-Zeile über beide Spalten reichen. Die lokale Klasse
-`account-profile-form` in `cosmos-account.css` setzt die öffentlichen Variablen
-für 20 px Spalten- und 24 px Zeilenabstand. Der öffentliche ResponsiveStep mit
-`--account-profile-two-column-min-width` erhält über die bestehende Medienabfrage
-die bisherige Bildschirmgrenze von 640 px, statt die Spaltenzahl an die schmalere
-Formularinnenbreite zu koppeln. Interne Vaadin-Layoutvariablen werden nicht verändert.
-
-Auch die Registrierung (`RegistrationView`) und Benutzer anlegen/bearbeiten
-(`AdminUserManagementSection`) verwenden natives `FormLayout`. Die lokale Klasse
-`public-registration-form` in `cosmos-public.css` erhält 20 px Zeilen-/Spaltenabstand
-und die bisherige Bildschirmgrenze von 640 px. Im Benutzerformular bleiben
-Passwort und Hinweis als gemeinsame Spalte erhalten. `admin-user-paired-form`
-in `admin-users.css` ordnet die Feldpaare mit 16 px Abstand an;
-der äußere Formularbereich behält über `--admin-user-group-spacing` 18 px
-Gruppenabstand, unabhängig vom Innenabstand verschachtelter FormLayouts.
-Die Medienabfrage und `--admin-user-two-column-min-width` erhalten den Wechsel bei 768 px.
-Lokale Checkboxregeln lassen die nativen FormLayout-Ränder bestehen und ergänzen
-nur den bisherigen Versatz zur Rollenbeschriftung. Dialogkopf, Footer, die
-zusätzlichen Superadmin-Optionen und die eingeklappte Anmeldung bleiben erhalten.
-
-Die allgemeinen Konfigurationsgruppen und „E-Mail-Queue / Allgemein“ verwenden
-ebenfalls natives `FormLayout`. `cosmos-config-fields` in
-`cosmos-admin.css` erhält 20 px Feldabstand und die bestehende
-Bildschirmgrenze von 768 px über `--admin-config-two-column-min-width`.
-`FieldHelpRowLayout` verbindet das unveränderte Eingabefeld und seinen
-`ConfigInfoButton` als natives `HorizontalLayout`: Das Feld wächst und darf
-schrumpfen, die Feldhilfe behält ihre feste Breite. Der gemeinsame Abstand
-kommt aus `cosmos-config-input-row`; Beschriftung und Feldhilfe bleiben fachlich
-dem bisherigen Feld zugeordnet. Die Eingabe selbst wird dabei nicht ersetzt.
-Die native Hilfespalte `cosmos-config-help-slot` bewahrt das bisherige
-Spaltenbudget von 28 px, auch wenn die Bedienfläche des Hilfebuttons darüber
-hinausragt. Die Eingabebreite bleibt dadurch unabhängig von dessen Bedienfläche.
-
-Die Google-/Microsoft-Zugangsdaten nutzen `FormLayout` mit 20 px Abstand und
-der bisherigen Bildschirmgrenze von 600 px. Die Redirect-Adresse und ihre
-Kopieraktion stehen in einem nativen `HorizontalLayout`, das mobil umbricht.
-Die 2FA-Regelpaare und die Inaktivitätsfelder nutzen ebenfalls `FormLayout`.
-`--mfa-policy-two-column-min-width` erhält die bestehende Containergrenze von
-480 px; `100cqw` bezieht sich auf den umgebenden Konfigurationsinhalt.
-Die erklärende Seitenleiste bleibt eine eigenständige responsive Komposition.
-Feldhilfezeilen verwenden in beiden Bereichen `FieldHelpRowLayout`, ohne
-Auswahlkomponenten, Switches oder deren Listener zu ersetzen.
-
-Die einspaltigen öffentlichen Formulare nutzen den nativen `VerticalLayout`-
-Inhalt von `PublicPanelComponent`, etwa Passwort zurücksetzen und die ergänzende
-Anbieterregistrierung. E-Mail-,
-Passwort- und Anbieter-Identitätsdialoge verwenden ebenfalls native senkrechte
-Layouts mit den vorhandenen Dialogklassen, Abständen und Aktionen. Der Mailtest
-behält seine native Feldspalte und verwendet `FieldHelpRowLayout` für die
-einzelnen Eingaben; der sichtbare Nachrichtenhinweis steht getrennt darunter.
-
-Die öffentlichen Standardpanels verwenden `PublicPanelComponent` auf nativer
-Vaadin-`Card`, einschließlich des abgenommenen Piloten „Passwort vergessen“.
-`setHeader`, der normale Inhalt und `addToFooter` übernehmen
-die vorhandenen Panelzonen. Kopf und Footer sind native `HorizontalLayout`-
-Container, der Inhalt bleibt ein `VerticalLayout`. Die Beschriftung der Card ist
-über `setAriaLabelledBy` mit der bestehenden Überschrift verbunden und folgt
-dadurch deren Sprachwechsel. `cosmos-cards.css` setzt ausschließlich für
-`.public-card-panel` die nativen Card-Innenabstände und Zwischenräume auf null
-sowie den äußeren Header-Abstand zurück. Die vorhandenen Zonenklassen beziehen
-Farben, Innenabstände, Rahmen, Radien und mobile Anordnung unverändert aus
-`cosmos-public.css` und den gemeinsamen Tokens. Anmeldung, Registrierung, externe
-Erstregistrierung, Passwortanfrage/-Reset, Verifikation, ausstehende Verifikation
-und Reaktivierung, Reaktivierungslink, E-Mail-Änderungslink und Wartung nutzen
-diesen Baustein. Die besonderen Konto-/Ticketkarten für 2FA, Wiederherstellungshilfe
-und Sitzungslimit behalten ihre bisherige Basis. In JUnit berücksichtigt
-`ComponentTestTree` die öffentlichen Kopf-/Footer-Slots der nativen Card;
-`Card.getChildren()` allein liefert nur den normalen Inhalt.
-
-Benachrichtigungen behalten ihre native `VerticalLayout`-Feldfolge. Das kleine
-CSS-Raster für Eingabe und Zeichenzähler überlagert ausschließlich den Zähler
-am Labelende; es ist kein allgemeines Formularraster. Ebenso bleibt der
-ausdrücklich freigegebene Canvas-Bildausschnitt eine eigene Bedienkomposition.
-Einzelne Hüllen um bereits native Code-/Nachweisbausteine benötigen kein
-zusätzliches `FormLayout`. Header, Fußleisten, Vorschau-/Erklärspalten und
-Sicherheitskarten sind von der Umstellung der Formularanordnung getrennt.
-
-Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
-Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits
-im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)
-ordnet die noch lokalen Anzeigen ein und schlägt die Reihenfolge für eine spätere
-Umstellung vor.
-
-Neue und umgestellte Badges mit Beschriftung erhalten keinen zusätzlichen
-Statuspunkt. Text und Farbe zeigen den Zustand. Beim Badge-Abgleich entfällt
-der Punkt auch bei bestehenden Beschriftungen, sobald das jeweilige Badge
-umgestellt wird. Eigenständige Statusanzeigen wie der Avatar-Status oder der
-Aktivitätspunkt am Ticketsystem behalten ihre Funktion.
-
-`EmailVerificationBadge` zeigt den E-Mail-Nachweis im Konto und in den
-Benutzerdetails sowie auf der ausstehenden Bestätigungsseite als native
-`Badge`-Komponente ohne Punkt. Erfolg ist grün, ausstehende Bestätigung gelb,
-ausdrücklich ungeprüfte Bereitstellung grau. `.email-verification-badge` in
-`cosmos-account.css` verwendet die vorhandenen Schrift-, Rahmen- und Farbregeln.
-Im Konto steht es neben der Überschrift „E-Mail-Adresse“ in einem nativen
-`HorizontalLayout`, entsprechend der Kennzeichnung der Zwei-Faktor-Authentifizierung.
-Die Adresse selbst steht darunter. Auf schmalen Displays darf die Überschriftenzeile umbrechen.
-Auch das Portalpasswort zeigt seinen Einrichtungszustand als natives Badge neben
-der Überschrift: Grün für eingerichtet, Blau für nicht eingerichtet. Die lokale
-Klasse `.account-password-status` verwendet dieselben kompakten Badge-Maße.
-`PendingEmailVerificationView` nutzt den reduzierten öffentlichen Seitenrahmen,
-`PublicPanelComponent`, die gemeinsame gelbe Warnbox und native Buttons.
-
-Gerahmte Status-Badges erhalten Rahmen und dezenten Hintergrund zentral aus
-`cosmos-theme.css`. Der Rahmen verwendet 25 % und die Fläche 10 % der
-jeweiligen Schriftfarbe. Die fachliche Farbe kommt aus dem jeweiligen Bereich.
-Die ausgewählte Ticket-Statusoption verwendet dieselbe Palette wie das Badge.
-Systemkennzeichnungen verwenden die abgestimmten `--cosmos-system-*`-Tokens.
-Zähler, der Aktivitätspunkt und flache Statusanzeigen in der Benutzertabelle
-verwenden ihre eigenen Varianten.
-
-In der Administration verwenden Benutzerliste, Benutzerfilter und
-Konfigurationskopf native Badges. Die Aktiv- und Anwesenheitsangaben in der
-Benutzertabelle bleiben flach. Mailtest und Benachrichtigungsversand zeigen
-den Versandzustand über Badge-Farbe und Tooltip. Die Quelle der
-Versandvorschau nutzt dieselbe Gestaltung wie die Quelle im persönlichen
-Postfach. Die lokalen Admin-Varianten stehen in `cosmos-admin.css`,
-die gemeinsame Quellendarstellung in `cosmos-notifications.css`.
-
-Im Benutzerformular teilen „Aktiv“ und „Verifikation“ die native Checkbox-
-Gestaltung mit `.admin-user-option-checkbox`, `.admin-user-option-label` und
-`.admin-user-option-hint` in `admin-users.css`: Beschriftung und dezenter
-Erklärungstext stehen untereinander, die Checkbox ist daneben vertikal zentriert.
-„Verifikation“ ist bei der Kontoanlage standardmäßig ausgewählt und kann nur von
-Superadmins abgewählt werden.
-
-## Übernahme des angemeldeten Benutzerportals
-
-`HomeView` für angemeldete Benutzer, `UserNotificationsView` und `AccountView`
-verwenden `cosmos-reference-portal`. Der gemeinsame Rahmen aller drei Einstiegsbereiche ist `PageFrameComponent`:
-Der Servicekopf liegt in `.cosmos-frame-header` und bleibt beim Scrollen oben.
-Seitenüberschrift, optionale Seitennavigation, Inhalt und Copyrightzeile scrollen
-zusammen im Dokument. `PageContentLayout` ordnet Überschrift und optionale
-Navigations-/Inhaltsspalten im Portal, in der Administration und im Besucherbereich
-an. Der Besucherbereich verwendet das Layout ohne Seitennavigation.
-`PortalSidebarPageLayout` ergänzt auf Startseite und im Postfach die
-`PortalSidebarComponent` mit Identitätskarte sowie den Avatar-Dialog.
-
-Escape für die mobile Navigation wird nur innerhalb der Seitenleiste behandelt.
-Dialoge und Popovers behalten ihre native Escape-Bedienung. Lange Servicenamen im
-öffentlichen Header werden bei Platzmangel gekürzt, damit die Navigation erreichbar bleibt.
-
-Portal und Administration verwenden `PageNavigationComponent` auf Basis von
-Vaadins `SideNav` und `SideNavItem`, auch für die Kontobereiche. Native Links,
-Tastaturbedienung und verschachtelte Einträge bleiben erhalten. Registrierte
-Seitenaktionen bewahren den jeweiligen Bereichszustand und schließen die mobile
-Navigation beim Wechsel. Die aktive Seite trägt `aria-current="page"`.
-Die gemeinsame Gestaltung und die mobilen Grenzen liegen in `cosmos-shell.css`.
-Die mobile Navigation überlagert den Inhalt unter dem Servicekopf, ohne die
-Formularspalten zu verschieben. Außenklick, Escape und Seitenwahl schließen sie.
-
-Wiederkehrende gemeinsame CSS-Klassen werden im Java-Code über `CosmosCssClasses`
-verwendet, etwa `REFERENCE_PORTAL`, `REFERENCE_OVERLAY`, `PANEL_ICON` und `DELETE_BUTTON`.
-Der Halter enthält ausschließlich Klassenbezeichner. Gestaltung, Farben, Größen
-und Zustände bleiben in den bestehenden CSS-Quellen; lokale Klassen bleiben bei
-ihrem jeweiligen Baustein.
-
-`--cosmos-hover-background` in `cosmos-tokens.css` ist der gemeinsame Hoverwert
-`#152238`. Er gilt für neutrale Buttons und sonstige Hoverflächen, Tabellen,
-Navigation, Auswahllisten, Eingabeflächen, Kalender und ungeprüfte native Checkboxen/
-Radiobuttons sowie Scrollleistengriffe. Auswahlfarben und Zustandsmarkierungen
-bleiben davon getrennt; ausgewählte Einträge und aktive Seitennummern behalten
-beim Hover ihre bestehende Gestaltung. Dauerhafte dezente Flächen verwenden
-`--cosmos-subtle-surface` und ändern sich nicht mit der Hoverfarbe.
-Primär-, Lösch- und Warnbuttons verwenden ihre eigenen semantischen Hoverfarben.
-Die neutralen Hover-Bezeichner verweisen auf den gemeinsamen Wert.
-Die semantischen `--cosmos-*`-Rollen in `cosmos-tokens.css` begrenzen die übrigen akzeptierten Werte.
-`cosmos-theme.css` gestaltet markierte native Controls, ComboBox-Optionen und
-Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und
-portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
-`cosmos-notifications.css` Vorschau, Postfach, Detail und Pagination.
-In `cosmos-shell.css` übernehmen die Auswahllisten von ComboBox und MultiSelectComboBox
-die Grundfarbe ihres Eingabefelds. Ausgewählte Einträge verwenden in `cosmos-theme.css`
-die Akzentfläche mit blauem Rahmen und Häkchen am rechten Rand. Im geschlossenen
-Feld steht der Wert ohne Auswahlmarkierung. Nicht ausgewählte Optionen verwenden
-bei Hover die blaue Fläche `--cosmos-hover-background`. Zwischen den
-MultiSelect-Optionen liegen 2 px Abstand. Die Rahmenfläche liegt vollständig
-innerhalb des nativen Eintrags, damit alle vier Seiten sichtbar bleiben.
-Die transparenten Außenrahmen schaffen den Abstand; das native Inhaltspadding bleibt bestehen.
-Die Pagination-Auswahllisten haben
-eine Mindestbreite von 88 px, damit Auswahlrahmen und Häkchen vollständig bleiben.
-`cosmos-background.css` enthält die anwendungsweite Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
-kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
-verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav;
-der Formularschutz nutzt Tablers `file-diff` und `file-x`.
-SVG und MIT-Lizenz liegen unter `icons/tabler/`, die Lucide-Dateien weiterhin unter
-`icons/lucide/`. Der gemeinsame Baustein `AppIcon` kennt die Herkunft und liefert
-für beide native `SvgIcon`-Komponenten. Es wird keine zusätzliche Iconbibliothek eingebunden.
-
-Feldlabels erfassen nur Feldhosts, keine Buttonlabels. `CosmosComboBoxStyling` erhält
-die native ComboBox-Bedienung. Seitengrößen und kompakte Felder verwenden dieselbe
-Auswahlmarkierung in kleineren Zeilen.
-
-Sekundäre Aktionsbuttons und Schließen-Buttons nutzen die Eingabefläche, bei Hover
-`--cosmos-hover-background` als Verweis auf die gemeinsame Hoverfarbe.
-Die übrigen Hoverflächen verwenden denselben zentralen Wert. Schließen-Buttons setzen auch Vaadins native Variable
-`--vaadin-button-tertiary-background`, damit die Tertiary-Variante die Fläche nicht
-transparent überschreibt. Navigation und Menüoptionen behalten ihre jeweiligen Zustände.
-Destruktive Buttons verwenden gemeinsam `.cosmos-delete-button`: rotes Icon und
-Text, 5 % rote Fläche und 25 % roter Rahmen; bei Hover 10 % rote Fläche,
-40 % roter Rahmen und helleres Rot. Die Werte liegen in `cosmos-tokens.css` unter
-`--cosmos-danger-*`, die Grundregeln in `cosmos-theme.css`.
-Das gilt für einzelne und gesammelte Lösch-/Geräteaktionen sowie Bestätigungen.
-Warnaktionen nutzen zentral `.cosmos-warning-button`: gelbes Icon und gelber Text,
-Warnrahmen und dezente Warnfläche. Der Hover bleibt in der Warnpalette über
-`--cosmos-warning-button-hover-surface`. Maße, Fokus und Disabled-Zustände kommen
-weiterhin aus dem gemeinsamen nativen Buttonstil. Primärbuttons behalten ihren
-bisherigen blauen Hover, System-Primäraktionen ihren violetten Hover.
-Deaktivierte Buttons bleiben gedämpft ohne Hover; der Tastaturfokus bleibt cyan.
-Die aktuelle Sitzung bleibt eine deaktivierte Statusanzeige ohne Gefahrenstil.
-Die Seitennavigation bleibt linksbündig. Hauptzeilen verwenden 12 px bei Gewicht
-500 (aktiv 600), 34 px Höhe und 8 px Iconabstand. Unterpunkte verwenden 11 px bei
-Gewicht 400 (aktiv 500), 30,5 px Höhe und 28 px Einrückung. Gemeinsame Regeln
-verwenden `.cosmos-side-navigation`, nicht globale Buttonzentrierung.
-Klickbare Einträge und Unterpunkt-Toggles verwenden den Handzeiger.
-Der Navigationspfeil ist 16 × 16 px groß, seine Klickfläche bleibt 24 × 32 px.
-Die Hoverfläche
-ist `--cosmos-hover-background` (#152238). Die aktive blaue Fläche bleibt
-bei Hover erhalten; Hauptpunkte tragen die freigegebene seitliche Akzentmarkierung.
-
-Header und SideNav teilen Zählerform und Schriftstärke. „Verfügbar“ erscheint
-in Grün, weitere Anwesenheitszustände verwenden ihre jeweilige Statusfarbe.
-Die Anwesenheit steht als natives Badge ohne Punkt in der Kontokarte und im
-Benutzermenü. Der Startseitenbutton verwendet denselben roten nativen
-Ungelesen-Zähler wie Header und SideNav. Avatarflächen in Header, Kontokarte und Benutzermenü verwenden die dunkle
-Eingabefläche mit dezentem Rahmen wie in der Referenz. Alle Avatarstatus sind
-gefüllte Punkte: verfügbar grün, beschäftigt rot, abwesend gelb und offline grau.
-Die Farben folgen `--cosmos-avatar-presence-color`; Kontursymbole erscheinen
-nur in der Statusauswahl. Die Punkte haben eine einfache schmale Freistellung; Border und äußerer Schatten
-werden nicht als doppelter Ring kombiniert. Die Punktmitte liegt bei 45 Grad
-auf der Mitte der Avatar-Kreislinie. Header, Kontokarte und Benutzermenü verwenden
-dieselbe größenabhängige Verankerung.
-In Kontokarte und Benutzermenü ist der sichtbare Statuskreis 12 × 12 px groß,
-mit einer schmalen Freistellung zur Avatarfläche.
-
-`PortalHomeComponent` verwendet den gesicherten SVG-Planeten und echte
-Navigationsaktionen. Es erfindet keine Kennzahlen. Das Postfach erhält Lesefilter
-mit tatsächlichen Zählern, Suche, Pagination und getrennte Metadaten/Aktionen.
-Suchlupe und Eingabetext haben einen eigenen Abstand. Die Pagination verwendet
-kompakte Seitengrößen- und Zahlencontrols; ihr Hinweis steht mit Infoicon zentriert.
-Die Zähler übernehmen auch die blaue Ungelesen-Beschriftung der Referenz.
-Die beiden Postfach-Kennzahlen „Gesamt“ und „Ungelesen“ verwenden als Pilot
-`CosmosMetricCard`, eine native Vaadin-`Card` mit `VerticalLayout` und zwei
-nativen `Span`-Texten. Die lokale Gestaltung liegt in `cosmos-metric-card.css`:
-96 × 60 px, 9 px Radius, neutrale Eingabefläche; `setHighlighted(true)` wählt
-die bisherige blaue Auswahlfläche samt blauem Text und Rahmen. Die Karte ist
-eine statische Zusammenfassung ohne Klickaktion oder Hoverzustand.
-Der öffentliche `content`-Part wird für den optischen Abgleich mit der bisherigen
-Zeile um 1 px nach unten versetzt; der native Kartenrahmen bleibt unverändert.
-`setLabel(...)` aktualisiert Beschriftung und zugänglichen Gruppennamen,
-`setValue(...)` nimmt Zahlen oder einen Ersatztext bei Ladefehlern entgegen.
-Aufrufer können über `getLabelSpan().getStyle()` und `getValueSpan().getStyle()`
-Schriftgröße, Gewicht, Farbe und weitere native Textstile getrennt festlegen.
-Diese Einstellungen und eine am Wert gesetzte ID bleiben bei Zähler- und
-Sprachaktualisierungen erhalten. Die Inhaltskomponenten nicht ersetzen;
-Texte über die Setter aktualisieren. Auch die Konten-Karte in der
-Benutzerverwaltung verwendet diesen Baustein. Ihr lokaler Abgleich in
-`admin-users.css` erhält die bisherigen 96 × 59 px, die dezente
-blaue Metadatenpalette und blaue Schrift mit 1,2 px Buchstabenabstand.
-Die Texte füllen weiterhin die Inhaltsbreite; der `content`-Part braucht dort
-keinen optischen Versatz. Die Gesamtzahl zählt alle geladenen Konten unabhängig
-von Suche und Filtern. Ihre zugängliche Beschriftung nennt weiterhin Zahl und
-Einheit und folgt dem Sprachwechsel. Kompakte Zähler bei Sitzungen, Navigation,
-Tabs und Filtern bleiben native Badges.
-Der Glockenzähler verwendet ein natives `Badge` mit `.cosmos-notification-count`.
-Die positionierte Variante in `cosmos-notifications.css` gleicht den
-Standard-Außenabstand des Badges aus. Bei null blendet sich der Zähler aus,
-über 99 zeigt er `99+`.
-Die zugängliche Beschriftung der Glocke nennt die tatsächliche Anzahl.
-Leere Benachrichtigungslisten verwenden im Postfach, in der Glockenvorschau und
-im Admin-Versandverlauf denselben
-Baustein `.cosmos-notification-empty`: zentriertes blaues Glocken-Icon (32 px),
-darunter mit 8 px Abstand eine kurze Überschrift mit 14 px und Gewicht 600,
-ohne Zusatztext.
-Die Anordnung übernimmt den Leerzustand der Benutzerverwaltung mit 48 px vertikalem
-und 24 px seitlichem Padding. Bei erfolgloser Suche bleibt der passende Suchtitel
-erhalten. Der Versandverlauf verwendet die Überschrift „Noch keine Benachrichtigungen gesendet“.
-Ein Ladefehler wird weiterhin als Fehler und nicht als leere Liste gezeigt.
-Titel und Text einer Inboxkarte haben einen einzigen Absatzabstand; ein zusätzlicher
-Gridabstand entfällt. Kompakte Seitengrößenfelder reservieren keinen Leerraum für
-nicht vorhandene Feldlabels.
-Die native ComboBox behält ihre Bedienung und Platzierungslogik. Ihr Menü verwendet
-kompakte Optionen ohne zusätzliche blaue Auswahlumrandung.
-Nachrichtenmetadaten werden in Liste, Detail und Bestätigung gemeinsam aufgebaut.
-Quelle und Lesestatus verwenden native Badges mit abgerundetem Rahmen. Die
-Administration erscheint in Blau, das System in Violett und „Ungelesen“ in Blau
-ohne Punkt. Die Zahlen neben den Lesefiltern sind ebenfalls native Badges.
-Die rote Zahl an der Glocke zeigt die Anzahl ungelesener Nachrichten.
-Die Glockenvorschau verwendet kompakte Karten mit Aktionen rechts, gemeinsamem
-Metadatenbaustein, eigenem Scrollbereich sowie festem Kopf und Footer.
-Gelesene Karten nutzen die Panelfläche, ungelesene die Eingabefläche mit blauer
-linker Kante. Die Metadatenzeile erstreckt sich unter Text und Aktionen über die
-gesamte Kartenbreite; die Aktionen bleiben rechts neben Titel und Textauszug.
-Ihre Werkzeugzeile verwendet die dunkle Overlayfläche. Lesefilter und Aktionsgruppe
-sind getrennt angeordnet: 12 px dazwischen (mobil 10 px), 6 px zwischen den quadratischen
-32-px-Iconbuttons. Nur der äußere Popoverrahmen rundet und beschneidet die Innenflächen.
-Der Detaildialog zeigt Titel, Metadaten und Inhalt in einer inneren Nachrichtenkarte.
-Sein Footer trennt linksbündige Iconaktionen (`.cosmos-notification-detail-tools`)
-von den rechtsbündigen Dialogaktionen (`.cosmos-notification-detail-primary`).
-Glocke öffnet die Übersicht, das Schloss wie in der SideNav die Kontosicherheit, Papierkorb den bestehenden
-Löschdialog. Die Sichtbarkeitsbedingungen bleiben erhalten; Iconbuttons haben
-Tooltip und zugängliche Beschriftung. „Als gelesen markieren“ und „Schließen“
-behalten ihren Text. Die Gruppen umbrechen auf schmalen Displays gemeinsam.
-Manuelles Aktualisieren meldet Erfolg als alleinigen Titel ohne leeren Textabsatz
-erst nach erfolgreichem Laden, bei einem
-Ladefehler eine Fehlermeldung. Automatische Aktualisierungen bleiben ohne Toast.
-`UserPopoverMenu` baut ausschließlich das aktuelle angemeldete Menü direkt auf.
-Ein alter Erstaufbau, eine ausgeblendete Schließen-Kopfzeile und eine anschließend
-entfernte Menü-Statusauswahl entfallen. Besucher verwenden `PublicPageComponent`;
-Anmeldung und Registrierung gehören nicht in dieses Benutzermenü.
-Die gemeinsame Statusauswahl am Kontobild und die Speicher-/Fehlerlogik bleiben erhalten.
-Das Benutzermenü zeigt die vier Statusoptionen zunächst aufgeklappt und eine kompakte Sprachwahl.
-Rechts neben „Anwesenheitsstatus“ schaltet der gemeinsame native `DetailsToggleButton`
-ohne Beschriftung die nativen `Details` auf und zu. Sein zugänglicher Name benennt
-den Bereich; der blaue Pfeil und `aria-expanded` folgen dem Öffnungszustand.
-Sprachwechsel erhalten den Klappzustand. Die Auswahl- und Speicherlogik bleibt erhalten.
-Das Popover richtet sich unter dem rechten Rand des Avatar-Auslösers aus
-(`BOTTOM_END`). Mobil reserviert ein zusätzlicher Abstand von 16 px Platz für die
-innere AppLayout-Scrollbar; die Breite berücksichtigt diesen Abstand auch auf schmalen Displays.
-Die separate Avatar-Statusauswahl bleibt ein natives Select mit Referenzmaßen.
-Beide Statusauswahlen verwenden `.portal-status-symbol`: 20-px-Kreise mit
-20 % Statusfarbe und 12-px-Lucide-Symbolen für Haken, Minus, Uhr und X.
-Die Darstellung stammt aus `UserStatus.getSelectionComponent()` und
-`cosmos-shell.css`; Avatarpunkte und die übrigen Kontursymbole bleiben getrennt.
-Profilbildbearbeitung bleibt am vorhandenen Avatarzugang; das Benutzermenü hat
-keinen zweiten Bearbeitungsbutton. Das Anwesenheitsbadge zeigt die aktuelle Präsenz.
-Der Menüpunkt Administration wird nur mit der vorhandenen Adminberechtigung angeboten;
-die Zugriffsprüfung des Adminbereichs bleibt maßgeblich.
-Einzelbestätigungen enthalten dieselben tatsächlichen Metadaten, Sammelbestätigungen
-die betroffene Anzahl. Der abweichende echte Lesebestätigungsablauf bleibt erhalten.
-Im Konto und beim Erreichen des Anmeldelimits gruppiert die Sitzungsliste aktive
-Sitzungen und gespeicherte Anmeldungen ohne aktive Sitzung. Jede sichtbare Gruppe
-trägt ihre Anzahl in Klammern. Die Überschriften stehen in Großbuchstaben, bei
-aktiven Sitzungen in Cyan und bei gespeicherten Anmeldungen in Grau.
-Zeitangaben und der bekannte Anmeldeweg aktiver Sitzungen stehen in den Karten
-und Abmeldebestätigungen in weißer Fettschrift bei gleicher Schriftgröße wie ihre
-Beschriftung. In den Benutzerdetails fasst eine Info-Box den Abschnitt „Anmeldung“
-zusammen und passt ihre Höhe dem Inhalt an. Das cyanfarbene Info-Icon steht links
-auf Höhe der ebenfalls cyanfarbenen Überschrift in Großbuchstaben mit 13 px.
-Unter der normalen Feldbeschriftung steht der Registrierungsweg als kompaktes
-Vaadin-Badge. Ohne Selbstregistrierung ist es grau, bei Selbstregistrierung cyan.
-Die verfügbaren Anmeldewege stehen nebeneinander als kompakte grüne Vaadin-Badges
-mit jeweils eigenem Rahmen im Stil der Sitzungsstatus-Badges.
-Das native Kennzeichen „Entwicklungskonto“ verwendet dieselben kompakten Maße
-und die neutrale graue Palette. Es bleibt links an seinem Inhalt ausgerichtet
-und dehnt sich nicht über die gesamte Info-Box aus.
-Die Informationen einschließlich E-Mail-Verifizierung stehen über einer nativen
-`Hr`-Trennlinie. Darunter folgen „Verifikationslink senden“ und „Passwort-Reset senden“
-in einem umbrechenden `HorizontalLayout`. Ein blaues Info-Icon steht neben dem
-dezenten Erklärungstext zu beiden Aktionen und ihrer gespeicherten Zieladresse.
-Die lokale Anordnung verwendet native `VerticalLayout`-/`HorizontalLayout`-Container
-und die Klassen `.admin-user-sign-in-*` beziehungsweise `.admin-user-mail-*`
-in `admin-users.css`. Bestehende Badge- und Buttonvarianten bleiben erhalten.
-Der Profilmenü-Auslöser `.tracked-user-button` im Header bleibt auch bei Hover
-transparent und ist von der allgemeinen Button-Hoverfläche ausgenommen.
-Der Logo-Link `.cosmos-topbar-home` bleibt ohne Unterstrich und zeigt den Handzeiger.
-Menübedienung und sichtbarer Tastaturfokus bleiben erhalten; die Regeln liegen in
-`cosmos-shell.css` und der gemeinsamen Buttonregel in `cosmos-theme.css`.
-Die Sitzungsübersicht verwendet native Vaadin-Badges für Anzahl, Limit und
-Sitzungsstatus. Statusbadges haben einen kompakten Rahmen und keinen Punkt.
-Das Badge `.account-session-count` verbindet Zahl und übersetzte Einheit
-auf dunkler Fläche mit Cyanrahmen.
-`.account-session-count-value` zeigt die Zahl mit 15 px und Schriftstärke 700;
-`.account-session-count-divider` trennt sie mit einer 12-px-Linie von der Einheit
-(13 px, Schriftstärke 600). Das Limit steht rechts mit gelbem Rahmen und
-dezenter gelber Fläche, vertikal mittig neben dem Block aus Sitzungsanzahl und
-Erklärungstext. Der Erklärungstext steht mit 12 px und Schriftgewicht 400
-in 6 px Abstand unter der Sitzungsanzahl.
-Auf sehr schmalen Displays stehen auch die Badges untereinander.
-Der ausführliche DE-/EN-Hinweis einschließlich des Widerrufs zugehöriger
-gespeicherter Anmeldungen bleibt erhalten.
-
-`PortalConfirmationDialog.Variant.UNSAVED_CHANGES` verwendet denselben Dialogkopf,
-Inhaltsbereich und Footer für den Formularschutz. Das Tabler-Icon `file-diff`
-steht im Kopf in einer Warnbox: Icon, Rahmen und dezente Hintergrundfläche
-verwenden die vorhandenen `--cosmos-security-warning-*`-Werte. Der
-Standard-Schließen-Button bleibt erhalten. Der Erklärungstext verwendet die
-dezente Textfarbe `--cosmos-text-secondary-color` bei 12 px und Schriftgewicht 400.
-„Änderungen verwerfen“ steht zuerst als gelber Warnbutton mit Tabler `file-x`.
-„Weiter bearbeiten“ bleibt blau und verwendet Lucide `chevron-right`.
-Auf Desktop steht Verwerfen ganz links und Weiterbearbeiten ganz rechts im Footer; der freie
-Platz liegt zwischen den Buttons. Beide sind nach der längeren Beschriftung
-gleich breit und füllen den Footer nicht aus.
-Bis 600 px stehen die Buttons in derselben Reihenfolge untereinander und
-füllen die verfügbare Breite innerhalb der Footer-Innenabstände. Die native
-Cancel-Hülle verliert nur mobil ihren automatischen linken Rand, damit beide
-Buttonhüllen gleich breit werden. Der Anfangsfokus liegt auf „Weiter bearbeiten“.
-Schließen und Escape behalten den Entwurf und lösen eine aufgeschobene Navigation
-abbrechend auf. Nur die ausdrückliche Verwerfen-Aktion führt die Navigation fort.
-Die Variante verwendet dafür den vorhandenen `EqualButtonWidths`-Baustein und
-eine über die Footerbreite verteilte Aktionszeile. `UnsavedChangesDialog` vermittelt
-ausschließlich die Fach- und Navigationscallbacks innerhalb der Anwendung.
-„Alle anderen abmelden“ verwendet dieselbe mobile Vollbreite: zuerst Abbrechen,
-darunter die rote Sammelaktion. `AccountSessionsComponent` setzt dafür die lokale
-Klasse `portal-other-sessions-confirmation` nur im normalen Sammeldialog und
-entfernt sie vor einer Einzelaktion. Einzelabmeldungen und der eingeschränkte
-Sitzungszugang behalten ihre Anordnung. Die Regeln liegen in `cosmos-confirmation.css`.
-Bei Browser-Refresh, Tab-Schließen und externer Navigation ergänzt
-`BrowserUnsavedChangesGuard` den nativen Browserhinweis; dafür kann dieser
-Cosmos-Dialog nicht verwendet werden. Umfang und Grenzen stehen unter
-[Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
-
-`PortalConfirmationDialog` ist der gemeinsame native Bestätigungsbaustein für
-Lesen, Löschen und Geräteaktionen. Kontextkarten zeigen den tatsächlich betroffenen
-Eintrag. Der einfache Infohinweis innerhalb der Bestätigung behält seine
-eigenen Abstände und Schriftwerte auch im Adminlayout. Die spezifische Regel
-in `cosmos-shell.css` verhindert eine Übernahme der Admin-Panelinnenabstände.
-Abbrechen, Escape und Außenklick verwerfen die ausstehende Aktion;
-Bestätigen verbraucht sie einmalig. Löschaktionen heißen „Löschen“, Sitzungsaktionen
-behalten ihre fachlichen Begriffe Abmelden/Widerrufen. Bei „alle als gelesen“ wird
-die beim Öffnen erfasste ID-Auswahl bestätigt; später eintreffende Nachrichten
-werden davon nicht erfasst. Der Sammelwiderruf beendet gemäß bestehendem Dienst
-alle anderen beim Bestätigen vorhandenen Zugänge. Die Dialogtexte nennen knapp
-die Wirkung und den Erhalt der aktuellen Sitzung; der technische Zeitpunkt wird
-nicht als zusätzlicher Erklärungssatz wiederholt.
-Die Gerätebestätigungen verwenden das Lucide-Icon `log-out` in Kopf
-und Aktion. Ihr Untertitel nennt die Auswahl beziehungsweise die Anzahl der
-betroffenen aktiven Sitzungen und alleinstehenden gespeicherten Anmeldungen.
-Kontextkarten übernehmen Gerät, Zeitangaben und tatsächliche Zustandsbadges aus
-derselben Sitzungsliste. Die Erklärung steht wie in der Referenz vor dem Kontext;
-ein leerer zusätzlicher Hinweisbereich entfällt. Geräteaktionsbuttons sind gleich
-breit, richten sich ohne feste Mindestbreite nach der längeren Beschriftung
-und bleiben einzeilig; bei schmalen Dialogen stehen die beiden
-Aktionen untereinander. Die aktuelle Sitzung bleibt deaktiviert. Der Gerätefooter verwendet normale
-Satzpunkte und nennt auch den Widerruf einer zugehörigen gespeicherten Anmeldung.
-
-E-Mail-, Passwort-, Profilbild-, Nachrichten- und Bestätigungsdialoge tragen
-`cosmos-reference-overlay` und das Theme `cosmos-reference`, damit portalisierte
-Inhalte denselben dunklen Inhalt zwischen Kopf und Footer erhalten. Profilbild-
-Upload/Ausschnitt und die bestehende Konflikt-/Entwurfsprüfung bleiben erhalten.
-Der gemeinsame äußere Dialograhmen beschneidet Kopf, Inhalt und Footer mit
-`overflow: hidden` an seiner 16-px-Rundung. Dadurch überdecken innere Flächen weder
-die Ecken noch den Rahmen; das native Scrollen im Inhaltsbereich bleibt erhalten.
-Buttons ohne gesetzten Prefix entfernen dessen Leerabstand, damit Icons, Zahlen
-und reine Beschriftungen zentriert bleiben. Schließen-Buttons entfernen zusätzlich
-den leeren Suffixabstand.
-Die Theme-Erkennung globaler Meldungen folgt dem tatsächlich angehängten
-Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
-`NotificationHelper`. Globale Meldungen im angemeldeten Portal verwenden alle vier Schweregradrollen,
-die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
-mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
-bleiben erhalten.
-`NotificationHelper` bietet gemeinsame native Textmethoden für alle vier
-Schweregrade. `showTextNotification` verwendet einen Vaadin-`Paragraph`; ohne
-Nachricht bleibt nur der Titel sichtbar. Die Überladung mit Anzeigedauer erhält
-auch dauerhafte Hinweise. `showTextNotificationWithDetails` ergänzt eine native
-`UnorderedList` mit `ListItem`. `showHighlightedTextNotification` hebt das erste
-exakte Vorkommen des separat gelieferten Texts mit einer nativen `Span`,
-`cosmos-text-primary` und `cosmos-toast-highlight` (halbfett) hervor. Fehlt dieses Vorkommen,
-bleibt die gesamte Nachricht als normaler Text erhalten. Keine dieser Methoden
-wertet HTML aus; Titel, Nachricht, Hervorhebung und Details folgen ihren Suppliern
-auch beim Sprachwechsel.
-
-Die bestehende Klasse `cosmos-notification-message` (ohne Außenabstand)
-sowie Meldungshülle, Symbole, Farben, Dauer und Schließen bleiben erhalten.
-Alle globalen UI-Meldungen verwenden diese Methoden, einschließlich öffentlicher
-Kontoabläufe, Kontosicherheit, Tickets, persönlicher Benachrichtigungen und
-Administration. Aufrufer mit ausschließlich einem Nachrichtentext können die
-Überladung ohne Titel verwenden; ohne Schweregrad gilt `NORMAL` mit der üblichen
-Anzeigedauer. Die Registrierungsübersetzungen enthalten nur den Text mit
-Adressplatzhalter; die Neustartwarnung ergänzt die betroffenen Felder als fette
-native Aufzählung. Der frühere HTML-Aufbau und sein Hilfsbaustein sind entfernt.
-Rückmeldungen aus URL-Parametern werden nach abgeschlossener Navigation geöffnet,
-damit bei direkten Aufrufen und Anbieter-Rücksprüngen bereits der Zielrahmen die
-Palette bestimmt. Das gilt für Sicherheitsbestätigungen und Anmeldefehler.
-
-Texte kommen aus Shared-`MessageTexts` und den DE-/EN-Ressourcen. Geschlecht ist
-ein echtes Pflichtfeld im bestehenden Profilvertrag, ohne neue Datenbankspalte
-oder Migration. Profil-E-Mail bleibt nur lesbar und fokussierbar; die E-Mail in der
-Sicherheitskarte ist weiß. Sicherheits-, Versions- und Eingabeprüfungen bleiben in
-den bestehenden Diensten. Die tatsächlichen Abläufe prüfen die isolierten Browsertests.
-
-Die Badges „SMTP Test“ und „Intern“ zeigen die Versandfreigabe mit grüner Schrift
-und grünem Rahmen. Bei aktivem Wartungsmodus oder nicht lesbarer
-Wartungskonfiguration sind die Aktionen gesperrt und die Badges rot. Den
-SMTP-Verbindungstest löst die Versandaktion aus. Die Zustandsbeschreibung steht als
-ARIA-Label und nativer Tooltip im gemeinsamen Tooltipstil zur Verfügung und folgt
-Sprache und aktuellem Wartungszustand. `MaintenanceService` und die bestehenden
-fachlichen Versandprüfungen bestimmen weiterhin die Freigabe.
-
-## Besucherportal in Vaadin
-
-`PublicPageComponent` stellt den gemeinsamen Besucherrahmen mit Service-Logo,
-Startseite/Anmeldung/Registrierung, kompakter DE-/EN-Auswahl, Seitenkopf und dem
-konfigurierten Copyright bereit. `PublicHomeComponent` verwendet das vorhandene
-lokale Kosmosmotiv. `PublicPanelComponent` verwendet die Cosmos-Panelklassen mit
-getrenntem Kopf, Inhalt und Aktionsfooter; seine Inhalte bleiben echte native
-Formularfelder und die bisherigen Aktionen der jeweiligen View.
-
-Die ausstehende E-Mail-Bestätigung verwendet die kompakte Stitch-Variante A im
-bestehenden `PublicPageComponent`-/`PublicPanelComponent`-Rahmen. Bereichszeile,
-Seitentitel, Beschreibung und Panelposition folgen unverändert den übrigen
-öffentlichen Seiten. Die Panelüberschrift bleibt der Seitenüberschrift untergeordnet.
-Native `HorizontalLayout`-/`VerticalLayout`-Container ordnen Adresse und gelbes
-`EmailVerificationBadge`, Warnhinweis und Versandwartezeit. Lange Adressen können
-umbrechen. Der Warnhinweis enthält zwei getrennte Absätze mit neutraler Linkanweisung
-und ergänzendem Spamhinweis. „Spam- oder Junkordner“ beziehungsweise die englische
-Entsprechung ist als native `Span` hervorgehoben, ohne HTML aus Übersetzungen einzusetzen.
-Die Texte einschließlich der Hervorhebung folgen dem Sprachwechsel. Die
-beiden Footeraktionen stehen als gleich breite Gruppe rechtsbündig: „Abmelden“
-im bestehenden roten Stil mit Sign-out-Icon und „Senden“ als Primäraktion mit
-Paperplane. Die native Aktionszeile verwendet `EqualButtonWidths` wie bei 2FA
-und bricht bei Platzmangel unter Erhalt von Reihenfolge und Rechtsausrichtung um.
-Abmelden verwirft weiterhin den vorläufigen Nachweis und führt zur Anmeldung.
-Das konfigurierte Service-Logo und der eingeschränkte Kopf mit
-Sprachwechsel bleiben erhalten. Die lokale Gestaltung liegt ausschließlich in
-`cosmos-email-verification.css` an `PendingEmailVerificationView`. Es werden keine
-erfundenen Versandzeitpunkte oder Zustellungsbestätigungen dargestellt.
-
-„Anmeldung fortsetzen“ zentriert die eingeschränkte Sitzungsliste im öffentlichen
-Inhaltsrahmen. Das Panel heißt „Sitzungsgrenze erreicht“ und verwendet den kurzen
-Referenzuntertitel. Der Listenhinweis und die beiden Anmeldeaktionen stehen im
-Panel-Footer. Die Listenbeschreibung steht unter dem Sitzungsanzahl-Badge;
-das Limit bleibt rechts und wechselt bei sehr schmalen Ansichten darunter.
-Abmelden und Widerrufen verwenden auch in der öffentlichen HTML-Sitzungsliste
-den gemeinsamen dezent roten Aktionsstil einschließlich Hover.
-„Anmeldung fortsetzen“ ist erst bei einem tatsächlich freien aktiven Sitzungsplatz
-aktiv. Aktualisieren und bestätigte Abmeldungen lesen den Zustand erneut;
-die serverseitige Zulassungsprüfung bleibt auch bei zwischenzeitlicher Belegung maßgeblich.
-Die normale Geräteseite und die Wirkungstexte ihrer Bestätigungen
-bleiben davon getrennt; die bestehende Passwortprüfung und Sitzungsfreigabe gelten weiter.
-
-Alle öffentlichen Seiten verwenden denselben zentrierten Header-Innenbereich
-`.public-header-inner` und Inhaltsrahmen `.public-main` mit maximal 1240 px.
-Der Header-Innenbereich ist 64 px hoch, der äußere Trenner ergänzt 1 px.
-Die seitlichen Innenabstände betragen 32 px ab 1024 px, 24 px ab 640 px und
-16 px darunter; im Header unter 441 px sind es wie in der Referenz 12 px.
-`.public-title-row` trennt Rubrik und Titel durch 8 px und richtet die
-Seitenbeschreibung am Titel aus. Header, Schrift und mobile Navigation gelten
-einheitlich für sämtliche öffentlichen Formular-, Link- und Wartungszustände.
-
-Der Ausblick am Fuß der öffentlichen Startseite verwendet wie die angemeldete
-Startseite `.portal-home-note`: durchgehender Trenner, mittig ausgerichteter
-dezent grauer Text und kleiner Cyanstern. Die Besucher-HTML übernimmt denselben
-abgestimmten Hinweis; `.vp-welcome-note` sorgt dort nur für den flächenbündigen
-Abschluss innerhalb des vorhandenen Grids.
-
-Die öffentliche Startseitenkarte grenzt ihre Anordnung in `cosmos-public.css`
-über `.cosmos-reference-public .public-home` vom angemeldeten Startseitenstil ab:
-zweispaltig ab 640 px. Darunter steht das zentrierte, maximal 260 px breite Motiv
-12 px über dem Willkommenstext. Die breite Textspalte hat keine 13-ch-Grenze.
-Die Überschrift ist 32 px groß (mobil 28 px), die Paneloberfläche hat keinen zusätzlichen Verlauf.
-Der öffentliche Rahmen verwendet dort dieselbe 1240-px-Begrenzung und die
-Abstände der festen Besucherreferenz. Der angemeldete Startseitenstil bleibt separat.
-Der Button „Link anfordern“ verwendet das Lucide-Mail-Icon für den bestehenden
-E-Mail-Anforderungsweg.
-
-Das öffentliche Resetformular heißt „Neues Passwort festlegen“, bestätigt das
-Passwort mit klar beschriftetem zweitem Feld und verwendet „Passwort speichern“
-mit Häkchen. Die zweite Aktion führt mit dem Anmelde-Icon zur Anmeldung.
-Die Aktionen des Reset- und Anforderungsformulars stehen in `.public-panel-actions`: gleich breite Spalten nach
-der längeren Beschriftung, am Desktop mindestens 156 px je Aktion; unter 640 px zwei gleich breite Zeilen in voller
-verfügbarer Breite. Zuständig ist die lokale `cosmos-public.css`.
-Validierung, Tokenbindung und erfolgreicher Passwortwechsel bleiben im bestehenden
-Resetdienst; die neutralen Seiten- und Panelüberschriften bleiben getrennt.
-
-Die lokale Gestaltung liegt ausschließlich in `cosmos-public.css` unter
-`.cosmos-reference-public`. Sie nutzt die vorhandenen Cosmos-Tokens und Controls.
-`--cosmos-input-font-size` steht hier auf
-14 px; leere und ausgefüllte Eingaben sowie Platzhalter bleiben bei Gewicht 400.
-Mobil stehen Navigation und Sprachwahl kompakt neben der Marke; die beschrifteten
-Navigationsbuttons behalten zugängliche Namen. Registrierungsfelder stehen auf
-schmalen Displays untereinander. Dekorative Feldpräfixe entfallen; native Augen,
-Kalender, Auswahllisten und Clear-Aktionen bleiben erhalten. Formularvalidierung,
-Tokenzustände, Fehlerverträge, Enumeration-Schutz und eingeschränkte Anmeldung
-verwenden weiterhin die vorhandenen Dienste. Neue neutrale Überschriften und
-Seitenbeschreibungen liegen im gemeinsamen typisierten DE-/EN-Katalog.
-
-Die Registrierung setzt beide E-Mail-Felder auf `autocomplete="off"` und beide
-Passwortfelder auf `new-password`. Gespeicherte Portal-Anmeldedaten sollen dadurch
-nicht als neue Registrierungsdaten eingesetzt werden. Browser und Passwortmanager
-können diese Hinweise übergehen; eine ausdrückliche manuelle Auswahl bleibt möglich.
-
-Die Anmeldezeile „Passwort vergessen?“ hat wie die Referenz keine dauerhafte
-Unterstreichung. Im Aktionsfooter bleibt der Kontohinweis normal gewichtet und
-in Secondary. Die Footerlinks zur Anmeldung beziehungsweise Registrierung verwenden
-wie die Referenz die Akzentfarbe und Gewicht 600.
-„Login speichern“ verwendet ein 18-px-Kästchen ohne native Außenmarge und 9 px
-Abstand zur vertikal mittigen Beschriftung, lokal unter `.cosmos-remember`.
-Manuelles Aktualisieren der Sitzungsliste meldet den erfolgreichen Abschluss
-über eine globale einzeilige Erfolgsmeldung. Automatisches Laden bleibt still;
-bei Ladefehlern wird ausschließlich die bestehende Fehlermeldung angezeigt.
-Bei Wartungsarbeiten heißt die Aktion „Anmelden“; der Erklärungstext nennt die
-währenddessen auf Administratoren beschränkte Anmeldung. Technische
-Nichtverfügbarkeit bleibt ein eigener Zustand mit neutralem Fehlertext.
-Das Wartungspanel verwendet den Lucide-Schraubenschlüssel im normalen blauen
-Iconrahmen. Ein zusätzlicher Hinweis, der nur die beiden Aktionen wiederholt,
-entfällt in HTML und Vaadin.
-
-Der öffentliche Copyright-Footer verwendet einheitlich 12 px vertikales Padding
-und 16 px Zeilenhöhe (einzeilig insgesamt 41 px einschließlich Trenner). Der Text
-darf bei langen Angaben umbrechen; eine feste Höhe schneidet ihn nicht ab.
-Ergebnisansichten richten ihre Beschreibung links aus. Erfolgs- und Warnsymbole
-erhalten im bestehenden Iconrahmen die passende grüne beziehungsweise gelbe Fläche.
-Ungültige Passwortlinks bieten „Neuen Link anfordern“ und öffnen den bestehenden
-Anforderungsweg, ohne selbst eine E-Mail auszulösen. Die Aktivierungsbestätigung
-verwendet die abgestimmten DE-/EN-Texte und führt mit „Anmelden“ zur Anmeldung.
-Beim abgelaufenen Aktivierungslink stehen „Startseite“ mit Haus-Icon und
-„Erneut senden“ mit Mail-Icon als gleich breite Aktionen bereit.
-Ein ungültiger Aktivierungslink zeigt zwei getrennte Sätze und vor dem
-E-Mail-Feld 20 px Abstand. „Startseite“ und „Aktivierungslink anfordern“ sind
-gleich breit; die Anforderung verwendet das Mail-Icon.
-Ungültige Aktivierungs- und E-Mail-Links zeigen ein rotes Ausrufezeichen im Kreis
-mit dezent rotem Hintergrund und rotem Rand. Hintergrund und Rand verwenden
-dieselben Deckkräfte wie die gelbe Warnvariante (8 % beziehungsweise 27 %).
-Abgelaufene Links bleiben gelb. Auch Passwortlinks haben getrennte rote
-Ungültig- und gelbe Ablaufansichten mit passenden DE-/EN-Texten. Der Resetdienst
-unterscheidet gültige, abgelaufene und ungültige Links unter der bestehenden
-Benutzersperre. Verbrauchte und widerrufene Links bleiben ungültig; beim
-Passwortwechsel werden Gültigkeit, Ablauf und Kontostatus erneut geprüft.
-Die E-Mail-Bestätigung verwendet die kurze Frage „Änderung bestätigen“ und einen
-separaten vollständigen Sitzungshinweis in `.cosmos-panel-hint`. Die beiden
-Aktionen sind gleich breit. Ergebnisansichten haben eigene Titel und eine
-primäre Anmeldeaktion; sie zeigen keinen Formularuntertitel.
-Die HTML-Formulare verwenden 20 px Feldabstand ohne zusätzlichen Endabstand;
-vor dem Aktionsfooter bleibt allein das bestehende Panelpadding.
-
-Die Umsetzung umfasst öffentliche Startseite, Anmeldung und Sitzungsfreigabe,
-Registrierung, Passwortanforderung/-reset, Verifikation, E-Mail-Bestätigung und
-Wartung. Die feste Besucher-HTML bleibt die abgestimmte Vergleichsgrundlage. Die früheren Vergleichsviewer, Piloten und separaten Testbeispiele sind entfernt.
-Die echten Linkzustände und Recoveryabläufe prüfen die isolierten Browsertests.
-
-## Administration in Vaadin
-
-`AdminView` übernimmt die freigegebene Adminreferenz mit dem lokalen Scope
-`cosmos-reference-admin`. `cosmos-admin.css` (Abschnitt „Adminrahmen im Portal“) und `admin-users.css` ergänzen die gemeinsamen
-Referenztokens und Controls; Besucher- und Kontoseiten erhalten keine Adminregeln.
-Header und Benutzermenü verwenden die bestehenden Portalbausteine. Die native
-SideNav enthält die acht Konfigurationsgruppen mit denselben Lucide-Icons wie die
-Panelköpfe sowie einen getrennten Portalzugang. Header, Bereichsüberschrift und Inhalt teilen die zentrierte maximale Breite
-der Referenz (1240 px); der gemeinsame Inhaltsabstand beträgt am Desktop 32 px.
-Die Desktopnavigation verwendet 208 px mit 24 px Abstand zum Inhalt, unterhalb
-von 1200 px 180 px mit 16 px Abstand. Die Desktop-SideNav steht ohne senkrechte Trennlinie daneben; die
-Copyrightzeile steht außerhalb der Inhaltsspalte über die gesamte Breite. Die
-Desktopnavigation hat einen transparenten Hintergrund und liegt für Mausklicks
-über der transparenten Innenfläche des Inhaltsrahmens; mobil bleibt sie eine
-undurchsichtige Überlagerung. Die mobile
-SideNav bleibt eine native Überlagerung. Das Infoicon des Dashboardausblicks verwendet
-die Akzentfarbe. Schnellzugriffe übernehmen die Beschreibung der jeweiligen Zielseite.
-Die Hauptnavigation verwendet wie das Frontend 12 px bei Gewicht 500 (aktiv 600), 34 px
-Zeilenhöhe und 4 px Abstand. Gruppenüberschriften haben 8 px Abstand zur ersten
-Zeile; die Portalgruppe beginnt mit 16 px Abstand. Unterpunkte verwenden 11 px
-bei Gewicht 400 (aktiv 500), 30,5 px Zeilenhöhe, 2 px Abstand und insgesamt 28 px
-Einrückung. Ihre aktive Fläche ist dezent blau (#008ecc1a).
-Die seitliche 3-px-Akzentmarkierung gilt für den aktiven Hauptpunkt im Portal und
-in der Administration.
-Der Ticketsystem-Eintrag zeigt relevante ungelesene Aktivitäten als roten Punkt
-rechts am nativen `SideNavItem`. Ein natives `Badge` mit der lokalen Klasse
-`.admin-nav-support-activity` in `cosmos-admin.css` verwendet 8 px
-Durchmesser und die bestehende rote Zählerfarbe `--cosmos-counter-badge-background`.
-Der native Tooltip erscheint nur bei aktivem Punkt und folgt dem Sprachwechsel.
-Mobil verwendet die Seitenleiste denselben Innenabstand von 20 px wie das Frontend.
-
-Das Dashboard verwendet das lokal mitgelieferte freigegebene Bildmotiv und echte
-Schnellzugriffe, ohne Beispielstatistik. Der Benachrichtigungszugang folgt der
-vorhandenen Superadminberechtigung; Dienste prüfen Rechte weiterhin unabhängig.
-
-Die Benutzerverwaltung verwendet weiterhin das native Grid und seine Sortierung.
-Ihre lokale Referenzgestaltung in `admin-users.css` übernimmt die
-kompakte Werkzeugleiste ohne zusätzlichen oberen Abstand, einmalige Zellinnenabstände,
-Referenzzeilenfarben sowie flache Statusbadges mit Text und gegebenenfalls
-Anwesenheitsicon. Die sieben Spalten
-reservieren ausreichend Platz für die vollständigen Aktionen und Sortierköpfe;
-die E-Mail-Spalte nimmt den verbleibenden Platz ein. Die lokale Palette gilt nur
-für dieses Grid.
-Zeilen und Pagination sind durch sichtbare, durchgehende Linien getrennt.
-Senkrechte Spaltentrenner entfallen. Tabellenavatare verwenden den dunklen
-Hintergrund und neutrale Initialen. Ein zusätzliches Statussymbol entfällt
-am Avatar, weil die Tabelle den Status bereits in einer eigenen Spalte anzeigt.
-Der Benutzer-Löschdialog übernimmt dieselbe neutrale Avatarfläche, auch außerhalb
-des Seitenrahmens. Hinterlegte Profilbilder bleiben in Vaadin erhalten.
-Der Löschdialog übernimmt lokal auch Breite, Kopf-/Inhaltsabstände, Textgrößen
-und gleich breite Aktionen der HTML-Bestätigung; der Bearbeitungsdialog bleibt separat.
-Die Passwortfelder im administrativen Benutzerformular sind mit `new-password`
-als neue Passwörter gekennzeichnet, die E-Mail mit `email`. Der Browser soll hier
-keine gespeicherten aktuellen Anmeldedaten einsetzen, auch beim eigenen Konto.
-Der Änderungsvergleich bleibt unverändert und schützt weiterhin echte Eingaben.
-
-Das Benutzerformular übernimmt Kopf, Feldhöhen, Typografie und Abschnittsabstände
-aus der Admin-HTML. Passworthinweise stehen unter dem zugehörigen Feld, Rollen
-und Sicherheitshinweis sind durch einzelne Linien getrennt. Die normalen
-Formularaktionen stehen am Desktop kompakt rechts und mobil nebeneinander.
-Die Geschlechtsauswahl verwendet im Benutzerformular, in der Registrierung und
-in den Kontodaten dieselbe dunkle Auswahlliste und Leerenaktion.
-Native Checkbox-Häkchen werden im Dialog innerhalb der Checkboxfläche zentriert.
-Der Formularhinweis verwendet das lokale Lucide-Icon `shield-check`.
-Im Bearbeitungsmodus nennt der Hinweis bei leerem Passwort sowohl das Beibehalten
-als auch die Regeln für ein neues Passwort. Nach Eingabe bleiben nur die
-Passwortregeln stehen. Leeren und Sprachwechsel aktualisieren diesen Hinweis.
-Die lokale Benutzerverwaltung zeichnet Streifen, Hover und Auswahl auf der ganzen
-Zeile statt auf einzelnen Zellen. So entstehen auch im skalierten Vergleich keine
-dunklen Fugen zwischen den Zellflächen. Native Fokusmarkierungen bleiben erhalten.
-Die Tabellenaktionen sind außen 32 × 32 px groß. Innerhalb des 1-px-Rahmens
-bleiben 30 × 30 px; eine geerbte native Mindesthöhe darf die Innenfläche nicht
-über den unteren Buttonrand schieben.
-Statusicons haben keine negativen Badge-Ränder und halten den Referenzabstand
-zum Text ein. Der Aktualisieren-Button meldet erst nach vollständigem Neuladen
-Erfolg. Ein Ladefehler erzeugt eine globale Fehlermeldung; automatische interne
-Aktualisierungen ergänzen keine Erfolgsmeldung.
-`AdminUserFilterBar` öffnet `AdminSidePanelDialog` rechts über der Oberfläche. Suche,
-Aktivschalter, Status- und Rollenmehrfachwahl sowie Aktivitätsgrenze sind ein
-Entwurf: Nur Anwenden übernimmt einen unveränderlichen Filterstand. Zurücksetzen
-ändert den Entwurf; Abbrechen, Außenklick und Escape stellen ihn wieder her.
-Innerhalb einer Mehrfachgruppe gilt Oder, zwischen den Gruppen Und.
-Der Zähler zählt ausgewählte Gruppen: Suche, Aktiv, Status, Rollen und
-Aktivitätsgrenze jeweils höchstens einmal. Datum und Uhrzeit bilden zusammen
-eine Gruppe. Auch alle ausgewählten Status- oder Rollenwerte zählen einmal.
-Navigation und Tastatur bleiben linksbündig beziehungsweise nativ.
-Benutzerformulare behalten Binder, Versions- und Rechteschutz; Löschen verwendet
-den gemeinsamen Gefahrenstil.
-Bei Status- und Rollenbadges deckt das native Checkbox-Label die gesamte sichtbare
-Fläche ab. Dadurch aktivieren auch freie Randbereiche die Auswahl, ohne einen
-zusätzlichen JavaScript-Klickhandler. Die lokale Regel steht in
-`admin-users.css`.
-
-Alle Konfigurationsgruppen behalten ihre vorhandenen Eingaben und Validierung.
-Die rechte Feldhilfe nutzt `AdminSidePanelDialog` im kompakten Referenzaufbau: fester
-Kopf „Feldhilfe“ mit Unterzeile, Gruppenname, Feldtitel, Beschreibung, geteilte
-Standardwertzeile und vollständige Eingaberegeln. Bei Copyright stehen die zulässigen
-Platzhalter mit Erklärung vor dem Standardwert. Vertrauliche Standardwerte bleiben
-verdeckt. Die Feldhilfe ist bis zu 380 px breit. Der Schließen-Button füllt die Footerbreite. Header und sichtbarer
-Copyrightbereich begrenzen die Leiste; beim Scrollen und bei Größenänderung werden
-die Grenzen aktualisiert. Ein nicht sichtbarer Seitenfooter reserviert keinen Abstand.
-Feldhilfe und Benutzerfilter enden auf Desktop am rechten Rand der Inhaltsspalte,
-auch auf breiten Bildschirmen. Dafür misst `AdminSidePanelDialog` die aktuelle Inhaltskante
-und setzt `--admin-drawer-right`. Unterhalb der Desktopnavigation bleibt der Rand
-am Viewport.
-Es gibt keine behauptete Livevalidierung oder Speicherung durch die Hilfe.
-Pflichtpunkte folgen der tatsächlichen Leerwertprüfung; Integer-Leerwerte mit
-Standardwert-/Unbegrenzt-Vertrag bleiben optional. Infoaktionen stehen außerhalb
-der Checkbox-/Eingabefläche; Zahlenaktionen bleiben native Vaadin-Komponenten.
-
-Der Mailtest verwendet ein kompaktes Panel, Klartexthinweis und SMTP-Direktzugang.
-Die Info-Buttons neben Empfänger, Betreff und Nachricht öffnen dieselbe seitliche
-Feldhilfe wie die Konfiguration und zeigen Beschreibung und Eingaberegeln.
-Das Infoicon steht mittig zum gesamten Block aus Hinweistext und SMTP-Zugang.
-Der SMTP-Zugang ist ein echter Navigationslink in einer neuen Zeile. Er übernimmt
-den rahmenlosen Avatar-Menüstil des Anbieter-Links, mit weißer Beschriftung und
-dem blauen Lucide-`square-arrow-right-enter` aus den Dashboard-Schnellzugriffen.
-Die Maße entsprechen dem Anbieter-Link; der obere Abstand beträgt 4 px.
-Wie bei „Startseite“ und „Abmelden“ im Avatar-Overlay bleiben Fläche, Text- und
-Iconfarbe bei Hover unverändert. Der Tastaturfokus bleibt sichtbar.
-Die Regeln liegen in `cosmos-admin.css`. Der Panelkopf verwendet 18 px
-vertikal und 22 px seitlich, der Inhalt 22 px. Bis 600 px verwenden Kopf und
-Inhalt 16 px. Die Nachrichtenfläche ist mindestens 144 px hoch.
-Der Klartexthinweis unter dem Nachrichtenfeld verwendet konstant 11 px bei Gewicht 400
-und die sekundäre Textfarbe, auch bei Hover. Feldlabels verwenden 12 px bei
-Gewicht 500. Der
-Aktionstrenner läuft über die gesamte Panelbreite. Das Nachrichtenfeld hat vertikalen
-Innenabstand; Eingabetexte verwenden wie die Kontofelder 14 px bei Gewicht 400.
-Fehler bleiben globale Notifications mit markiertem Feld; es gibt keine zusätzliche
-Fehlerbox im Panel. Der reale SMTP- und Wartungsvertrag bleibt erhalten.
-
-Benachrichtigungen zeigen Verfassen und Vorschau nebeneinander, mobil untereinander.
-Empfängerauswahl, Vorschauentwertung, erfasste Empfängermenge und Request-ID bleiben
-im vorhandenen Dienst. Die Vorschau zeigt Nachricht und Empfängeravatare, Namen
-und Adressen erst in den Details. Der Verlauf wiederholt Titel und Metadaten nicht
-im aufgeklappten Inhalt. Er verwendet Glockensymbole, durchgehende Trenner und die
-gemeinsame Pagination. Ungeprüfte Aussagen zur unveränderlichen Protokollierung
-werden aus dem synthetischen HTML-Beispiel nicht als echte Funktion übernommen.
-
-## Icon und Text in Aktionsbuttons
-
-Im Referenzportal und seinen Overlays haben native Button-Präfixe zum Text 8 px
-Abstand. Präfix und Label richten ihre Inhalte mittig aus; leere Präfixe reservieren
-keinen Abstand. Die lokale 10-px-Ausnahme der Seitennavigation und die 7-px-Ausnahme
-der Sitzungsaktionen sind auf diesen Standard angeglichen. Auch die Kontotabs
-verwenden denselben Abstand. Zuständig sind `cosmos-theme.css` und
-`cosmos-account.css`. Die Avatar-/Identitätsanordnung im Kopf und reine Iconbuttons
-behalten ihre eigenen Maße; native Eingabe- und Tabellensymbole werden nicht umgebaut.
-
-## Gemeinsames Lucide-Iconset
-
-`AppIcon` definiert die benötigten Symbolfunktionen und erzeugt jeweils ein natives
-Vaadin-`SvgIcon` aus `META-INF/resources/icons/lucide/<name>.svg`. Buttons behalten
-ihre Beschriftung, Icons sind dekorativ mit `aria-hidden`. Direkte `VaadinIcon`-Aufrufe
-und der frühere `PortalIcon`-Wrapper entfallen. Logo, Flaggen und
-Kosmosillustration sind eigenständige Bildinhalte und kein Teil des UI-Iconsets.
-Lokale Original-SVGs, vollständige Lizenz und Paketquelle liegen zusammen im
-Lucide-Ordner; es gibt keinen CDN-Aufruf und keine zusätzliche JavaScript-Bibliothek.
-
-Die Iconregel in `cosmos-theme.css` betrifft nur ausdrücklich erzeugte
-`AppIcon`-Symbole (`cosmos-lucide-icon`, `cosmos-tabler-icon`). Es übernimmt die Lucide-Originalstrichstärke;
-vorhandene Größen, Statusfarben und Zustandsregeln bleiben maßgeblich.
-Anwesenheitsanzeigen verwenden `circle-check`, `circle-minus`,
-`clock` und `circle-x`. Der Gerätebaustein verwendet `monitor-smartphone`, die
-Sammelaktion „alle gelesen“ `check-check` entsprechend der Referenzfunktion.
-
-Auf ausdrücklichen Benutzerwunsch bleiben die eingebauten Symbole der nativen
-Vaadin-Komponenten unverändert. Dazu gehören Passwortauge, Kalender, Auswahl- und
-Leerenzeichen, Zahlenpfeile, Checkbox-Haken, interne Tab-/Drawer-Schalter und
-Tabellensortierung. Tabellenköpfe und Komponenten werden für diese Umstellung
-nicht umgebaut. Die Suche verwendet Lucide, wenn ihre Lupe durch Anwendungscode
-gesetzt wird. Es gibt keine Masken- oder Schriftglyphenüberschreibung für native
-Komponenten und keine Abhängigkeit von internen Icon-CSS-Variablen.
-
-## Basis: Vaadin Aura mit Cosmos-Schichten
+**Cosmos ist das gemeinsame Theme auf Basis von Vaadin Aura.** Neue Ansichten
+verwenden die vorhandenen Komponenten und Tokens. Die laufende Vaadin-Oberfläche
+dient als gestalterische Vorlage.
+
+| Ich möchte … | Hier nachschlagen |
+| --- | --- |
+| Farben, Schrift und Flächen ändern | [Grundlagen](#grundlagen) |
+| einen vorhandenen Baustein einsetzen | [Gemeinsame Bausteine](#gemeinsame-bausteine) |
+| Header, Navigation und Seitenpfade verstehen | [Seitenrahmen](#seitenrahmen-und-navigation) |
+| Anbieter-, Queue- oder 2FA-Ansichten erweitern | [Fachoberflächen](#fachoberflächen) |
+| Icons und Avatare gestalten | [Icons und Identität](#icons-und-identität) |
+| die zuständige CSS-Datei finden | [Dateien und Ladereihenfolge](#dateien-und-ladereihenfolge) |
+| Gestaltung in den Standard übernehmen | [Änderungen am Theme](#änderungen-am-theme) |
+
+Fachliche Abläufe stehen unter [Anwendung](anwendung.md), [Sicherheit](sicherheit.md),
+[Mailqueue](mailqueue.md) und [2FA](zwei-faktor-authentifizierung.md).
+Hier stehen Darstellung, Wiederverwendung und die wichtigen technischen Grenzen.
+
+## Grundlagen
+
+### Basis: Vaadin Aura mit Cosmos-Schichten
 
 Grundlage ist das Vaadin-Theme **Aura** (`Aura.STYLESHEET`, Version laut `pom.xml`).
 Lumo wird nicht geladen; Lumo-Variablen, `LumoUtility` und `ButtonVariant.LUMO_*`
@@ -1180,7 +34,7 @@ sichtbare Ladeordnung. Grenzen: Aura-Standards weichen teils ab und werden in
 `cosmos-aura.css` zurückgesetzt (siehe [Aura-Abgleich](#aura-abgleich-und-akzeptierte-abweichungen));
 Aura-Updates können dort Nacharbeit erfordern.
 
-## Theme-Quellen und Template
+### Theme-Quellen und Template
 
 Das gemeinsame Template besteht aus den CSS-Dateien unter
 `app/src/main/resources/META-INF/resources/custom-theme/`. Es gibt keine separate
@@ -1191,13 +45,13 @@ ausgelieferten Ressourcen. Generierte Ausgaben nicht von Hand bearbeiten.
 gemeinsamen Stelle dieser Quellen verankern und hier dokumentieren. Konkrete Werte
 werden in CSS definiert; die folgenden Tabellen beschreiben den dazugehörigen Standard.
 
-## Palette
+### Palette
 
 `cosmos-palette.css` ist die einzige Stelle für Farbwerte der Oberfläche
 (`--cosmos-color-*`). Semantische Tokens in `cosmos-tokens.css` verweisen darauf;
 Fachdateien verwenden Tokens oder Palettenfarben. Transparente Flächen entstehen per
 `color-mix()` aus diesen Farben, nicht als eigene RGBA-Werte. Ausnahmen mit eigenen
-Farbwerten: die dekorative Hintergrundszene (`cosmos-background-*.css`) und die
+Farbwerten: die dekorative Hintergrundszene (`cosmos-background.css`) und die
 Google-Markenfarben in `cosmos-external-login.css`.
 
 Kontraste nach WCAG 2.x (normaler Text ≥ 4,5:1, große Schrift und Bedienelemente ≥ 3:1):
@@ -1229,7 +83,7 @@ Weiß auf Violett erreicht nur 3,96:1; Violett dient daher als Rahmen/Akzent, ni
 Fläche hinter normalem Text. Gedämpfter Text und Primary-Fläche sind für ausreichenden
 Kontrast bewusst heller bzw. dunkler gewählt.
 
-## Typografie
+### Typografie
 
 `typography.css` definiert Inter (variable Schrift) mit Roboto/Systemschrift als Ersatz
 (`--cosmos-font-family`) und Space Mono für Codes, Schlüssel und technische Ausgaben
@@ -1252,8 +106,8 @@ bleiben davon unberührt. Alle Schriftgrößen verwenden die Skala aus `cosmos-t
 Stärken: 400 regulär, 500 mittel, 600 halbfett, 700 fett
 (`--cosmos-font-weight-*`).
 
-Zeilenhöhen stehen als Tokens in `cosmos-tokens.css`; Bausteine verwenden keine eigenen
-Einzelwerte mehr:
+Zeilenhöhen stehen als Tokens in `cosmos-tokens.css`. Neue gemeinsame Bausteine verwenden
+diese Skala; vorhandene fachliche Varianten stehen in ihren CSS-Quellen:
 
 | Token | Wert | Einsatz |
 | --- | --- | --- |
@@ -1271,71 +125,440 @@ Einzelwerte mehr:
 Bewusste Ausnahmen: `1` für einzeilige Symbol- und Zählerflächen sowie die fließende
 Hero-Überschrift der Startseite.
 
-## Gestaltungsregeln
+## Gemeinsame Bausteine
 
-Vaadin Flow ist die Komponentenbasis. Das gemeinsame Cosmos-Theme ist der Standard.
-Neue Ansichten verwenden vorhandene Bausteine. Lokale Anpassungen verändern keine
-anderen Views, Icons oder Maße als Nebenwirkung.
+### Native Vaadin-Bausteine zuerst
 
-| Element | Standard |
-| --- | --- |
-| Primary-/Secondary-Button | 36 px (`--cosmos-control-height`), 9 px Radius, 13 px / 600 |
-| Primary | Primary-Fläche, Primary-Border, Kontrastschrift |
-| Secondary | Input-Hintergrund, Primary-Text, dezenter 1-px-Rahmen |
-| Buttonicons | Vorhandene Größe; die 14-px-Basis für em-Icons erhalten |
-| Tabellenaktionen | 32×32 px, Icons 16×16 px |
-| Pagination | 28×28 px, 11 px Schrift, 4 px Abstand; aktiv Primary |
-| Eingaben | 36 px Controlhöhe, 13 px; Platzhalter/leere Eingaben 13 px / 400 |
-| Labels | 12 px / 500, Secondary |
-| Paneltitel/-beschreibung | Gemeinsame cosmos-panel-title / cosmos-panel-description |
-| Schließen | cosmos-overlay-close und bestehendes CLOSE_CIRCLE |
-| Frage-/Erfolgs-/Warnsymbole der Kontoansichten | 40 px über die Cosmos-Größentokens |
+Vor neuen UI-Bausteinen die APIs der tatsächlich verwendeten Vaadin-Version prüfen.
+Native Flow-Komponenten, öffentliche Parts, Theme-Varianten und Variablen haben Vorrang.
 
-Formularpaare nutzen `cosmos-form-row` und stehen unter 600 px untereinander.
-Die Löschaktion verwendet die vereinbarte Mischung aus Fehler- und Basisfarbe;
-weitere rote Komponentenfarben werden nicht parallel eingeführt.
+- Einfache Zeilen und Spalten: `HorizontalLayout` und `VerticalLayout`.
+- Formulare: `FormLayout` mit den vorhandenen responsiven Grenzen.
+- CSS Grid/Flex gezielt für fachliche responsive Kompositionen verwenden.
+- Ein eigener Ersatz für eine spezialisierte Komponente benötigt eine ausdrückliche
+  Freigabe. Normale Layoutcontainer sind kein solcher Ersatz.
+- Die freigegebenen Lucide-/Tabler-Icons und der Canvas-Bildausschnitt bleiben zulässig.
 
-Alle Cosmos-Grids verwenden dieselben vier zentralen Tokens, gebildet aus der Palette:
+Aktionen, Bestätigungen und Downloads verwenden native **Buttons**; ein `Anchor`
+dient der Navigation. Fachliche Prüfungen bleiben in den Diensten.
 
-| Token | Herkunft |
-| --- | --- |
-| --cosmos-table-header-background | Slate 800, 70 % deckend |
-| --cosmos-table-row-background | Overlayfläche, 45 % deckend |
-| --cosmos-table-alternate-row-background | Hoverfläche, 50 % deckend |
-| --cosmos-table-highlight-background | Auswahlfläche |
+### Vorhandene Bausteine wiederverwenden
 
-Zeilenwechsel gilt im Cosmos-Theme automatisch über die öffentlichen
-`--vaadin-grid-row-*`-Variablen und den Part `odd-row-cell`; keine zusätzliche
-Variante oder benutzerverwaltungsspezifische Klasse nötig. Hover verwendet
-`--cosmos-hover-background`, Auswahl `--cosmos-table-highlight-background`.
-Keine eigene Tabellenpalette pro View hinzufügen; Tastaturfokus und die vorhandenen
-responsiven Gridregeln erhalten.
-
-## Vorhandene Bausteine wiederverwenden
-
-Im vorhandenen `.cosmos-theme`-Bereich gelten gemeinsame Vaadin-Controlregeln.
-Neue Textfelder oder Buttons benötigen keine eigenen Farb-/Typografieregeln, um
-wie die bisherigen auszusehen. Eine vorhandene passende Ansicht dient als Vorlage
-für Klassen und Struktur; nicht nur einzelne sichtbare Maße nachbauen.
-
-| Baustein | Bestehende Grundlage | Zuständige CSS-Datei |
+| Aufgabe | Baustein / Grundlage | Gestaltung |
 | --- | --- | --- |
-| Eingabefelder und Formularpaare | Native Vaadin-Felder, `cosmos-form` / `cosmos-form-row` | cosmos-theme.css |
-| Primary-/Secondary-/Löschaktionen | Vorhandene Button-Themes und zentrale Control-/Danger-Tokens | cosmos-theme.css / cosmos-tokens.css |
-| Textartige und quadratische Buttons, Textfarben | Ersatzklassen aus `CosmosCssClasses` | cosmos-utilities.css |
-| Karten | `CosmosCardComponent`, `CosmosContentCardComponent`, öffentliche Panels | cosmos-cards.css |
-| Panels | Vorhandene Cardbasis und `cosmos-panel-card`, Header, Icon, Heading, Titel, Beschreibung, Footer und Aktionen | cosmos-admin.css |
-| Tabellen | Vaadin Grid im Cosmos-Theme, gemeinsame Zeilen-/Header-/Hoverregeln | cosmos-theme.css |
-| Dialoge und Schließen | Bestehende Dialogstruktur, Overlay-/Dialogtokens und `cosmos-overlay-close` | cosmos-theme.css / cosmos-admin.css / cosmos-shell.css |
-| Konto und Avatare | `CosmosAvatar` als nativer Bildkern; bestehende Konto-/Profilbild-/Sitzungskomponenten und `cosmos-avatar-*`-Tokens | cosmos-avatar.css / cosmos-account.css / cosmos-shell.css |
-| Benachrichtigungen | Bestehende Vorschau-/Inbox-/Detail-/Versandkomponenten; Controls und Panelteile aus dem gemeinsamen Theme | cosmos-notifications.css |
+| Seitenrahmen und Navigation | `PageFrameComponent`, `PageContentLayout`, `PageNavigationComponent` | `cosmos-shell.css` |
+| Große Panels | `CosmosCardComponent`, `AccountPanelComponent` | `cosmos-cards.css`, Fachdatei |
+| Kleine Kontext-, Anbieter- und Sitzungskarten | `CosmosContentCardComponent` | `cosmos-cards.css`, Fachdatei |
+| Öffentliche Formularpanels | `PublicPanelComponent` | `cosmos-cards.css`, `cosmos-public.css` |
+| Kennzahlen | `CosmosMetricCard` | `cosmos-metric-card.css` |
+| Eingaben | Native Vaadin-Felder | `cosmos-theme.css` |
+| Zahl und Zeiteinheit | `CosmosDurationCustomField`, `CosmosDurationField` | `cosmos-duration-field.css` |
+| Eingabe mit Feldhilfe | `FieldHelpRowLayout`, `ConfigInfoButton`, `AdminSidePanelDialog` | `cosmos-admin.css` |
+| Segmentierte Auswahl | `CosmosSegmentedTabs<T>` | `cosmos-segmented-tabs.css` |
+| Auf-/Zuklappen | Native `Details`, `DetailsToggleButton` | `cosmos-theme.css` |
+| Bestätigung | `PortalConfirmationDialog`, `NotificationReadAllConfirmationDialog` | `cosmos-confirmation.css` |
+| Globale Meldung | `NotificationHelper` | Gemeinsame Toast-Regeln |
+| Identität | `CosmosAvatar`, `OverlayUserIcon` | `cosmos-avatar.css`, `cosmos-shell.css` |
 
-Für neue Panels die vorhandene Header-/Inhalts-/Footerstruktur samt passenden
-`cosmos-panel-*`-Klassen verwenden. Lokale Fachklassen ergänzen nur die benötigte
-Anordnung. Ein neues Eingabefeld bleibt beim vorhandenen Controlstandard;
-zusätzliche globale Feldregeln sind dafür nicht nötig.
+Wiederkehrende Klassen im Java-Code über `CosmosCssClasses` verwenden. Der Halter
+enthält Bezeichner, keine Gestaltung. Ein neues Textfeld braucht keine zusätzlichen
+lokalen Farb-, Fokus- oder Disabled-Regeln.
 
-## Ersatzklassen für frühere Lumo-Varianten
+### Gestaltungsregeln
+
+#### Buttons und Eingaben
+
+| Element | Gemeinsamer Standard |
+| --- | --- |
+| Normale Aktionsbuttons | 36 px Höhe, 9 px Radius; vorhandene Primary-/Secondary-Variante |
+| Tabellenaktionen | 32 × 32 px, 16-px-Icon |
+| Pagination | Kompakte native Controls; aktive Seite in Primärfarbe |
+| Eingaben | Gemeinsame Feldfläche; Höhe und Schrift aus der jeweiligen Controlvariante |
+| Labels | Gemeinsame Labelschrift; Pflichtpunkt nur bei tatsächlichem Pflichtfeld |
+| Schließen | `cosmos-overlay-close`, vorhandenes `CLOSE_CIRCLE` |
+| Löschaktionen | `cosmos-delete-button`, gemeinsame Danger-Tokens |
+| Warnaktionen | `cosmos-warning-button`, gemeinsame Warnpalette |
+
+Beschriftete Felder erhalten keine dekorativen Präfixicons. Suchlupe und native
+rechte Feldaktionen bleiben erhalten. Feldicons sind neutral in Ruhe, heller bei
+Hover und akzentblau bei Fokus beziehungsweise geöffnetem Picker.
+Disabled ist auch an Label, Wert und Platzhalter erkennbar. Read-only, Fehler und
+Tastaturfokus bleiben unterscheidbar.
+
+#### Hinweise und Warnungen
+
+- Gerahmte Infoboxen verwenden `--cosmos-info-box-padding` und `--cosmos-info-box-gap`.
+- Sicherheitswarnungen verwenden `cosmos-security-warning` und die Warnpalette.
+- Bei **fetter Einleitung mit Doppelpunkt** steht das Icon an der ersten Textzeile
+  (`Alignment.START`). Die Erklärung folgt direkt daneben.
+- Bei reinem Fließtext darf das Icon zur gesamten Texthöhe zentriert bleiben.
+- Inhaltlich getrennte Hinweise stehen in Absätzen, ohne HTML im Textkatalog.
+- Footerhinweise verwenden die bestehende Fläche und Trennlinie.
+
+#### Badges und Tabellen
+
+Native `Badge`s zeigen Status und Zähler. Beschriftete Statusbadges bekommen keinen
+zusätzlichen Punkt; eigenständige Avatar- und Aktivitätspunkte bleiben.
+Rahmen und Fläche kommen aus `cosmos-theme.css`, die fachliche Farbe aus dem Bereich.
+Systemkennzeichnungen verwenden `--cosmos-system-*` in Violett.
+
+Grids teilen Header-, Zeilen-, Wechsel-, Hover- und Auswahlfarben aus den gemeinsamen
+`--cosmos-table-*`-Tokens. Keine zweite Tabellenpalette pro View einführen.
+Sortierung, Tastaturfokus und vorhandene responsive Regeln bleiben erhalten.
+
+### Native Kartenhüllen für bestehende Ansichten
+
+`CosmosCardComponent` und `CosmosContentCardComponent` verwenden native Cards.
+Die Fachklassen bestimmen Rahmen, Fläche und Anordnung. `cosmos-cards.css`
+neutralisiert zusätzliche native Innenabstände; Kopf und Footer nutzen öffentliche Slots.
+
+- Sichtbare Überschriften als zugängliche Card-Beschriftung anbinden.
+- Keine zusätzlichen Kartenrahmen um Tabellenzeilen oder illustrative Kompositionen legen.
+- `ComponentTestTree` berücksichtigt in JUnit auch Header-/Footer-Slots;
+  `Card.getChildren()` allein liefert nur den normalen Inhalt.
+- Eine Komponenten-Umstellung erlaubt keine beiläufige Neugestaltung.
+
+`CosmosMetricCard` ist eine statische Kennzahl ohne Klick-/Hoveraktion.
+`setLabel(...)`, `setValue(...)` und `setHighlighted(...)` aktualisieren den Inhalt.
+Die Label-/Wert-Spans bleiben erhalten, damit äußere Schriftanpassungen und IDs
+bei Sprach- oder Zählerwechseln nicht verloren gehen. Inbox und Benutzerverwaltung
+verwenden ihre vorhandenen lokalen Größenvarianten.
+
+### Formulare und Zeitfelder
+
+| Bereich | Lokale Gestaltung |
+| --- | --- |
+| Persönliche Daten | `account-profile-form` / `cosmos-account.css` |
+| Registrierung | `public-registration-form` / `cosmos-public.css` |
+| Benutzer anlegen/bearbeiten | `admin-user-paired-form` / `admin-users.css` |
+| Allgemeine Konfiguration | `cosmos-config-fields` / `cosmos-admin.css` |
+| Anmeldeanbieter | `cosmos-provider-settings.css` |
+| 2FA-Regeln | `cosmos-mfa.css` |
+
+FormLayout nutzt die vorhandenen Breakpoints und öffentlichen Variablen, keine
+privaten Vaadin-Layoutvariablen. `FieldHelpRowLayout` lässt das Feld wachsen und
+schrumpfen, während die Feldhilfe ihren Platz behält.
+Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
+Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
+
+**Zeitfelder:** Aufrufer verwenden `CosmosDurationCustomField`. Die Hülle trägt
+Label, Enabled/Read-only/Invalid und die sichtbare Fehlermeldung;
+`CosmosDurationField` liefert innen Zahl und Einheit.
+
+- Speicherformate bleiben Sekunden, ISO-Duration oder ganze Tage.
+- Laden wählt die größte ganzzahlig passende Einheit. Einheitenwechsel erhält die
+  Zahl; Nachkommastellen werden nicht unbemerkt gerundet.
+- Leerwerte behalten den Fachvertrag des Aufrufers: Standardwert, unbegrenzt oder Pflichtfeld.
+- Feste Tageswerte haben nur ein Suffix. 2FA-Inaktivität erlaubt Minuten, Stunden und Tage.
+- Zahl und Einheit teilen eine Fläche, ohne zweiten inneren Fokusrahmen.
+- Der Plusbutton der präzisen Eingabe gehört direkt ins Suffixlayout, ohne eigenen
+  Suffix-Slot innerhalb dieses Layouts.
+- Die Einheit ist per ARIA beschriftet. Leere Label-/Baselineflächen dürfen sie nicht
+  nach unten verschieben; Unterlängen müssen sichtbar bleiben.
+
+Native Switches behalten ihr Grid-Layout. Flex kann die Klickfläche des inneren
+Inputs auf Breite null reduzieren.
+
+### Details und Bestätigungsdialoge
+
+Details-Schalter bleiben bei Hover und Klick ohne zusätzliche Fläche. Handzeiger,
+Pfeilwechsel, `aria-controls`, `aria-expanded` und Tastaturfokus bleiben erhalten.
+`DetailsToggleButton` vermittelt den Zustand der nativen `Details`.
+
+`PortalConfirmationDialog`, die Sammel-Lesebestätigung und administrative
+Benutzerlöschung verwenden `ConfirmDialog`. Formular-/Identitätsdialoge bleiben `Dialog`s.
+
+- Close, Escape und Abbrechen verwerfen die Aktion. Außenklick schließt normale
+  Bestätigungen; beim Formularschutz bleibt er ohne Wirkung.
+- Nur das Bestätigungsereignis führt den erfassten Auftrag einmal aus.
+  Schließereignisse dürfen weder die folgende Bestätigung vorzeitig verwerfen
+  noch einen erneut geöffneten Dialog zurücksetzen.
+- `ConfirmDialogInitialFocus` setzt den Fokus am öffentlichen `vaadin-overlay-open`-
+  Ereignis. `opened-changed` allein kommt dafür zu früh.
+- Lange Inhalte scrollen innerhalb der maximalen Höhe; der Footer bleibt erreichbar.
+- Eine fehlgeschlagene administrative Löschung öffnet denselben Kontext erneut.
+  Erst eine neue ausdrückliche Bestätigung wiederholt den Versuch.
+
+`EqualButtonWidths` gleicht sichtbare Textaktionen nach der längeren Beschriftung an.
+Sprachwechsel, Sichtbarkeit und verfügbare Breite werden berücksichtigt; Iconbuttons
+zählen nicht. Mobile Vollbreite wird am zuständigen Container gesetzt.
+
+Beim Formularschutz steht auf Desktop Verwerfen links und Weiterbearbeiten rechts.
+Bis 600 px stehen beide in dieser Reihenfolge untereinander in voller Breite;
+Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls mobile
+Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
+[Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
+
+### Globale Notifications
+
+Alle globalen UI-Meldungen verwenden `NotificationHelper`. Der angehängte Seitenrahmen
+bestimmt die Palette; Supplier halten Texte beim Sprachwechsel aktuell.
+
+| Methode | Inhalt |
+| --- | --- |
+| `showTextNotification` | Nativer Paragraph; ohne Nachricht nur der Titel |
+| `showTextNotificationWithDetails` | Text mit nativer Liste |
+| `showHighlightedTextNotification` | Erstes exaktes Vorkommen eines gelieferten Texts hervorheben |
+
+Die Methoden werten kein HTML aus. Fehlt die Hervorhebung, bleibt normaler Text.
+Schweregrad, Symbole, Dauer und Fensterisolation bleiben erhalten.
+URL-Rückmeldungen erst nach der Navigation öffnen, damit der Zielrahmen feststeht.
+Manuelles Laden meldet Erfolg oder Fehler; automatisches Laden bleibt ohne Erfolgstoast.
+
+## Seitenrahmen und Navigation
+
+### Übernahme des angemeldeten Benutzerportals
+
+`HomeView`, `UserNotificationsView` und `AccountView` nutzen `cosmos-reference-portal`.
+`PageFrameComponent` stellt den Servicekopf, `PageContentLayout` Überschrift und Inhalt
+bereit. Der Kopf bleibt oben; übriger Inhalt und Copyright scrollen im Dokument.
+`PortalSidebarPageLayout` ergänzt Identitätskarte und Kontonavigation.
+
+`PageNavigationComponent` nutzt `SideNav`/`SideNavItem`; die aktive Seite trägt
+`aria-current="page"`. Mobile Navigation überlagert den Inhalt und schließt bei
+Seitenwahl, Außenklick oder Escape. Dialoge behalten ihr eigenes Escape-Verhalten.
+Startseite/Dashboard bieten echte Navigation, keine Beispielstatistiken.
+Leere Benachrichtigungslisten und Ladefehler bleiben unterschiedliche Zustände.
+
+### Besucherportal in Vaadin
+
+`PublicPageComponent` und `PublicPanelComponent` bilden den gemeinsamen Rahmen für
+öffentliche Formulare und Linkzustände. Gestaltung: `cosmos-public.css`;
+Anbieter-Schnellzugänge: `cosmos-external-login.css`.
+
+- Gemeinsamer Servicekopf, DE-/EN-Auswahl, Inhaltsrahmen und Copyright.
+- „Login speichern“ ist ein nativer Switch, keine Checkbox.
+- Registrierung erlaubt Autovervollständigung beider E-Mail-Felder (`email`);
+  beide Passwortfelder nutzen `new-password`. Passwortmanager können Hinweise übergehen.
+- Ausstehende Verifikation und Reaktivierung zeigen eine beschriftete Adresszeile,
+  gelbes Badge und Warnung mit hervorgehobenem Spam-/Junkhinweis.
+- Gültige, abgelaufene und ungültige Links behalten unterschiedliche Texte,
+  Farben und tatsächlich verfügbare Aktionen. Keine Zustellbestätigungen erfinden.
+
+Statische HTML-Referenzen sind keine laufende zweite Oberfläche. Sie liegen bei
+Bedarf im Git-Tag `archiv/html-referenzen`; neue Entwürfe gehen von Vaadin aus.
+
+### Administration in Vaadin
+
+`AdminView` nutzt `cosmos-reference-admin`; Header und Menü sind dieselben
+Portalbausteine. Adminregeln bleiben auf ihren Scope begrenzt. Navigation und
+Panelköpfe verwenden dieselbe `ConfigGroupIcons`-Zuordnung.
+
+**Benutzerverwaltung:** natives Grid, Werkzeugleiste und Pagination. Filter sind
+Entwürfe: Anwenden übernimmt, Zurücksetzen ändert den Entwurf, Abbrechen verwirft ihn.
+Der eingeklappte Bereich Anmeldung zeigt Registrierungsweg, Anmeldewege,
+E-Mail-Nachweis und Kontotyp. Standardkonten sind blau, Entwicklerkonten systemviolett.
+Selbstdeaktivierung erscheint als gelber Warnhinweis mit Trennlinie und Löschtermin.
+Die administrative Sperre ist davon unabhängig.
+
+**Konfiguration:** Die Feldhilfe zeigt Beschreibung, Standardwert, Regeln und
+„Wann gilt die Änderung?“. Vertrauliche Werte bleiben verdeckt; die Hilfe speichert
+nichts. Laden/Speichern stehen im äußeren Footer, bis 600 px untereinander in voller
+Breite, auch bei Anbietern, Queue und 2FA.
+
+**Mailtest:** native Eingaben und dieselbe Feldhilfe. Die Nachricht ist vertikal
+vergrößerbar; Klartexthinweis und SMTP-Navigation stehen getrennt darunter.
+Fehler sind Fehlermeldungen, keine erfolgreichen Testergebnisse.
+
+### Seitenpfade und Navigationsziele
+
+Die blauen Elternpfade und der große aktuelle Seitentitel sind wie folgt zugeordnet.
+Untertabs bleiben Tabs und werden nicht zusätzlich als Breadcrumb oder Seitentitel
+wiederholt. Alle Beschriftungen folgen dem gemeinsamen DE-/EN-Textkatalog.
+Der manuelle Breadcrumb-Modus berücksichtigt die vorhandenen Queryparameter.
+
+| Bereich | Blauer Elternpfad | Große Überschrift |
+| --- | --- | --- |
+| Besucherseiten einschließlich öffentlicher Startseite, Anmeldung, Registrierung und Reset | `PORTAL` | Aktueller Seitentitel |
+| Angemeldete Startseite | `PORTAL` | Startseite |
+| Persönliche Daten, Sicherheit, Geräte & Sitzungen | `PORTAL / MEIN KONTO` | Jeweiliger Seitentitel |
+| Eigene Benachrichtigungen | `PORTAL` | Benachrichtigungen |
+| Admin-Dashboard, Benutzerverwaltung, Tickets und Benachrichtigungen | `ADMINISTRATION` | Jeweiliger Seitentitel |
+| Sämtliche Konfigurationsgruppen einschließlich Anmeldeanbieter und 2FA | `ADMINISTRATION / KONFIGURATION` | Gewählte Gruppe |
+| Mailtest | `ADMINISTRATION` | Mail Test |
+| 2FA, Wiederherstellung und Hilfe aus dem Konto | `PORTAL / MEIN KONTO / SICHERHEIT` | Aktueller Schritt |
+| 2FA beim Login, ausstehende Verifikation und Reaktivierung | `PORTAL` | Aktueller Schritt |
+| Verifikations-, E-Mail-Änderungs- und Reaktivierungslinks | `PORTAL` | Aktueller Seitentitel |
+
+
+Portal führt zur Startseite, Mein Konto zu `account?section=profile` und Sicherheit
+zu `account?section=security&tab=portal`. Administration führt zum Dashboard,
+Konfiguration zur ersten für den Benutzer zulässigen Gruppe. In eingeschränkten
+Sicherheitsabläufen bleiben alle Pfaditems ohne Navigationsziel; die expliziten
+Zurück-/Abmeldeaktionen und serverseitigen Sperren bleiben maßgeblich.
+
+## Fachoberflächen
+
+### Externe Anmeldebausteine
+
+`PublicAuthenticationPanelLayout` verbindet lokales Formular, ODER-Trenner und den
+optionalen Schnellzugang aus `ExternalLoginButtons`. Ohne verfügbare Anbieter bleibt
+nur das lokale Formular. Bei Platzmangel stehen die Panels untereinander.
+
+`ExternalConnectionsComponent` nutzt Sicherheitskarten mit Anbieterlogo, Status
+und Aktion. `ExternalIdentityConfirmationDialog` liegt außerhalb der Tabinhalte,
+damit ein inaktiver Tab ihn nicht sperrt. Die letzte nutzbare Anmeldung bleibt geschützt.
+Details: [Externe Anmeldung](externe-anmeldung.md).
+
+Die Anbieterkonfiguration nutzt native TabSheets, Felder, Switches und Feldhilfen.
+Tabwechsel speichern/laden nicht. Statusbadges zeigen den gespeicherten Zustand,
+nicht den Entwurf. Gespeicherte Secrets bleiben im Feld leer und in der Hilfe verdeckt.
+`cosmos-external-login.css` und `cosmos-provider-settings.css` gestalten Anordnung
+und zugelassenes Branding aus `icons/external-login/`.
+
+### Administrative Mailqueue-Bereinigung
+
+| Queue-Reiter | Sichtbarkeit | Inhalt / Zähler |
+| --- | --- | --- |
+| Allgemein | Admin und Superadmin | Fünf normale Queue-Einstellungen |
+| Assistenten | Nur Superadmin | Vier Bereinigungseinstellungen und Ausführung |
+
+`tab=general`/`tab=assistants` innerhalb von `section=configuration&group=queue`
+erhält die Auswahl bei F5. Tabwechsel bewahren Entwürfe; ungültige Parameter oder
+fehlende Rechte führen zu Allgemein. Der Kopfzähler zählt den aktiven Reiter,
+auch deaktivierte Felder. Beide Reiter werden gemeinsam gespeichert.
+
+Die innere `CosmosCardComponent` hat einen blauen Brush im Kopf. Automatik und
+Historienfrist stehen vor den Zeitfeldern; darunter Warnung, Ausführung und Info-Box.
+Laden/Speichern bleiben im äußeren Footer. Gestaltung: `cosmos-mailqueue-assistant.css`.
+
+- Äußere Startaktion und Dialogtitel: „Manuelle Bereinigung“.
+- Bestätigungsdialog: roter Brush, gelbe Warnbox „Späterer Empfang möglich:“ mit
+  Warndreieck, gemeinsame rote Bestätigungsaktion.
+- Status: neutral vor dem ersten Lauf; gelb bei Warten, Lauf oder Teilergebnis;
+  grün bei Abschluss; rot bei Fehler. Die Vormerkungs-Notification bleibt blau mit Info-Icon.
+- Laufzeitpunkt und bereinigte Gesamtzahl stehen in getrennten Monospace-Zeilen.
+- Während aktiver Aufträge ist die Startaktion deaktiviert. Vorübergehendes Polling
+  stellt danach den vorherigen Abstand wieder her.
+
+Umfang, Paketgrenzen und Historie: [Mailqueue](mailqueue.md).
+
+### Segmentierte Auswahl mit nativen Tabs
+
+`CosmosSegmentedTabs<T>` verbindet native Tabs mit einem typisierten CustomField.
+Profilbildmodus und Benachrichtigungs-, Ticket- und Zugangsfilter verwenden ihn.
+Icons/Zähler bleiben native Tabinhalte. Textupdates bewahren Tabinstanz, Wert und Fokus.
+
+Der OTP-Stil steht in `cosmos-segmented-tabs.css`; die Glockenvorschau hat eine kompakte
+Variante. App-Code/Ersatzcode, QR/Schlüssel und Antwort/Vermerk teilen die Gestaltung.
+Normale Seitenreiter und RadioButtonGroups bleiben davon getrennt.
+Alle Reiterleisten behalten bei Platzmangel die native horizontale Navigation mit
+Pfeilen – mobil und auf schmalem Desktop. Kein Zusammendrücken oder mehrzeiliges Tab-Raster.
+
+### Zwei-Faktor-Bereiche
+
+`cosmos-mfa*.css` kapselt 2FA, Wiederherstellung und Tickets. Panels, Eingaben,
+Buttons und Statusfarben verwenden die gemeinsamen Bausteine.
+
+#### Einrichtung und Ersatzcodes
+
+- Der reduzierte Header zeigt Initialenavatar und Identität, kein Profilbild,
+  Benutzermenü oder Statuspunkt.
+- QR-Code/manueller Schlüssel sind native Tabs. Der Schlüssel ist eine
+  schreibgeschützte TextArea; Codes verwenden Space Mono.
+- Geschützte No-Store-Abrufe setzen Schlüssel/Ersatzcodes nur ins öffentliche
+  `inputElement`. Hostwert und serverseitiges Flow-Modell bleiben leer;
+  Geheimnisse gehören nicht in den JDBC-Sitzungszustand.
+- `TwoFactorCodeInput` verbindet sechsstelliges OtpField und Ersatzcodefeld.
+  Ein vollständiger OTP bestätigt die wiederkehrende Abfrage automatisch.
+  In Aktionsdialogen gilt das nur beim Verbinden eines Anbieters; sonst bleibt
+  die ausdrückliche Bestätigung erforderlich.
+- `cosmos-mfa-otp.css` wird in die OTP-Schattenwurzel geladen. Den Eingabewert nicht
+  zusätzlich über den Kästchen zeichnen; native Bedienung und Fehlerzustände erhalten.
+- `RecoveryCodeDownload` nutzt einen nativen Button mit DownloadHandler und prüft
+  Status, PDF-Inhaltstyp und Signatur. Fehler werden nicht als Datei heruntergeladen.
+- Kopieren/PDF verbrauchen die Ausgabe nicht. Erst „Codes gesichert“ mit bestätigtem
+  Switch verwirft sie. Sie bleibt bis dahin oder bis zum Ende der berechtigten Sitzung verfügbar.
+
+#### Ticketsystem
+
+Antragsteller sehen eigene Nachrichten und anonymisierte Antworten der Systemadministration.
+Die berechtigte Adminansicht darf tatsächliche Autoren, Zuständigkeit und interne Vermerke
+zeigen. Diese Grenze gilt auch für Tooltips.
+
+Vorgangsliste, Details und Verlauf nutzen die vorhandenen Cards und nativen Scroller.
+Bei schmalem Inhalt stehen Liste und Details untereinander. Maximieren blendet nur die
+Liste aus; Filter, Auswahl und Antwortentwurf bleiben erhalten.
+
+- Öffentliche Antworten und interne Vermerke nutzen native Tabs; Vermerke tragen die Systempalette.
+- Filter werden erst mit Anwenden übernommen. Direkte Ticketsprünge heben entgegenstehende
+  Filter auf; erfolglose Sprünge behalten die Auswahl.
+- `tab=all`/`tab=recovery` und Ticketnummer bleiben ohne Formularnavigation in der URL.
+- `RecoveryInstructionsComponent` nutzt native Layouts, nummerierte Badges und Details.
+  Nachrichten sind Text, kein HTML.
+- Listen-/Verlaufsgeometrie bleibt lokal; globale Scrollregeln liefern die Leisten.
+
+Fachliche Zustände, Zähler und Beobachtung:
+[Ticketregeln](zwei-faktor-authentifizierung.md#ticketzustände-zähler-und-glocke).
+
+#### E-Mails und Druckvorlagen
+
+Kontomails verwenden MJML und erzeugtes HTML im Cosmos-Stil. Inter wird über die
+lokale `email-fonts.css` eingebunden, ohne externen Schriftdienst. Empfänger müssen
+die Basisadresse erreichen können; ohne Webfonts greifen Ersatzschriften.
+`fonts: {}` verhindert zusätzliche MJML-Standardimporte.
+
+`email/partials/action-link.css` gestaltet vollständige Links in einer gemeinsamen Box.
+URL und Kopierhinweis bleiben lesbar; kein Clipboard-JavaScript in E-Mails.
+Die PDF nutzt Classpath-Vorlagen unter `pdf/`, eingebettete Schriften und hellen Druckhintergrund.
+
+## Icons und Identität
+
+### Icon und Text in Aktionsbuttons
+
+Button-Präfix und Text haben im Portal und seinen Overlays 8 px Abstand.
+Leere Präfixe/Suffixe reservieren keinen Platz. Iconbuttons und Identitätszeilen
+behalten ihre Maße. Dafür keine globalen Avatar-/Buttonregeln verändern.
+
+### Gemeinsames Lucide-Iconset
+
+`AppIcon` liefert native SvgIcons aus lokalen Lucide- und freigegebenen Tabler-Dateien.
+Icons beschrifteter Aktionen sind dekorativ (`aria-hidden`); Iconbuttons brauchen
+zugängliche Namen und gegebenenfalls Tooltips.
+
+- Lucide ist das reguläre Set; Tabler ergänzt gewählte Motive wie Cloud-Lock,
+  Formularschutz, Schrittnummern und Ticket-/Terminalsymbole.
+- SVGs und Lizenzen liegen unter `icons/lucide/` und `icons/tabler/`; kein CDN oder zusätzliches Icon-JavaScript.
+- Native Komponentenicons bleiben grundsätzlich erhalten. Der Dauerbaustein hat
+  eigene freigegebene Lucide-Masken für Löschen und Schrittaktionen.
+- Logo, Anbieterzeichen und Illustrationen sind eigenständige Ressourcen.
+  Die Sprachwahl verwendet DE/EN, keine Flaggen.
+
+### Avatare und Overlays
+
+`CosmosAvatar` liefert den nativen Bild-/Initialenkern, `OverlayUserIcon` ergänzt
+Status, Tooltip, geschützte Bildressource und Profilereignisse. Header, Konto,
+Menü, Tabelle und Tickets nutzen denselben Kern mit lokalen Größen.
+
+- Ohne Namen erscheint das Benutzersymbol; bei Bildfehlern übernimmt Vaadin den Initialen-Rückfall.
+- Anwesenheit ist ein gefüllter grüner, roter, gelber oder grauer Punkt. Seine Mitte
+  liegt größenabhängig bei 45 Grad auf der Avatar-Kreislinie. Keine doppelten Ringe.
+- Statusauswahl und Avatarpunkt sind getrennte Darstellungen.
+- Der Bildeditor bleibt die freigegebene Canvas-Sonderlösung mit nativen Uploadaktionen.
+
+**AvatarGroup:** Die Empfängervorschau nutzt Initialen ohne zusätzliche Bildabfragen.
+Bis sechs Empfänger alle anzeigen; ab sieben fünf Avatare plus „+N“. Früherer Überlauf
+bei Platzmangel bleibt nativ. Rahmen/Farben entsprechen Cosmos. Das höhenbegrenzte
+Überlaufmenü zeigt nur die ausgeblendeten Namen und bleibt scrollbar. Es zeigt auf
+Benutzerwunsch keinen Fokus-/Klickrahmen; Hover und Tastaturbedienung bleiben nativ.
+Die Details-Liste bleibt der Zugang zu allen Namen und E-Mail-Adressen.
+
+### Tooltips
+
+Native Tooltips verwenden eine dunkle Fläche ohne Pfeil, feinen Rahmen und kleine
+helle Schrift. Tokens: `--cosmos-tooltip-*`; Gestaltung: `cosmos-theme.css`.
+Die rechte Feldhilfe ist ein eigener Baustein.
+
+Name/E-Mail im Header, in Profilkarte, Benutzermenü und Löschbestätigung werden nach
+verfügbarer Breite begrenzt. Normal ist eine Zeile mit Ellipse; im mobilen Löschdialog
+höchstens zwei Zeilen je Angabe. Gespeicherte Werte werden nicht gekürzt. Tooltips zeigen
+vollständige Werte bei Hover oder Tastaturfokus.
+Eine allgemeine Touch-Lösung ist nicht eingebaut; die offene Entscheidung steht im [TODO](../TODO.md).
+Reine Avatare bleiben Anzeigeelemente; interaktive Container geben ihren Zeiger vor.
+
+## CSS-Organisation
+
+### Ersatzklassen für frühere Lumo-Varianten
 
 `CosmosCssClasses` stellt die Java-Konstanten bereit; die Regeln stehen in
 `cosmos-utilities.css`.
@@ -1352,7 +575,7 @@ Die Datei lädt direkt nach `cosmos-theme.css`, damit diese Klassen die gemeinsa
 Komponentenregeln gleicher Spezifität ergänzen. Abstände und Hervorhebung früherer
 Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls dort.
 
-## Aura-Abgleich und akzeptierte Abweichungen
+### Aura-Abgleich und akzeptierte Abweichungen
 
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
@@ -1415,7 +638,7 @@ Vom Benutzer akzeptierte Abweichungen durch Aura (kein pixelgenauer Nachbau):
 - Schließen-Symbol in Dialogen kräftiger; gestrichelter Rahmen schreibgeschützter Felder
   schwächer.
 
-## Dateien und Ladereihenfolge
+### Dateien und Ladereihenfolge
 
 Basis: `app/src/main/resources/META-INF/resources/custom-theme/`. Jede Datei beginnt mit
 einem kurzen Kopfkommentar zu ihrer Zuständigkeit. `Application` lädt die globalen
@@ -1461,21 +684,21 @@ View platziert. Keine versteckten CSS-Imports einführen.
 (`UserStatus`, `OverlayUserIcon`, `CosmosPagination`), für Seitenpanels über dem
 Vaadin-Dialogoverlay, `[hidden]` und reduzierte Bewegung.
 
-### CSS prüfen und formatieren
+#### CSS prüfen und formatieren
 
 Prettier formatiert, Stylelint prüft die Theme-Dateien (Farben nur aus der Palette, keine
 `--lumo-*`-Variablen, keine doppelten Selektoren/Eigenschaften, keine unbekannten
 Eigenschaften). Im Verzeichnis `app`:
 
 ```powershell
-npm run format:css
-npm run format:css:check
-npm run lint:css
+npm.cmd run format:css
+npm.cmd run format:css:check
+npm.cmd run lint:css
 ```
 
 Konfiguration und Grenzen: [CSS prüfen und formatieren](entwicklung.md#css-prüfen-und-formatieren).
 
-### Hintergrund
+#### Hintergrund
 
 Es gibt genau einen Anwendungshintergrund, „Horizont mit Mondaufgang“ (vom Benutzer
 gewählte Variante A). `CosmosBackgroundComponent` erzeugt im gemeinsamen
@@ -1493,8 +716,8 @@ Bei reduzierter Bewegung sind Sternschnuppen, Satellit und Wanderstern ausgeblen
 liegt nur in den Randzonen links und rechts der Inhaltsbreite oder über dem Horizont, nie
 fest nach Bildschirmprozenten im Kopfbereich. Der Mond steht deshalb tief rechts über dem
 Horizont (`bottom` statt `top`), die Funkelsterne liegen an den Rändern, und die Sternflächen
-sind hinter dem Inhaltsbereich per zusätzlicher Maske gedämpft. So verdeckt bei keiner
-Breite etwas Seitenüberschrift oder Beschreibung. Farben, Verläufe, Positionen und
+sind hinter dem Inhaltsbereich per zusätzlicher Maske gedämpft. Ziel ist, Seitenüberschrift und Beschreibung bei allen Breiten freizuhalten;
+der noch offene Nachtest steht im [Testbedarf](testbedarf.md). Farben, Verläufe, Positionen und
 Animationen liegen gemeinsam in `cosmos-background.css` (`--cosmos-background-*` am
 Dateianfang); als dekorative Ausnahme darf diese Datei eigene Farbwerte außerhalb der
 Palette enthalten (Stylelint-Ausnahme).
@@ -1507,7 +730,9 @@ Systemeinstellung werden vorhandene Parallaxenwerte zurückgesetzt.
 Alle Ebenen sind dekorativ und `aria-hidden`; sie fangen keine Eingaben ab.
 Nur die feste Hintergrundebene verwendet `overflow: hidden`, keine Inhaltsfläche.
 
-## Neue Oberfläche und Übernahme in den Standard
+## Änderungen am Theme
+
+### Neue Oberfläche und Übernahme in den Standard
 
 1. Die passende vorhandene Oberfläche, ihre Klassen und zentralen Tokens prüfen.
    Neue Panels, Felder, Buttons und Tabellen zunächst aus diesen Bausteinen zusammensetzen.
@@ -1532,7 +757,7 @@ Die Benachrichtigungsbausteine sind bereits Teil des gemeinsamen Standards:
 `cosmos-notifications.css` verwendet die gemeinsamen Controls, Panelregeln und Tokens.
 Ähnliche neue Komponenten knüpfen daran an, statt eine zweite Gestaltung zu beginnen.
 
-## Theme ersetzen oder erweitern
+### Theme ersetzen oder erweitern
 
 Nur im ausdrücklich freigegebenen Umfang:
 
@@ -1554,1062 +779,15 @@ Nicht jedes gleiche Maß muss gekoppelt werden: Bildausschnitt, Dekoration und
 besondere Seitenbreiten können eigene Verträge haben. CSS-Variablen sind keine
 Viewportwerte für Mediaqueries; die vorhandenen Breakpoints bleiben wörtlich.
 
-## Avatare und Overlays
-
-`CosmosAvatar` ist der gemeinsame native Vaadin-`Avatar` für Initialen und Bild.
-`OverlayUserIcon` ergänzt ihn um die bisherigen Statuskonturen, Tooltips,
-geschützten Bildressourcen und Profilereignisse. Dadurch verwenden Kopfzeilen,
-Kontokarte, Benutzermenü, Benutzertabelle/-bestätigung und Ticketidentitäten
-denselben nativen Kern, ohne ihre jeweilige Bedienung zu ändern.
-Gemeinsame `--cosmos-avatar-*`-Tokens und `cosmos-shell.css` steuern die bestehenden
-Flächen; `cosmos-avatar.css` passt die öffentlichen Parts `abbr` und `icon` an.
-Die Größenvererbung bleibt beim umgebenden Baustein, damit etwa der Menüavatar
-seine bisherigen lokalen Maße behält. Die native SVG-Schrift hat geringfügig
-andere Kantenglättung als der bisherige HTML-Text. Bei fehlendem Namen erscheint
-das bestehende Lucide-Benutzersymbol; bei einem Bildladefehler übernimmt Vaadin
-den Rückfall auf Initialen.
-
-Der reduzierte 2FA-Header verwendet `CosmosAvatar` direkt mit 32 px. Dieser Header
-lädt wie bisher kein eigenes Profilbild. Name und E-Mail stehen daneben;
-Avatar und Identität bleiben ohne Menü, Statuspunkt oder Tastaturaktion.
-Der Canvas-Bildeditor bleibt die freigegebene Sonderlösung für Bildausschnitt und
-Vorschau. Die Empfängervorschau der administrativen Benachrichtigungen verwendet
-eine native `AvatarGroup` mit Namen/Initialen, ohne zusätzliche Profilbildabfragen.
-`cosmos-notification-compose-avatar-group` in `cosmos-notifications.css` begrenzt
-nur die Gruppengröße und übernimmt die Kontoavatarfarben über die vorhandenen
-Referenztokens. Die Avatare sind 32 px groß, ihr Rand 2 px; Schrift und Überlappung
-verwenden die bestehenden Theme-Werte. Die Überlappung nutzt `--cosmos-space-xs`,
-damit beide Initialen trotz der kleinen Kreisfläche vollständig sichtbar bleiben.
-Native Fokus-, Überlappungs- und Menülogik
-bleiben erhalten; der öffentliche Part `abbr` erhält die Cosmos-Initialenschrift.
-Die Gruppe bietet sechs Plätze einschließlich Überlaufkreis: bis einschließlich
-sechs Empfänger alle anzeigen, ab sieben fünf Avatare und „+N“. Bei Platzmangel
-greift der native Überlauf. Der äußere Avatarrahmen wird als echter CSS-Rahmen
-wie bei den Kontoavataren
-gezeichnet; Vaadins zusätzliche innere Rahmenlinie ist ausgeschaltet.
-Das Overlay verwendet die vorhandenen Referenzfarben, Standardauswahlschrift,
-Rahmen und Rundungen. Seine Höhe ist auf 360 px und den verfügbaren Bildschirm
-begrenzt; natives Scrollen bleibt erhalten. Die Menüavatare verwenden denselben
-Rahmen und dieselben Farben bei 24 px Größe. Die Menügestaltung ist lokal in
-`cosmos-notifications.css` eingegrenzt. Die Menüeinträge zeigen auf Benutzerwunsch
-keinen Fokusrahmen, auch beim Öffnen oder nach einem Klick. Hover und native
-Tastaturbedienung bleiben erhalten. Die ausführliche Details-Liste bleibt
-auf Benutzerwunsch als Zugang zu allen Namen und E-Mail-Adressen erhalten; der
-native Überlauf zeigt weiterhin ausschließlich die ausgeblendeten Namen.
-Die zugänglichen Gruppenbezeichnungen sind DE/EN lokalisiert. Vaadins Platzhalter
-`{count}` wird nach der serverseitigen Übersetzung erst im Browser aufgelöst.
-Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
-Benutzermenü und Vorschau bleiben durch Viewportgrenzen scrollbar und erreichbar.
-„Abmelden“ bleibt im Benutzermenü-Footer rechtsbündig, auch wenn der
-Startseiten-Button auf der bereits geöffneten Startseite entfällt.
-Die Administrationsaktion im Avatar-Menü verwendet den sekundären Buttonstil
-mit Rahmen, weißem Text und `shield-cog` als Akzenticon, eingerückt wie die primäre
-Kontoaktion. „Mein Konto“ behält das einfache Zahnrad.
-
-## Sichtbar machen
-
-Bei jeder UI-/Designänderung angeben, welcher dieser Fälle tatsächlich gilt:
+### Sichtbar machen
 
 | Änderung / Betrieb | Übernahme |
 | --- | --- |
-| Nur CSS, Entwicklungsmodus, aktualisierte Ressource wird bereits ausgeliefert | Seite neu laden, bei Bedarf Strg+F5 |
-| Java-Komponenten, neue Stylesheet-Einbindung oder noch nicht aktualisierte Ressourcen | Erforderlichen Build bzw. IDE-Ressourcenabgleich und Anwendungsneustart benennen, danach neu laden |
-| Optimierter Frontend-/JAR-/Containerbetrieb | Neu bauen, die eigene Anwendung mit dem neuen Artefakt/Image starten, danach Seite neu laden |
+| CSS im Entwicklungsmodus, Ressource bereits aktualisiert | Seite neu laden, bei Bedarf Strg+F5 |
+| Java, neue Stylesheet-Einbindung oder veraltete Ressourcen | Passenden Build/IDE-Abgleich und Neustart benennen, danach neu laden |
+| Optimiertes JAR / Container | Neues Artefakt/Image bauen und die eigene Anwendung damit starten |
 
 `DevelopmentCssConfiguration` verhindert im Entwicklungsmodus die Auswahl älterer
-komprimierter CSS-Kopien. Das ersetzt keinen nötigen Ressourcenabgleich oder Neubau.
-Ein Browserrefresh allein ersetzt kein gepacktes Stylesheet. Nur tatsächlich
-ausgeführte Prüfungen als erfolgt melden; eine Änderung der Quelle allein belegt
-keine sichtbare Übernahme. Die letzten Prüfungen stehen im [aktuellen Stand](status.md).
-
-Der Textblock im Admin-Dashboard verwendet die Canvasfarbe
-(`--cosmos-page-background`). Konfigurationsaktionen stehen über eine vollbreite
-Trennlinie getrennt. Dialogaktionen verwenden den gemeinsamen Größenabgleich der
-sichtbaren Textbuttons und brechen bei wenig Platz um. Konfigurationsaktionen
-behalten ihre eigene responsive Anordnung. Bis 600 px stehen „Werte neu laden“
-und „Konfiguration speichern“ untereinander in voller Breite innerhalb der
-bestehenden Footer-Innenabstände. Die lokale Regel für `.cosmos-config-card-actions`
-in `cosmos-admin.css` setzt dafür `--cosmos-equal-button-width:100%`;
-sie gilt auch für Anbieter, Queue-Assistent und 2FA-Rollen. Die Desktopanordnung
-bleibt erhalten. Der Mailtest erlaubt
-über `resize:vertical` am nativen TextArea-Host das manuelle Vergrößern des
-Eingabefelds einschließlich Label. Die Mindesthöhe beträgt 168 px. Der sichtbare
-Klartexthinweis steht außerhalb, damit der Griff direkt an der Eingabekante sitzt.
-`.cosmos-mail-body-hint` zeigt den Hinweis. Die native Hilfsbeschreibung bleibt
-visuell verborgen für assistive Technik erhalten, sodass sie weiterhin mit der
-Eingabe verknüpft ist. Die Infoaktion wird zur Eingabefläche zentriert.
-Die Breite bleibt fest. Diese Regeln gelten nur für diese Adminbausteine.
-Auch die Nachrichten-Textarea lässt sich vertikal vergrößern. Sie hat keine
-maximale Zeilenbegrenzung, damit die Eingabefläche dem Ziehgriff vollständig folgt.
-
-Konfigurationsbeschreibungen und Eingaberegeln verwenden vollständige Sätze ohne
-Semikolons. Unterschiedliche Hinweisbereiche stehen in eigenen Absätzen. Der
-Textkatalog enthält dafür normale Zeilenumbrüche; `.admin-help-description` und
-`.hc-description` erhalten sie über `white-space:pre-line`, ohne HTML im Textkatalog.
-
-Das Dashboardbild übernimmt den Rahmen der HTML-Vorlage: Seitenverhältnis 512/286,
-10 px Rundung und dezente Border. Das Raster hat 28 px Innenabstand und Lücke,
-bis 1100 px jeweils 24/22 px, bis 760 px eine Spalte mit 20 px Innenabstand
-und Lücke sowie Bild vor dem Text. Die gleich breiten HTML-Aktionsbuttons sind
-auf `.ad-config` begrenzt. Der Mailtest bleibt mit natürlicher Buttonbreite
-rechtsbündig, einschließlich Smartphone.
-
-Die E-Mail-Queue verwendet native `TabSheet`-/`Tab`-Komponenten mit
-`cosmos-panel-tabs`, wie die Anmeldeanbieter. `Allgemein` trägt `sliders-horizontal`,
-`Assistenten` das bestehende `bot`-Icon und ist nur für Superadmins sichtbar.
-Der innere `CosmosCardComponent` des Bereinigungsassistenten übernimmt den
-Panelheader mit `brush-cleaning`, Titel, Sekundärtext und Trennlinie. Ein natives
-`FormLayout` ordnet Switch und Historienfrist vor den beiden Zeitfeldern an.
-Warnung und dezente Info-Box verwenden die vorhandenen Cosmos-Farben/Abstände.
-Der Statusbereich trägt Tabler `terminal-2`, stellt nur die Ergebnisausgabe in
-Monospace dar und hält Aktualisieren neben der Bereinigungsaktion rechts.
-Die Anzahl bereinigter Aufträge beginnt unabhängig von der verfügbaren Breite
-in einer neuen Zeile unter dem Laufzeitpunkt, auch in der englischen Anzeige.
-Die lokale Anordnung liegt in `cosmos-mailqueue-assistant.css`; normale
-Buttonzustände kommen unverändert aus dem gemeinsamen Theme. Laden und Speichern
-bleiben im äußeren gemeinsamen Footer, nicht in der inneren Karte.
-
-`CosmosDurationCustomField` ist das gemeinsame native `CustomField<String>` für
-alle 17 Konfigurationszeitfelder und die 2FA-Inaktivitätsdauer. Es verwendet
-`CosmosDurationField` als Zahl-/Einheitenbaustein aus nativen Vaadin-Zahlenfeldern
-und einem `Select<Unit>` im öffentlichen Suffix. Dazu gehören
-die Gültigkeit gespeicherter Anmeldungen, der Sitzungs-Timeout, das Zeitfenster für
-Fehlversuche, vier Tokenfristen, automatische Abwesenheit, zwei
-Benachrichtigungs-Aufbewahrungen sowie Wartezeit und Aufbewahrung der E-Mail-Queue.
-Zahl und Einheit teilen eine Feldfläche. Der Einheitenbereich steht rechts hinter
-Löschen und Plus, durch die bestehende senkrechte Linie getrennt. Beim präzisen
-`BigDecimalField` verbindet ein natives `HorizontalLayout` Plusbutton und Auswahl.
-Der Plusbutton wird direkt in dieses Layout eingefügt. Er erhält zuvor keinen
-eigenen Suffix-Slot, der ihn im Standardslot des Layouts unsichtbar machen würde.
-Native Feldaktionen und die präzisen Schrittbuttons verwenden dieselben
-Lucide-Symbole mit 16 px innerhalb einer 24 × 28 px großen Aktionsfläche.
-Zwischen X, Plus und Einheit gelten jeweils 4 px. Die lokalen Variablen
-`--cosmos-duration-icon-size`, `--cosmos-duration-action-width`,
-`--cosmos-duration-action-height` und `--cosmos-duration-action-gap` stehen in
-`cosmos-duration-field.css`; andere Eingabetypen bleiben davon unberührt.
-Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
-Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
-Die 2FA-Inaktivitätsregel begrenzt die Auswahl wie bisher auf Minuten, Stunden
-und Tage. Alle Aufrufer lesen und setzen den Wert über die native Feldhülle;
-Sekunden, ISO-Zeitspannen und feste Tageswerte behalten ihr eigenes Speicherformat.
-Das Modell verwendet die kanonische Darstellung des bisherigen Eingabebausteins;
-ein leerer Entwurf bleibt leer. Standardwerte beim Laden beziehungsweise Speichern
-und die fachliche Validierung bleiben bei den Konfigurationsaufrufern.
-Programmatische und benutzerseitige Änderungen der Zahl-/Einheitenfelder behalten
-ihren Ereignisursprung. Native Wertänderungen, Binding, Read-only, Enabled und
-Invalid stehen an der gemeinsamen Hülle zur Verfügung. Beschriftungen werden an
-die innere Zahleneingabe weitergereicht; die Fehlermeldung gehört zur nativen Hülle.
-Der zusätzliche Eingabelistener erfasst auch Änderungen zwischen zwei ungültigen
-Entwürfen mit demselben Modellwert, damit ein alter Konfigurationsfehler beim
-Weiterbearbeiten zurückgesetzt wird. Ein explizites Neuladen stellt auch bei
-wertgleichem Entwurf die gespeicherte Darstellung wieder her.
-Die Klasse `cosmos-duration-custom-field` neutralisiert Außenabstand und zusätzliche
-Zeilenhöhe der Hülle. Der öffentliche Part `input-fields` gibt die vorhandene
-Feldfläche frei. Diese Regeln stehen gemeinsam in `cosmos-duration-field.css`;
-eine lokale Sonderregel für das 2FA-Feld ist nicht erforderlich.
-Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
-wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
-die Zahl, die Schaltflächen ändern sie um eins. Bestehende Nachkommastellen einer
-Zeitspanne werden ohne Rundung erhalten, bis zur Nanosekundenpräzision von Duration.
-Gültigkeit gespeicherter Anmeldungen, Sitzungs-Timeout, Fehlversuchsfenster und
-Wartezeit für erneuten Versand verwenden bei leerer Eingabe den Standardwert.
-Leere Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Die beiden
-Benachrichtigungsfelder zeigen die feste Einheit Tage im nativen Suffix des
-`IntegerField`. Über die öffentlichen Parts `clear-button` und `increase-button`
-steht das feste Suffix ganz rechts hinter Löschen und Plus. Ein dezenter Trenner
-grenzt es von den Bedienelementen ab. Bei fokussiertem Zahlenfeld wird die Einheit
-wie die Eingabe weiß, ohne Fokus bleibt sie in der sekundären Textfarbe.
-Eine Einheitenauswahl gibt es für diese Tageswerte nicht. Ihre Feldhilfen
-beschreiben die Eingabe in ganzen Tagen und zeigen den aktuellen Wert in Tagen.
-Andere Zeitspannen bleiben Pflichtfelder.
-
-Die gemeinsame Gestaltung steht in `cosmos-duration-field.css`, global geladen durch
-`Application`. Sie hängt an `cosmos-duration-field` und benötigt keinen
-Admin-Seitencontainer. Die Zahlenfläche bleibt 40 px hoch. `cosmos-duration-unit-select`
-verwendet ohne eigene Außenbox den vorhandenen Suffix, eine eigene zugängliche
-Beschriftung „Einheit“. Der Einheitenbereich ist 104 px breit und 28 px hoch,
-die mittig ausgerichtete Trennlinie 18 px hoch. Bei Fokus auf der Einheit wird
-die gemeinsame Zahlenfläche markiert; ein zweiter innerer Fokusrahmen entfällt.
-Die innere Auswahl hat nur ihre ARIA-Beschriftung. Ihr leerer `label`-Part bleibt
-ausgeblendet und ohne Außenabstand; die globale Feldlabel-Regel darf hier keine
-zusätzliche Zeile erzeugen und den Inhalt nach unten verschieben.
-Die Trennlinie verwendet `::after`; Vaadins `::before` für die Grundlinienausrichtung
-bleibt unverändert, damit Text und Auswahlfläche vertikal im Zahlenfeld sitzen.
-Die Auswahl öffnet ohne vertikale Überdeckung des Felds. Ihr Overlay verwendet die vorhandenen Cosmos-Farben,
-blauen Hover und die bestehende Auswahlfarbe mit Rahmen und Häkchen rechts.
-Die Optionszeilen verwenden die kompakten Pagination-Maße: 32 px Zeilenhöhe,
-4 px Abstand darunter, 8 px Rundung und 12-px-Schrift mit Gewicht 500. Die
-lokal begrenzten Regeln haben Vorrang vor den allgemeinen Select-Standardwerten.
-Das native Auswahlhäkchen ist 16 px groß und verwendet den Cosmos-Akzent.
-Der geschlossene Einheitenwert hat ausdrücklich 20 px Zeilenhöhe, damit
-Unterlängen wie das „g“ in „Tage“ vollständig sichtbar bleiben.
-`cosmos-duration-step` bezeichnet die Schrittbuttons der präzisen Zahleneingabe,
-`cosmos-duration-unit-label` den festen Tageszusatz.
-Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
-damit beide Spalten dieselbe Ober- und Unterkante haben.
-Jede Feldhilfe in der Konfiguration verwendet `AdminSidePanelDialog.addEffectiveUse`
-für die kurze Liste unter „Wann gilt die Änderung?“. Neustarthinweise nutzen die
-gelbe gemeinsame Warnbox in der Feldhilfe.
-
-Alle booleschen Konfigurationsfelder verwenden native Vaadin-Switches mit der
-Klasse `cosmos-config-switch`, auch in der Anbietereinrichtung. Der Text steht
-links, der Schalter rechts und das Infoicon außerhalb. Die Zeile hat keinen
-Rahmenkasten. Die gemeinsame Gestaltung liegt in `cosmos-admin.css`:
-34 × 20 px Bahn, 14-px-Marker und mindestens 40 px Zeilenhöhe. Das Label steht
-links, die Bahn am rechten Rand der Eingabespalte.
-Die öffentlichen Parts `label` und `switch` sowie der native Eingabeslot liegen
-in derselben Rasterzeile. Eine RTL-Umkehrung ist dafür nicht nötig. Fokus, Tastatur,
-Disabled-Zustand und Labelklick bleiben nativ. Ein Umschalten ändert zunächst den
-Formularentwurf; übernommen wird er weiterhin mit „Konfiguration speichern“.
-Die übrigen Checkboxen, beispielsweise bei Benutzerrollen, bleiben Checkboxen.
-
-Die Admin-Benachrichtigung verwendet eine native Mehrfachauswahl mit zweizeiligen
-Empfängern (Name und E-Mail). Die Anzahl liegt innerhalb der Eingabefläche und weicht
-beim Tippen dem Suchtext. `admin-notification-body-field` erlaubt ausschließlich
-vertikales Vergrößern und behält den Innenabstand der Textarea. Vorschau und
-Eingabepanel beginnen bündig. Ihre Aktionsleisten erhalten vollbreite Trennlinien;
-Der Zeitstempel bleibt einfacher Text und der Prüfstatus verwendet ein grünes Häkchen.
-Die Darstellung bleibt lokal in `cosmos-admin.css`.
-Panel-Badges in der Administration verwenden 30 px Höhe und Schrift mit
-10 px, Gewicht 600, 16 px Zeilenhöhe und 1,2 px Zeichenabstand wie
-Konfiguration und Mailtest. Die Empfängeranzahl verwendet Gewicht 600 bei einer
-Auswahl und Gewicht 400 ohne Auswahl. Die weiße Details-Aktion steht rechts neben den Empfängeravataren;
-ihre Liste klappt darunter auf. Native Admin-Checkboxen zentrieren das Häkchen
-innerhalb der unveränderten Checkboxfläche.
-Ohne individuelle Auswahl bleibt die Empfängeranzahl in der dezenten
-Placeholderfarbe. Die geöffnete Empfängerliste zeigt wie die Referenz Name und
-E-Mail untereinander mit feinen Zeilentrennern und eigenem Scrollbereich.
-„Details“ öffnet und schließt sie. Der Pfeil kennzeichnet den Zustand.
-Die Herkunft „Administration“ verwendet in
-der Vorschau dasselbe Badge wie im persönlichen Postfach. Der zusätzliche
-Empfängerzähler ist rund und verwendet die Referenz-Akzentfarbe.
-Die Abschnittsüberschrift „EMPFÄNGER“ in der Vorschau verwendet wie die Feldhilfe
-die Akzentfarbe, Großbuchstaben und den kompakten Abschnittstitelstil.
-HTML und Vaadin zeigen bei individueller Auswahl ausschließlich die Anzahl im
-Feld, einschließlich einer dezenten Nullanzeige. Die letzte Empfängerzeile hat
-keine untere Trennlinie. Der zusätzliche runde Zähler hat eine feste Breite und
-kräftige, zentrierte Ziffern. Der Prüfstatus nutzt dasselbe kompakte, gerahmte Badge
-wie „Gesendet“. Eine geprüfte Vorschau zeigt ein grünes Häkchen. Nach einer
-Änderung zeigt das Badge eine gelbe Glocke. Der Versandverlauf verwendet
-durchgehende Zeilen statt einzelner Karten.
-Beim Wechsel zwischen allen Konten und Einzelauswahl liegt der Anzahltext auf
-derselben inneren Textkante des nativen Feldrahmens. Die Details-Beschriftungen
-bei Empfängern und im Verlauf verwenden dieselbe Größe und Stärke. Der Verlauf
-zeigt Nachrichteninhalt mit `message-square`, kompaktem Abschnittstitel,
-Referenz-Innenabständen und einer getrennten Zustellzeile. Der äußere native
-Details-Container ergänzt keine zusätzliche Linie oberhalb der Inhaltskarte.
-Die Anzeige aller aktiven Konten verwendet dieselben kräftigen Schriftwerte wie
-die individuelle Auswahl und setzt die Textfarbe ausdrücklich auf das dezente Grau.
-Die untere Verlaufszeile zeigt links die Zustellung ins persönliche Postfach und
-rechts „Unveränderliche Versandprotokollierung“, bei schmaler Breite umbrechend.
-Die Zeichenzähler stehen rechts auf der
-Beschriftungszeile über Titel und Nachricht, ohne die Eingabebreite zu verkleinern.
-Die Beschriftung „Empfänger“ und ihr blauer Pflichtpunkt bleiben beim Wechsel
-der Auswahlart unverändert. Nur der Wert für alle aktiven Konten ist grau.
-Beide Empfängerfelder verwenden dieselbe Labelausrichtung und denselben Abstand
-zum Pflichtpunkt. Die Auf-/Zuklapppfeile der Admin-SideNav sind akzentblau.
-Die geprüfte Nachrichtenvorschau zeigt links neben dem Prüfstatus eine blaue
-Abschnittsüberschrift mit demselben Nachrichtenicon und Stil wie der Nachrichteninhalt.
-Beide Abschnittsüberschriften verwenden 10 px und Schriftgewicht 600.
-Die Empfängerüberschrift der Vorschau ergänzt links das vorhandene Gruppenicon.
-
-Die Benutzerdialoge Anlegen/Bearbeiten verwenden eine native Mehrfachauswahl für
-Rollen neben der Aktiv-Checkbox, mobil untereinander. Im Feld steht die Auswahlanzahl;
-die Liste verwendet wie die Empfängerauswahl einen dunklen Rahmen und kompakte
-12-px-Optionen. Die Auswahl erscheint mit Akzentfläche, Rahmen und Häkchen rechts.
-Der Abstand zum Eingabefeld beträgt unabhängig von der Auswahl vier Pixel.
-Tippen im Feld filtert Rollen, ohne die Auswahl zu verändern.
-Optionsbeschriftungen und Anzahl folgen dem Sprachwechsel. Mindestens eine Rolle
-bleibt erforderlich. Die Superadminrolle wird nur entsprechend der bestehenden
-Berechtigung angeboten. Der Prüfhinweis steht in einer eigenen Footerzeile über den
-rechtsbündigen Aktionen, mit durchgehender Trennlinie. Die lokalen Regeln liegen in
-`admin-users.css`.
-Am unteren Ende der Benutzertabelle zeichnet allein die Pagination die Abschlusslinie;
-die letzte Zeile erhält keinen zusätzlichen unteren Rahmen.
-
-Der Benutzerfilter gleicht seine rechte Seitenleiste lokal über
-`.admin-user-filter-drawer` an den vereinbarten Stil an: Kopf mit Beschreibung,
-Aktivzähler in Buttonhöhe, kompakte Status-/Rollenkarten mit farbigen Symbolen und
-Bestätigungshaken, dunkler Scrollinhalt und gleich breite Footeraktionen. Statusfarbe
-kennzeichnet das Symbol und die ausgewählte Karte; unausgewählte Texte bleiben
-Secondary. Die gemeinsame Konfigurationshilfe wird dadurch nicht umgestaltet.
-Filterentwurf, Zurücksetzen, Anwenden und Verwerfen bleiben unverändert.
-
-Der Datumsfilter „Letzte Aktivität ab“ verwendet denselben übersetzten
-Beispielplatzhalter wie das Geburtsdatum (DE: „z. B. 31.12.1990“).
-Die Zeitvorschau und der tatsächliche Filterwert bleiben davon unberührt.
-
-## Externe Anmeldebausteine
-
-`ExternalLoginButtons` ergänzt die vorhandenen Anmelde-/Registrierungspanels.
-`ExternalConnectionsComponent` verwaltet Anbieter im bestehenden Sicherheitspanel.
-Das Sicherheitspanel gliedert seine Inhalte mit einem nativen `TabSheet` in
-„Portalzugang“ (Service-Logo, Passwort, E-Mail, Zugangsdatenhinweis) und
-„Anmeldeanbieter“ (Cloud-Lock, Google/Microsoft). Die Tabs übernehmen lokal in
-`cosmos-account.css` dieselbe Form wie die Anbieterkonfiguration. Der normale
-Seiteninhalt wächst mit; ein eigener Scrollbereich entfällt. Portalzugang ist
-anfangs ausgewählt. Beide Tabs behalten ihre Komponenten beim Umschalten.
-Google/Microsoft verwenden denselben Sicherheitskartenstil wie Passwort und E-Mail
-mit Markenlogo, nativem `Badge`, Verbindung und passender Aktion. Die allgemeine
-Aktionsauswahl und das dauerhaft sichtbare Passwortfeld entfallen.
-Die Anbieterbuttons gleichen ihre natürliche Breite ausschließlich untereinander an.
-Die schmale „Ändern“-Breite des Portalzugangs gilt nicht für diese Karten.
-Das gemeinsame Kartenraster verwendet deshalb eine automatische Aktionsspalte.
-Eine später geladene Kontogestaltung darf die Anbieteraktionen nicht begrenzen.
-Verbindungsbadges übernehmen den kompakten Kontostil mit Rahmen, kleinen Ecken und
-derselben Schriftstufe. Verbundene Anbieter sind grün, nicht verbundene blau.
-Service- und Cloud-Lock-Symbole in den Kontotabs sind lokal 20 px groß, um ihre
-schlankeren Motive gegenüber den gefüllten Markenlogos auszugleichen.
-`ExternalIdentityConfirmationDialog` ist ein nativer `Dialog` im vorhandenen
-Kontodialogstil. Er liegt außerhalb der Tabinhalte, damit ein inaktiver Tab seine
-Bedienung nicht sperrt. Er bestätigt die konkret gewählte Aktion mit Portalpasswort oder
-einem bereits verbundenen, verfügbaren Anbieter. Nach externer Bestätigung werden
-Passwort-/E-Mail-Dialoge wieder geöffnet. Nach einem Nachweis über einen bereits
-verbundenen Anbieter folgt beim Verbinden/Trennen die ausdrückliche Bestätigung.
-Die letzte nutzbare Anmeldung bleibt geschützt.
-Verbinden/Trennen zeigt das Dienstlogo im Dialogkopf.
-Bei erforderlicher 2FA verwendet der Dialog die Tabs „App-Code“ und „Ersatzcode“
-und die Codefelder der Anmeldebestätigung mit Space Mono. Die erste Ziffer erhält
-beim Öffnen den Fokus. Beim Verbinden eines Anbieters startet ein vollständiger
-App-Code nach erfolgreicher Prüfung den Anbieterschritt automatisch. Der Aktionsbutton
-bestätigt beide Codearten. Fehler verwenden die vorhandene Pflichtfeld- oder
-Kontosicherheitsmeldung als Notification und markieren das betroffene Feld rot.
-Ein zusätzlicher Fehlertext unter dem Passwortfeld entfällt. Der Trenner
-„ODER“ verwendet Großbuchstaben, Gewicht 600 und die Secondary-Textfarbe.
-Nur die Anordnung von Zeilen, Anbieterlogos und Bestätigungsalternativen wird lokal
-gestaltet.
-Ihre lokalen Regeln liegen in `cosmos-external-login.css`. Die vorhandenen globalen
-Feld-, Dialog- und Buttonregeln bleiben die Grundlage. Anbieterbuttons verwenden
-die offiziellen Google-/Microsoft-Markenressourcen unter `icons/external-login/`
-und eine begrenzte Abweichung für das Anbieterbranding.
-
-Anmeldung und Registrierung verwenden `PublicAuthenticationPanelLayout` für das lokale
-Formular und den optionalen eigenständigen Schnellzugang. `ExternalLoginButtons`
-liefert als native `Card` Kicker, Überschrift, Erklärung und „Mit … fortfahren“.
-Der Kopf verwendet `setHeader` mit einem nativen `VerticalLayout`; die vorhandenen
-Anbieterbuttons liegen im normalen Card-Inhalt. Die öffentlichen Padding-/Gap-
-Variablen und der Header-Part erhalten lokal die bisherigen Abstände. Eine ungenutzte
-Inline-Darstellung wird nicht parallel vorgehalten.
-`.public-auth-panels--external` ordnet das lokale Formular, den Trenner und den
-Schnellzugang nebeneinander an. Bei der Anmeldung bleibt das Formular 600 px breit,
-die Zeile höchstens 1048 px. Unter 1024 px stehen die Panels untereinander.
-Die Variante `.public-auth-panels--register` lässt dem bestehenden zweispaltigen
-Registrierungsformular mehr Raum: ohne Anbieter maximal 880 px; mit Anbieter
-600 bis 880 px für das Formular, 376 px für den Schnellzugang und maximal 1328 px
-für die gesamte Zeile, begrenzt durch den gemeinsamen Seitenrahmen. Unter 1200 px
-stehen die Registrierungspanels untereinander, weiterhin mit maximal 880 px Breite.
-Die vorhandenen Felder, Feldspalten und Aktionen bleiben erhalten.
-
-Dazwischen steht ein 40 px breiter Trenner mit je 16 px Abstand zu den Panels.
-Seine dezente dunkle Linie trägt mittig „ODER“ in der Secondary-Textfarbe, bei
-englischer Sprache „OR“. Der Text hat keinen Rahmen, Hintergrund oder eigenen
-Innenabstand. Schrift und Linienabstand entsprechen dem Trenner im
-Identitätsbestätigungsdialog: 10 px, Gewicht 600, 18 px Zeilenhöhe,
-0,06 em Zeichenabstand und 12 px Abstand zu den Linien.
-Beim Stapeln verläuft die Trennlinie waagerecht; der Textstil bleibt gleich.
-Der Schnellzugang behält seine Inhaltshöhe und steht auf Desktop vertikal mittig
-neben dem Formular. Er verwendet die Panelfläche von Kopf und Footer
-(`--cosmos-card-background`, in HTML `--surface-panel`) und 32 px Innenabstand,
-mobil 24 px / 20 px. Seine Anbieterbuttons übernehmen die Schrift des lokalen
-Anmelden-Buttons (Inter, 12 px, Gewicht 600). Die unveränderten farbigen Markenlogos
-stehen in einer 16 × 16 px großen Iconfläche mit 8 px Abstand zum Text.
-Die Anbieterbuttons stehen in `.external-provider-actions`: mindestens 220 px pro
-Button und 8 px Abstand. Reicht die tatsächliche Inhaltsbreite für beide, stehen
-sie gleich breit nebeneinander. Andernfalls wechseln sie untereinander. Unterhalb
-der Mindestbreite begrenzt die verfügbare Fläche den Button, damit kein Überlauf
-entsteht. Diese Regel gilt für Anmeldung und Registrierung unabhängig davon,
-ob der Schnellzugang neben oder unter dem Formular steht.
-
-Die dunkle Formularfläche und der lokale Aktionsfooter bleiben erhalten.
-Kontohinweis und Link zur jeweils anderen Anmeldeseite stehen bei genügend Platz
-nebeneinander. Zuerst darf der Link unter den Hinweis umbrechen. Reicht der Platz
-auch dafür nicht, rückt die Primäraktion rechtsbündig in eine eigene Zeile.
-Der Umbruch folgt der tatsächlichen Textbreite statt einer festen Smartphonegrenze.
-Ohne aktive Anbieter bleibt allein das lokale Panel sichtbar. Die eingeschränkte
-Sitzungsverwaltung blendet beide Anmeldewege gemeinsam aus. Die Regeln bleiben
-in `cosmos-external-login.css`.
-
-Die Anbieterverwaltung unter Konfiguration verwendet die bestehenden Adminpanel-,
-Formular-, Switch- und Footerbausteine. Panelkopf und SideNav heißen einheitlich
-„Anmeldeanbieter“. Die zwei Erklärungssätze im Kopf stehen mit festem Zeilenumbruch
-und 20 px Zeilenhöhe, damit rechts Platz für die Statusbadges bleibt.
-Ein gemeinsamer Panelkopf steht über einer
-nativen `TabSheet` mit Google-/Microsoft-Logo und Name. Der Einrichtungsassistent
-und das Anbieterformular liegen im jeweiligen Tabinhalt. Beide Formulare bleiben beim Tabwechsel
-erhalten; weder Speicherung noch Neuladen werden dadurch ausgelöst.
-Der aktive Anbietertab hat einen blauen oberen Rand, abgerundete obere Ecken und
-die dunkle Inhaltsfläche. Desktop-Tabs sind mindestens 168 px breit und zentrieren
-Logo und Namen. Mobil teilen sie sich die verfügbare Breite gleichmäßig.
-Die Tableiste hat keinen oberen Innenabstand. Unter dem Panelkopf gibt es keine
-Trennlinie. Die Linie vor dem Inhalt wird als
-Hintergrund der Tableiste gezeichnet und nur unter dem aktiven Tab verdeckt.
-Der Tabinhalt wächst mit der Seite und hat keinen eigenen Scrollbereich.
-Seine native obere Scrollmarkierung ist deaktiviert, damit unter dem aktiven
-Tab auch nach Fokuswechseln keine zusätzliche feine Linie erscheint.
-Der zusätzliche TabSheet-Rahmen ist lokal entfernt. Rechts im Panelkopf stehen
-zwei native `Badge`-Komponenten mit Anbieterlogo und gespeichertem Status, aktiv
-in Grün, deaktiviert oder noch nicht eingerichtet in Gelb. Sichtbar ist nur
-„Aktiv“/„Inaktiv“. Anbietername und Status bleiben als zugängliche Beschriftung erhalten.
-Native Tooltips erläutern
-die Freigabe für neue Anmeldungen, die Prüfung der Zugangsdaten beim Anmeldeversuch
-und bei deaktivierten Anbietern den Erhalt bestehender Sitzungen. Ungespeicherte
-Formularänderungen ändern diese Statusanzeige nicht. Die Statusanzeigen bleiben
-auch mit Tastaturfokus lesbar. Client-ID, Client-Secret
-und Freigabe haben rechts einen `ConfigInfoButton`. Ein Klick öffnet die bestehende
-`AdminSidePanelDialog`-Feldhilfe mit anbieterspezifischer Erklärung und Eingaberegeln.
-Geheimniswerte werden dabei weder angezeigt noch zurückgeladen. Die Hilfe und
-Status-Tooltips folgen dem Sprachwechsel. Der Tabinhalt beginnt mit „Einrichtungsassistent“
-in 11 px bei Gewicht 600 und dem Lucide-`bot`-Icon, einer Anbieterüberschrift
-und einer kurzen Erklärung. Die Schrittüberschriften behalten 10 px.
-Darunter gliedern drei Schrittüberschriften Einrichtung mit Rücksprungadresse,
-Zugangsdaten und Freigabe. Sie tragen die blauen Tabler-Icons
-`square-rounded-number-1`, `square-rounded-number-2` und `square-rounded-number-3`
-mit den Titeln „Anbieter einrichten“, „Zugangsdaten hinterlegen“ und „Anmeldung
-aktivieren“. Der native Link zur Anbieter-Verwaltung übernimmt die rahmenlose
-Startseitenaktion des Avatar-Overlays: 36 px Höhe, 12 px seitlicher Innenabstand,
-12-px-Text mit Gewicht 600 und ein blaues 16-px-Tabler-`external-link`-Icon
-mit 8 px Textabstand. Zwischen Erklärung und Linkfläche liegen 4 px.
-Der Link bleibt auch bei Hover transparent mit unveränderten Text- und Iconfarben.
-Sein sichtbarer Tastaturfokus bleibt erhalten.
-URL, neues Fenster und Linksemantik bleiben erhalten. Die Rücksprungadresse trägt
-das kurze Label „Rücksprungadresse“. Der Kopierbutton hat dieselbe Höhe wie die
-Eingabefläche (40 px) und das blaue 16-px-Lucide-Icon `clipboard-copy`.
-Die Aktivierungszeile verwendet denselben nativen Konfigurations-Switch ohne Rahmenkasten.
-Text und Switch bleiben zusammen mit der rechts stehenden Feldhilfe auf der Breite
-einer Zugangsdaten-Spalte: halbe Inhaltsbreite abzüglich des halben 20-px-Spaltenabstands.
-Unter 600 px wird die Zeile vollständig breit. Der Switch übernimmt lokal die
-34 × 20 px große Bahn und den 14-px-Marker des Anmeldeschalters.
-Beide Zugangsdatenlabels haben den üblichen
-blauen Pflichtpunkt für die Aktivierung. Ein gespeichertes Secret erfüllt diese
-Voraussetzung trotz leer angezeigtem Passwortfeld. Ohne Client-ID oder neues/gespeichertes
-Secret lässt sich die Freigabe nicht einschalten. Ausschalten bleibt auch mit
-unvollständigem Entwurf möglich. Eingaben aktualisieren diese Verfügbarkeit direkt,
-ändern aber weder den gespeicherten Status noch die tatsächliche Anbieterfreigabe.
-Panelkopf und SideNav verwenden dieselbe
-`ConfigGroupIcons`-Zuordnung zu `AppIcon.CLOUD_LOCK`.
-Nur das Anordnen von Einrichtungshinweis,
-Rücksprungadresse, Zugangsdaten und Freigabe liegt lokal in
-`cosmos-provider-settings.css`. Anbieterzeichen stammen aus `icons/external-login/`.
-Globale Feld-, Button- und Dialogregeln werden dafür nicht verändert.
-
-Die beiden Textbuttons in `.portal-home-actions` der angemeldeten Startseite
-verwenden den bestehenden sichtbarkeits- und sprachabhängigen Größenabgleich
-`EqualButtonWidths`.
-Die Sprachbeschriftung im Avatar-Overlay verwendet die normale Primärtextfarbe.
-Sprachnamen unter „Bevorzugte Sprache“ folgen der aktuellen Oberflächensprache:
-DE „Deutsch/Englisch“, EN „German/English“. Die gespeicherte Locale bleibt unverändert.
-Beim Sprachwechsel wird auch der native Beschriftungsgeber neu gesetzt, damit
-Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahlliste.
-
-## Seitenpfade und Navigationsziele
-
-Die blauen Elternpfade und der große aktuelle Seitentitel sind wie folgt zugeordnet.
-Untertabs bleiben Tabs und werden nicht zusätzlich als Breadcrumb oder Seitentitel
-wiederholt. Alle Beschriftungen folgen dem gemeinsamen DE-/EN-Textkatalog.
-Der manuelle Breadcrumb-Modus berücksichtigt die vorhandenen Queryparameter.
-
-| Bereich | Blauer Elternpfad | Große Überschrift |
-| --- | --- | --- |
-| Besucherseiten einschließlich öffentlicher Startseite, Anmeldung, Registrierung und Reset | `PORTAL` | Aktueller Seitentitel |
-| Angemeldete Startseite | `PORTAL` | Startseite |
-| Persönliche Daten, Sicherheit, Geräte & Sitzungen | `PORTAL / MEIN KONTO` | Jeweiliger Seitentitel |
-| Eigene Benachrichtigungen | `PORTAL` | Benachrichtigungen |
-| Admin-Dashboard, Benutzerverwaltung, Tickets und Benachrichtigungen | `ADMINISTRATION` | Jeweiliger Seitentitel |
-| Sämtliche Konfigurationsgruppen einschließlich Anmeldeanbieter und 2FA | `ADMINISTRATION / KONFIGURATION` | Gewählte Gruppe |
-| Mailtest | `ADMINISTRATION` | Mail Test |
-| 2FA, Wiederherstellung und Hilfe aus dem Konto | `PORTAL / MEIN KONTO / SICHERHEIT` | Aktueller Schritt |
-| 2FA beim Login, ausstehende Verifikation und Reaktivierung | `PORTAL` | Aktueller Schritt |
-| Verifikations-, E-Mail-Änderungs- und Reaktivierungslinks | `PORTAL` | Aktueller Seitentitel |
-
-
-Portal führt zur Startseite, Mein Konto zu `account?section=profile` und Sicherheit
-zu `account?section=security&tab=portal`. Administration führt zum Dashboard,
-Konfiguration zur ersten für den Benutzer zulässigen Gruppe. In eingeschränkten
-Sicherheitsabläufen bleiben alle Pfaditems ohne Navigationsziel; die expliziten
-Zurück-/Abmeldeaktionen und serverseitigen Sperren bleiben maßgeblich.
-
-## Administrative Mailqueue-Bereinigung
-
-Der Einstellungszähler im Kopf bezieht sich auf den aktiven Queue-Reiter:
-fünf unter „Allgemein“, vier unter „Assistenten“. Deaktivierte Eingabefelder
-zählen mit. Tab- und Sprachwechsel aktualisieren den Zähler; gespeichert
-werden weiterhin die Einstellungen beider Reiter gemeinsam.
-
-Der typisierte `AdminConfigurationSection.QueueTab` hält die Auswahl unabhängig
-von übersetzten Tabtexten. `AdminView` stellt sie über `tab=general` oder
-`tab=assistants` innerhalb von `section=configuration&group=queue` wieder her.
-Die öffentliche History-API aktualisiert die Adresse ohne Formularnavigation;
-der Reiterwechsel erhält den Entwurf und ändert keine fremden Gruppen-URLs.
-Unbekannte oder mehrdeutige Parameter und fehlende Assistentenrechte führen
-zu „Allgemein“. Die vorhandene Reitergestaltung bleibt unverändert.
-
-`AdminMailQueueCleanupComponent` ergänzt ausschließlich für Superadmins die
-Gruppe Mailqueue. Sie kombiniert native Vaadin-Layouts, die Standardwarnbox,
-Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden
-`CosmosDurationCustomField`, der Schalter die vorhandene Checkbox-/Switch-Gestaltung.
-`PortalConfirmationDialog` übernimmt die ausdrückliche Bestätigung. Die lokale
-Klasse `.admin-mail-queue-resolution` in `cosmos-admin.css` spannt den Bereich
-über beide Konfigurationsspalten. Die Aktion ist unabhängig vom Speichern des
-Konfigurationsentwurfs. Der [Mailqueue-Vertrag](mailqueue.md) beschreibt ihre Grenzen.
-
-Die manuelle Bereinigung übernimmt die freigegebene Stitch-Variante A innerhalb
-des vorhandenen Dialograhmens. Der äußere Button und der Dialogtitel heißen
-„Manuelle Bereinigung“; im Dialog bestätigt „Jetzt bereinigen“ die Aktion.
-Beide Aktionen und der Dialogkopf verwenden `AppIcon.BRUSH_CLEANING`.
-Die bestehende Großschreibung der Statusüberschrift bleibt erhalten, ihre Farbe
-ist `--cosmos-primary-text-color`. Die Kopf-Iconbox des Bestätigungsdialogs verwendet
-die vorhandene rote Gefahrenvariante; der Bestätigungsbutton behält den
-gemeinsamen roten Aktionsstil, „Abbrechen“ bleibt unverändert.
-
-Unter der Frage und der kurzen Erklärung stehen zwei native Layoutzeilen:
-die gemeinsame `cosmos-security-warning` mit oben ausgerichtetem Warnicon und
-fettem „Späterer Empfang möglich:“ sowie `admin-queue-cleanup-info` mit einem
-  Info-Icon und den gespeicherten Rahmenbedingungen ohne sichtbare Gesamtgrenze.
-  Zusammengehörige Aussagen stehen in zwei Absätzen mit `--cosmos-space-s`.
-  Der bisherige zusätzliche Hinweis entfällt im Dialog.
-Die lokalen Klassen `admin-queue-cleanup-confirmation` und
-`admin-queue-cleanup-confirmation-details` liegen in
-`cosmos-mailqueue-assistant.css`; andere Bestätigungen bleiben unverändert.
-
-Die Statuszeile verwendet ein natives `Badge` mit den vorhandenen kompakten
-Cosmos-Maßen. Noch nicht ausgeführt ist neutral; Warten und laufende Verarbeitung
-sind gelb, Abschluss grün, Fehler rot und ein tatsächliches Teilergebnis gelb.
-Die Erklärung übernimmt dieselbe Statusfarbe. Zeit und Gesamtzahl stehen weiterhin
-in getrennten Monospace-Zeilen. Während aktiver Aufträge ist die Startaktion
-deaktiviert; das vorübergehende UI-Polling stellt nach Abschluss oder Abhängen
-den zuvor verwendeten Pollingabstand wieder her.
-Die gelbe Vormerkungserklärung bleibt kurz und passt bei normaler Desktopbreite
-in eine Zeile; auf schmalen Ansichten darf sie umbrechen. Die vorübergehende
-Vormerkungs-Notification verwendet weiterhin das normale blaue Informationsdesign
-mit Info-Icon. Der Wartezustand ist kein Fehler und keine zusätzliche Sicherheitswarnung.
-
-## Segmentierte Auswahl mit nativen Tabs
-
-`CosmosSegmentedTabs<T>` verbindet einen typisierten Vaadin-`CustomField` mit nativen
-`Tabs` und `Tab`. Profilbildmodus, Benachrichtigungsfilter in Inbox/Glockenvorschau,
-Nachrichtenfilter im Ticketsystem und Zugangsfilter der Benutzerverwaltung verwenden
-diesen Baustein. Icons und Zähler bleiben native Komponenten in den Tablabels.
-Beschriftungs- und Zähleraktualisierungen erhalten Wert und Tabinstanz, damit weder
-ein Filterwechsel ausgelöst noch der Tastaturfokus entfernt wird.
-
-Die gemeinsame Gestaltung `.cosmos-segmented-tabs` liegt in
-`cosmos-segmented-tabs.css` und verwendet die vorhandenen Cosmos-Tokens. Sie übernimmt
-den OTP-Stil mit einer Außenhöhe von 42 px und einem gerahmten ausgewählten Segment.
-Die Glockenvorschau behält ihre kompakte Höhe von 36 px. `.cosmos-segmented-field`
-gestaltet ausschließlich die native Feldhülle und ihr gegebenenfalls vorhandenes Label.
-Die bereits nativen App-Code-/Ersatzcode-, QR-Code-/Schlüssel- und
-Antwort-/Vermerk-Umschalter verwenden dieselbe gemeinsame Gestaltung.
-
-Normale Seitenreiter bleiben davon getrennt: die Kontosicherheits-TabSheet,
-Anmeldeanbieter- und 2FA-Rollen-TabSheets sowie die Ticketkategorien behalten ihren
-bisherigen Reiterstil. Gewöhnliche Radioauswahl wie die Ticketzuständigkeit bleibt
-eine RadioButtonGroup.
-
-## Zwei-Faktor-Bereiche
-
-Die gemeinsame Klasse `cosmos-panel-tabs` (`CosmosCssClasses.PANEL_TABS`) gestaltet
-die nativen Ticket-`Tabs` und die `TabSheet`-Leisten der Anmeldeanbieter sowie der
-2FA-Rollen. Die gemeinsamen Regeln stehen in `cosmos-provider-settings.css`:
-48 px Höhe, mindestens 168 px Breite auf Desktop, abgerundete obere Ecken und
-eine blaue Oberkante am aktiven Tab. Die untere Trennlinie bleibt außerhalb des
-aktiven Tabs sichtbar. Unter 600 px teilen sich die Tabs den verfügbaren Platz.
-Der Ticketfilter behält seine bestehenden Kategorien und seine Auswahlfunktion.
-Im „Ticketsystem“ entfällt die Linie zwischen Panelkopf und Tableiste.
-Der vorhandene `CosmosSectionHeaderComponent` liefert wie in den anderen
-Adminbereichen den großen Seitenkopf mit „Administration / Ticketsystem“,
-Titel und allgemeinem Erklärungstext. `AdminView` ordnet ihn im gemeinsamen
-Seitenrahmen an. Der separate Panel-Untertitel erklärt die Auswahl und Bearbeitung
-eines Tickets, ohne einen Nachrichtenverlauf für jede Ticketart vorauszusetzen.
-Lucides `messages-square` steht am Panelkopf, in der Navigation, am Dashboardzugang
-und vor „Alle Tickets“. Der Tab „Wiederherstellung“ nutzt wie die Benutzerhilfe
-Tablers `lock-question`. Die nativen Tabicons sind 16 px groß und akzentblau.
-
-Die administrative 2FA-Konfiguration gruppiert die neun Regeln je Rolle in
-Zugang und Administration, Konto- und Sicherheitsdaten sowie Authenticator und
-Anmeldeanbieter. Das native `TabSheet` verwendet die Tableiste der Anmeldeanbieter
-aus `cosmos-provider-settings.css`. Die Erklärspalte steht auf breiten Inhaltsflächen
-neben den Gruppen und rückt auf schmalen darunter. Die rollenübergreifende
-Inaktivitätsregel folgt außerhalb der Tabs und trägt das vierte Tabler-Zahlenicon.
-`cosmos-mfa.css` enthält das lokale Layout. Die Erklärspalte trennt die blaue
-Info-Box mit einer horizontalen Linie von den Hinweisen darüber und hebt den Namen
-der gerade bearbeiteten Rolle fett hervor.
-`.mfa-role-scope` steht in `cosmos-mfa-confirmation.css`. Regelauswahl und
-Inaktivitätsdauer verwenden die 40 px hohen Eingabeflächen
-der Konfiguration mit externen Feldlabels und 6 px Abstand. Die Regelauswahl
-verwendet eine native `ComboBox` mit dem gemeinsamen Optionsstil der Pagination
-und der nativen Platzierung des Auswahlmenüs am Feld.
-Die Feldhilfe nutzt `ConfigInfoButton` und `AdminSidePanelDialog` mit demselben Aufbau
-wie die allgemeine Konfiguration. Sie zeigt Gruppe, Feldtitel, Beschreibung,
-Standardwert aus der 2FA-Standardrichtlinie und die Eingaberegeln als Liste.
-
-Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
-Buttons, `Badge`, `TabSheet`, `ComboBox`, `Switch`, `Grid` und die bestehenden Cosmos-
-Bestätigungsdialoge. Die 2FA-Verwaltung liegt im Tab „Portalzugang“. Einrichtung
-und eingeschränkte Anmeldung sowie 2FA-Hilfe verwenden den Seitenrahmen mit
-reduziertem Kopf. Die Marke ist statisch. Rechts stehen Sprachwahl, Trennlinie
-und ab dem ersten erfolgreichen Anmeldenachweis der Initialenavatar mit Name
-und E-Mail als reine Anzeige. Die Kontextzeile unterscheidet Anmeldung und
-Kontosicherheit. Rückweg, Abmelden
-und Abschluss liegen im jeweiligen Panel-Footer. Kurzlebige
-QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
-Werte im dauerhaften Sitzungszustand gehalten.
-
-Die wiederkehrende Codebestätigung, der geschützte Authenticatorwechsel und die
-Benutzerhilfe folgen der ausgewählten Stitch-Variante A. Die Bestätigung verwendet
-native `Tabs` im vorhandenen 42-px-Methodenstil: Authenticator-Code mit demselben
-sechsstelligen `OtpField`-Add-on wie bei der Einrichtung oder ein normales natives
-`TextField` für den vollständigen Ersatzcode. Ersatzcode-Eingaben verwenden Space
-Mono und zeigen vier Gruppen mit je acht Zeichen als Platzhalter. Ein vollständiger
-sechsstelliger Authenticator-Code löst in beiden OTP-Feldern über das native
-`OtpField.addCompleteListener`-Ereignis dieselbe Prüfung wie der Footerbutton aus,
-auch beim Tippen und Autofill. Der Button bleibt verfügbar. Die gewählte Methode bleibt beim Sprachwechsel
-erhalten; sensible Eingaben werden dabei geleert. Die beiden
-Hilfsaktionen liegen in „Zugangsprobleme und Alternativen“ unter der Trennlinie.
-
-Die Bestätigungsdialoge für Anmeldeanbieter und 2FA-Aktionen verwenden für
-App-Code und Ersatzcode gemeinsam `TwoFactorCodeInput` mit
-`.two-factor-dialog-codes`. Beim Öffnen beginnt die Eingabe auf der ersten
-App-Code-Stelle. Beide Felder verwenden Space Mono. Ein vollständiger App-Code
-bestätigt nur beim Verbinden eines Anmeldeanbieters automatisch. Ersatzcodes und
-alle übrigen Dialogaktionen erfordern den jeweiligen Bestätigungsbutton.
-
-Der einleitende Erklärungstext im `ExternalIdentityConfirmationDialog` verwendet
-die reguläre Textgröße und das reguläre Schriftgewicht über `--cosmos-font-size-s`
-und `--cosmos-font-weight-regular`. Die lokale Regel in `cosmos-external-login.css`
-gilt für den Text im Formularbereich, nicht für den Untertitel im Dialogkopf.
-
-Vaadin `Details` ist anfangs geschlossen. Die Anmeldung und die Ersatzcode-Ausgabe
-verwenden denselben nativen Vaadin-Button und dieselbe Gestaltung in `cosmos-mfa.css`.
-Die Schalter bleiben bei Hover und Mausklick neutral. Der Tastaturfokus ist sichtbar.
-Bei der Anmeldung ist die ganze Zeile klickbar, mit Titel und Fragezeichen links
-und „Details“ rechts. Der blaue 16-px-Pfeil zeigt geschlossen nach rechts und
-geöffnet nach unten. Darunter
-folgen zwei Fragen in Sekundärfarbe mit rahmenlosen nativen Vaadin-Buttons.
-Wie der Details-Schalter bleiben beide Aktionen bei Hover und Mausklick neutral
-und zeigen den Tastaturfokus.
-Beide zeigen Lucides `square-arrow-right-enter` mit 8 px Abstand hinter dem
-Aktionstext, wie bei den App-Links mit Icon links.
-Die Bestätigungsdialoge im angemeldeten Bereich verwenden für „Hilfe zur
-Wiederherstellung“ dieselbe Zeile mit Frage, rahmenloser Aktion und Icon rechts.
-„Zurück“ steht mit einem Linkspfeil als nativer Button links im Footer und führt
-vom Faktorwechsel und von der Benutzerhilfe zur Codeabfrage.
-Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
-Die Benutzerhilfe verwendet den vorhandenen Panelkopf mit Tablers `lock-question`.
-„Bestehende Anfragen“ zeigt ein natives Grid mit kompakten Zeilen für Nummer,
-Betreff in der aktuellen Oberflächensprache, Aktualisierungszeit und gerahmtem
-Statusbadge. In der Liste steht die Vorgangsnummer links, vertikal mittig neben
-Betreff und Zeitstempel. Die ausgewählte Vorgangsnummer und die Nummer im
-Verlaufskopf sind primärblau. Die übrigen Nummern nutzen die Standardtextfarbe.
-Offene Vorgänge verwenden in Nutzer- und Adminansicht den Bernsteinton des
-Sicherheitshinweises (`--cosmos-security-warning-accent`). Vorgänge in Bearbeitung
-haben blaue Badges, abgeschlossene graue und vom Nutzer geschlossene grüne.
-Die Liste nutzt denselben Grundton
-wie der Nachrichtenverlauf und die gemeinsame Tabellenfarbe für Hover und Auswahl.
-Der Nachrichtenverlauf mit Vorgangsnummer und Anzahl nutzt einen nativen
-`Scroller`. Eigene Nachrichten stehen rechts
-mit dem vorhandenen Initialenavatar und einem Tooltip für Name und E-Mail.
-Antworten aus der Administration stehen links mit dem Lucide-Icon `shield-cog`
-und der neutralen Beschriftung „Systemadministration“. Der Verlauf richtet die
-Nachricht nach ihrem Schreibkontext aus, auch wenn beide Seiten dasselbe Konto
-verwenden. Der Avatar behält beim Überfahren den normalen Mauszeiger.
-Eigene Nachrichten nutzen Primärblau mit weißer Schrift. Antworten der
-Systemadministration nutzen die blaue Hervorhebungsfläche mit akzentblauem
-Absender. Die Spitze zur Absenderseite übernimmt die Kontur der Sprechblase.
-Beide Abschnittsüberschriften stehen in Versalien. Ein graues natives Badge zeigt
-rechts über der Anfragenliste die Zahl der Vorgänge und am Verlauf die Zahl seiner
-Nachrichten. Vorgangsnummern, Zeitstempel und der Zeichenzähler stehen in Space Mono.
-Ein Mittelpunkt trennt Datum und Uhrzeit und steht im Verlauf auch vor dem Zeitstempel.
-Der quadratische native Iconbutton „Aktualisieren“ mit Rahmen und übersetztem Tooltip
-steht bei vorhandenen Anfragen am Verlauf oder an der Anfragenübersicht. Seine Höhe
-und Breite folgen wie in der Benutzerverwaltung `--cosmos-control-height`. Die
-Zustände übernehmen die gemeinsamen Buttonregeln. „Anfrage schließen“ steht im Verlauf links neben
-„Aktualisieren“ und zeigt Lucides grünes `circle-check`-Icon.
-Der Hinweis zum Identitätsnachweis nutzt
-den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Mit demselben Abstand
-wie die übrigen Inhaltsabschnitte steht vor der nativen `TextArea`
-der Sicherheitshinweis im gemeinsamen Stil `.cosmos-security-warning` aus
-`cosmos-theme.css`. Variante B setzt auf eine dunkle bernsteinfarbene Fläche,
-einen dezenten Rahmen und eine 4 px starke bernsteinfarbene Kante links.
-Das Lucide-Warndreieck und die fett gesetzte Beschriftung verwenden dieselbe
-Akzentfarbe. Der Text verwendet die helle Standardtextfarbe. Die Farben stehen
-unter `--cosmos-security-warning-*` in `cosmos-tokens.css`.
-Im Footer steht „Zurück“ links. Rechts stehen „Abmelden“ und die jeweilige
-Hauptaktion gleich breit, auf sehr schmalen Bildschirmen untereinander.
-`cosmos-mfa-confirmation.css` begrenzt die Gestaltung
-auf `.two-factor-confirmation`, `.two-factor-restore` und `.support-recovery-help`;
-Panels, Buttonzustände und Eingaben folgen weiterhin den vorhandenen Standards.
-
-Anfragen und Antworten verwenden dieselbe native Vaadin-`TextArea`. Für den
-Zeichenzähler rechts neben der Beschriftung nutzen sie die vorhandenen
-`cosmos-notification-compose-*`-Klassen. `.support-message-input` in
-`cosmos-mfa.css` gleicht die Eingabefläche an die Benachrichtigungen an und
-erlaubt das vertikale Ziehen bei fester Breite.
-
-Die Adminansicht „Ticketsystem“ übernimmt denselben Nachrichtenverlauf und den
-gelben Sicherheitshinweis. In der Administration stehen Anfragen links und
-Antworten rechts. Interne Vermerke haben eine eigene Kennzeichnung.
-Die ausgewählten Ticketdetails stehen in einem eigenen `CosmosCardComponent`
-mit dem bestehenden Panelrahmen. Der native `VerticalLayout`-Panelkopf gruppiert
-`lock-question` im Cosmos-Iconrahmen, „Ticket #…“ in Primärblau und Status in einer
-Orientierungszeile mit rechtsbündiger Aktualisierungszeit. Darunter steht der Betreff.
-Eine dezente Trennlinie setzt Antragsteller und Bearbeiter als eigene Rollen ab;
-auf schmalen Panelbreiten stehen die Rollen untereinander. Die Titelgestaltung übernimmt
-`cosmos-panel-title`; Statusfarben und Identitätstooltips bleiben gemeinsam.
-Im Kopf stehen Antragsteller und Bearbeiter in zwei gleich breiten Spalten mit
-kleinen blauen Rollenüberschriften in Großbuchstaben ohne Doppelpunkt. Unter der
-Rolle stehen ein 32-px-`OverlayUserIcon` und daneben Name sowie E-Mail in zwei
-Zeilen. E-Mail-Adressen bleiben in Inter. Beim eigenen Bearbeiterkonto erscheinen
-statt Name und E-Mail der Avatar und das grüne „Sie“-/„You“-Badge. Der gesamte
-Bearbeiterblock einschließlich Überschrift und „Nicht Zugewiesen“ steht rechtsbündig.
-Native `HorizontalLayout`-/`VerticalLayout`-Komponenten halten die Rollen getrennt;
-lange Namen und Adressen können umbrechen. Der Dienst liefert diese Identität
-ausschließlich für die berechtigte Adminansicht. Im administrativen Verlauf
-zeigen Antragstellernachrichten denselben Avatar und den Namen. Öffentliche
-Adminantworten und interne Vermerke zeigen dort ebenfalls den tatsächlichen Autor
-mit 24-px-Initialenavatar und Namen. Im Avatar-Tooltip belegen Name und E-Mail je
-eine Zeile. Der lokale Stil in `cosmos-mfa-confirmation.css` lässt den Tooltip bis
-zum verfügbaren Platz wachsen. Text, der dann noch zu lang ist, endet mit einer
-Ellipse. Für Antragsteller bleiben Adminantworten als „Systemadministration“
-anonymisiert, ebenso bei gelöschtem Autorenkonto in der Administration.
-Eine separate native Werkzeugleiste darunter enthält die vorhandenen Aktionen
-„Übernehmen“ rechtsbündig, bei offenen Tickets als primäre Aktion, und
-„Anleitung senden“ mit der unveränderten Vorschaufunktion. Links steht der native
-Benachrichtigungsschalter mit der gemeinsamen Klasse `cosmos-config-switch`.
-Die lokale Stitch-Anordnung setzt die Bahn links vor „Beobachten“ mit 8 px Abstand
-am öffentlichen Label-Part. Schriftfarbe, Größe und Gewicht übernimmt der Schalter
-aus der Konfiguration (12 px / 500). Ein nativer Tooltip erklärt die internen
-Benachrichtigungen für neue Ticketnachrichten und die unveränderte Zuständigkeit.
-Öffentliche Parts und der native Eingabeslot halten Label und
-Schalter in derselben Zeile; bei Platzmangel kann die Beschriftung umbrechen.
-Die Leiste bricht bei Platzmangel um.
-Der Inhaltsbereich gliedert die Sicherheitsleitlinie als bestehende Infobox:
-Infoicon in Cyan, „Sicherheitsleitlinie:“ weiß und fett, direkt anschließend die
-Erklärung in Sekundärfarbe ohne erzwungenen Zeilenumbruch. Das Icon steht oben zur
-ersten Textzeile. In der Werkzeugleiste bleibt „Beobachten“ links; die sichtbare
-Aktion „Übernehmen“ beziehungsweise „Anleitung senden“ steht rechtsbündig.
-Die Verlaufsüberschrift ist blau, der Nachrichten-Zähler bleibt grau. Unter dem
-Verlauf steht ein statusabhängiger zentrierter, kursiver Hinweis mit 8 px Abstand
-(`.support-admin-status-note`): Bei offenen, unzugewiesenen Tickets erklärt er die
-nötige Übernahme. Abgeschlossene Tickets weisen auf die gesperrten Nachrichten
-und Änderungen hin. Bei vom Antragsteller geschlossenen Tickets fordert er zum
-Prüfen des Verlaufs und abschließenden Schließen auf. In Bearbeitung entfällt er.
-Die vorhandenen Abschluss- und
-Antwortbuttons liegen im gemeinsamen Panel-Footer. Werkzeugleiste und Footer
-sind ohne sichtbare Aktionen ausgeblendet; Berechtigungen bleiben unverändert.
-Die lokalen Anordnungsregeln stehen unter `.support-admin-ticket-*` und
-`.support-admin-detail-*` in `cosmos-mfa-confirmation.css`.
-Die Ticketkarten verwenden native `VerticalLayout`- und
-`HorizontalLayout`-Komponenten: Nummer und Status mit Ungelesen-Zähler oben,
-Betreff über die volle Breite, darunter Bearbeiter links und Zeitpunkt rechts.
-Eine dezente Linie trennt diese Fußzeile. Die Texte können bei Platzmangel umbrechen;
-die bisherige zweispaltige Anordnung der Nutzertickets bleibt erhalten.
-Die Bearbeiterinfo der Admin-Karten verwendet denselben `OverlayUserIcon`
-mit 24 px wie die Anfrageansicht; der Detailkopf verwendet 32 px. Der gemeinsame
-Identitätstooltip zeigt oben den Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
-steht daneben ein grünes natives „Sie“-/„You“-Badge mit der Statusfarbe
-`--cosmos-success-color` (`.support-assignee-self`).
-Unzugewiesene Tickets zeigen „Nicht Zugewiesen“ / „Unassigned“ kursiv.
-Die Identitätsdaten des Bearbeiters
-liefert der Dienst ausschließlich im Adminzugang, niemals in der Nutzeransicht.
-Unter `.support-admin-workspace` heißt die administrative Liste „Vorgänge“ / „Cases“.
-Die Liste und ihr Kopf stehen gemeinsam in einem nativen `CosmosCardComponent`
-mit den vorhandenen Panelklassen. Der Kopf verwendet `HorizontalLayout`,
-links `list` im gemeinsamen `cosmos-panel-icon`-Rahmen und den Titel
-mit `cosmos-panel-title`. Darunter steht eine eigene native `HorizontalLayout`-
-Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten Eintrag.
-Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanelDialog`-Baustein.
-`SupportTicketFilterPanel` übernimmt die vorhandenen Klassen des Benutzerfilters:
-`admin-user-filter-drawer`, `admin-filter-tools`, `admin-user-filters` und
-`admin-filter-choices`. Oben steht `CosmosSegmentedTabs` mit nativen Tabs für „Alle / Ungelesen“.
-Darunter zeigen native Checkboxen die Statusmehrfachwahl in zwei Spalten. Bei
-Auswahl übernehmen Rahmen, Fläche und Haken die Farben des jeweiligen Ticket-Badges.
-Die Zuständigkeit unterscheidet alle, eigene und nicht zugewiesene Vorgänge.
-Leere Statuswahl bedeutet alle Status. Innerhalb der Statuswahl gilt Oder,
-zwischen Status, Zuständigkeit und Lesestand Und. Erst Anwenden übernimmt den Filter;
-Zurücksetzen ändert den Entwurf, Abbrechen und Escape lassen den aktiven Stand bestehen.
-Ein natives graues Badge am Button zählt aktive Filtergruppen. Aktualisieren und
-Live-Antworten behalten diese Auswahl und vorhandene Antwortentwürfe bei.
-Ein ausdrücklich geöffneter Ticketlink hebt entgegenstehende Listenfilter auf.
-Dasselbe gilt für den Ticketsprung im Filterpanel. Ein natives `TextField` nimmt
-die sichtbare Nummer mit oder ohne Raute auf. Ein nativer Button öffnet das Ticket.
-Darunter erklärt die Info-Box `admin-filter-hint` aus der Benutzerverwaltung den
-Suchumfang und das Zurücksetzen der Filter bei einem Treffer. Die lokale Anordnung
-der Eingabezeile steht in `cosmos-mfa.css` unter `.support-filter-jump`.
-Die Ticketnummer zählt nicht als Filtergruppe. Ein erfolgloser Sprung behält die
-bisherige Auswahl bei und meldet den Fehler über die Standardnotification.
-Beim direkten Sprung werden Listenfilter aufgehoben, damit auch ein gerade als
-gelesen quittiertes Ticket ausgewählt bleibt. Ein aus dem Ungelesen-Filter gelesener
-Vorgang verschwindet nur aus der Liste, seine geöffnete Detailansicht bleibt erhalten;
-das native Grid enthält dann keine ausgewählte Zeile außerhalb seiner Daten.
-Status- und Zuständigkeitsfilter bleiben für die Detailauswahl maßgeblich.
-Die Zuständigkeitsoptionen verwenden
-12 px / 18 px, Gewicht 400 (ausgewählt 500) und die gemeinsamen Textfarben.
-Der Footer übernimmt allein `admin-drawer-actions` aus der Benutzerverwaltung;
-zusätzliche Dialogaktionsklassen würden dessen Raster überschreiben.
-Die native Tab-/Ticketauswahl meldet ihren Zustand an die Adminansicht. Diese hält
-`tab=all`/`tab=recovery` und die öffentliche Ticketnummer ohne Raute in der URL,
-ohne neu zu navigieren. Beim Browser-Refresh werden Tab und Auswahl daraus
-wiederhergestellt; unveränderte Live-Updates schreiben die Adresse nicht erneut.
-Die Filter grenzen ausschließlich bereits berechtigte Admin-Daten ein und verändern
-weder Zuständigkeit noch Status oder die fachliche Zugriffskontrolle.
-Titelschrift und Rahmenstil übernimmt er vom Ticketsystem-Panelkopf;
-der kompakte Vorgänge-Kopf und der Pagination-Footer verwenden lokal 12 px
-umlaufenden Innenabstand.
-Der Vorgänge-Kopf verwendet den 32 × 32 px großen Cosmos-Iconrahmen mit dem
-16 × 16 px großen Lucide-Icon `list`.
-Der äußere Panelrahmen umschließt die Liste ohne zusätzlichen Gridrahmen;
-Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
-Eine leere Vorgangsliste übernimmt den zentrierten Leerzustand der Benutzerverwaltung
-mit blauem 24-px-`list`-Icon ohne Rahmen und einem Hinweis passend zu den aktiven Filtern.
-Native Tabs gliedern die Kategorien, ein natives Grid
-zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
-die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
-begrenzt den Verlauf. Unter der Liste liegt der gemeinsame `cosmos-panel-footer`.
-`CosmosPagination` zeigt links die native Auswahl der Seitengröße, mittig den
-Trefferbereich und rechts die beiden Pfeilbuttons. Der Modus `PREVIOUS_NEXT`
-ist auf die Vorgangsliste begrenzt. Die lokale Anordnung steht in
-`cosmos-mfa-confirmation.css` unter `#support-queue-footer` und `#support-pagination`.
-Die Vorgangsliste erhält mindestens 330 px tatsächliche
-Panelbreite. Zwischen Liste und Details liegen 16 px ohne zusätzliche Trennlinie;
-der gemeinsame Arbeitsbereich hat 20 px Innenabstand, auf Smartphones 16 px.
-Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;
-die Containerabfrage berücksichtigt auch den Platzbedarf der Seitennavigation.
-Ein nativer Iconbutton neben dem Zeitpunkt maximiert das ausgewählte Ticket mit
-Lucide `expand`. Dabei wird nur die Vorgangsliste ausgeblendet; Auswahl, Filter und
-Antwortentwurf bleiben erhalten. `minimize` stellt die geteilte Ansicht wieder her.
-Tooltips und `aria-pressed` erklären den Zustand auch bei Tastaturbedienung. Wird
-die Auswahl aufgehoben, erscheint die Vorgangsliste automatisch wieder.
-Die native Tableiste verwendet `border-box`, reserviert ihre volle Höhe und schließt
-ohne zusätzlichen Inhaltsabstand am Panel ab. Der Auswahlhinweis verwendet ein natives
-`VerticalLayout` mit dem bestehenden `.cosmos-notification-empty`-Stil: mittig,
-blaues 36-px-Lucide-Icon `mouse-pointer-click` ohne Rahmen, die Überschrift
-„Kein Ticket ausgewählt“ mit 18 px / 600 und darunter ein kurzer Hinweis in
-Sekundärfarbe. Zwischen Icon, Überschrift und Hinweis liegen jeweils 8 px.
-Der Titel und der Hinweis wechseln zwischen DE und EN.
-Diese lokale Übernahme aus Stitch lässt die zusammenhängenden Ticketzeilen
-ohne zusätzliche Kartenrahmen und den mobilen Umbruch unverändert.
-In `cosmos-mfa-confirmation.css` sind diese Regeln auf den
-Ticketarbeitsbereich begrenzt. Die Sprechblasen nutzen die gemeinsamen
-Nachrichtenklassen und orientieren sich am jeweiligen Absender.
-
-`RecoveryInstructionsComponent` stellt die feste Anleitung mit nativen
-`HorizontalLayout`-/`VerticalLayout`-Komponenten und vier nummerierten `Badge`-
-Komponenten dar. Warnung und Information nutzen die vorhandenen Hinweisbausteine.
-Die lokale Gestaltung liegt unter `.support-instruction-*` in
-`cosmos-mfa-confirmation.css`. Die kompakte Anleitung im Verlauf verwendet ein
-natives `Details` und den gemeinsamen `DetailsToggleButton`. Auch die bestehenden
-2FA-Details verwenden diesen Button mit der unveränderten Klasse
-`.two-factor-details-toggle`. Deren gemeinsame Gestaltung liegt in `cosmos-theme.css`,
-damit der Anwesenheitsschalter denselben Stil im Benutzermenü nutzt.
-Pfeil und Zugänglichkeitszustand werden gemeinsam
-aktualisiert. Die feste Textvorlage enthält sieben durch Leerzeilen getrennte
-Abschnitte: Kopf, vier Schritte, Warnung und Grenze. Kopf und Schritte enthalten
-jeweils eine Überschrift und einen Zeilenumbruch vor der Beschreibung. Der Text
-wird ausschließlich als Text gerendert, niemals als Nachrichten-HTML.
-
-`cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
-`.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und
-Eingabestandards bleiben unverändert. Das Anmeldepanel ist höchstens 640 px breit.
-Der QR-Einrichtungsschritt verwendet die freigegebene Variante B mit maximal 920 px:
-links native `Tabs` für QR-Code oder manuellen Schlüssel, rechts zwei
-Abschnitte mit den vorhandenen blauen Tabler-Zahlenicons aus der Anbietereinrichtung.
-Die erste Anleitung enthält die drei frei wählbaren App-Empfehlungen als rahmenlose
-Links mit dem vorhandenen blauen Tabler-External-Link-Icon und 12 px / 600 wie in
-der Anbietereinrichtung. Ein Hinweis darunter erklärt die Unterstützung weiterer
-TOTP-Apps nach RFC 6238. Der Scan-Hinweis steht direkt unter dem QR-Code; Schritt 2
-beschreibt nur die Codeeingabe und endet mit einem Doppelpunkt. Die App-Einleitung
-endet nach „beispielsweise:“, ohne die verlinkten Namen zusätzlich aufzuzählen.
-Unter dem Kompatibilitätshinweis trennt eine dünne Linie die beiden Schritte.
-Die vertikale Trennlinie zwischen Einrichtungsmethode und Anleitung reicht über
-die volle gemeinsame Inhaltshöhe, auch wenn der QR-Bereich höher als die Anleitung ist.
-Die Zahlenicons sind 20 × 20 px groß. Unter 760 px
-stehen die Bereiche untereinander; statt der vertikalen Trennlinie trennt dann
-eine horizontale Linie mit 24 px Abstand zu den Schritten die beiden Bereiche.
-Der Inhalt verwendet die normale dunkle
-Contentfläche, Kopf und Footer die bestehende Panelfläche.
-Die Panelköpfe der Authenticator-Einrichtung und der Anmeldebestätigung sowie die
-2FA-Zeile unter „Sicherheit & Zugang“ zeigen das Lucide-Icon `shield-keyhole`.
-Das native Badge „Eingerichtet“ verwendet den kompakten grünen Kontostil mit Rahmen
-und ohne Statuspunkt.
-Die Tabs schalten normale Inhaltscontainer um; ein zusätzliches `TabSheet` und
-ein eigener Scrollbereich entfallen. `cosmos-mfa-methods.css` gestaltet Form,
-Innenabstände, Schrift und Auswahlfarbe.
-Die Methodenauswahl ist 42 px hoch und zeigt die Lucide-Icons
-`qr-code` und `key-round` mit jeweils 16 px neben den Beschriftungen.
-Der aktive Tab verwendet wie die Profilbild-Umschaltung weiße Schrift mit Gewicht
-600 und ein blaues Icon; inaktive Beschriftungen bleiben Secondary mit Gewicht 500.
-Der QR-Code steht horizontal
-und vertikal mittig im Bereich unter den Tabs. Der manuelle Schlüssel erscheint
-in zwei Zeilen mit je vier Vierergruppen in einem schreibgeschützten Feld mit
-normaler Labelschrift und ausschließlich blauem Schlüsselicon sowie
-einem nativen Vaadin-Iconbutton als Suffix rechts. Das Feld ist eine native,
-schreibgeschützte `TextArea` mit nativem Feldlabel und zwei festen Zeilen. Sie nutzt
-die volle Breite der manuellen Ansicht; die Schlüsselzeilen sind horizontal
-zentriert. Das Label verwendet wie die bestehenden Formularfelder 12 px / 500;
-der Feldrahmen ist wie bei schreibgeschützten Textfeldern gestrichelt.
-Das Kopiericon ist in Ruhe neutral, bei Hover heller und bei Feldfokus
-wie andere Feldaktionen blau. Seine Hoverfläche folgt dem gemeinsamen Hoverwert;
-eine zusätzliche Umrandung entfällt.
-Nur der Schlüsseltext verwendet Space Mono Regular mit 14 px / 20 px. Die Datei
-`custom-theme/fonts/SpaceMono-Regular.ttf` und `SpaceMono-LICENSE.txt` liegen neben
-Inter.
-Die Schrift wird lokal geladen. Feldlabel und übrige Oberfläche verwenden weiterhin Inter.
-Die manuelle Ansicht
-verwendet `VerticalLayout`. Rahmen, Schrift und Fokus folgen dem bestehenden
-Feldstandard. Der Browser lädt den Wert vom geschützten No-Store-Endpunkt und setzt
-ihn ausschließlich in das öffentliche `inputElement` des schreibgeschützten Felds.
-Der Hostwert und das serverseitige Flow-Modell bleiben leer. Dadurch gelangt der
-Seed weiterhin nicht in den JDBC-Sitzungszustand. Die frühere HTML-/IFrame-
-Sonderdarstellung entfällt. Kopiert wird ohne
-Gruppierungsleerzeichen und Zeilenumbruch. Die gewählte Einrichtungsmethode bleibt
-beim Sprachwechsel erhalten.
-Die manuelle Anleitung erklärt die Schlüsseleingabe und die Auswahl zeitbasierter Codes
-in einem vollständigen Satz. Sie ist über die volle Breite zentriert und bricht natürlich um.
-Der Scan-Hinweis direkt unter dem QR erscheint nur im QR-Tab. Schritt 2 fordert
-in beiden Tabs nur zur App-Codeeingabe auf.
-
-Die erste Codebestätigung verwendet das freigegebene Flowing-Code-Add-on `OtpField`
-mit sechs sichtbaren Kästchen und einem gemeinsamen Eingabefeld. Einfügen,
-Auswählen, Rücktaste, Pfeiltasten und Autofill übernimmt der Baustein. Die sechste
-Ziffer löst automatisch die Bestätigung aus; der vorhandene Button bleibt zusätzlich
-bedienbar. Längere Ersatzcode-
-und E-Mail-Code-Felder bleiben unverändert. Die Gestaltung ist auf
-`.two-factor-otp` in `cosmos-mfa.css` begrenzt und nutzt die öffentlichen Parts
-und `--fc-otp-field-*`-Variablen.
-Die Kästchen verwenden Space Mono bei der Einrichtung und bei der späteren
-Anmeldebestätigung.
-Label, 4 px Abstand und Position des Pflichtfeldpunkts übernehmen die bestehenden
-Vaadin-Feldregeln mit 12 px / 16 px Labelschrift und 14 px / 14 px für den Punkt.
-Die native Eingabe über den Slots bleibt durch eine auf `.two-factor-otp`
-begrenzte Regel unsichtbar. Allgemeine Formularfarben dürfen den vollständigen
-Eingabewert nicht zusätzlich über die sechs angezeigten Ziffern legen. Die Eingabe
-bleibt für Fokus, Tastatur, Einfügen und Autofill vorhanden.
-Einzelne Punkt-Platzhalter setzt die native Add-on-API. Das nächste leere Kästchen
-bleibt auch ohne echten Tastaturfokus blau markiert; Eingabe und Positionswechsel
-steuert weiterhin das Add-on. `cosmos-mfa-otp.css` wird gezielt in dessen Shadowroot
-geladen und gestaltet ausschließlich die dokumentierten `slot`-Parts und deren
-`active`-/`filled`-Zustände. Beide OTP-Felder verwenden den nativen Autofokus, damit
-die Eingabe beim Öffnen mit dem ersten Kästchen beginnen kann. Ob dabei die virtuelle
-Tastatur erscheint, entscheidet der mobile Browser. Fehler-, Disabled- und
-Read-only-Zustände behalten Vorrang.
-Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
-die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
-
-Die Ersatzcodeausgabe verwendet einen nativen `Button` mit einem per öffentlicher
-Element-API registrierten `DownloadHandler` über `RecoveryCodeDownload`. Wie
-„Alle Codes kopieren“ verwendet er ausschließlich die gemeinsamen Buttonregeln
-aus `cosmos-theme.css`; lokale Downloadbutton-Styles entfallen.
-Der Abruf prüft die aktuelle Berechtigung und
-verbraucht die Ausgabe weder bei Erfolg noch bei Fehler. `recovery-code-download.js`
-prüft vor dem Dateidownload Status, PDF-Inhaltstyp und PDF-Signatur. Erst danach
-startet der Browser den Download. Fehlerantworten und Anmeldeseiten werden nicht
-als Datei angeboten; die Browserseite bleibt stehen und zeigt die Standardnotification. Ein nativer `Switch`
-bestätigt die Sicherung und schaltet den einzigen Abschlussbutton „Codes gesichert“ frei. Die zusätzliche
-Aktion „Zurück zum Konto“ entfällt ausschließlich in der Ersatzcodeausgabe. Nur die ausdrückliche
-bestätigte Aktion verwirft die einmalige Ausgabe; reine Navigation ist kein Download.
-Die gemeinsame `.account-panel-body`-Regel in `cosmos-account.css` setzt 24 px
-umlaufenden Innenabstand und unter 640 px die vorhandenen 20 px. Persönliche Daten,
-Tickets und die normalen 2FA-Ansichten einschließlich Einrichtung und Ersatzcodes
-übernehmen diesen Standard. Bereiche mit eigener innerer Aufteilung
-wie Sicherheit und Sitzungen behalten ihre bewusst randlosen äußeren Inhaltsflächen.
-Die separat freigegebene Einführungskarte behält 32 px, unter 480 px weiterhin 20 px.
-In der 2FA-Kontokarte steht eine einzelne Aktion wie „Einrichten“ ab 651 px rechts
-neben der Beschreibung und ist vertikal mittig ausgerichtet. Mehrere Aktionen und
-schmale Ansichten behalten ihre vorhandene separate Aktionszeile.
-Die freigegebene Variante B verwendet auf maximal 920 px ein responsives Grid:
-links die lokale Tresorillustration `images/two-factor-vault.svg` mit dezentem blauem
-Glow aus der Primärfarbe und drei Hinweise aus nativen `HorizontalLayout`-/`VerticalLayout`-
-Komponenten. Überschrift und Erklärung haben keinen zusätzlichen Zwischenabstand.
-Kopieren und PDF stehen darunter nach einer horizontalen Trennlinie in einem nativen
-`VerticalLayout`, beide über die volle Spaltenbreite. Rechts stehen ein natives
-`Details` mit anfangs aufgeklappter Codeübersicht und der vorhandene Sicherungs-Switch.
-Die Sicherungsbestätigung bleibt am unteren Rand der rechten Spalte, auch bei
-eingeklappter Codeübersicht.
-Über den Codes stehen der blaue Schlüssel und „Ihre 10 Ersatzcodes“. Rechts steuert
-ein rahmenloser nativer „Details“-Button mit blauem Pfeil nach rechts (geschlossen)
-beziehungsweise unten (offen) den Bereich,
-wie bei den Admin-Benachrichtigungen; `aria-controls` und `aria-expanded` folgen dem Zustand.
-`cosmos-mfa-recovery.css` kapselt ausschließlich diese Ansicht.
-Unter 760 px stehen beide Bereiche untereinander; eine horizontale ersetzt dann
-die vertikale Trennlinie. Kopf und Footer verwenden Panelfläche, der Inhalt die
-normale Contentfarbe; Überschriften sind Primary, Hinweise Secondary und Icons blau.
-Der native Sicherungs-Switch folgt dem öffentlichen Login-Switch mit 34 × 20 px,
-14-px-Marker, 9 px Labelabstand und 12 px / 400 für den Secondary-Text.
-Seine native Reverse-Variante setzt die Beschriftung links und den Schalter rechts.
-Die lokale Grid-Aufteilung und die öffentlichen Parts halten den Schalter ganz am
-rechten Spaltenrand; die Beschriftung nutzt den verbleibenden Platz links.
-Zusätzliche Rahmen oder Änderungen an der Tresorillustration entfallen.
-Ein-/Ausklappzustand und Sicherungsbestätigung bleiben beim Sprachwechsel für
-dieselbe Ausgabe erhalten. Kopieren und PDF funktionieren auch bei eingeklappten Codes.
-Die Ausgabe bleibt bis „Codes gesichert“ oder zum Ende der berechtigten Sitzung
-verfügbar; die Fünf-Minuten-Frist gilt nur für Sicherheitsbestätigungen.
-Zehn native schreibgeschützte `TextField`-Komponenten zeigen die Codes einzeln mit
-gestricheltem Rahmen und einem Kopierbutton im Suffix. Space Mono mit 12 px / 20 px
-erleichtert das Ablesen. Die Schrift ist am Eingabe-Part und am nativen Eingabetext
-festgelegt. Die PDF bettet Inter für ihre normalen Texte und Space Mono für die Codes
-aus den mitgelieferten Schriftdateien ein. Die Codefelder sind 36 px hoch und stehen mit 6 px Abstand
-untereinander; der Rahmen folgt dem vorhandenen Eingabestandard.
-Die Kopiericons sind neutral, bei Hover heller und bei Feldfokus blau. Ihre
-Hoverfläche folgt ebenfalls dem gemeinsamen Hoverwert. Ein geschützter No-Store-Abruf setzt die Werte ausschließlich in die
-öffentlichen `inputElement`-Eingaben. Hostwerte und gespeicherter Flow-Zustand bleiben leer.
-
-Die Kontomails deklarieren Inter in allen MJML-Vorlagen und den daraus erzeugten
-HTML-Dateien. `mj-font` bindet `custom-theme/email-fonts.css` über die konfigurierte
-Basisadresse ein; die Schrift stammt aus den lokalen Theme-Ressourcen. Es gibt keinen
-externen Schriftdienst. Mailprogramme ohne Webfonts oder mit blockierten externen
-Inhalten verwenden Roboto, Arial oder Sans-Serif. Die Basisadresse muss vom Empfänger
-erreichbar sein; eine lokale Entwicklungsadresse ist außerhalb des Rechners ungeeignet.
-Beim MJML-Erzeugen `fonts: {}` setzen: Die `mj-font`-Deklaration liefert Inter,
-automatische MJML-Standardimporte von Google Fonts werden damit vermieden.
-
-Die vollständigen Aktionslinks unter den Mailbuttons erhalten über
-`email/partials/action-link.css` eine gemeinsame Cosmos-Linkbox: Eingabefläche
-`#091120`, Rahmen `1px solid #2c3751`, Radius 8 px und Innenabstand 12 px.
-Der vorhandene DE-/EN-Kopierhinweis bleibt erhalten. Die URL bleibt vollständig
-markierbar und bricht bei langen Werten um. Kein Clipboard-Button oder JavaScript
-wird in die Mail eingebaut; die Gestaltung wird in das erzeugte HTML eingebettet.
-
-Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
-Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
-Details bleiben bis zur gemeinsamen Designabnahme lokal.
-
-Der freigegebene verpflichtende Einrichtungseinstieg folgt Stitch-Variante A:
-zentrierte Schlossillustration, Überschrift, Erklärung und die nativen Aktionen
-„Abmelden“ / „Einrichten“. `.two-factor-introduction` in `cosmos-mfa.css` begrenzt
-die Karte auf 440 px, mit 32 px Innenabstand, einem 128 × 112 px großen Motiv
-und Inter 22 px / 600 für die Überschrift. Unter 480 px gelten 20 px umlaufender
-Innenabstand und 20 px Überschrift. Bei Platzmangel brechen die Aktionen untereinander um.
-Buttonhöhen, Farben und Icongrößen folgen dem vorhandenen Standard.
-Der Aktionsbereich verwendet den Standard-Panel-Footer mit durchgehender oberer
-Trennlinie, Panelfläche und rechtsbündigen, bei Platzmangel umbrechenden Buttons.
-„Abmelden“ verwendet dort die bestehende rote Aktionsvariante mit Rahmen und
-dezentem Hintergrund (`cosmos-delete-button`).
-Der öffentliche Seitenrahmen bleibt erhalten. Die Illustration liegt lokal als
-`images/two-factor-locks.svg`. Nur dieser Einstieg blendet den normalen Panelkopf aus.
-
-Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
-Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.
-
-Die administrative Ticketbearbeitung verwendet für die Editorumschaltung native
-`Tabs` mit der vorhandenen Gestaltung `.cosmos-segmented-tabs`. Die lokalen
-Ergänzungen in `cosmos-mfa-confirmation.css` kennzeichnen interne
-Vermerke und deren Editor mit der gemeinsamen Systempalette (`.support-internal-message`,
-`.support-admin-internal`). Im internen Modus verwendet die Speicheraktion die
-Systemfarbe mit dem unveränderten nativen Primary-Buttonstil. Auch der
-Pflichtfeldpunkt am Vermerkfeld verwendet den Systemakzent.
-Die lokale Regel bindet nur dessen bestehende Farbvariablen an den Systemakzent,
-für lesbare weiße Beschriftung etwas abgedunkelt. Beim Wechsel zur öffentlichen
-Antwort gelten wieder die normalen blauen Farben. Im internen Modus bündelt die bestehende
-Sicherheitswarnung das Verbot sensibler Inhalte und den Hinweis auf die ausschließlich
-administrative Sichtbarkeit; eine zusätzliche Infobox entfällt. Öffentliche Nachrichten behalten
-ihre Sprechblasenfarben. `.support-history-event` zentriert kompakte Systemereignisse
-zwischen Nachrichten; Zustandsfarben verwenden die vorhandenen Ticket-Badges.
-Erstellung verwendet Lucides `message-square-plus`, Statuswechsel Tablers
-`status-change`. Beide lokalen SVGs werden als native `SvgIcon` mit 16 × 16 px
-und dem vorhandenen blauen Akzent unter `.support-history-event-icon` angezeigt.
-Panelkopf, Werkzeugleiste und Aktionsfooter bleiben davon unabhängig.
-Der native Verlaufsscroller auf Antragseite und in der Administration verwendet
-die globale Scrollgestaltung. Lokal bleiben `.support-message-scroll` und
-`.support-message-thread` für die Geometrie zuständig. Die reservierte Scrollbahn verhindert einen
-Breitensprung. Rechts bleiben einschließlich der 11-px-Sprechblasenspitze 12 px
-Abstand zur Bahn; Form und Rahmen der Sprechblasen bleiben erhalten.
+komprimierter CSS-Kopien. Es ersetzt weder Ressourcenabgleich noch Neubau.
+Quelländerung, sichtbare Übernahme und ausgeführte Prüfung sind getrennte Aussagen.
+Der belegte Gesamtprüfstand steht in [status.md](status.md).

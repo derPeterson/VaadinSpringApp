@@ -1,14 +1,27 @@
 # Mailqueue
 
+Die Queue trennt die **transaktionale Versandanforderung** vom späteren SMTP-Versand.
+Eine Aufnahme bestätigt keine Zustellung. Ein unklarer Transportausgang wird nicht
+automatisch erneut versendet.
+
+**Direkt zu:** [Versand](#auftrag-und-versand) · [Ergebnisse](#ergebnisse-und-wiederholung) ·
+[Ungeklärte Aufträge](#bereinigung-ungeklärter-aufträge) ·
+[Automatik und Historie](#automatik-konfiguration-und-historie) ·
+[Aufbewahrung](#konfiguration-und-bereinigung)
+
 ## Auftrag und Versand
 
-Entwicklungskonten besitzen ein eigenes, bei der Anlage festgelegtes Kennzeichen.
+### Entwicklerkonten
+
+Entwicklerkonten besitzen ein eigenes, bei der Anlage festgelegtes Kennzeichen.
 Die Queue unterdrückt ihre Kontomails anhand des frisch gesperrten Kontodatensatzes,
 auch bei festen abweichenden Empfängeradressen. Der Löschablauf berücksichtigt das
 Kennzeichen noch vor Entfernung des Kontos. Verifikations-, Reset-, Sicherheits-,
 Frist- und Löschmails sind gleichermaßen ausgeschlossen. Mailabhängige Nachweise
 werden nicht übersprungen. Der direkte administrative SMTP-Mailtest bleibt unabhängig.
 „Nicht geprüft“ allein ist keine Versandunterdrückung.
+
+### Transaktion und Zieladresse
 
 Fachaktionen reihen ihre Mails transaktional ein. Verifikation und Passwortreset
 sperren den Kontodatensatz während der Transaktion; offene gleichartige Aufträge werden dedupliziert.
@@ -26,6 +39,8 @@ Adressmails entfernt. Bereits beanspruchte Aufträge behalten ihr ursprüngliche
 und ihren Zustand. Sie werden nicht erneut freigegeben und blockieren keinen Auftrag
 für die neue Adresse. Änderungen am Konto und der automatische Verifikationsauftrag
 für die neue Adresse werden gemeinsam gespeichert oder gemeinsam zurückgerollt.
+
+### Auswahl und Worker
 
 Der Scheduler wählt fällige PENDING-IDs nach Erstellungszeit und ID. Pro Lauf gilt
 die konfigurierte Kapazität; der Workerpool nimmt höchstens seine konfigurierte
@@ -51,6 +66,10 @@ ist kein sicherer Nachweis der Nichtzustellung. Explizite negative Antworten des
 verwendeten Angus-Transports werden nur für die einzelne Nachricht mit genau einem
 Empfänger und ohne Teilversand eingeordnet. Fehlende Antworten bleiben unklar.
 SMTP-Annahme und Datenbankcommit sind nicht atomar; es gibt keine Exactly-once-Garantie.
+
+## Bereinigung ungeklärter Aufträge
+
+### Manuell anfordern oder warten
 
 Unter **Konfiguration → E-Mail-Queue → Assistenten** können ausschließlich
 Superadmins eine gemeinsame **Manuelle Bereinigung** bestätigen. Es gibt keine
@@ -221,4 +240,4 @@ Reaktivierungslink als Button und kopierbare URL. Die übrigen Bestätigungen ha
 keinen Aktionslink. Das Öffnen eines Reaktivierungslinks erzeugt noch keine Mail:
 Erst die erfolgreiche Bestätigung reiht die Nachricht über die Wiederaktivierung
 in derselben Transaktion ein. Ungültige oder erneut verwendete Links tun das nicht.
-Entwicklungskonten bleiben bei allen vier Ereignissen ohne Versand.
+Entwicklerkonten bleiben bei allen vier Ereignissen ohne Versand.

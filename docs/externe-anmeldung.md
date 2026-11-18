@@ -4,6 +4,11 @@ Die lokale E-Mail-/Passwortanmeldung bleibt erhalten. Vollständig konfigurierte
 Anbieter erscheinen zusätzlich bei Anmeldung und Registrierung. Google sowie
 private Microsoft-Konten und Firmen-/Schulkonten werden unterstützt.
 
+**Direkt zu:** [Einrichtung](#einrichtung) · [Google](#google-client-id-und-client-secret-erstellen) ·
+[Microsoft](#microsoft-client-id-und-client-secret-erstellen) ·
+[Konten und Nachweise](#konten-und-nachweise) ·
+[Geschützte Ersteinrichtung](#google-bestätigung-und-geschützte-ersteinrichtung)
+
 ## Einrichtung
 
 Unter **Administration → Konfiguration → Anmeldeanbieter** können ausschließlich Superadmins
@@ -19,6 +24,8 @@ Geheimnisfeld behält den bisherigen Wert bei. Die Zugangsdaten werden erst beim
 tatsächlichen Anmeldeversuch vom Anbieter geprüft. Der Status „Aktiv“ bezeichnet
 die lokale Freigabe, keine vorab bestätigte Verbindung.
 
+### Gespeicherte Einstellungen und laufende Anmeldungen
+
 Bestehende Portalsitzungen bleiben erhalten. Nach Deaktivierung benötigen betroffene
 Benutzer einen anderen Anmeldeweg. Laufende Anbieteranfragen mit zwischenzeitlich
 geänderten Einstellungen müssen neu gestartet werden. Veraltete parallele
@@ -29,6 +36,8 @@ an den jeweiligen Anbieter gebunden. Client-IDs bleiben lesbar. Die Administrati
 prüft vor Lesen und Speichern frische Superadminrechte. Endpunktadressen sind nicht
 über die Oberfläche änderbar. Entschlüsselte Secrets bleiben serverseitig und werden
 nicht ins Formular, in UI-Sitzungen oder in Fehlermeldungen übernommen.
+
+### Verschlüsselungsschlüssel
 
 Vor dem Hinterlegen von Secrets den eigenen Startschlüssel
 `APP_SECURITY_PROVIDER_SECRETS_ENCRYPTION_KEY` in der `.env` setzen.
@@ -49,6 +58,8 @@ Das aktuelle Entwicklungsschema enthält ausschließlich die verschlüsselte Spa
 Eine ältere lokale Datenbank muss zurückgesetzt und anschließend neu eingerichtet
 werden. Es gibt keinen automatischen Umbau alter Klartextbestände. Vorhandene
 Klartextkopien und alte Datenbankexporte werden durch diese Änderung nicht verändert.
+
+### Optionale Startvorgaben
 
 Die folgenden Startvorgaben sind optional. Beim Start legt die Anwendung fehlende
 Anbieterzeilen in `external_providers` mit diesen Werten an. Vorhandene Zeilen
@@ -219,6 +230,7 @@ Details zu Einrichtung, Regeln, Wiederherstellung und Grenzen stehen unter
 [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
 Fehlgeschlagene Bestätigungen kehren zur Kontosicherheit mit passender Meldung zurück,
 sie beginnen keine neue Registrierung.
+
 ### Welche Kontoaktionen möglich sind
 
 Die folgende Übersicht ergänzt die jeweils geltende 2FA-Regel. Ein eingerichteter Faktor

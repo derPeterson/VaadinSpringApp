@@ -7,11 +7,16 @@ server.address=127.0.0.1
 app.security.expose-h2-console=false
 spring.h2.console.enabled=false
 
-# Nur fuer die erste Adminanlage aktivieren; beide leeren Werte lokal ausfuellen.
+# Nur fuer die erste Adminanlage aktivieren; Passwort und Schluessel lokal ausfuellen.
 app.bootstrap.enabled=true
 app.bootstrap.admins[0].email=manual-admin@example.test
 app.bootstrap.admins[0].password=
 app.config.defaults.rememberMe.secret.key=
+
+# Eigener zufaelliger 32-Byte-Schluessel als Base64; fuer die Admin-2FA erforderlich.
+app.security.totp-encryption-key=
+# Nur fuer Anbieterpruefungen: separater 32-Byte-Schluessel, nicht den TOTP-Schluessel wiederverwenden.
+app.security.provider-secrets-encryption-key=
 
 # Erstbefuellung: vorhandene DB-Werte gehen diesen Vorgaben vor.
 app.config.defaults.service.name=Vaadin Handpruefung

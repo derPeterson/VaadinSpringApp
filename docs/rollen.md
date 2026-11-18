@@ -12,7 +12,7 @@ Der Superadmin erhält zusätzlich zu den Adminrechten folgende Befugnisse:
 - Superadmin-Konten anlegen, bearbeiten, sperren und löschen sowie die
   Superadmin-Rolle vergeben oder entziehen. Die Schutzregel für den letzten
   aktiven Superadmin gilt weiterhin.
-- Bei der administrativen Kontoanlage ein **Entwicklungskonto** anlegen. Es
+- Bei der administrativen Kontoanlage ein **Entwicklerkonto** anlegen. Es
   sendet keine Kontomails, besitzt aber dieselben Rollen- und 2FA-Prüfungen wie
   ein reguläres Konto. Das Kennzeichen wird nach der Anlage nicht über die
   Benutzerbearbeitung geändert.
@@ -53,8 +53,8 @@ Details: [Benutzerverwaltung](anwendung.md#administration),
 Zusätzlich zu den gemeinsamen Kontofunktionen darf ein Admin:
 
 - Die Administration öffnen und Konten ohne Superadmin-Rolle verwalten:
-  anlegen, bearbeiten, aktivieren, deaktivieren und löschen. Dazu gehören auch
-  andere Admin-Konten. Rollen ohne Superadmin-Berechtigung können im Rahmen
+  anlegen, bearbeiten, den Zugang administrativ sperren oder entsperren und löschen.
+  Dazu gehören auch andere Admin-Konten. Rollen ohne Superadmin-Berechtigung können im Rahmen
   dieser Verwaltung zugewiesen werden.
 - Benutzerdetails einschließlich Registrierungsweg, verfügbaren Anmeldewegen
   und E-Mail-Nachweis einsehen. Verifikations- und Passwortresetmails für dafür
@@ -166,7 +166,7 @@ Sichtbarkeit eines Buttons. Sperren, Löschung, Rollenänderungen und widerrufen
 Sitzungen müssen auch bei bereits geöffneten Ansichten berücksichtigt werden.
 Die Anmeldung über Google, Microsoft oder Portalpasswort verleiht keine höheren
 Rollen. „Verifiziert“, „Nicht geprüft“ und der Registrierungsweg sind ebenfalls
-keine administrativen Rollen. Das separate Merkmal Entwicklungskonto verleiht
+keine administrativen Rollen. Das separate Merkmal Entwicklerkonto verleiht
 ebenfalls keine zusätzlichen Rechte.
 
 Die 2FA-Regeln können sich nach Rolle und Aktion unterscheiden. Mehrere Rollen

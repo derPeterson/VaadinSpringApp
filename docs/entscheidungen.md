@@ -12,7 +12,7 @@ Implementierung steht im Code; begründete Sonar-Ausnahmen stehen zusätzlich am
 | Frische Rechteprüfung in Diensten | Sperren, Widerruf und Rollenänderungen gelten auch in geöffneten Ansichten | Schutz darf nicht auf sichtbare Buttons beschränkt werden |
 | Versionierung plus Kontosperren | Formularkonflikte und konkurrierende Sicherheitsaktionen sind kontrolliert | Mehrzeilige Invarianten wie letzter Superadmin brauchen zusätzliche gemeinsame Sperren |
 | Typisierte gemeinsame Übersetzungen | Anwendung und Browsertests nutzen denselben DE-/EN-Vertrag | Fehlende Schlüssel müssen sichtbar fehlschlagen; keine stillen Sprach-Fallbacks |
-| Konservative Mailclaims | Unklarer SMTP-Ausgang wird nicht automatisch doppelt versendet | Keine Exactly-once-Garantie; IN_PROGRESS kann manuelle Entscheidung verlangen |
+| Konservative Mailclaims | Unklarer SMTP-Ausgang wird nicht automatisch doppelt versendet | Keine Exactly-once-Garantie; alte Claims können ohne Neuversand manuell oder nach freigegebener Automatikregel beendet werden |
 | Gemeinsame Theme-Tokens | Farben und Bausteine zentral austauschbar | CSS-Ladereihenfolge und lokale Geltungsbereiche bleiben Teil des Vertrags |
 | Gezielte Logs mit sicheren Metadaten | Diagnose ohne Credential-/Inhaltsflut | Freie Exceptiontexte nicht ungeprüft ausgeben |
 
