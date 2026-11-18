@@ -615,10 +615,15 @@ Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
 kleinerer Aufklapppfeil der Seitennavigation, runder Schaltergriff, Pflichtfeldpunkt direkt hinter dem Label,
 Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
 ohne Einrückung um die Pfeilbreite, Kalender (Datumsauswahl) im Cosmos-Stil mit
-dunkler Fläche ohne Auras Zwischenflächen, 36 px hohen Tagen (am Desktop auch 36 px breit,
+dunkler Kalenderfläche, 36 px hohen Tagen (am Desktop auch 36 px breit,
 mobil über die verfügbare Kalenderbreite verteilt), „heute“ als Akzentschrift ohne
 Kreis, gemeinsamer Hoverfläche, ausgewähltem Tag in `--cosmos-primary-color`, kleiner
-Jahresspalte ohne Markierungsfläche und ungefüllten Buttons „Heute“/„Abbrechen“, Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
+Jahresspalte mit leicht abgedunkeltem Hintergrund, feiner Trennlinie und nativer seitlicher
+Markierung. Die Jahresspalte verwendet `--vaadin-date-picker-year-scroller-background`
+und `--vaadin-date-picker-year-scroller-border-color`; ihre Auswahl bleibt ohne zusätzliche
+Markierungsfläche. „Heute“/„Abbrechen“ sind native Tertiärbuttons ohne Rahmen oder Füllung
+in `--cosmos-primary-text-color`. Fokus und Hover bleiben nativ.
+Weitere Anpassungen: Schließen-Buttons (`cosmos-overlay-close`) mit mittigem 18-px-Symbol
 ohne Abstand zum leeren Textbereich, Cosmos-Auswahlzeilen (`cosmos-reference-option`) ohne
 Auras Fokusrahmen, Innenabstand und Hover-/Active-Fläche auf dem Eintrag (die einzige
 Fläche zeichnet die Zeile), Feldfehler in 13 px/16 px mit `--cosmos-error-text-color` ohne

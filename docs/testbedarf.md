@@ -2,6 +2,14 @@
 
 ## Browser-Tests
 
+- **DatePicker-Overlay: Textaktionen und Jahresspalte — offen.**
+  Vorhandene Datumsauswahl in DE/EN auf Desktop und Smartphone prüfen: „Heute“ und
+  „Abbrechen“ als rahmenlose Aktionen in Cosmos-Akzenttextfarbe, Jahresspalte mit
+  dunklerer Fläche, feiner Trennlinie und nativer seitlicher Markierung. Auf dem
+  Smartphone die native Jahresauswahl öffnen. Fokus, Hover, Jahreswechsel und
+  Datumsauswahl bleiben bedienbar; kein Überlauf. Vom Benutzer gesichtet und
+  abgenommen; der automatisierte Browsernachtest bleibt ohne Freigabe offen.
+
 - **Globale Notifications: responsive Position, Aura-Abstand und Statussymbole — offen.**
   Bestehende Profil-/Notification-Varianten in DE/EN bei Desktop- und Smartphonebreite
   nachprüfen: ab 768 px oben rechts unter dem Header, darunter unten mittig ohne

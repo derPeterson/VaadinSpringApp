@@ -110,8 +110,8 @@ vaadin-combo-box-item.cosmos-reference-option::part(content) {
     margin-inline-start: 0;
 }
 
-/* Kalender (Datumsauswahl) im Cosmos-Stil des Lumo-Stands: dunkle Overlayfläche ohne Auras
- * Zwischenflächen, 36-px-Tage, „heute“ als Akzentschrift ohne Kreis, kleine Jahresspalte. */
+/* Kalender mit Cosmos-Flächen und kompakten Tagen; die Jahresspalte behält Auras
+ * Trennlinie und seitliche Markierung, die Aktionen bleiben native Textbuttons. */
 vaadin-date-picker,
 vaadin-date-picker-overlay-content {
     --vaadin-date-picker-date-width: 36px;
@@ -124,8 +124,12 @@ vaadin-date-picker-overlay-content {
     --vaadin-date-picker-month-header-font-weight: 500;
     --vaadin-date-picker-weekday-color: var(--cosmos-text-secondary-color);
     --vaadin-date-picker-weekday-font-weight: 400;
-    --vaadin-date-picker-year-scroller-background: transparent;
-    --vaadin-date-picker-year-scroller-border-color: transparent;
+    --vaadin-date-picker-year-scroller-background: color-mix(
+        in srgb,
+        var(--cosmos-overlay-background) 85%,
+        var(--cosmos-color-black)
+    );
+    --vaadin-date-picker-year-scroller-border-color: var(--cosmos-border-color);
     --vaadin-date-picker-year-scroller-current-year-color: var(--cosmos-primary-text-color);
 }
 
@@ -144,9 +148,13 @@ vaadin-month-calendar::part(today) {
 }
 
 vaadin-month-calendar::part(today)::before,
-vaadin-date-picker-year-scroller::before,
 vaadin-date-picker-year[selected]::after {
     content: none;
+}
+
+/* Die native Kerbe verbindet die Kalenderfläche mit der dunkleren Jahresspalte. */
+vaadin-date-picker-year-scroller::before {
+    background: var(--cosmos-overlay-background) padding-box;
 }
 
 vaadin-month-calendar::part(date selected) {
@@ -178,7 +186,9 @@ vaadin-date-picker-year:is([current], [selected])::part(year-number) {
     opacity: 1;
 }
 
-/* Die native Tertiärvariante überstimmt die allgemeinere Cosmos-Buttonfläche. */
+/* Die nativen Tertiäraktionen überstimmen nur Fläche, Rahmen und Textfarbe der Cosmos-Buttons. */
 vaadin-date-picker-overlay-content > vaadin-button[theme~="tertiary"] {
     background: transparent;
+    border-color: transparent;
+    color: var(--cosmos-primary-text-color);
 }
