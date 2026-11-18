@@ -1625,7 +1625,21 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         if (actionLocator.evaluate("element => element.localName").equals("vaadin-button")) {
           assertThat(actionLocator).hasCSS("opacity", "0.45");
         } else {
-          assertThat(actionLocator).isDisabled();
+          // Playwright erkennt den Zustand am nativen Input, nicht an jeder Vaadin-Hülle.
+          assertThat(actionLocator.locator("input")).isDisabled();
+          String markerPart =
+              actionLocator.evaluate("element => element.localName").equals("vaadin-checkbox")
+                  ? "checkbox"
+                  : "marker";
+          Locator markerLocator = actionLocator.locator("[part=" + markerPart + "]");
+          String disabledMarkerColor =
+              (String)
+                  markerLocator.evaluate("element => getComputedStyle(element).backgroundColor");
+          actionLocator.evaluate("element => element.disabled = false");
+          assertThat(markerLocator).not().hasCSS("background-color", disabledMarkerColor);
+          actionLocator.evaluate("element => element.disabled = true");
+          assertThat(markerLocator).hasCSS("background-color", disabledMarkerColor);
+          assertThat(actionLocator.locator("input")).isDisabled();
         }
       }
       AllurePlaywright.attachScreenshot("Aura-Felder " + viewportWidth, browserPage);
