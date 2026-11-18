@@ -105,6 +105,7 @@ final class BrowserSuites {
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
       case "avatar-group" -> List.of(AvatarGroupBrowserTest.class);
+      case "inbox-pagination" -> List.of(NotificationInboxBrowserTest.class);
       case "duration-custom-field" -> List.of(DurationCustomFieldBrowserTest.class);
       case "notification-variants" ->
           List.of(

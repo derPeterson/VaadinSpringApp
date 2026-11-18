@@ -13,7 +13,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -47,7 +46,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -83,21 +81,13 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
   private final Button dismissReadButton = new Button(AppIcon.TRASH.create());
 
   // Seitenauswahl und Zusammenfassung
-  private final Button previousPageButton = new Button();
-  private final Button nextPageButton = new Button();
+  private final CosmosPagination inboxPagination;
   private final Button refreshInboxButton = new Button();
   private final Button openHistoryButton = new Button();
-  private final Span pageLabel = new Span();
-  private final ComboBox<Integer> pageSize = new ComboBox<>();
-  private final Span pageTotal = new Span();
   private long totalItems;
-  private final Button firstPageButton = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
-  private final Button lastPageButton = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
-  private final Div pageNumbers = new Div();
   private final TextField notificationSearchField = new TextField();
   private final CosmosMetricCard totalNotificationsMetricCard = new CosmosMetricCard();
   private final CosmosMetricCard unreadNotificationsMetricCard = new CosmosMetricCard();
-  private int totalPages = 1;
   private final Span notificationRetentionSpan = new Span();
   private final Span previewHint = new Span();
   private List<Long> unreadIds = List.of();
@@ -119,6 +109,17 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     this.userNotificationService = userNotificationService;
     this.httpSession = httpSession;
     this.compact = compact;
+    inboxPagination =
+        new CosmosPagination(
+            messageProperties,
+            selectedPage -> {
+              page = selectedPage;
+              refreshInbox();
+            },
+            selectedPageSize -> {
+              page = 0;
+              refreshInbox();
+            });
 
     notificationActionConfirmation =
         new PortalConfirmationDialog(
@@ -145,17 +146,13 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     inboxToolbarDiv.addClassName("cosmos-notifications-actions");
     configureCommonActions();
 
-    Div inboxPagingDiv =
-        new Div(firstPageButton, previousPageButton, pageNumbers, nextPageButton, lastPageButton);
-    inboxPagingDiv.addClassName("cosmos-notifications-actions");
-    inboxPagingDiv.setVisible(!compact);
     openHistoryButton.setVisible(compact);
     notificationRetentionSpan.addClassName("cosmos-notifications-secondary");
 
     if (compact) {
       buildPreview(inboxToolbarDiv);
     } else {
-      buildInbox(inboxToolbarDiv, inboxPagingDiv);
+      buildInbox(inboxToolbarDiv);
     }
 
     add(notificationActionConfirmation, notificationReadAllConfirmationDialog);
@@ -211,27 +208,9 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     dismissReadButton.addClickListener(e -> confirmDismissRead());
     refreshInboxButton.addClickListener(e -> refreshInbox(true));
     markAllReadButton.addClickListener(e -> confirmMarkAllNotificationsAsRead());
-    previousPageButton.addClickListener(e -> {
-      if (page > 0) {
-        page--;
-      }
-      refreshInbox();
-    });
-    nextPageButton.addClickListener(e -> {
-      page++;
-      refreshInbox();
-    });
     openHistoryButton.addClickListener(e -> {
       closeAction.run();
       UI.getCurrent().navigate(UserNotificationsView.class);
-    });
-    firstPageButton.addClickListener(e -> {
-      page = 0;
-      refreshInbox();
-    });
-    lastPageButton.addClickListener(e -> {
-      page = Math.max(0, totalPages - 1);
-      refreshInbox();
     });
   }
 
@@ -275,7 +254,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     addToFooter(previewFooterDiv);
   }
 
-  private void buildInbox(Div inboxToolbarDiv, Div inboxPagingDiv) {
+  private void buildInbox(Div inboxToolbarDiv) {
     SvgIcon inboxArchiveSvgIcon = AppIcon.BELL.create();
     inboxArchiveSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div inboxIconDiv = new Div(inboxArchiveSvgIcon);
@@ -319,32 +298,14 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     inboxToolbarDiv.add(inboxControlsDiv, notificationSearchField);
     inboxToolbarDiv.addClassName("cosmos-notification-inbox-toolbar");
     notificationRows.addClassName("cosmos-notification-inbox-rows");
-    previousPageButton.setIcon(AppIcon.ANGLE_LEFT.create());
-    nextPageButton.setIcon(AppIcon.ANGLE_RIGHT.create());
-    pageNumbers.addClassName("cosmos-notification-inbox-page-numbers");
-    inboxPagingDiv.addClassName("cosmos-notification-inbox-pagination");
-    pageSize.setId("notifications-inbox-page-size");
-    pageSize.addClassName("portal-page-size");
-    CosmosComboBoxStyling.styleChoice(pageSize, Object::toString, true);
-    pageSize.setItems(10, 20, 50);
-    pageSize.setValue(10);
-    pageSize.setAllowCustomValue(false);
-    pageSize.setWidth("64px");
-    pageSize.addValueChangeListener(e -> {
-      if (e.getValue() != null) {
-        page = 0;
-        refreshInbox();
-      }
-    });
-    Div inboxSummaryDiv = new Div(pageLabel, pageSize);
-    pageTotal.addClassName("cosmos-notification-inbox-range");
-    inboxSummaryDiv.addClassName("cosmos-notification-inbox-page-summary");
-    Div paginationRowDiv = new Div(inboxSummaryDiv, pageTotal, inboxPagingDiv);
-    paginationRowDiv.addClassName("cosmos-notification-inbox-pagination-row");
+    inboxPagination.addClassName("cosmos-notification-inbox-pagination-row");
+    inboxPagination.getPageSizeSelector().setId("notifications-inbox-page-size");
+    inboxPagination.getPageSizeSelector().addClassName("portal-page-size");
+    inboxPagination.getPageSizeSelector().setWidth("64px");
     Div retentionNoteDiv = new Div(AppIcon.INFO_CIRCLE.create(), notificationRetentionSpan);
     retentionNoteDiv.addClassName("cosmos-notification-inbox-retention");
 
-    Div inboxFooterDiv = new Div(paginationRowDiv, retentionNoteDiv);
+    Div inboxFooterDiv = new Div(inboxPagination, retentionNoteDiv);
     inboxFooterDiv.addClassName("cosmos-notification-inbox-footer");
     add(inboxHeaderDiv, inboxToolbarDiv, notificationRows, inboxFooterDiv);
   }
@@ -386,16 +347,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     markAllReadButton.setTooltipText(messageProperties.getNotificationsMarkAll());
     dismissReadButton.setTooltipText(messageProperties.getNotificationsDismissRead());
     dismissReadButton.setAriaLabel(messageProperties.getNotificationsDismissRead());
-    pageLabel.setText(messageProperties.getAdminUsersPaginationPerPage());
-    pageSize.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
-    previousPageButton.setAriaLabel(messageProperties.getNotificationsPrevious());
-    previousPageButton.setTooltipText(messageProperties.getNotificationsPrevious());
-    nextPageButton.setAriaLabel(messageProperties.getNotificationsNext());
-    nextPageButton.setTooltipText(messageProperties.getNotificationsNext());
-    firstPageButton.setAriaLabel(messageProperties.getAdminUsersPaginationFirstPage());
-    firstPageButton.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
-    lastPageButton.setAriaLabel(messageProperties.getAdminUsersPaginationLastPage());
-    lastPageButton.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
+    inboxPagination.refreshTexts();
     openHistoryButton.setText(messageProperties.getNotificationsHistory());
     refreshRetention();
     refreshPreviewHint();
@@ -447,7 +399,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
       return userNotificationService.inbox(httpSession, selectedFilter(), page, PREVIEW_LIMIT);
     }
     if (notificationSearchField.isEmpty()) {
-      return userNotificationService.inbox(httpSession, selectedFilter(), page, selectedPageSize());
+      return userNotificationService.inbox(
+          httpSession, selectedFilter(), page, inboxPagination.getPageSize());
     }
     return userNotificationService.searchInbox(
         httpSession,
@@ -456,7 +409,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
         UserNotificationTexts.findMatchingNotificationTypes(
             messageProperties, notificationSearchField.getValue()),
         page,
-        selectedPageSize());
+        inboxPagination.getPageSize());
   }
 
   public void refreshInbox() {
@@ -487,7 +440,13 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
       dismissReadButton.setEnabled(!compact && userNotificationService.readCount(httpSession) > 0);
       renderRows(notificationPage);
 
-      updateInboxPagination(notificationPage);
+      if (!compact) {
+        inboxPagination.showPage(
+            page,
+            notificationPage.getTotalElements(),
+            inboxPagination.getPageSize(),
+            notificationPage.getNumberOfElements());
+      }
       if (notifyResult) {
         NotificationHelper.getInstance()
             .showTextNotification(
@@ -515,26 +474,6 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     } finally {
       updatingFilterLabels = false;
     }
-  }
-
-  private void updateInboxPagination(Page<Item> notificationPage) {
-    totalPages = Math.max(1, notificationPage.getTotalPages());
-    firstPageButton.setEnabled(page > 0);
-    previousPageButton.setEnabled(page > 0);
-    nextPageButton.setEnabled(notificationPage.hasNext());
-    lastPageButton.setEnabled(notificationPage.hasNext());
-    if (!compact) {
-      renderPageNumbers();
-    }
-
-    long firstEntryNumber = notificationPage.isEmpty() ? 0 : (long) page * selectedPageSize() + 1;
-    long lastEntryNumber =
-        notificationPage.isEmpty()
-            ? 0
-            : (long) page * selectedPageSize() + notificationPage.getNumberOfElements();
-    pageTotal.setText(
-        messageProperties.getPortalPaginationRange(
-            firstEntryNumber, lastEntryNumber, notificationPage.getTotalElements()));
   }
 
   private void refreshOpenedDetail(Page<Item> result) {
@@ -580,53 +519,11 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     notificationRows.add(new Span(messageProperties.getNotificationsUnavailable()));
     markAllReadButton.setEnabled(false);
     dismissReadButton.setEnabled(false);
-    previousPageButton.setEnabled(false);
-    nextPageButton.setEnabled(false);
-    firstPageButton.setEnabled(false);
-    lastPageButton.setEnabled(false);
-    pageNumbers.removeAll();
-    pageTotal.setText("–");
+    inboxPagination.showUnavailable();
     totalNotificationsMetricCard.setValue("–");
     unreadNotificationsMetricCard.setValue("–");
     if (notificationDetailDialog != null) {
       notificationDetailDialog.close();
-    }
-  }
-
-  private int selectedPageSize() {
-    return Objects.requireNonNullElse(pageSize.getValue(), 10);
-  }
-
-  private void renderPageNumbers() {
-    pageNumbers.removeAll();
-    TreeSet<Integer> visiblePageIndices = new TreeSet<Integer>();
-    visiblePageIndices.add(0);
-    visiblePageIndices.add(totalPages - 1);
-    int firstVisiblePageIndex = totalPages <= 7 ? 0 : Math.clamp(page - 1L, 1, totalPages - 4);
-    int lastVisiblePageIndex =
-        totalPages <= 7 ? totalPages - 1 : Math.clamp(page + 1L, 3, totalPages - 2);
-    for (int pageIndex = firstVisiblePageIndex; pageIndex <= lastVisiblePageIndex; pageIndex++) {
-      visiblePageIndices.add(pageIndex);
-    }
-    int preceding = -1;
-    for (int pageIndex : visiblePageIndices) {
-      if (preceding >= 0 && pageIndex - preceding > 1) {
-        pageNumbers.add(new Span("…"));
-      }
-      Button pageNumberButton =
-          new Button(
-              Integer.toString(pageIndex + 1),
-              e -> {
-                page = pageIndex;
-                refreshInbox();
-              });
-      pageNumberButton.setAriaLabel(messageProperties.getAdminUsersPaginationPage(pageIndex + 1));
-      if (pageIndex == page) {
-        pageNumberButton.addThemeVariants(ButtonVariant.PRIMARY);
-        pageNumberButton.getElement().setAttribute("aria-current", "page");
-      }
-      pageNumbers.add(pageNumberButton);
-      preceding = pageIndex;
     }
   }
 

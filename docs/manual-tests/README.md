@@ -152,6 +152,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Native Notification-Texte | Repräsentative Varianten in DE/EN auf Desktop/Smartphone abgenommen; übrige Aufrufer auf Wunsch ohne eigene Browserrunde übernommen |
 | Einheitliche Dauerfelder | 2FA-Pilot mit Vergleichsaufnahmen; übrige Felder vom Benutzer gesichtet und ohne weitere Screenshotrunde übernommen |
 | Native AvatarGroup | Rahmen und Cosmos-Überlaufliste warten laut Katalog noch auf Sichtung; vollständige Details-Liste bleibt erhalten |
+| Gemeinsame Inbox-Pagination und zentrierte Seitenzahlen | Vom Benutzer nach den Vorher-/Nachher-Vergleichen von Benutzerverwaltung, Versandhistorie und Inbox in DE/EN auf Desktop/Smartphone abgenommen |
 
 Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
 kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem

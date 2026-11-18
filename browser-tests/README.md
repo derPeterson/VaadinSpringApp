@@ -90,6 +90,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 
 | Suite | Inhalt | Fälle |
 | --- | --- | ---: |
+| `inbox-pagination` | Benutzerverwaltung, Versandhistorie und Inbox bei 1280/390 px: zentrierte Seitenzahlen, Originalaufnahmen und Messwerte; echte Inbox-Seiten, Größenwechsel, Suche/Lesefilter sowie Vorschaugrenze und Sammellesen | 2 |
 | `tab-overflow` | Kontosicherheit, 2FA-Rollen, Anmeldeanbieter und Mailqueue bei 1280/1024/390/320 px: lesbare Beschriftungen, native Überlaufpfeile, Auswahl und gezielte Vergleichsaufnahmen | 4 |
 | `identity-overflow` | Normale und lange Benutzerangaben im Kopf, in Profilkarte und Benutzermenü sowie in der administrativen Löschbestätigung bei 1280/390 px | 4 |
 | `mobile-confirmation-footers` | Nur Formularschutz und „Alle anderen abmelden“ bei 1280/390 px: Aktionsbreiten, Reihenfolge, Fokus, Abbruch und unveränderte Einzelabmeldung | 4 |
@@ -167,11 +168,11 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
 | `segmented-selection` | Profilbild, Inbox/Glockenvorschau und Benutzer-/Ticketfilter: native Tabs, Tastatur, Auswahl und Screenshots bei 1280/390/320 px | 3 |
-| `component-follow-up` | Gezielte Nachtests für Zeitfelder, Details-Schalter, Kontoaktionen/-typ, Sperre/Selbstdeaktivierung, Verifikations-/Reaktivierungsdarstellung und E-Mail-Linkrahmen; kanonische Mailvorlagen werden ergänzend separat von tatsächlichen Mailpit-Journeys dargestellt | 3 |
+| `component-follow-up` | Gezielte Nachtests für Zeitfelder, Details-Schalter, Kontoaktionen/-typ, Sperre/Selbstdeaktivierung, Verifikations-/Reaktivierungsdarstellung und E-Mail-Linkrahmen; kanonische Mailvorlagen werden ergänzend separat von tatsächlichen Mailpit-Journeys dargestellt | 4 |
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `notifications` | Versand, persönliche Inbox/Header-Vorschau, Sammellesebestätigung, Löschaktionen und Versandarchiv | 10 |
+| `notifications` | Versand, persönliche Inbox/Header-Vorschau, Sammellesebestätigung, Löschaktionen und Versandarchiv | 11 |
 | `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape, native Neuladehinweise und Verwerfen auf Desktop/Smartphone | 12 |
 | `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü, Header-/Filter-Mauszeiger und native Scrollleisten sowie integriertes Zeitfeld und Seitenpfade | 12 |
 | `breadcrumbs` | Native Elternpfade in Besucherbereich, Portal und Administration; alle Konfigurationsgruppen und gruppenspezifische Titel, Elternnavigation per Tastatur, Profilentwurfsschutz und gesperrte 2FA-/Hilfe-/Verifikations-/Reaktivierungspfade auf Desktop/Smartphone | 3 |

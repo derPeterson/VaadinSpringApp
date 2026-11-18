@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.function.SerializableConsumer;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeSet;
 
 /** Gemeinsame native Pagination mit vollständiger oder auf zwei Pfeile verkürzter Navigation. */
@@ -32,6 +33,9 @@ public final class CosmosPagination extends HorizontalLayout {
   private int currentPage;
   private int totalPages = 1;
   private long totalItems;
+  private int displayedItemCount;
+  private boolean available = true;
+  private final int defaultPageSize;
   private final Mode mode;
 
   public CosmosPagination(
@@ -58,12 +62,13 @@ public final class CosmosPagination extends HorizontalLayout {
     this.messageProperties = messageProperties;
     this.selectPageConsumer = selectPageConsumer;
     this.mode = mode;
+    defaultPageSize = pageSizes.getFirst();
     addClassName("admin-user-pagination");
     setWidthFull();
     setAlignItems(Alignment.CENTER);
     setPadding(false);
     pageSizeSelector.setItems(pageSizes);
-    pageSizeSelector.setValue(pageSizes.getFirst());
+    pageSizeSelector.setValue(defaultPageSize);
     pageSizeSelector.setAllowCustomValue(false);
     CosmosComboBoxStyling.styleChoice(pageSizeSelector, Object::toString, true);
     pageSizeSelector.addClassName("portal-pagination-size");
@@ -120,11 +125,35 @@ public final class CosmosPagination extends HorizontalLayout {
   }
 
   public void showPage(int pageIndex, long totalItems, int pageSize) {
+    showPage(pageIndex, totalItems, pageSize, pageSize);
+  }
+
+  /** Die Bereichsanzeige berücksichtigt die tatsächlich geladenen Einträge der Seite. */
+  public void showPage(int pageIndex, long totalItems, int pageSize, int displayedItemCount) {
     this.totalItems = totalItems;
     totalPages = Math.clamp(Math.ceilDiv(totalItems, (long) pageSize), 1, Integer.MAX_VALUE);
     currentPage = Math.clamp(pageIndex, 0, totalPages - 1);
+    int remainingPageItemCount =
+        (int) Math.min(pageSize, totalItems - (long) currentPage * pageSize);
+    this.displayedItemCount = Math.clamp(displayedItemCount, 0, remainingPageItemCount);
+    available = true;
 
     refreshTexts();
+  }
+
+  /** Sperrt die Navigation bei einem Ladefehler; die Seitengröße bleibt bedienbar. */
+  public void showUnavailable() {
+    available = false;
+    refreshTexts();
+  }
+
+  public int getPageSize() {
+    return Objects.requireNonNullElse(pageSizeSelector.getValue(), defaultPageSize);
+  }
+
+  /** Für lokale Kennungen und Maße; die Auswahl verarbeitet weiterhin dieser Baustein. */
+  public ComboBox<Integer> getPageSizeSelector() {
+    return pageSizeSelector;
   }
 
   public void refreshTexts() {
@@ -134,13 +163,16 @@ public final class CosmosPagination extends HorizontalLayout {
     if (mode == Mode.PREVIOUS_NEXT) {
       pageSizeSelector.setTooltipText(messageProperties.getAdminUsersPaginationPerPage());
     }
-    int selectedPageSize = pageSizeSelector.getValue();
-    long firstDisplayedItemNumber = totalItems == 0 ? 0 : (long) currentPage * selectedPageSize + 1;
+    int selectedPageSize = getPageSize();
+    long firstDisplayedItemNumber =
+        displayedItemCount == 0 ? 0 : (long) currentPage * selectedPageSize + 1;
     long lastDisplayedItemNumber =
-        Math.min(((long) currentPage + 1) * selectedPageSize, totalItems);
+        displayedItemCount == 0 ? 0 : firstDisplayedItemNumber + displayedItemCount - 1;
     totalItemsSpan.setText(
-        messageProperties.getPortalPaginationRange(
-            firstDisplayedItemNumber, lastDisplayedItemNumber, totalItems));
+        available
+            ? messageProperties.getPortalPaginationRange(
+                firstDisplayedItemNumber, lastDisplayedItemNumber, totalItems)
+            : "–");
     totalItemsSpan.addClassName("admin-user-pagination-total");
 
     labelPageButton(firstPageButton, messageProperties.getAdminUsersPaginationFirstPage());
@@ -148,14 +180,14 @@ public final class CosmosPagination extends HorizontalLayout {
     labelPageButton(nextPageButton, messageProperties.getAdminUsersPaginationNextPage());
     labelPageButton(lastPageButton, messageProperties.getAdminUsersPaginationLastPage());
 
-    firstPageButton.setEnabled(currentPage > 0);
-    previousPageButton.setEnabled(currentPage > 0);
-    nextPageButton.setEnabled(currentPage < totalPages - 1);
-    lastPageButton.setEnabled(currentPage < totalPages - 1);
+    firstPageButton.setEnabled(available && currentPage > 0);
+    previousPageButton.setEnabled(available && currentPage > 0);
+    nextPageButton.setEnabled(available && currentPage < totalPages - 1);
+    lastPageButton.setEnabled(available && currentPage < totalPages - 1);
 
     pageNumberButtonsLayout.removeAll();
 
-    if (mode == Mode.PREVIOUS_NEXT) {
+    if (!available || mode == Mode.PREVIOUS_NEXT) {
       return;
     }
     int previousPageIndex = -1;

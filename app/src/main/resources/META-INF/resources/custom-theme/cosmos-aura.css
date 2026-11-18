@@ -73,6 +73,11 @@ vaadin-button.cosmos-overlay-close {
     padding: 0;
 }
 
+/* Seitenzahlen haben ebenfalls kein Präfix: Der native Abstand würde sie nach rechts versetzen. */
+vaadin-button.admin-user-pagination-number {
+    --vaadin-button-gap: 0;
+}
+
 /* Kompakte Seitengrößenauswahl: kleinerer Abstand zum Pfeil, damit zweistellige Werte passen. */
 :is(.portal-pagination-size, .portal-page-size) {
     --vaadin-input-field-container-gap: 4px;

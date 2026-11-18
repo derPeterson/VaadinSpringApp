@@ -54,6 +54,7 @@ class BrowserExecutionPlanTest {
         "profile-notification",
         "notification-variants",
         "duration-custom-field",
+        "inbox-pagination",
         "aura-fields",
         "avatar-group",
         "avatars",
@@ -156,6 +157,7 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "inbox-pagination" -> Set.of("paginationPreviewLimitAndSentArchive");
           case "aura-fields" ->
               Set.of(
                   "nativeFieldsShareDisabledColorsAndErrorPresentation",

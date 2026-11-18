@@ -7,11 +7,9 @@
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Der aktuelle Zwischenstand liegt auf `main`;
-  die Gesamtumsetzung bleibt ausdrücklich offen. Weitere Arbeiten später
-  auf einem Folgebranch fortsetzen.
-  Als nächste Kandidaten die Inbox-Seitennavigation mit `CosmosPagination`,
-  vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
+  Die Gesamtumsetzung bleibt ausdrücklich offen und wird auf
+  `codex/vaadin-komponenten-folgearbeiten-5` fortgesetzt.
+  Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
   gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
   unten erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
 

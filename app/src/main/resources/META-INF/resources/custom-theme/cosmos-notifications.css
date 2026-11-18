@@ -481,7 +481,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     gap: var(--cosmos-space-l);
 }
 
-.cosmos-notification-inbox-page-summary {
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-summary {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -491,25 +491,29 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     font-weight: var(--cosmos-font-weight-regular);
 }
 
-.cosmos-notification-inbox-page-summary vaadin-combo-box {
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-summary vaadin-combo-box {
     --vaadin-input-field-value-font-size: var(--cosmos-font-size-s);
     --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-medium);
     font-size: var(--cosmos-font-size-s);
 }
 
-.cosmos-notification-inbox-pagination,
-.cosmos-notification-inbox-page-numbers {
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-nav,
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-numbers {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--cosmos-space-xs);
 }
 
-.cosmos-notification-inbox-pagination {
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-nav {
     margin-inline-start: auto;
 }
 
-.cosmos-notification-inbox-pagination vaadin-button {
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-ellipsis {
+    padding-inline: 0;
+}
+
+.cosmos-notification-inbox-pagination-row .admin-user-pagination-nav vaadin-button {
     width: var(--cosmos-pagination-size);
     min-width: var(--cosmos-pagination-size);
     height: var(--cosmos-pagination-size);
@@ -1541,7 +1545,7 @@ vaadin-app-layout.cosmos-reference-admin
     box-sizing: border-box;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-page-summary {
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row .admin-user-pagination-summary {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -1550,25 +1554,29 @@ vaadin-app-layout.cosmos-reference-admin
     font-size: var(--cosmos-font-size-xs);
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-range {
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row .admin-user-pagination-total {
     color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     white-space: nowrap;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination {
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row .admin-user-pagination-nav {
     justify-self: end;
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-page-numbers {
+.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row .admin-user-pagination-numbers {
     display: flex;
     gap: 4px;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-button {
+.cosmos-reference-portal
+    #notifications-inbox
+    .cosmos-notification-inbox-pagination-row
+    .admin-user-pagination-nav
+    vaadin-button {
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -1582,13 +1590,21 @@ vaadin-app-layout.cosmos-reference-admin
     border-radius: 6px;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-button::part(label) {
+.cosmos-reference-portal
+    #notifications-inbox
+    .cosmos-notification-inbox-pagination-row
+    .admin-user-pagination-nav
+    vaadin-button::part(label) {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination vaadin-icon {
+.cosmos-reference-portal
+    #notifications-inbox
+    .cosmos-notification-inbox-pagination-row
+    .admin-user-pagination-nav
+    vaadin-icon {
     width: 14px;
     height: 14px;
     padding: 0;
@@ -2049,12 +2065,15 @@ vaadin-combo-box-item.portal-pagination-option {
         gap: 12px;
     }
 
-    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination {
+    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row .admin-user-pagination-nav {
         grid-column: 1 / -1;
         justify-self: center;
     }
 
-    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-range {
+    .cosmos-reference-portal
+        #notifications-inbox
+        .cosmos-notification-inbox-pagination-row
+        .admin-user-pagination-total {
         justify-self: end;
     }
 

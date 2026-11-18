@@ -159,10 +159,21 @@ dient der Navigation. Fachliche Prüfungen bleiben in den Diensten.
 | Bestätigung | `PortalConfirmationDialog`, `NotificationReadAllConfirmationDialog` | `cosmos-confirmation.css` |
 | Globale Meldung | `NotificationHelper` | Gemeinsame Toast-Regeln |
 | Identität | `CosmosAvatar`, `OverlayUserIcon` | `cosmos-avatar.css`, `cosmos-shell.css` |
+| Seitennavigation | `CosmosPagination` | `admin-users.css`, lokale Anordnung in den Fachdateien |
 
 Wiederkehrende Klassen im Java-Code über `CosmosCssClasses` verwenden. Der Halter
 enthält Bezeichner, keine Gestaltung. Ein neues Textfeld braucht keine zusätzlichen
 lokalen Farb-, Fokus- oder Disabled-Regeln.
+
+`CosmosPagination` verbindet native `HorizontalLayout`, `ComboBox` und `Button` für
+Benutzerverwaltung, Versandhistorie, Ticketliste und persönliche Inbox. Nummern,
+Pfeile und Seitengrößen werden gemeinsam verwaltet; Filter und Datenabfragen bleiben
+beim Aufrufer. Die Inbox behält ihre eigene Footeranordnung in
+`cosmos-notifications.css`, verwendet aber die gemeinsamen `admin-user-pagination-*`-
+Klassen. `showPage` kann die tatsächlich geladenen Zeilen berücksichtigen;
+`showUnavailable` sperrt die Navigation und zeigt einen Gedankenstrich statt des
+Bereichs. Die Seitengröße bleibt dabei bedienbar. Seitenzahlen erhalten in
+`cosmos-aura.css` keinen Abstand zu einem leeren Präfix, damit sie mittig stehen.
 
 ### Gestaltungsregeln
 

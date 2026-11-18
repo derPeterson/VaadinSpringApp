@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -191,21 +190,26 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName(
       "NOTIFY-04: Inbox-Pagination, Vorschaugrenze und Versandarchiv mit echten UI-Sendungen")
   @Description(
       """
       1. Elf Nachrichten ausschließlich über das Versandformular an ein eigenes frisches Konto senden.
-      2. Versandarchiv: neueste fünf, Metadaten und vollständige aufklappbare Details; Seitengröße 56px und nächste Seite prüfen.
+      2. Versandarchiv: neueste fünf, Metadaten und vollständige aufklappbare Details; 64 px breite Seitengrößenauswahl und nächste Seite prüfen.
       3. Empfänger-Inbox: zehn und eine Nachricht auf zwei Seiten ohne Dopplung; Seitengröße 20 zeigt alle elf.
       4. Suche findet einen Betreff, erfolglose Suche zeigt den hervorgehobenen Leerzustand; Rücksetzen erhält alle Einträge.
       5. Header-Vorschau begrenzt auf fünf Einträge; Sammellesen markiert alle elf und bleibt nach Reload erhalten.
       Erwartet: Echte persistente Pagination und Suche, Vorschaugrenze fünf, Sammellesen auch jenseits der sichtbaren Seite.
       """)
   @Tag("component-follow-up")
-  void paginationPreviewLimitAndSentArchive() {
+  @Tag("inbox-pagination")
+  void paginationPreviewLimitAndSentArchive(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     String recipient = prepareRecipient();
+    capturePagination(
+        browserPage, browserPage.locator(".admin-user-pagination:visible"), "Users", viewportWidth);
     String prefix = "Pages " + UUID.randomUUID();
     for (int index = 0; index < 11; index++) {
       send(recipient, prefix + " item " + index, "Archive body " + index);
@@ -223,6 +227,8 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     assertThat(latest.locator(".cosmos-notification-sent-details")).hasAttribute("opened", "");
     assertThat(latest.locator(".cosmos-notification-sent-body")).hasText("Archive body 10");
     assertEquals(64, archive.locator("vaadin-combo-box").boundingBox().width, 1);
+    capturePagination(
+        browserPage, archive.locator(".admin-user-pagination"), "Sent", viewportWidth);
     archive
         .getByRole(
             AriaRole.BUTTON,
@@ -236,6 +242,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
       browserActor.login(recipient, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(browserActor.browserPage).selectTestLanguage();
+      browserActor.browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
       NotificationInboxPage inbox = new NotificationInboxPage(browserActor.browserPage);
       inbox.open();
 
@@ -245,6 +252,11 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
           64,
           browserActor.browserPage.locator("#notifications-inbox-page-size").boundingBox().width,
           1);
+      capturePagination(
+          browserActor.browserPage,
+          inbox.inbox().locator(".cosmos-notification-inbox-pagination-row"),
+          "Inbox",
+          viewportWidth);
       inbox.button(inbox.inbox(), uiTexts.getNotificationsNext()).click();
 
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
@@ -294,6 +306,53 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Persistente Inbox und Pagination", browserActor.browserPage);
     }
+  }
+
+  private void capturePagination(
+      Page page, Locator paginationLocator, String context, int viewportWidth) {
+    paginationLocator.scrollIntoViewIfNeeded();
+    String evidenceName = "Pagination-" + context + "-" + viewportWidth;
+    Allure.attachment(
+        evidenceName,
+        "image/png",
+        new ByteArrayInputStream(paginationLocator.screenshot()),
+        AttachmentOptions.empty());
+    String geometry =
+        (String)
+            paginationLocator.evaluate(
+                """
+                element => JSON.stringify({
+                  width: element.getBoundingClientRect().width,
+                  height: element.getBoundingClientRect().height,
+                  numbers: [...element.querySelectorAll('vaadin-button')]
+                    // Rein numerische Beschriftungen erkennen die Seitenzahlen, nicht die Pfeile.
+                    .filter(button => /^[0-9]+$/.test(button.textContent.trim()))
+                    .map(button => {
+                      const box = button.getBoundingClientRect();
+                      const label = button.shadowRoot.querySelector('[part=label]').getBoundingClientRect();
+                      return {number: button.textContent.trim(), width: box.width, height: box.height,
+                        offsetX: label.x + label.width / 2 - box.x - box.width / 2};
+                    })
+                })
+                """);
+    Allure.attachment(evidenceName + "-geometry", "application/json", geometry);
+    assertTrue(
+        (Boolean)
+            paginationLocator.evaluate(
+                """
+                element => {
+                  // Rein numerische Beschriftungen erkennen die Seitenzahlen, nicht die Pfeile.
+                  const buttons = [...element.querySelectorAll('vaadin-button')]
+                    .filter(button => /^[0-9]+$/.test(button.textContent.trim()));
+                  return buttons.length > 0 && buttons.every(button => {
+                    const box = button.getBoundingClientRect();
+                    const label = button.shadowRoot.querySelector('[part=label]').getBoundingClientRect();
+                    return Math.abs(label.x + label.width / 2 - box.x - box.width / 2) < 0.1;
+                  });
+                }
+                """),
+        evidenceName + ": Seitenzahlen müssen mittig stehen: " + geometry);
+    AllurePlaywright.attachScreenshot(evidenceName + "-page", page);
   }
 
   private void attachMetricCardEvidence(Page browserPage, int viewportWidth) {

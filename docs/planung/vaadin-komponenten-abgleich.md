@@ -11,10 +11,15 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
-Die Gesamtumsetzung bleibt ausdrücklich offen. Der aktuelle Komponentenstand wird
-erneut lokal nach `main` zwischenintegriert; diese Integration ist kein
-Featureabschluss. Weitere Pakete später auf einem Folgebranch fortsetzen;
-die offenen Kandidaten bleiben in diesem Plan und in [TODO](../../TODO.md) erhalten.
+Die Gesamtumsetzung bleibt ausdrücklich offen. Der bisherige Komponentenstand
+liegt auf `main`; die Integration war kein Featureabschluss.
+Aktueller Folgebranch: `codex/vaadin-komponenten-folgearbeiten-5`, angelegt von
+main bei `b4502e6fb73c72a389677702fefa9f5e7ee24b6b`.
+Die Inbox-Seitennavigation mit `CosmosPagination` und die Korrektur verschobener
+Seitenzahlen sind nach den isolierten DE-/EN-Vergleichen bei 1280/390 px vom
+Benutzer abgenommen. Daraus bleibt kein offenes Paket.
+Die übrigen offenen Kandidaten bleiben in diesem Plan und in
+[TODO](../../TODO.md) erhalten.
 Native Karten, weitere Bestätigungen
 und vollständige Mailqueue-Bereinigung sind einschließlich Sonar-Bereinigung und
 abschließender großer Testrunde fertig. Ergebnisse und Grenzen stehen im
@@ -42,8 +47,7 @@ und die Wiederverwendung vorhandener nativer Cosmos-Bausteine. Gestaltung und
 Fachverhalten bleiben erhalten, soweit keine andere Entscheidung getroffen wird.
 Die unten aufgeführten Kandidaten sind noch keine pauschale Umbaufreigabe.
 
-Eine allgemeine Smartphone-Tooltip-Lösung, endgültige
-Hintergrundauswahl, sichtbare Bereinigungshistorie, Release-/Neuigkeitenablauf,
+Eine allgemeine Smartphone-Tooltip-Lösung, sichtbare Bereinigungshistorie, Neuigkeiten-Oberfläche,
 Passkeys und Hosting gehören zu eigenen Themen nach dem Komponentenumbau.
 Die offenen Aufgaben bleiben in [TODO](../../TODO.md). Diese Abgrenzung behebt
 oder erledigt die betreffenden Aufgaben nicht.
@@ -138,10 +142,10 @@ die Gestaltung des nativen Überlaufs wird gemeinsam gesichtet.
 | Anmeldeanbieter und Identitätsbestätigung | `ExternalLoginButtons` und `ExternalConnectionsComponent` verwenden native Buttons, Logos und Status-Badges. `ExternalIdentityConfirmationDialog` und `TwoFactorActionDialog` verwenden `Dialog` und [TwoFactorCodeInput](../../app/src/main/java/de/derpeterson/app/ui/components/TwoFactorCodeInput.java). | Gemeinsamen Code-Eingabebaustein weiterverwenden. Auto-Bestätigung beim Verbinden und Klick beim Trennen oder bei sicherheitsrelevanten Änderungen bleiben pro Aufrufer bewusst verschieden. |
 | 2FA-Einrichtung und Wiederherstellung | `TwoFactorView` verwendet `Tabs`, das Flow-Add-on `OtpField` und native `TextField` für Ersatzcodes. `RecoveryHelpView` verwendet den öffentlichen Rahmen und den Ticketbaustein für die anfragende Person. | In den bisher geprüften offiziellen APIs wurde kein gleichwertiges segmentiertes OTP-Feld festgestellt. Add-on mit Fokus, Einfügen, AutoFill und Completion-Ereignis erhalten. Prüfen lässt sich separat, ob der Style ohne manuelles Einfügen eines Stylesheets in den Shadow DOM auskommt. |
 | Admin-Übersicht, Benutzer und Konfiguration | `AdminView` und die Admin-Sektionen verwenden native Layouts. Das Benutzer-Grid rendert Identität, Status, Rollen und Aktionen. Konfiguration, 2FA, Anmeldeanbieter und Mailtest verwenden native Felder, `TabSheet`, `Switch` und die gemeinsame Feldhilfe. `CosmosDurationCustomField` und `AdminUserActivityFilter` kombinieren native Eingaben als `CustomField`. | Die übertragenen Badges, Kennzahlkarten und Formularlayouts beibehalten. Die Zeitfelder sind einheitlich nativ gekapselt; ihre Speicherformate und fachliche Validierung bleiben erhalten. Statische Kennzahlkarten brauchen kein Dashboard-Widget-System. |
-| Benachrichtigungen | `UserNotificationsView`, `UserNotificationsPanel` und `AdminUserNotificationsSection` verwenden native Buttons, Auswahl, `Popover`, `Dialog` und Empfänger-Avatare. Listen-, Vorschau- und Detaildarstellung sind eigene Kompositionen. | Die native Badge-Darstellung beibehalten und gegebenenfalls den Pager vereinheitlichen. Eine News-/Inbox-Zeile mit Lesen/Archivieren und Quellenstatus erfüllt einen anderen Vertrag als ein Chat-Eintrag. |
+| Benachrichtigungen | `UserNotificationsView`, `UserNotificationsPanel` und `AdminUserNotificationsSection` verwenden native Buttons, Auswahl, `Popover`, `Dialog` und Empfänger-Avatare. Listen-, Vorschau- und Detaildarstellung sind eigene Kompositionen. | Die native Badge-Darstellung und den gemeinsamen Pager beibehalten. Eine News-/Inbox-Zeile mit Lesen/Archivieren und Quellenstatus erfüllt einen anderen Vertrag als ein Chat-Eintrag. |
 | Ticketliste und Detail | [SupportTicketsComponent](../../app/src/main/java/de/derpeterson/app/ui/components/SupportTicketsComponent.java) enthält `Grid`, `Scroller`, `Tabs`, `Switch`, `TextArea` und native Buttons. Das Admin-Arbeitsraster liegt über CSS. Die eigene Ticketzeile ist ein Grid-Renderer. | `MasterDetailLayout` ist ein späterer Vergleichskandidat. Es bietet ein responsives Detail-Overlay. Das muss mit Fokusansicht, leerem Detail, mobilem Ablauf, URL-Zustand und Rückkehr zur Liste verglichen werden. `SplitLayout` ist interessant, wenn eine verschiebbare Trennung gewünscht ist. Der aktuelle Bedarf ist eine stabile Zweiteilung mit Fokusumschaltung. |
 | Ticketverlauf und Editor | Der Verlauf setzt öffentliche Nachrichten, Vermerke und Statusereignisse unterschiedlich zusammen. Der Editor koppelt `TextArea` und native Aktionen mit dem Modus für interne Vermerke, Warnhinweisen und der jeweils erlaubten Aktion. | Die Java-API von `MessageListItem` unterstützt Autor, Zeit, Text, Avatar, Varianten und Anhänge. Ein allgemeiner Komponenteninhalt für Statuszeilen mit zwei nativen Badges war in der geprüften API nicht ersichtlich. `MessageInput` hat ein Submit-Ereignis, bildet unseren Editorvertrag aber nicht vollständig ab. Die bestehende Komposition ist dafür passend. |
-| Pagination | [CosmosPagination](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosPagination.java) kombiniert `HorizontalLayout`, `ComboBox` und `Button`. Benutzerverwaltung, Versandhistorie und Ticketliste verwenden ihn. Die persönliche Inbox hat eigene Seitennavigation in `UserNotificationsPanel`. | Vaadin Grid hat keine eingebaute Leiste für manuelle Seitennavigation. Den vorhandenen Baustein beibehalten. Inbox später angleichen, wenn die gemeinsame API ihre vorhandene Bedienung trägt. Datenabfrage, Ticket-Sprung und Filterzustand gehören weiterhin in den jeweiligen Fachbereich. |
+| Pagination | [CosmosPagination](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosPagination.java) kombiniert `HorizontalLayout`, `ComboBox` und `Button`. Benutzerverwaltung, Versandhistorie, Ticketliste und persönliche Inbox verwenden ihn. `UserNotificationsPanel` behält nur Datenabfrage, Filter und lokale Anordnung. | Vaadin Grid hat keine eingebaute Leiste für manuelle Seitennavigation. Den abgenommenen gemeinsamen Baustein beibehalten. Datenabfrage, Ticket-Sprung und Filterzustand gehören weiterhin in den jeweiligen Fachbereich. |
 
 [Vaadin Login](https://vaadin.com/docs/latest/components/login),
 [Master-Detail Layout](https://vaadin.com/docs/latest/components/master-detail-layout),
@@ -186,7 +190,7 @@ den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
 **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
-Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
+Anwesenheitsauswahl nur einzeln betrachten, wenn
 die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.
 Bereits passende Bausteine wie native Switches, Tabs, Eingaben, Grids,
 Popovers und die Ticket-Status-Badges werden weiterverwendet.

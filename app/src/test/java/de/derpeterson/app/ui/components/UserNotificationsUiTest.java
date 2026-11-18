@@ -1864,12 +1864,12 @@ class UserNotificationsUiTest {
     UserNotificationsPanel notificationsPanel =
         new UserNotificationsPanel(
             messageProperties, userNotificationService, mockHttpSession, false);
-    ReflectionTestUtils.setField(notificationsPanel, "page", pageIndex);
-    ReflectionTestUtils.setField(notificationsPanel, "totalPages", 20);
-    ReflectionTestUtils.invokeMethod(notificationsPanel, "renderPageNumbers");
-    Div pageNumbersDiv = readComponentField(notificationsPanel, "pageNumbers");
+    CosmosPagination inboxPagination = readComponentField(notificationsPanel, "inboxPagination");
+    inboxPagination.showPage(pageIndex, 200, 10);
+    Component pageNumbersLayout =
+        readInboxPaginationField(notificationsPanel, "pageNumberButtonsLayout");
     List<String> pageNumberLabels =
-        streamComponentTree(pageNumbersDiv)
+        streamComponentTree(pageNumbersLayout)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
             .map(Button::getText)
@@ -1904,16 +1904,18 @@ class UserNotificationsUiTest {
 
     assertInboxHeaderAndCounters(notificationsPanel);
 
-    ((Button) readComponentField(notificationsPanel, "lastPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "lastPageButton")).click();
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 4, 10);
-    assertFalse(((Button) readComponentField(notificationsPanel, "nextPageButton")).isEnabled());
-    ((Button) readComponentField(notificationsPanel, "firstPageButton")).click();
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).isEnabled());
+    ((Button) readInboxPaginationField(notificationsPanel, "firstPageButton")).click();
 
     assertEquals(0, (int) readComponentField(notificationsPanel, "page"));
-    Div pageNumbersDiv = (Div) readComponentField(notificationsPanel, "pageNumbers");
+    Component pageNumbersLayout =
+        readInboxPaginationField(notificationsPanel, "pageNumberButtonsLayout");
     Button thirdPageButton =
-        streamComponentTree(pageNumbersDiv)
+        streamComponentTree(pageNumbersLayout)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
             .filter(candidateButton -> candidateButton.getText().equals("3"))
@@ -1957,8 +1959,10 @@ class UserNotificationsUiTest {
             .map(Span.class::cast)
             .anyMatch(candidateSpan ->
                 candidateSpan.getText().equals(messageProperties.getNotificationsSearchEmpty())));
-    assertFalse(((Button) readComponentField(notificationsPanel, "firstPageButton")).isEnabled());
-    assertFalse(((Button) readComponentField(notificationsPanel, "lastPageButton")).isEnabled());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "firstPageButton")).isEnabled());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "lastPageButton")).isEnabled());
 
     notificationSearchTextField.clear();
 
@@ -1971,8 +1975,9 @@ class UserNotificationsUiTest {
   void inboxPageSizeControlsAndChangesResetThePage(String languageTag) {
     UserNotificationsPanel notificationsPanel =
         createAndRefreshInboxWithFortyFiveItems(languageTag);
-    ComboBox<Integer> pageSizeComboBox = readComponentField(notificationsPanel, "pageSize");
-    Span pageTotalSpan = readComponentField(notificationsPanel, "pageTotal");
+    ComboBox<Integer> pageSizeComboBox =
+        readInboxPaginationField(notificationsPanel, "pageSizeSelector");
+    Span pageTotalSpan = readInboxPaginationField(notificationsPanel, "totalItemsSpan");
 
     assertEquals(List.of(10, 20, 50), pageSizeComboBox.getListDataView().getItems().toList());
     assertEquals(10, pageSizeComboBox.getValue());
@@ -1982,9 +1987,9 @@ class UserNotificationsUiTest {
         pageSizeComboBox.getAriaLabel().orElseThrow());
     assertEquals(
         messageProperties.getAdminUsersPaginationPerPage(),
-        ((Span) readComponentField(notificationsPanel, "pageLabel")).getText());
+        ((Span) readInboxPaginationField(notificationsPanel, "pageSizeLabelSpan")).getText());
     assertEquals(messageProperties.getPortalPaginationRange(1, 10, 45), pageTotalSpan.getText());
-    ((Button) readComponentField(notificationsPanel, "lastPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "lastPageButton")).click();
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 4, 10);
 
@@ -1992,7 +1997,7 @@ class UserNotificationsUiTest {
 
     assertEquals(0, (int) readComponentField(notificationsPanel, "page"));
     verify(userNotificationService, atLeastOnce()).inbox(mockHttpSession, ReadFilter.ALL, 0, 20);
-    ((Button) readComponentField(notificationsPanel, "nextPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).click();
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 1, 20);
 
@@ -2000,7 +2005,8 @@ class UserNotificationsUiTest {
 
     assertEquals(0, (int) readComponentField(notificationsPanel, "page"));
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 0, 50);
-    assertFalse(((Button) readComponentField(notificationsPanel, "nextPageButton")).isEnabled());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).isEnabled());
   }
 
   @ParameterizedTest
@@ -2008,8 +2014,9 @@ class UserNotificationsUiTest {
   void inboxPagingKeepsSearchUnreadLanguageAndEmptyFailureStates(String languageTag) {
     UserNotificationsPanel notificationsPanel =
         createAndRefreshInboxWithFortyFiveItems(languageTag);
-    ComboBox<Integer> pageSizeComboBox = readComponentField(notificationsPanel, "pageSize");
-    Span pageTotalSpan = readComponentField(notificationsPanel, "pageTotal");
+    ComboBox<Integer> pageSizeComboBox =
+        readInboxPaginationField(notificationsPanel, "pageSizeSelector");
+    Span pageTotalSpan = readInboxPaginationField(notificationsPanel, "totalItemsSpan");
     pageSizeComboBox.setValue(50);
     ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
@@ -2024,7 +2031,7 @@ class UserNotificationsUiTest {
 
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
-    ((Button) readComponentField(notificationsPanel, "lastPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "lastPageButton")).click();
 
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 2, 20);
@@ -2049,12 +2056,62 @@ class UserNotificationsUiTest {
     notificationSearchTextField.setValue("no-hit");
 
     assertEquals(messageProperties.getPortalPaginationRange(0, 0, 0), pageTotalSpan.getText());
-    assertFalse(((Button) readComponentField(notificationsPanel, "firstPageButton")).isEnabled());
-    assertFalse(((Button) readComponentField(notificationsPanel, "lastPageButton")).isEnabled());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "firstPageButton")).isEnabled());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "lastPageButton")).isEnabled());
     notificationsPanel.unavailable();
 
     assertEquals("–", pageTotalSpan.getText());
     verify(userNotificationService, never()).markRead(any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void inboxRangeUsesLoadedRowsAndRecoversAfterAnUnavailablePage(String languageTag) {
+    UserNotificationsPanel notificationsPanel =
+        createAndRefreshInboxWithFortyFiveItems(languageTag);
+    CosmosPagination inboxPagination = readComponentField(notificationsPanel, "inboxPagination");
+    Span pageTotalSpan = readInboxPaginationField(notificationsPanel, "totalItemsSpan");
+    when(userNotificationService.inbox(
+            eq(mockHttpSession), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(new PageImpl<>(List.of(inboxNotificationItem), PageRequest.of(0, 10), 45));
+    notificationsPanel.refreshInbox();
+
+    assertEquals(messageProperties.getPortalPaginationRange(1, 1, 45), pageTotalSpan.getText());
+
+    when(userNotificationService.inbox(
+            eq(mockHttpSession), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 45));
+    notificationsPanel.refreshInbox();
+
+    assertEquals(messageProperties.getPortalPaginationRange(0, 0, 45), pageTotalSpan.getText());
+    notificationsPanel.unavailable();
+    inboxPagination.refreshTexts();
+
+    assertEquals("–", pageTotalSpan.getText());
+    assertFalse(
+        ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).isEnabled());
+    assertTrue(
+        ((Component) readInboxPaginationField(notificationsPanel, "pageNumberButtonsLayout"))
+            .getChildren()
+            .findAny()
+            .isEmpty());
+    assertTrue(inboxPagination.getPageSizeSelector().isEnabled());
+
+    when(userNotificationService.inbox(
+            eq(mockHttpSession), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(createInboxPage(0, 10));
+    notificationsPanel.refreshInbox();
+
+    assertEquals(messageProperties.getPortalPaginationRange(1, 10, 45), pageTotalSpan.getText());
+    assertTrue(
+        ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).isEnabled());
+    inboxPagination.getPageSizeSelector().clear();
+
+    assertEquals(10, inboxPagination.getPageSize());
+    notificationsPanel.refreshInbox();
+    assertEquals(messageProperties.getPortalPaginationRange(1, 10, 45), pageTotalSpan.getText());
   }
 
   @ParameterizedTest
@@ -2248,10 +2305,10 @@ class UserNotificationsUiTest {
                 PageRequest.of(mockInvocation.getArgument(2), mockInvocation.getArgument(3)),
                 30));
     UserNotificationsPanel notificationsPanel = createAndRefreshNotificationsPanel(false);
-    ((Button) readComponentField(notificationsPanel, "nextPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "nextPageButton")).click();
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 1, 10);
-    ((Button) readComponentField(notificationsPanel, "previousPageButton")).click();
+    ((Button) readInboxPaginationField(notificationsPanel, "previousPageButton")).click();
 
     verify(userNotificationService, times(2)).inbox(mockHttpSession, ReadFilter.ALL, 0, 10);
   }
@@ -3538,6 +3595,12 @@ class UserNotificationsUiTest {
   }
 
   // Gemeinsame Komponentenabfragen und Assertions
+  private <T> T readInboxPaginationField(
+      UserNotificationsPanel notificationsPanel, String fieldName) {
+    CosmosPagination inboxPagination = readComponentField(notificationsPanel, "inboxPagination");
+    return readComponentField(inboxPagination, fieldName);
+  }
+
   @SuppressWarnings("unchecked")
   private <T> T readComponentField(Object targetComponent, String fieldName) {
     return (T) ReflectionTestUtils.getField(targetComponent, fieldName);
