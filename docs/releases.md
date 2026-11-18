@@ -30,7 +30,7 @@ Sprachabschnitte sind erlaubt, leere Releases oder einseitige Übersetzungen nic
 Die sichtbare Neuigkeiten-Seite ist ein eigener späterer Auftrag.
 
 Das ausführbare JAR liegt versionsunabhängig unter `app/target/app.jar`.
-`BOOT-INF/classes/META-INF/build-info.properties` enthält Projektversion,
+`META-INF/build-info.properties` im gepackten Spring-Boot-JAR enthält Projektversion,
 Git-Revision und Dirty-Zustand. Spring Boots bereits verwaltetes Git-Plugin
 liefert lokal ausschließlich Commit-ID und Dirty-Zustand; keine Autoren- oder
 Remoteangaben. Normale lokale Builds benötigen den Repository-Kontext.

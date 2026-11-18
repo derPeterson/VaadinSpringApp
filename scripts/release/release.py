@@ -269,7 +269,7 @@ def verify_artifact(root, artifact):
     if version not in sections:
         raise ReleaseError("Release-Notizen für die Kandidatenversion fehlen.")
     with zipfile.ZipFile(artifact) as jar:
-        metadata_path = "BOOT-INF/classes/META-INF/build-info.properties"
+        metadata_path = "META-INF/build-info.properties"
         if jar.getinfo(metadata_path).file_size > 16384:
             raise ReleaseError("Unerwartet große Build-Metadaten.")
         properties = read_properties(jar.read(metadata_path).decode("utf-8"))

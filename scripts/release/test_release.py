@@ -60,7 +60,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(path, "w") as jar:
             jar.writestr(
-                "BOOT-INF/classes/META-INF/build-info.properties",
+                "META-INF/build-info.properties",
                 "\n".join(f"build.{key}={value}" for key, value in values.items()),
             )
             jar.writestr(
