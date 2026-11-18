@@ -1113,6 +1113,10 @@ vaadin-form-layout.account-profile-form {
 }
 
 /* Kontoaktionen: bestehende Sicherheitskarten mit nativen Zeilenlayouts. */
+#account-lifecycle-proof .account-change-dialog-form > vaadin-vertical-layout {
+    gap: var(--cosmos-space-m);
+}
+
 .cosmos-account .account-lifecycle-overview {
     box-sizing: border-box;
     padding: 0;
