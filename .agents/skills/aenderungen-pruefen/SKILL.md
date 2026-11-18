@@ -47,6 +47,9 @@ hat Vorrang. Beim Anlegen oder Erklären dieses Skills keine rekursive Prüfung 
 - Prüfen, ob passende Regressionen existieren und Dokumentation, Übersetzungen,
   Ressourcen und aktive Aufgaben zum tatsächlichen Verhalten passen. Auf den
   Änderungsumfang fokussieren, keine zusätzliche Projektbereinigung eröffnen.
+- Bei fachlich abgeschlossenen Funktionen die DE-/EN-Einträge unter `Unreleased`
+  in `CHANGELOG.md` auf Vollständigkeit und Nutzereffekt prüfen. Kosmetik und interne
+  Wartung aus den Benutzerneuigkeiten heraushalten; kein automatischer Release.
 
 ## 3. Kleine Korrekturen und passende Nachweise
 

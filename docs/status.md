@@ -5,8 +5,8 @@ Der spätere Sonar-/JUnit-Nachweis vom 16.11.2026 und gezielte Komponentenprüfu
 sind getrennt aufgeführt. Sie sind keine vollständige Abnahme des aktuellen
 Aura-Branches `design/aura-theme`.
 
-Die gemeinsame DE/EN-Browserrunde für Aura steht weiterhin aus und wartet auf den
-ausdrücklichen Startauftrag. Offene automatisierte Szenarien stehen im
+Die gemeinsame DE/EN-Browserrunde für Aura ist nach der Versionierungsumsetzung
+beauftragt; ihr Ergebnis steht weiterhin aus. Offene automatisierte Szenarien stehen im
 [Testbedarf](testbedarf.md), menschliche Abnahmen im
 [manuellen Katalog](manual-tests/README.md). Die redaktionelle Überarbeitung
 dieser Dokumentation hat keine neue Testausführung ausgelöst.

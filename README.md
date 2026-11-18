@@ -10,6 +10,7 @@ Sie wird ausschließlich auf der Entwicklungsmaschine mit austauschbaren Testdat
 | --- | --- |
 | die Funktionen verstehen | [Anwendung](docs/anwendung.md) |
 | entwickeln und konfigurieren | [Entwicklung](docs/entwicklung.md) |
+| Versionen, Changelog und lokale Releases verwalten | [Releases](docs/releases.md) |
 | die Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
 | die Docker-Testumgebung mit Mailpit verwenden | [Docker](docs/docker/README.md) |
 | Anmeldung, Rechte und Sitzungen verstehen | [Sicherheit](docs/sicherheit.md) |

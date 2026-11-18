@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class BackgroundVariantsBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @Tag("background-variants")
-  @ValueSource(ints = {1280, 390})
+  @ValueSource(ints = {1440, 1280, 1100, 390})
   @DisplayName(
       "BACKGROUND-01: Gemeinsamer Hintergrund bleibt hinter allen Rahmen und beachtet reduzierte Bewegung")
   void chosenBackgroundRemainsDecorativeAcrossPublicPortalAndAdministration(int viewportWidth) {
@@ -81,6 +81,25 @@ public class BackgroundVariantsBrowserTest extends BrowserFixture {
       assertThat(scene.locator(".cosmos-nova")).isHidden();
     }
     assertThat(scene.locator(".cosmos-moon")).isVisible();
+    assertTrue(
+        (boolean)
+            browserPage.evaluate(
+                """
+                () => {
+                  const headings = [...document.querySelectorAll(
+                    '.cosmos-section-title, .cosmos-section-description')]
+                    .filter(element => element.getBoundingClientRect().height > 0)
+                    .map(element => element.getBoundingClientRect());
+                  return [...document.querySelectorAll('.cosmos-moon, .cosmos-spark')]
+                    .every(element => {
+                      const box = element.getBoundingClientRect();
+                      return headings.every(heading => box.right <= heading.left
+                        || box.left >= heading.right || box.bottom <= heading.top
+                        || box.top >= heading.bottom);
+                    });
+                }
+                """),
+        "Mond und Funkelsterne dürfen Überschrift und Beschreibung nicht überdecken.");
     browserPage.mouse().move(10, 120);
     browserPage.mouse().move(browserPage.viewportSize().width - 10, 180);
     browserPage.waitForCondition(() ->

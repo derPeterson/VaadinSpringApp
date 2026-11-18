@@ -217,7 +217,7 @@ im Anwendungsmodul findet. Caddy bei diesem Start separat starten.
 Das optimierte JAR ebenfalls vom Repositoryroot aus starten:
 
 ```powershell
-java -jar .\app\target\app-1.0-SNAPSHOT.jar --spring.profiles.active=https --vaadin.productionMode=true
+java -jar .\app\target\app.jar --spring.profiles.active=https --vaadin.productionMode=true
 ```
 
 ## Lokales HTTPS

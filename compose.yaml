@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_SOURCE_REVISION: ${APP_SOURCE_REVISION:-unknown}
+        APP_SOURCE_DIRTY: ${APP_SOURCE_DIRTY:-true}
     environment:
       TZ: Europe/Berlin
       SPRING_PROFILES_ACTIVE: docker,https

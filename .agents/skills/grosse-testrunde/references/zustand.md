@@ -65,6 +65,13 @@ die Testrunde weiterlaufen. Fehlende Prüfungen bleiben dagegen unvollständige 
 
 ## Verlässliche Zählung und Bericht
 
+Für einen ausdrücklich beauftragten Release kann `last_success` nach vollständig
+grüner QA zusätzlich `release_qualification` tragen. Schema und Grenzen stehen in
+[Releases](../../../../docs/releases.md#qa-freigabe). Diese Qualifikation bindet
+Version, Commit, Artefaktprüfsumme, Sonar-Revision und DE-/EN-Image an die tatsächlich
+bestandenen Prüfungen. Vorher nicht ausfüllen und bei abweichendem Artefakt nicht
+übernehmen; ein normaler QA-Auftrag erzeugt dadurch keinen Release.
+
 Testzahlen aus tatsächlichen Reports beziehen, nicht aus der vorherigen Dokumentation.
 JUnit-Anwendung und JUnit-basierte Browser-/Helfertests getrennt halten, damit keine
 doppelte Gesamtzahl entsteht. Bestandene, fehlgeschlagene, abgebrochene und übersprungene

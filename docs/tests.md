@@ -109,6 +109,15 @@ und der normalen Browser-Helfertests für App und Shared; Browsercode wird nicht
 zu Anwendungscode umklassifiziert. Die optionale serverseitige Browsermessung
 aus dem Runner bleibt separat.
 
+### Release-Helfer
+
+Die Offline-Regressionen für Versionierung, Artefaktbindung und lokale Release-Tags
+gehören ebenfalls zur gepflegten Gesamtprüfung, ohne Browser oder Anwendung zu starten:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s scripts/release -p 'test_*.py' -v
+```
+
 ### Coverage-Prüfer
 
 Die Offline-Regressionen des Coverage-Prüfers gehören zu den gepflegten Helfern:

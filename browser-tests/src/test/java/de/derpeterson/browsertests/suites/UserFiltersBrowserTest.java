@@ -1,10 +1,13 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -327,6 +330,69 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
     return new AdminUsersPage(browserPage);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("AURA-02: Kalenderstil und erneut geöffnete Zeitauswahl bleiben konsistent")
+  void calendarAndTimePickerKeepTheirCosmosPresentation(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    AdminUsersPage usersPage = login();
+    usersPage.open();
+    usersPage.activeSince(LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1));
+    usersPage.openFilters();
+    Locator datePickerLocator =
+        browserPage.locator(".admin-user-activity-filter vaadin-date-picker");
+    datePickerLocator.locator("[part~=toggle-button]").click();
+    Locator selectedDateLocator =
+        browserPage.locator("vaadin-month-calendar [part~=date][part~=selected]");
+    assertThat(selectedDateLocator).isVisible();
+    assertThat(selectedDateLocator).hasCSS("width", "36px");
+    assertThat(selectedDateLocator).hasCSS("height", "36px");
+    assertThat(browserPage.locator("vaadin-date-picker-month-scroller"))
+        .hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    assertThat(browserPage.locator("vaadin-date-picker-overlay-content [part=toolbar]"))
+        .hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    Locator todayLocator = browserPage.locator("vaadin-month-calendar [part~=today]");
+    assertEquals(
+        "none",
+        todayLocator.first().evaluate("element => getComputedStyle(element, '::before').content"));
+    assertThat(browserPage.locator("vaadin-date-picker-year [part=year-number]").first())
+        .hasCSS("font-size", "11px");
+    for (Locator buttonLocator :
+        browserPage.locator("vaadin-date-picker-overlay-content > vaadin-button").all()) {
+      assertThat(buttonLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    }
+    AllurePlaywright.attachScreenshot("Aura-Kalender " + viewportWidth, browserPage);
+    browserPage.keyboard().press("Escape");
+
+    for (LocalTime selectedTime : new LocalTime[] {LocalTime.of(7, 30), LocalTime.of(7, 37)}) {
+      usersPage.activityTime(selectedTime);
+      usersPage.openFilters();
+      browserPage
+          .locator(".admin-user-activity-filter vaadin-time-picker [part~=toggle-button]")
+          .click();
+      Locator displayedTimeLocator =
+          browserPage.getByRole(
+              AriaRole.OPTION,
+              new Page.GetByRoleOptions()
+                  .setName(uiTexts.timeInput(LocalTime.of(7, 30)))
+                  .setExact(true));
+      assertThat(displayedTimeLocator).isVisible();
+      BoundingBox rowBounds = displayedTimeLocator.boundingBox();
+      BoundingBox scrollerBounds =
+          browserPage.locator("vaadin-time-picker-scroller:visible").boundingBox();
+      assertTrue(
+          rowBounds.y >= scrollerBounds.y - 1
+              && rowBounds.y + rowBounds.height <= scrollerBounds.y + scrollerBounds.height + 1);
+      if (selectedTime.equals(LocalTime.of(7, 30))) {
+        assertThat(displayedTimeLocator).hasAttribute("aria-selected", "true");
+      }
+      AllurePlaywright.attachScreenshot(
+          "Zeitauswahl " + selectedTime + " " + viewportWidth, browserPage);
+      browserPage.keyboard().press("Escape");
+      assertThat(usersPage.activityTime()).hasValue(uiTexts.timeInput(selectedTime));
+    }
   }
 
   private String unique(String purpose) {

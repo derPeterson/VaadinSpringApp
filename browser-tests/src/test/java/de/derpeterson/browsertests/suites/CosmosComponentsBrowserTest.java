@@ -1026,6 +1026,9 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             .first();
     hoveredChoiceRowLocator.hover();
     assertThat(hoveredChoiceRowLocator).hasCSS("background-color", "rgb(21, 34, 56)");
+    Locator hoveredChoiceItemLocator = hoveredChoiceRowLocator.locator("..");
+    assertThat(hoveredChoiceItemLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    assertThat(hoveredChoiceItemLocator).hasCSS("outline-style", "none");
     AllurePlaywright.attachScreenshot("Blauer Hover bei " + viewportWidth + " px", browserPage);
     genderComboBoxLocator.locator("input").press("Escape");
     Locator firstNameInputSurfaceLocator =
@@ -1534,5 +1537,95 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("AURA-01: Native Felder teilen Deaktiviert-Zustand und kleine Fehlertexte")
+  void nativeFieldsShareDisabledColorsAndErrorPresentation(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    signIn();
+    browserPage.evaluate(
+        """
+        async () => {
+          const tags = ['vaadin-text-field', 'vaadin-email-field', 'vaadin-password-field',
+            'vaadin-integer-field', 'vaadin-big-decimal-field', 'vaadin-text-area',
+            'vaadin-combo-box', 'vaadin-date-picker', 'vaadin-time-picker'];
+          await Promise.all(tags.map(tag => customElements.whenDefined(tag)));
+          const fixture = document.createElement('vaadin-vertical-layout');
+          fixture.id = 'aura-field-fixture';
+          fixture.className = 'cosmos-theme cosmos-reference-portal';
+          fixture.style.cssText = 'position:fixed;inset:80px 16px 16px;z-index:1000;overflow:auto;background:#091120;padding:16px;gap:8px';
+          for (const tag of tags) {
+            const field = document.createElement(tag);
+            field.label = tag;
+            field.style.width = '100%';
+            field.placeholder = 'Sample';
+            field.disabled = true;
+            field.setAttribute('data-aura-disabled', '');
+            if (tag === 'vaadin-combo-box') field.items = ['Sample'];
+            field.value = tag === 'vaadin-date-picker' ? '2026-01-01'
+              : tag === 'vaadin-time-picker' ? '07:30'
+              : tag.includes('integer') || tag.includes('decimal') ? '12' : 'Sample';
+            fixture.append(field);
+          }
+          const invalid = document.createElement('vaadin-text-field');
+          invalid.label = 'Invalid field';
+          invalid.errorMessage = 'Synthetic validation message';
+          invalid.invalid = true;
+          invalid.id = 'aura-invalid-field';
+          fixture.append(invalid);
+          for (const tag of ['vaadin-checkbox', 'vaadin-switch', 'vaadin-button']) {
+            const control = document.createElement(tag);
+            control.disabled = true;
+            control.textContent = 'Disabled action';
+            control.setAttribute('data-aura-action', '');
+            fixture.append(control);
+          }
+          document.body.append(fixture);
+        }
+        """);
+    try {
+      Locator fixtureLocator = browserPage.locator("#aura-field-fixture");
+      assertThat(fixtureLocator.locator("[data-aura-disabled]")).hasCount(9);
+      String disabledColor =
+          (String)
+              fixtureLocator.evaluate(
+                  """
+                  element => {
+                    const probe = document.createElement('span');
+                    probe.style.color = 'var(--cosmos-text-disabled-color)';
+                    element.append(probe);
+                    const color = getComputedStyle(probe).color;
+                    probe.remove();
+                    return color;
+                  }
+                  """);
+      for (Locator fieldLocator : fixtureLocator.locator("[data-aura-disabled]").all()) {
+        assertThat(fieldLocator).hasAttribute("disabled", "");
+        assertThat(fieldLocator.locator("[part=label]")).hasCSS("opacity", "0.5");
+        Locator inputLocator = fieldLocator.locator("input[slot=input], textarea[slot=textarea]");
+        assertThat(inputLocator).hasCSS("color", disabledColor);
+        assertEquals(
+            disabledColor,
+            inputLocator.evaluate("element => getComputedStyle(element, '::placeholder').color"));
+      }
+      Locator errorLocator = fixtureLocator.locator("#aura-invalid-field [part=error-message]");
+      assertThat(errorLocator).hasCSS("font-size", "13px");
+      assertEquals(
+          "none",
+          errorLocator.evaluate("element => getComputedStyle(element, '::before').display"));
+      for (Locator actionLocator : fixtureLocator.locator("[data-aura-action]").all()) {
+        assertThat(actionLocator).hasAttribute("disabled", "");
+        if (actionLocator.evaluate("element => element.localName").equals("vaadin-button")) {
+          assertThat(actionLocator).hasCSS("opacity", "0.45");
+        } else {
+          assertThat(actionLocator).isDisabled();
+        }
+      }
+      AllurePlaywright.attachScreenshot("Aura-Felder " + viewportWidth, browserPage);
+    } finally {
+      browserPage.evaluate("document.querySelector('#aura-field-fixture')?.remove()");
+    }
   }
 }

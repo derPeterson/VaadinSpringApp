@@ -59,6 +59,7 @@ sonar-findings.json
 
 # Aktueller lokaler Sonar-Bericht und Wiederaufnahmestand
 /.codex/sonar/
+/.codex/releases/
 
 # Lokale MCP-Konfiguration enthält maschinenspezifische Pfade
 /.codex/config.toml

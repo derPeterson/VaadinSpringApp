@@ -14,6 +14,7 @@ oder diese Anleitung zu lesen startet keinen Ablauf.
 | Java-Code auf Lesbarkeit prüfen oder überarbeiten | „Prüfe die Lesbarkeit von KLASSE“ oder „Überarbeite die Java-Lesbarkeit projektweit“ | [java-lesbarkeit](../.agents/skills/java-lesbarkeit/SKILL.md) |
 | einen fertigen Branch lokal integrieren | „Merge BRANCH nach ZIEL“ | [branch-lokal-mergen](../.agents/skills/branch-lokal-mergen/SKILL.md) |
 | einen Entwurf mit Stitch aus der laufenden Vaadin-Oberfläche entwickeln | „Lass Stitch für SEITE zwei Varianten mit ANREGUNGEN erstellen“ | [stitch-entwurf](../.agents/skills/stitch-entwurf/SKILL.md) |
+| einen ausdrücklich freigegebenen lokalen Release erstellen | „Erstelle einen lokalen Release“ | [release-erstellen](../.agents/skills/release-erstellen/SKILL.md) |
 
 Normale Folgeantworten gehören zum laufenden Auftrag; der Skillname muss nicht bei
 jedem Arbeitsschritt wiederholt werden. Explizite Einschränkungen des Benutzers gelten.

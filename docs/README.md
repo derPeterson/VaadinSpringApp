@@ -26,6 +26,7 @@ hier stehen Bedienung, Entwicklungsregeln und wesentliche Entscheidungen.
 | [Logging](logging.md) | Logpegel, erlaubte Inhalte und sichere Diagnose |
 | [Technische Entscheidungen](entscheidungen.md) | Gründe, Vorteile und Grenzen des geltenden Modells |
 | [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, passende Aufträge und Ausführungsgrenzen |
+| [Versionierung und Releases](releases.md) | Changelog, Kandidatenprüfung, unveränderliche Tags und nächster Snapshot |
 | [Docker](docker/README.md) | Eigene lokale Testanwendung, HTTPS und Mailpit |
 
 ## Prüfen und nachschlagen
@@ -47,11 +48,12 @@ Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Te
 
 - [Aura-Umstellung](planung/aura-umstellung.md): Die technische Umstellung und
   CSS-Bereinigung sind umgesetzt. Die gemeinsame DE/EN-Browserrunde steht noch aus
-  und wartet auf den ausdrücklichen Startauftrag.
+  und ist nach der Versionierungsumsetzung beauftragt.
 - [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
   mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
-- Zurückgestellte Planungen: [Releases](planung/releases.md),
-  [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
+- [Versionierung](planung/releases.md): Release-Werkzeuge umsetzen, anschließend
+  Gesamt-QA und bedingt erster lokaler Release.
+- Zurückgestellte Planungen: [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
   [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
 - Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).
 

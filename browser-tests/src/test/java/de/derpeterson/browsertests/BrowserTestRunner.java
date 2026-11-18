@@ -66,6 +66,9 @@ public final class BrowserTestRunner {
                 suiteName, System.getProperty("browser.tests.workerClasses"));
     String suffix = UUID.randomUUID().toString().substring(0, 8);
     String commit = git("rev-parse", "HEAD");
+    testEnvironment.put("APP_SOURCE_REVISION", commit);
+    testEnvironment.put(
+        "APP_SOURCE_DIRTY", Boolean.toString(!git("status", "--porcelain").isBlank()));
     // Ersetzt einen Punkt plus Sekundenbruchteil am Ende vor Z durch _UTC; $ verlangt das
     // Zeichenfolgenende.
     String runId =

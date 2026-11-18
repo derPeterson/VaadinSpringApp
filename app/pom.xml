@@ -6,7 +6,7 @@
 
     <groupId>de.derpeterson</groupId>
     <artifactId>app</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
 
     <name>VaadinSpringApp</name>
 
@@ -90,7 +90,7 @@
         <dependency>
             <groupId>de.derpeterson</groupId>
             <artifactId>shared</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -191,10 +191,36 @@
     </dependencies>
 
     <build>
+        <finalName>app</finalName>
         <plugins>
+            <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <configuration>
+                    <verbose>false</verbose>
+                    <commitIdGenerationMode>full</commitIdGenerationMode>
+                    <!-- Verankerte Regex mit literalen Punkten: keine Autoren- oder Remoteangaben übernehmen. -->
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>^git\.commit\.id\.full$</includeOnlyProperty>
+                        <includeOnlyProperty>^git\.dirty$</includeOnlyProperty>
+                    </includeOnlyProperties>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>build-information</id>
+                        <goals><goal>build-info</goal></goals>
+                        <configuration>
+                            <additionalProperties>
+                                <revision>${git.commit.id.full}</revision>
+                                <dirty>${git.dirty}</dirty>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <mainClass>de.derpeterson.app.Application</mainClass>
                     <workingDirectory>${project.basedir}/..</workingDirectory>

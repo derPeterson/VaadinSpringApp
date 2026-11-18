@@ -3,8 +3,14 @@
 ## Laufende Umsetzung
 
 - [ ] [Umstellung auf Vaadin Aura mit neu gegliedertem Cosmos-Theme](docs/planung/aura-umstellung.md)
-  auf Branch `design/aura-theme` abschließen: offene Aura-Fehler aus BUGS, Zeilenhöhen,
-  Nutzungsprüfung und Abschlussvergleich; offene Punkte und Wiedereinstieg stehen im Plan.
+  nach der Versionierungsumsetzung mit der großen DE/EN-Testrunde abschließen.
+  Offene Nachtests aus BUGS und Testbedarf einschließen; erst nach belegbar grünem
+  Ergebnis erledigte Einträge und den Aura-Plan entfernen.
+
+- [ ] [Release-Ablauf und Versionierung](docs/planung/releases.md) auf
+  `codex/release-versionierung` vorbereiten und umsetzen; danach große Testrunde,
+  bedingter Aura-Abschluss und kleiner lokaler Erst-Release mit folgendem
+  Patch-Snapshot. Releasevorschau und genaue Startversion stehen im Plan.
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
@@ -21,10 +27,9 @@
 
 ## Zurückgestellte Planungen
 
-- [ ] [Release-Ablauf](docs/planung/releases.md) und [Was ist neu?](docs/planung/neuigkeiten.md)
-  später auf eigenen Auftrag umsetzen. Die Planungen sind durchgelesen.
-  Am Ende der laufenden Gesamtumsetzung entscheiden, ob ein erster Release
-  erstellt werden soll; noch kein Releaseauftrag.
+- [ ] [Was ist neu?](docs/planung/neuigkeiten.md) später auf eigenen Auftrag umsetzen.
+  Die Planung ist durchgelesen; die sichtbare Neuigkeiten-Seite gehört nicht
+  automatisch zur jetzt vorbereiteten Versionierung.
 - [ ] [Passkey-Planung](docs/planung/passkeys.md) bei einer späteren Freigabe
   erneut gegen den aktuellen Stand prüfen und umsetzen. Planung durchgelesen,
   Umsetzung zurückgestellt; bestehende 2FA beibehalten.

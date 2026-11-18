@@ -229,6 +229,22 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
   }
 
   private void captureCleanupStateAtBothWidths(String evidenceName) {
+    // Die Vormerkungsmeldung schließt regulär nach kurzer Zeit. Vor den aufwendigeren
+    // Bildschirmaufnahmen prüfen; der dauerhaft sichtbare Status wird in beiden Breiten geprüft.
+    if ("WAITING"
+        .equals(browserPage.locator("#admin-mail-queue-status").getAttribute("data-status"))) {
+      Locator queuedNotificationLocator =
+          browserPage
+              .locator("vaadin-notification-card:not([closing])")
+              .filter(
+                  new Locator.FilterOptions()
+                      .setHasText(uiTexts.getAdminQueueCleanupWaitingExplanation()));
+      assertThat(queuedNotificationLocator)
+          .hasAttribute("theme", Pattern.compile(".*cosmos-reference-normal.*"));
+      assertThat(queuedNotificationLocator.locator(".cosmos-notification-icon"))
+          .hasAttribute("data-lucide", "info");
+      captureCleanupComponent("Vormerkungs-Notification", queuedNotificationLocator);
+    }
     for (int viewportWidth : new int[] {1280, 390}) {
       browserPage.setViewportSize(viewportWidth, 1000);
       browserPage.locator("#admin-mail-queue-resolution").scrollIntoViewIfNeeded();
@@ -248,18 +264,6 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
         }
         captureCleanupComponent(
             "Wartetext " + viewportWidth, browserPage.locator(".admin-queue-cleanup-status"));
-        Locator queuedNotificationLocator =
-            browserPage
-                .locator("vaadin-notification-card:not([closing])")
-                .filter(
-                    new Locator.FilterOptions()
-                        .setHasText(uiTexts.getAdminQueueCleanupWaitingExplanation()));
-        assertThat(queuedNotificationLocator)
-            .hasAttribute("theme", Pattern.compile(".*cosmos-reference-normal.*"));
-        assertThat(queuedNotificationLocator.locator(".cosmos-notification-icon"))
-            .hasAttribute("data-lucide", "info");
-        captureCleanupComponent(
-            "Vormerkungs-Notification " + viewportWidth, queuedNotificationLocator);
       }
       AllurePlaywright.attachScreenshot(evidenceName + " " + viewportWidth, browserPage);
     }

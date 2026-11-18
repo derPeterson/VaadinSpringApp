@@ -105,6 +105,11 @@ beim Erstellen dieses Skills sind keine tatsächlichen Umsetzungsaufträge.
   Zwischencommits sind möglich; die Zahl bestimmt nicht den fachlichen Abschluss.
   Standardmäßig Commit-Messages liefern. Nur auf entsprechenden Auftrag committen;
   kein automatischer Commit/Merge/Push durch einen Umsetzungs- oder Abnahmeauftrag.
+- Bei fachlicher Benutzerabnahme die wesentlichen nutzbaren Änderungen in
+  `CHANGELOG.md` unter `Unreleased` auf Deutsch und Englisch ergänzen.
+  Nur funktionale Neuerungen und wichtige
+  Fehlerkorrekturen aufnehmen, keine Layoutkorrektur-Chronik. Daraus keinen
+  automatischen Versionswechsel oder Releaseauftrag ableiten.
 - Nach Benutzerabnahme featurebezogene Provisorien, nachweislich überflüssigen Code,
   Ressourcen und erledigte Plan-/TODO-Verweise bereinigen. Keine pauschale Bereinigung
   fremder Bereiche. Wichtige offene Folgefunktionen nach TODO, Testlücken in den Testbedarf

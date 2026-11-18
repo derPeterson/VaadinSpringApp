@@ -36,6 +36,10 @@
 - Dokumentation beschreibt den aktuell gültigen Zustand und wesentliche Entscheidungen
   mit Vorteilen/Grenzen. Keine Triage-CSV, Nachscan-/Updatechroniken oder QA-Berichtsserien.
 - `TODO.md` enthält nur offene Arbeiten; erledigte Aufgaben entfernen.
+- Bei fachlicher Abnahme die wesentlichen nutzbaren Änderungen in `CHANGELOG.md`
+  unter `Unreleased` auf Deutsch und Englisch ergänzen. Reine Kosmetik und interne
+  Wartung nicht als Benutzerneuigkeit aufführen. Ein Zwischencommit erstellt weder
+  automatisch eine neue Version noch einen Release; Ablauf: [Releases](docs/releases.md).
 - Vor der Planung neuer Arbeiten `BUGS.md` lesen. Die Datei enthält bestätigte offene
   Anwendungsfehler, kurz nach Dringlichkeit sortiert
   mit Verweis auf Fehlerdetails. Diese Bugs haben Vorrang vor allen anderen Aufgaben.

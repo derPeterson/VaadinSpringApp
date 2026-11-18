@@ -17,9 +17,15 @@ des Auftrags. Commits nur auf ausdrücklichen Auftrag.
 
 ## Offene Arbeiten
 
-- [ ] Gemeinsame Browserrunde DE/EN erst nach dem nächsten ausdrücklichen Startauftrag,
-      wenn der Benutzer schlafen geht. Vorher anhalten und das weitere Vorgehen absprechen;
-      offene Fälle im [Testbedarf](../testbedarf.md). Danach diesen Plan entfernen.
+- [ ] Gemeinsame große Testrunde DE/EN nach Umsetzung der
+      [Versionierung](releases.md) durchführen. Offene Fälle im
+      [Testbedarf](../testbedarf.md) sowie den Dauerfeld-Nachtest aus
+      [BUGS](../../BUGS.md) einschließen. Keine vorgezogene Browserrunde.
+- [ ] Bei vollständig grünem Gesamtergebnis ist der Abschluss vom Benutzer
+      beauftragt: erfolgreich nachgeprüfte Bug-/Testbedarfseinträge, den Aura-TODO
+      und diesen erledigten Plan samt Verweisen entfernen. Bei offenen Fehlern
+      oder fehlenden Nachweisen die betroffenen Punkte erhalten. Die separate
+      Vaadin-Komponenten-Gesamtumsetzung wird dadurch nicht abgeschlossen.
 
 ## Wiedereinstieg
 
