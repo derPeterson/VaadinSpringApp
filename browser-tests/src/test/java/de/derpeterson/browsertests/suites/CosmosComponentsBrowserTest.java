@@ -1585,7 +1585,9 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           secondary.id = 'aura-secondary-button';
           secondary.textContent = 'Secondary action';
           const secondaryIcon = document.createElement('vaadin-icon');
-          secondaryIcon.setAttribute('src', '/icons/lucide/arrow-left.svg');
+          secondaryIcon.setAttribute('src', '/icons/lucide/chevron-left.svg');
+          secondaryIcon.classList.add('cosmos-lucide-icon');
+          secondaryIcon.slot = 'prefix';
           secondary.append(secondaryIcon);
           fixture.append(secondary);
           for (const tag of ['vaadin-checkbox', 'vaadin-switch', 'vaadin-button']) {
@@ -1618,6 +1620,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           errorLocator.evaluate("element => getComputedStyle(element, '::before').display"));
       Locator secondaryButtonLocator = fixtureLocator.locator("#aura-secondary-button");
       assertThat(secondaryButtonLocator).hasCSS("color", "rgb(255, 255, 255)");
+      assertThat(secondaryButtonLocator.locator("vaadin-icon path")).hasCount(1);
       assertThat(secondaryButtonLocator.locator("vaadin-icon"))
           .hasCSS("color", resolveFixtureColor(fixtureLocator, "--cosmos-primary-text-color"));
       for (Locator actionLocator : fixtureLocator.locator("[data-aura-action]").all()) {
