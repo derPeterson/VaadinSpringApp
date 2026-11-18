@@ -12,6 +12,20 @@
     margin: 0;
 }
 
+/* Vaadin entfernt den Löschen-Button bei leerem Wert aus dem Layout. Bei zentrierten
+ * Zahlen verschiebt das die Mitte der Eingabefläche. Nur dessen Platz erhalten;
+ * der leere Button bleibt unsichtbar und nimmt keine Zeigerereignisse entgegen. */
+.cosmos-theme
+    :is(vaadin-integer-field, vaadin-number-field, vaadin-big-decimal-field)[clear-button-visible]:not(
+        [has-value],
+        [disabled],
+        [readonly]
+    )::part(clear-button) {
+    display: block;
+    visibility: hidden;
+    pointer-events: none;
+}
+
 /* Gemeinsames Zeitfeld: Zahl und native Einheit teilen die vorhandene Feldfläche. */
 .cosmos-duration-field {
     min-width: 0;

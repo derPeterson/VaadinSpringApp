@@ -202,6 +202,11 @@ Hover und akzentblau bei Fokus beziehungsweise geöffnetem Picker.
 Disabled ist auch an Label, Wert und Platzhalter erkennbar. Read-only, Fehler und
 Tastaturfokus bleiben unterscheidbar.
 
+Zentrierte Zahlen- und Dauerfelder mit Löschen-Button reservieren dessen Platz
+auch bei leerem Wert. Die Aktion bleibt dabei unsichtbar und nicht bedienbar;
+der Placeholder springt dadurch nicht in eine breitere Eingabefläche. Die Regel
+liegt gemeinsam in `cosmos-duration-field.css` und verwendet `::part(clear-button)`.
+
 Bearbeitbare `TextField`-, `EmailField`-, `PasswordField`- und `TextArea`-Eingaben
 aktivieren das native Löschkreuz mit `setClearButtonVisible(true)`. Das gilt auch
 für neue Eingabefelder. Vaadin blendet das X bei leeren, deaktivierten und

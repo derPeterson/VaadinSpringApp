@@ -189,17 +189,32 @@ Startseitengestaltung wurde nicht als Abweichung bewertet.
 
 **Analyse einschließlich Screenshot-Messung und Korrektur freigegeben.**
 
-- [ ] Den gemeldeten Rechtsversatz beim Löschen eines Zahlenwertes untersuchen:
+- [x] Den gemeldeten Rechtsversatz beim Löschen eines Zahlenwertes untersuchen:
       Sowohl im Cosmos-Dauerfeld mit Einheitenauswahl als auch im normalen Zahlenfeld
       springt die Darstellung beim Wechsel zum Placeholder nach rechts.
-- [ ] Bei der späteren Bearbeitung die beiden bereitgestellten Screenshots ausmessen
+- [x] Bei der Bearbeitung die beiden bereitgestellten Screenshots ausmessen
       und die Positionen von Wert und Placeholder vergleichen. Die Aufnahmen haben
       unterschiedliche Bildbreiten; die Lage im jeweiligen Feld berücksichtigen.
-- [ ] Ursache anhand der verwendeten Vaadin-Komponenten und unserer CSS-Regeln klären;
+- [x] Ursache anhand der verwendeten Vaadin-Komponenten und unserer CSS-Regeln klären;
       insbesondere den Einfluss des beim Leeren verschwindenden Löschen-Buttons prüfen.
       Schriftgröße oder eine Vaadin-Eigenheit nicht ungeprüft als Ursache annehmen.
-- [ ] Den Positionssprung nach geklärter Ursache für beide Feldtypen beheben,
+- [x] Den Positionssprung nach geklärter Ursache für beide Feldtypen beheben,
       ohne Wert-, Placeholder- oder Bedienverhalten unbeabsichtigt zu ändern.
+
+Technisch umgesetzt, visuelle Abnahme offen: Vaadins `button-base-styles.js`
+setzt den Clear-Part bei fehlendem Wert auf `display:none`; NumberField zentriert
+den Wert bei sichtbaren Schrittbuttons in der dadurch veränderten Restfläche.
+`cosmos-duration-field.css` erhält bei leeren bearbeitbaren Zahlenfeldern mit
+aktivierter Löschfunktion dessen Platz über den öffentlichen Part, mit
+`visibility:hidden` und ohne Zeigerereignisse. Ohne Löschfunktion sowie bei
+Disabled/Read-only greift die Ergänzung nicht.
+
+In den Screenshots liegen die Mittelpunkte der sichtbaren Ziffern bei x=142,5
+gegenüber 157,5 (Dauer) und 198,5 gegenüber 211,5 (Zahlenfeld), jeweils in Bildpixeln.
+Die Bilder haben unterschiedliche Breiten; diese Pixelwerte sind keine Messung
+von CSS-Pixeln im Browser. Der gemeldete Rechtsversatz ist sichtbar, die Korrektur
+wurde noch nicht im Browser geprüft. Prettier-Formatierung, Formatprüfung und
+Stylelint erfolgreich; der sichtbare Nachtest steht zentral im Testbedarf.
 
 Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 

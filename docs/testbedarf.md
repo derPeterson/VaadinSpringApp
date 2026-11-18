@@ -21,7 +21,12 @@
   In DE/EN Desktop/Smartphone alle vier Zeitfelder der Link-/Tokenlaufzeiten leeren:
   Zahl bleibt leer, sichtbarer Standard ist ein gedämpfter Platzhalter und kein
   eingetragener Wert. Integer- und präzise Dauerfelder berücksichtigen; nach Eingabe
-  normale Wertfarbe, deaktiviert weiterhin gedämpft. Kein Browserlauf freigegeben.
+  normale Wertfarbe, deaktiviert weiterhin gedämpft. Zusätzlich normale Zahlenfelder
+  und Dauerfelder mit Löschen-Button vergleichen: Beim Wechsel zum Placeholder
+  bleibt die horizontale Mitte der Eingabefläche unverändert. Im leeren Zustand
+  bleibt nur der Platz des Löschen-Buttons erhalten, ohne sichtbare oder bedienbare
+  Aktion. Disabled/Read-only und Felder ohne Löschen-Button unverändert.
+  Kein Browserlauf freigegeben.
 
 - **Zentrales Switch-Grundstyling — offen.**
   In DE/EN Desktop/Smartphone Login speichern, Benutzeranlage/-bearbeitung,
