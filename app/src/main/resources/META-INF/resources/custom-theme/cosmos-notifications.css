@@ -1675,7 +1675,7 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
     margin: 0;
     padding: 13px 12px;
     border-radius: 9px;
-    border-left: 3px solid transparent;
+    border-left: 3px solid var(--cosmos-text-secondary-color);
     background: var(--cosmos-card-background);
 }
 
@@ -1697,6 +1697,7 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
     width: 100%;
     font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     text-align: left;
+    justify-content: flex-start;
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-footer {

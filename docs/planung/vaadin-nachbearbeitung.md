@@ -210,8 +210,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - Weitere Farben für mögliche künftige Zustände nur als spätere Möglichkeit festhalten,
   jetzt keine zusätzlichen Zustände einführen.
 
-- [ ] Umsetzung und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 11. Benachrichtigungsdialog: „Als gelesen markieren“ als Primary-Button
 

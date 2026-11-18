@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Glockenvorschau: Titelausrichtung und Lesestatuslinie — offen.**
+  In DE/EN auf Desktop/Smartphone Titel bündig mit Nachricht und Metadaten prüfen.
+  Ungelesen blaue, gelesen graue linke Linie; Ticketrelevanz wie „Bereits übernommen“
+  bleibt eigener Badge und ändert nicht die Farbe des tatsächlichen Lesestatus.
+  Vorhandene JUnit-Prüfungen decken die Zustandszuordnung ab, keine Browserfreigabe.
+
 - **Empfängervorschau: vollständige Popover-Liste — offen.**
   In DE/EN auf Desktop und Smartphone mit 1/5/6/7/200 synthetischen Empfängern:
   Klick auf ersten Avatar, Zwischenraum und „+N“ sowie Enter/Leertaste öffnet

@@ -784,6 +784,51 @@ class UserNotificationsUiTest {
             .noneMatch(Button::isVisible));
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "de,false,ACTIVE",
+    "en,false,ACTIVE",
+    "de,true,ACTIVE",
+    "en,true,ACTIVE",
+    "de,false,TICKET_ASSIGNED",
+    "en,false,TICKET_ASSIGNED",
+    "de,true,TICKET_ASSIGNED",
+    "en,true,TICKET_ASSIGNED"
+  })
+  void compactPreviewLineUsesReadStateIndependentlyOfTicketRelevance(
+      String languageTag, boolean isRead, UserNotificationRelevance relevance) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    inboxNotificationItem =
+        new Item(
+            7L,
+            UserNotificationType.ADMIN_ANNOUNCEMENT,
+            "Title",
+            "Message",
+            Instant.now(),
+            isRead,
+            null,
+            relevance);
+    UserNotificationsPanel notificationsPanel = createAndRefreshNotificationsPanel(true);
+    Component previewRowComponent =
+        streamComponentTree(notificationsPanel)
+            .filter(component -> component.hasClassName("cosmos-notification-preview-row"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(!isRead, previewRowComponent.hasClassName("cosmos-notification-row--unread"));
+    Badge stateBadge =
+        streamComponentTree(previewRowComponent)
+            .filter(Badge.class::isInstance)
+            .map(Badge.class::cast)
+            .filter(badge -> badge.hasClassName("cosmos-notification-preview-state"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        UserNotificationTexts.getNotificationRelevanceText(
+            messageProperties, inboxNotificationItem),
+        stateBadge.getText());
+    verify(userNotificationService, never()).markRead(any(), any());
+  }
+
   @Test
   void openingCompactItemKeepsPopoverWithoutMarkingRead() {
     UserNotificationBell notificationBell = createAndAttachNotificationBell(new Button());

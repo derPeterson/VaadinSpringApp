@@ -634,9 +634,8 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
         new Div(previewTitleButton, previewBodyDiv, previewMetadataDiv, previewActionsDiv);
     previewRowDiv.addClassNames("cosmos-notification-row", "cosmos-notification-preview-row");
     previewRowDiv.getElement().setAttribute("data-notification-id", item.id().toString());
-    if (item.unread()) {
-      previewRowDiv.addClassName("cosmos-notification-row--unread");
-    }
+    // Die Kartenlinie zeigt den Lesestatus, nicht die Bearbeitbarkeit eines Tickets.
+    previewRowDiv.setClassName("cosmos-notification-row--unread", !item.read());
     // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
     previewRowDiv
         .getElement()

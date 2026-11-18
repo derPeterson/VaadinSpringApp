@@ -350,6 +350,11 @@ Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls m
 Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
 [Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
 
+Die kompakten Benachrichtigungskarten richten ihren Titelbutton linksbündig zum
+Text aus. Ihre linke Linie zeigt unabhängig von der Ticketrelevanz den Lesestatus:
+Blau bei ungelesen, sekundäres Grau bei gelesen. Fachliche Statusbadges und
+Aktionssperren bleiben davon getrennt (`cosmos-notifications.css`).
+
 ### Globale Notifications
 
 Alle globalen UI-Meldungen verwenden `NotificationHelper`. Der angehängte Seitenrahmen
