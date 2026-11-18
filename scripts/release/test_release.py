@@ -114,6 +114,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertEqual("0.1.0", release.project_version(self.root))
         content = self.root.joinpath("CHANGELOG.md").read_text(encoding="utf-8")
         sections = release.changelog_sections(content)
+        self.assertFalse(content.endswith("\n\n"))
         self.assertEqual(["", ""], sections["Unreleased"]["entries"])
         self.assertIn("Neue Funktion", sections["0.1.0"]["entries"][0])
         self.assertIn("New feature", sections["0.1.0"]["entries"][1])

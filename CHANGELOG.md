@@ -4,6 +4,12 @@
 
 ### DE
 
+### EN
+
+## [0.1.0] - 2026-11-18
+
+### DE
+
 - Benutzerkonten registrieren, E-Mail-Adressen bestätigen und Passwörter zurücksetzen.
 - Persönliche Daten, Profilbild, Anmeldeanbieter und Zwei-Faktor-Authentifizierung verwalten.
 - Eigene Geräte und Sitzungen verwalten sowie Konten selbst deaktivieren, reaktivieren oder löschen.

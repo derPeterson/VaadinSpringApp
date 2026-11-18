@@ -237,7 +237,7 @@ def prepare(root, version):
     new_section = f"## [Unreleased]\n\n### DE\n\n### EN\n\n## [{version}] - {date.today().isoformat()}\n\n{unreleased['body']}\n\n"
     changed = (
         content[: unreleased["start"]] + new_section + content[unreleased["end"] :]
-    )
+    ).rstrip() + "\n"
     changelog_sections(changed)
     updates = version_updates(root, current, version)
     updates[path] = changed
