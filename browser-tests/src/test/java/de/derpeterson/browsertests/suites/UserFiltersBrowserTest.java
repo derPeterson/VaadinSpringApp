@@ -83,6 +83,16 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     adminRole.click();
 
     assertThat(adminRole.getByRole(AriaRole.CHECKBOX)).isChecked();
+    for (String filterLabel :
+        new String[] {uiTexts.getAdminUsersFilterRole(), uiTexts.getAdminUsersGridStatus()}) {
+      for (Locator choiceLocator :
+          users.filterField(filterLabel).locator("vaadin-checkbox").all()) {
+        BoundingBox choiceBounds = choiceLocator.boundingBox();
+        BoundingBox labelBounds = choiceLocator.locator("label[slot=label]").boundingBox();
+        assertEquals(
+            choiceBounds.y + choiceBounds.height / 2, labelBounds.y + labelBounds.height / 2, 1);
+      }
+    }
     AllurePlaywright.attachScreenshot("Vollständig anklickbare Filter-Badges", browserPage);
     users.applyFilters();
 
@@ -347,6 +357,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     Locator selectedDateLocator =
         browserPage.locator("vaadin-month-calendar [part~=date][part~=selected]");
     assertThat(selectedDateLocator).isVisible();
+    assertThat(datePickerLocator.locator("[part=overlay]")).hasCSS("outline-style", "none");
     assertThat(selectedDateLocator).hasCSS("width", "36px");
     assertThat(selectedDateLocator).hasCSS("height", "36px");
     assertThat(browserPage.locator("vaadin-date-picker-month-scroller"))
@@ -379,6 +390,8 @@ public class UserFiltersBrowserTest extends BrowserFixture {
                   .setName(uiTexts.timeInput(LocalTime.of(7, 30)))
                   .setExact(true));
       assertThat(displayedTimeLocator).isVisible();
+      assertThat(browserPage.locator("vaadin-time-picker-overlay[opened] [part=overlay]"))
+          .hasCSS("outline-style", "none");
       BoundingBox rowBounds = displayedTimeLocator.boundingBox();
       BoundingBox scrollerBounds =
           browserPage.locator("vaadin-time-picker-scroller:visible").boundingBox();

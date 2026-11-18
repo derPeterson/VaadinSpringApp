@@ -1489,7 +1489,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           .hasCSS("cursor", "pointer");
       for (String buttonId :
           new String[] {"account-header-notifications", "account-header-settings"}) {
-        assertThat(browserPage.locator("#" + buttonId)).hasCSS("cursor", "pointer");
+        Locator actionButtonLocator = browserPage.locator("#" + buttonId);
+        assertThat(actionButtonLocator).hasCSS("cursor", "pointer");
+        BoundingBox buttonBounds = actionButtonLocator.boundingBox();
+        BoundingBox iconBounds = actionButtonLocator.locator("vaadin-icon").boundingBox();
+        assertEquals(
+            buttonBounds.x + buttonBounds.width / 2, iconBounds.x + iconBounds.width / 2, 0.1);
       }
       Locator homeLinkLocator = browserPage.locator(".cosmos-topbar-home");
       homeLinkLocator.hover();
@@ -1575,6 +1580,13 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           invalid.invalid = true;
           invalid.id = 'aura-invalid-field';
           fixture.append(invalid);
+          const secondary = document.createElement('vaadin-button');
+          secondary.id = 'aura-secondary-button';
+          secondary.textContent = 'Secondary action';
+          const secondaryIcon = document.createElement('vaadin-icon');
+          secondaryIcon.setAttribute('src', '/icons/lucide/arrow-left.svg');
+          secondary.append(secondaryIcon);
+          fixture.append(secondary);
           for (const tag of ['vaadin-checkbox', 'vaadin-switch', 'vaadin-button']) {
             const control = document.createElement(tag);
             control.disabled = true;
@@ -1588,19 +1600,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     try {
       Locator fixtureLocator = browserPage.locator("#aura-field-fixture");
       assertThat(fixtureLocator.locator("[data-aura-disabled]")).hasCount(9);
-      String disabledColor =
-          (String)
-              fixtureLocator.evaluate(
-                  """
-                  element => {
-                    const probe = document.createElement('span');
-                    probe.style.color = 'var(--cosmos-text-disabled-color)';
-                    element.append(probe);
-                    const color = getComputedStyle(probe).color;
-                    probe.remove();
-                    return color;
-                  }
-                  """);
+      String disabledColor = resolveFixtureColor(fixtureLocator, "--cosmos-text-disabled-color");
       for (Locator fieldLocator : fixtureLocator.locator("[data-aura-disabled]").all()) {
         assertThat(fieldLocator).hasAttribute("disabled", "");
         assertThat(fieldLocator.locator("[part=label]")).hasCSS("opacity", "0.5");
@@ -1615,6 +1615,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       assertEquals(
           "none",
           errorLocator.evaluate("element => getComputedStyle(element, '::before').display"));
+      Locator secondaryButtonLocator = fixtureLocator.locator("#aura-secondary-button");
+      assertThat(secondaryButtonLocator).hasCSS("color", "rgb(255, 255, 255)");
+      assertThat(secondaryButtonLocator.locator("vaadin-icon"))
+          .hasCSS("color", resolveFixtureColor(fixtureLocator, "--cosmos-primary-text-color"));
       for (Locator actionLocator : fixtureLocator.locator("[data-aura-action]").all()) {
         assertThat(actionLocator).hasAttribute("disabled", "");
         if (actionLocator.evaluate("element => element.localName").equals("vaadin-button")) {
@@ -1627,5 +1631,21 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     } finally {
       browserPage.evaluate("document.querySelector('#aura-field-fixture')?.remove()");
     }
+  }
+
+  private String resolveFixtureColor(Locator fixtureLocator, String colorToken) {
+    return (String)
+        fixtureLocator.evaluate(
+            """
+            (element, token) => {
+              const probe = document.createElement('span');
+              probe.style.color = `var(${token})`;
+              element.append(probe);
+              const color = getComputedStyle(probe).color;
+              probe.remove();
+              return color;
+            }
+            """,
+            colorToken);
   }
 }
