@@ -78,4 +78,7 @@ public class SupportTicketEntity {
   private Instant publicUpdatedAt;
 
   private Instant instructionSentAt;
+
+  // Nur der letzte eigene Auftrag sperrt weitere Anleitungen; Queue-Bereinigung bleibt unabhängig.
+  private Long instructionEmailQueueId;
 }

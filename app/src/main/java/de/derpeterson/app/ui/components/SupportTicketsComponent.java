@@ -22,6 +22,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -37,6 +38,7 @@ import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.InboxQuery;
+import de.derpeterson.app.service.SupportTicketService.InstructionBlock;
 import de.derpeterson.app.service.SupportTicketService.LiveView;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
@@ -140,6 +142,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Button sendReplyButton = new Button();
   private final Button closeTicketButton = new Button();
   private final Button sendInstructionsButton = new Button();
+  private final HorizontalLayout instructionButtonTargetLayout = new HorizontalLayout();
+  private final Tooltip instructionBlockedTooltip =
+      Tooltip.forComponent(instructionButtonTargetLayout);
 
   // Vorgangsliste und Filter
   private final Button reloadTicketsButton = new Button();
@@ -195,6 +200,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   // Registrierung für Aktualisierungen während der Sitzung
   private transient Registration liveTicketRegistration;
+  private transient Registration instructionPollRegistration;
+  private transient UI instructionPollUi;
+  private int previousInstructionPollInterval;
+  private int instructionPollInterval;
   private transient HttpSession liveSession;
   private transient volatile Long liveViewerId;
 
@@ -674,7 +683,21 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminTicketTools.setAlignItems(Alignment.CENTER);
     adminTicketTools.addClassName("support-admin-ticket-tools");
     watchTicketSwitch.addClassName("cosmos-config-switch");
-    adminTicketTools.add(watchTicketSwitch, claimTicketButton, sendInstructionsButton);
+    instructionButtonTargetLayout.setId("support-instructions-target");
+    instructionButtonTargetLayout.setPadding(false);
+    instructionButtonTargetLayout.setSpacing(false);
+    instructionButtonTargetLayout.setWidth("auto");
+    instructionButtonTargetLayout.add(sendInstructionsButton);
+    instructionButtonTargetLayout.addAttachListener(event ->
+        instructionButtonTargetLayout
+            .getElement()
+            .executeJs(
+                """
+                const tooltip = Array.from(this.ownerDocument.querySelectorAll('vaadin-tooltip'))
+                    .find(candidate => candidate.target === this);
+                tooltip?.classList.add('support-instructions-tooltip');
+                """));
+    adminTicketTools.add(watchTicketSwitch, claimTicketButton, instructionButtonTargetLayout);
     adminPolicyLabelSpan.addClassName("support-admin-policy-label");
     Span ticketPolicySpan = new Span(adminPolicyLabelSpan, new Text(" "), adminRecoveryHintSpan);
     adminRecoveryInfoLayout.add(AppIcon.INFO_CIRCLE.create(), ticketPolicySpan);
@@ -1005,6 +1028,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   @Override
   protected void onDetach(DetachEvent event) {
+    stopInstructionPolling();
     if (liveTicketRegistration != null) {
       liveTicketRegistration.remove();
       liveTicketRegistration = null;
@@ -1031,6 +1055,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       showConversation(liveTicketView.messages(), liveTicketView.requester());
     } catch (AccessDeniedException _) {
       // Die Sitzungs-/Rollenprüfung hat Vorrang vor dem Nachladen per Push.
+      stopInstructionPolling();
     } catch (RuntimeException failure) {
       log.warn("Ticket refresh failed", safeFailure(failure));
     }
@@ -1317,13 +1342,60 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void updateSendInstructionsButton(boolean canReply) {
-    sendInstructionsButton.setVisible(administration && canReply);
-    boolean developmentTicket =
-        administration && selectedTicket != null && selectedTicket.developmentAccount();
-    sendInstructionsButton.setEnabled(
-        selectedTicket != null && !selectedTicket.instructionSent() && !developmentTicket);
-    sendInstructionsButton.setTooltipText(
-        developmentTicket ? messageProperties.getDevelopmentAccountMailUnavailable() : null);
+    boolean visible = administration && canReply;
+    sendInstructionsButton.setVisible(visible);
+    instructionButtonTargetLayout.setVisible(visible);
+    InstructionBlock block =
+        selectedTicket == null
+            ? InstructionBlock.NONE
+            : selectedTicket.instructionDelivery().blockReason(Instant.now());
+    sendInstructionsButton.setEnabled(selectedTicket != null && block == InstructionBlock.NONE);
+    instructionBlockedTooltip.setMarkdown(
+        switch (block) {
+          case EMAIL_PENDING -> messageProperties.getSupportInstructionsPending();
+          case COOLDOWN -> messageProperties.getSupportInstructionsCooldown();
+          case NONE -> "";
+        });
+    if (visible && block != InstructionBlock.NONE) {
+      instructionButtonTargetLayout.getElement().setAttribute("tabindex", "0");
+      startInstructionPolling();
+    } else {
+      instructionButtonTargetLayout.getElement().removeAttribute("tabindex");
+      stopInstructionPolling();
+    }
+  }
+
+  private void startInstructionPolling() {
+    if (instructionPollRegistration != null || liveSession == null || !isAttached()) {
+      return;
+    }
+    UI ui = getUI().orElseThrow();
+    instructionPollUi = ui;
+    previousInstructionPollInterval = ui.getPollInterval();
+    instructionPollInterval =
+        previousInstructionPollInterval > 0
+            ? Math.min(previousInstructionPollInterval, 1000)
+            : 1000;
+    ui.setPollInterval(instructionPollInterval);
+    instructionPollRegistration =
+        ui.addPollListener(event -> {
+          HttpSession session = liveSession;
+          if (session != null && isAttached()) {
+            refreshLive(session);
+          }
+        });
+  }
+
+  private void stopInstructionPolling() {
+    if (instructionPollRegistration == null) {
+      return;
+    }
+    instructionPollRegistration.remove();
+    instructionPollRegistration = null;
+    if (instructionPollUi.getPollInterval() == instructionPollInterval) {
+      instructionPollUi.setPollInterval(previousInstructionPollInterval);
+    }
+    instructionPollUi = null;
   }
 
   private void refreshAdminConversation(List<Reply> ticketReplies) {
@@ -1723,22 +1795,28 @@ public final class SupportTicketsComponent extends VerticalLayout {
       instructionDialog.open(
           new PortalConfirmationDialog.Prompt(
               messageProperties::getSupportInstructions,
-              () -> "",
-              guide::getHeading,
-              guide::getDescription,
-              () -> guide,
+              () ->
+                  target.developmentAccount()
+                      ? messageProperties.getSupportInstructionsTicketDescription()
+                      : messageProperties.getSupportInstructionsEmailDescription(),
+              () -> target.developmentAccount() ? "" : guide.getHeading(),
+              () -> target.developmentAccount() ? "" : guide.getDescription(),
+              () -> createInstructionPreviewContext(guide, target),
               () -> "",
               messageProperties::getSupportInstructions,
               false,
               AppIcon.ENVELOPE::create),
           () -> {
             try {
-              supportTicketService.sendTicketRecoveryInstructions(
-                  httpRequest, target.id(), target.version());
+              Ticket updatedTicket =
+                  supportTicketService.sendTicketRecoveryInstructions(
+                      httpRequest, target.id(), target.version());
               refreshTicketWorkspace();
               NotificationHelper.getInstance()
                   .showTextNotification(
-                      messageProperties::getSupportQueued,
+                      updatedTicket.developmentAccount()
+                          ? messageProperties::getSupportInstructionsRecorded
+                          : messageProperties::getSupportQueued,
                       NotificationHelper.NotificationType.SUCCESS);
             } catch (RuntimeException failure) {
               handleActionFailure(failure);
@@ -1747,6 +1825,43 @@ public final class SupportTicketsComponent extends VerticalLayout {
     } catch (RuntimeException failure) {
       handleActionFailure(failure);
     }
+  }
+
+  private Component createInstructionPreviewContext(
+      RecoveryInstructionsComponent guide, Ticket target) {
+    if (!target.developmentAccount()) {
+      return guide;
+    }
+
+    Span warningLabelSpan = new Span(messageProperties.getSupportSecurityNoticeLabel() + " ");
+    warningLabelSpan.addClassName("cosmos-security-warning-label");
+    HorizontalLayout warningLayout =
+        new HorizontalLayout(
+            AppIcon.WARNING_TRIANGLE.create(),
+            new Span(
+                warningLabelSpan,
+                new Span(messageProperties.getSupportInstructionsDevelopmentNotice())));
+    warningLayout.setSpacing(false);
+    warningLayout.setPadding(false);
+    warningLayout.setAlignItems(Alignment.START);
+    warningLayout.addClassName("cosmos-security-warning");
+    warningLayout.setId("support-instructions-development-warning");
+
+    Span instructionHeadingSpan = new Span(guide.getHeading());
+    instructionHeadingSpan.addClassName("portal-confirm-question");
+    Span instructionDescriptionSpan = new Span(guide.getDescription());
+    instructionDescriptionSpan.addClassName("portal-confirm-explanation");
+    VerticalLayout instructionLeadLayout =
+        new VerticalLayout(instructionHeadingSpan, instructionDescriptionSpan);
+    instructionLeadLayout.setPadding(false);
+    instructionLeadLayout.setSpacing(false);
+    instructionLeadLayout.addClassName("portal-confirm-lead");
+
+    VerticalLayout previewLayout = new VerticalLayout(warningLayout, instructionLeadLayout, guide);
+    previewLayout.setPadding(false);
+    previewLayout.setSpacing(false);
+    previewLayout.addClassName("support-instruction-guide");
+    return previewLayout;
   }
 
   private void runTicketActionAndRefreshWorkspace(

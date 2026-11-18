@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,10 +21,12 @@ import com.flowingcode.vaadin.addons.otpfield.OtpCompleteEvent;
 import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.PollEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Paragraph;
@@ -31,6 +34,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -63,6 +67,7 @@ import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.SupportTicketFilter.Assignment;
 import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.InstructionDelivery;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
@@ -77,6 +82,7 @@ import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,6 +96,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -97,16 +104,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 class TwoFactorFlowViewTest {
   @ParameterizedTest
   @CsvSource({
-    "de,false,false",
-    "en,false,false",
-    "de,true,false",
-    "en,true,false",
-    "de,false,true",
-    "en,false,true"
+    "de,false,false,false", "en,false,false,false",
+    "de,true,false,false", "en,true,false,false",
+    "de,false,true,false", "en,false,true,false",
+    "de,true,true,false", "en,true,true,false",
+    "de,false,false,true", "en,false,false,true",
+    "de,true,false,true", "en,true,false,true"
   })
   @SuppressWarnings("unchecked")
-  void instructionsRemainAvailableOnlyForAnUnsentRegularAccountTicket(
-      String language, boolean alreadySent, boolean developmentAccount) {
+  void instructionsExplainTemporaryMailAndCooldownBlocks(
+      String language, boolean cooldownActive, boolean developmentAccount, boolean emailPending) {
     openTwoFactorPage(language, false);
     SupportTicketService ticketService = mock(SupportTicketService.class);
     Ticket baseTicket = filterTicket(1L, Status.IN_PROGRESS, 9L);
@@ -121,7 +128,8 @@ class TwoFactorFlowViewTest {
             baseTicket.createdAt(),
             baseTicket.assignee(),
             baseTicket.assigneeIdentity(),
-            alreadySent,
+            new InstructionDelivery(
+                cooldownActive ? Instant.now().plusSeconds(60) : null, emailPending),
             developmentAccount,
             baseTicket.unreadMessages(),
             baseTicket.subscribed(),
@@ -130,15 +138,155 @@ class TwoFactorFlowViewTest {
     stubInbox(ticketService, List.of(ticket));
     when(ticketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent ticketsComponent =
-        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, true);
+        new SupportTicketsComponent(
+            new MessageProperties(new CustomI18NProvider()), ticketService, mockHttpRequest, true);
     ((Grid<Ticket>) find(ticketsComponent, "support-ticket-grid"))
         .asSingleSelect()
         .setValue(ticket);
     ticketsComponent.refreshTicketWorkspace();
     Button instructionsButton = (Button) find(ticketsComponent, "support-instructions");
     assertTrue(instructionsButton.isVisible());
-    assertEquals(!alreadySent && !developmentAccount, instructionsButton.isEnabled());
+    assertEquals(!cooldownActive && !emailPending, instructionsButton.isEnabled());
+    assertEquals(
+        emailPending
+            ? messageProperties.getSupportInstructionsPending()
+            : cooldownActive ? messageProperties.getSupportInstructionsCooldown() : "",
+        Tooltip.forComponent(find(ticketsComponent, "support-instructions-target")).getText());
     assertTrue(find(ticketsComponent, "support-add-reply").isVisible());
+    if (!cooldownActive && !emailPending) {
+      instructionsButton.click();
+      ConfirmDialog previewDialog =
+          (ConfirmDialog) find(ticketsComponent, "support-instruction-preview");
+      assertTrue(previewDialog.isOpened());
+      assertTrue(
+          previewDialog
+              .getElement()
+              .getTextRecursively()
+              .contains(
+                  developmentAccount
+                      ? messageProperties.getSupportInstructionsTicketDescription()
+                      : messageProperties.getSupportInstructionsEmailDescription()));
+      assertEquals(
+          messageProperties.getSupportInstructions(),
+          ((Button) find(previewDialog, "support-instruction-preview-submit")).getText());
+      verify(ticketService, never()).sendTicketRecoveryInstructions(any(), any(), any());
+      assertEquals(
+          developmentAccount,
+          tree(previewDialog)
+              .anyMatch(component ->
+                  component.getId().orElse("").equals("support-instructions-development-warning")));
+      if (developmentAccount) {
+        String previewText = previewDialog.getElement().getTextRecursively();
+        assertTrue(
+            previewText.contains(messageProperties.getSupportInstructionsDevelopmentNotice()));
+        assertTrue(
+            previewText.indexOf(messageProperties.getSupportInstructionsDevelopmentNotice())
+                < previewText.indexOf(
+                    messageProperties.getSupportRecoveryInstructions().split("\n")[0]));
+      }
+      Locale switchedLocale = Locale.forLanguageTag("de".equals(language) ? "en" : "de");
+      when(vaadinSession.getLocale()).thenReturn(switchedLocale);
+      ticketsComponent.refreshTexts();
+      MessageProperties switchedTexts =
+          MessageProperties.forLocale(new CustomI18NProvider(), switchedLocale);
+      assertTrue(
+          previewDialog
+              .getElement()
+              .getTextRecursively()
+              .contains(
+                  developmentAccount
+                      ? switchedTexts.getSupportInstructionsTicketDescription()
+                      : switchedTexts.getSupportInstructionsEmailDescription()));
+      assertEquals(
+          switchedTexts.getSupportInstructions(),
+          ((Button) find(previewDialog, "support-instruction-preview-submit")).getText());
+      if (developmentAccount) {
+        String previewText = previewDialog.getElement().getTextRecursively();
+        assertTrue(previewText.contains(switchedTexts.getSupportInstructionsDevelopmentNotice()));
+        assertTrue(
+            previewText.indexOf(switchedTexts.getSupportInstructionsDevelopmentNotice())
+                < previewText.indexOf(
+                    switchedTexts.getSupportRecoveryInstructions().split("\n")[0]));
+      }
+      when(ticketService.sendTicketRecoveryInstructions(
+              mockHttpRequest, ticket.id(), ticket.version()))
+          .thenReturn(ticket);
+      ComponentUtil.fireEvent(previewDialog, new ConfirmDialog.ConfirmEvent(previewDialog, true));
+      verify(ticketService)
+          .sendTicketRecoveryInstructions(mockHttpRequest, ticket.id(), ticket.version());
+      assertTicketValidationMessage(
+          developmentAccount
+              ? switchedTexts.getSupportInstructionsRecorded()
+              : switchedTexts.getSupportQueued());
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 250, 2000})
+  @SuppressWarnings("unchecked")
+  void waitingInstructionsRestorePollingAfterReleaseDenialOrDetach(int previousInterval) {
+    openTwoFactorPage("de", false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    Ticket available = filterTicket(1L, Status.IN_PROGRESS, 9L);
+    Ticket waiting =
+        new Ticket(
+            available.id(),
+            available.version(),
+            available.subject(),
+            available.type(),
+            available.status(),
+            available.updatedAt(),
+            available.createdAt(),
+            available.assignee(),
+            available.assigneeIdentity(),
+            new InstructionDelivery(Instant.now().plusSeconds(60), false),
+            available.developmentAccount(),
+            available.unreadMessages(),
+            available.subscribed(),
+            available.subscriptionAllowed(),
+            available.requesterIdentity());
+    List<Ticket> visibleTickets = new ArrayList<>(List.of(waiting));
+    stubInbox(ticketService, visibleTickets);
+    when(ticketService.administratorId(mockHttpRequest)).thenReturn(9L);
+    when(ticketService.liveView(any(), eq(true), any(), any()))
+        .thenAnswer(call ->
+            ticketService.loadTicketInbox(
+                mockHttpRequest, call.getArgument(2), call.getArgument(3)));
+    SupportTicketsComponent tickets =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, true);
+    ((Grid<Ticket>) find(tickets, "support-ticket-grid")).asSingleSelect().setValue(waiting);
+    UI ui = UI.getCurrent();
+    ui.setPollInterval(previousInterval);
+    ui.add(tickets);
+    ReflectionTestUtils.setField(tickets, "liveSession", mock(HttpSession.class));
+    tickets.refreshTicketWorkspace();
+    Button instructions = (Button) find(tickets, "support-instructions");
+    assertFalse(instructions.isEnabled());
+    assertEquals(
+        previousInterval > 0 ? Math.min(previousInterval, 1000) : 1000, ui.getPollInterval());
+    assertEquals(
+        "0", find(tickets, "support-instructions-target").getElement().getAttribute("tabindex"));
+
+    visibleTickets.set(0, available);
+    ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
+    assertTrue(instructions.isEnabled());
+    assertEquals(previousInterval, ui.getPollInterval());
+    assertEquals("", Tooltip.forComponent(find(tickets, "support-instructions-target")).getText());
+
+    visibleTickets.set(0, waiting);
+    tickets.refreshTicketWorkspace();
+    assertFalse(instructions.isEnabled());
+    doThrow(new AccessDeniedException("Ticket access revoked"))
+        .when(ticketService)
+        .liveView(any(), eq(true), any(), any());
+    ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
+    assertEquals(previousInterval, ui.getPollInterval());
+
+    tickets.refreshTicketWorkspace();
+    ui.remove(tickets);
+    assertEquals(previousInterval, ui.getPollInterval());
+    ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
+    verify(ticketService, times(2)).liveView(any(), eq(true), any(), any());
   }
 
   @ParameterizedTest
@@ -547,7 +695,7 @@ class TwoFactorFlowViewTest {
             Instant.EPOCH,
             null,
             null,
-            false,
+            new InstructionDelivery(null, false),
             false,
             0,
             false,
@@ -564,7 +712,7 @@ class TwoFactorFlowViewTest {
             Instant.EPOCH,
             null,
             null,
-            false,
+            new InstructionDelivery(null, false),
             false,
             0,
             false,
@@ -622,7 +770,7 @@ class TwoFactorFlowViewTest {
             Instant.EPOCH,
             null,
             null,
-            false,
+            new InstructionDelivery(null, false),
             false,
             0,
             false,
@@ -639,7 +787,7 @@ class TwoFactorFlowViewTest {
             Instant.EPOCH,
             null,
             null,
-            false,
+            new InstructionDelivery(null, false),
             false,
             0,
             false,
@@ -912,7 +1060,7 @@ class TwoFactorFlowViewTest {
         Instant.EPOCH,
         assignee,
         identity,
-        false,
+        new InstructionDelivery(null, false),
         false,
         unread,
         false,
@@ -1101,7 +1249,7 @@ class TwoFactorFlowViewTest {
             Instant.EPOCH,
             9L,
             new UserIdentity("Alex", "Beispiel", "alex@example.test"),
-            false,
+            new InstructionDelivery(null, false),
             false,
             0,
             false,

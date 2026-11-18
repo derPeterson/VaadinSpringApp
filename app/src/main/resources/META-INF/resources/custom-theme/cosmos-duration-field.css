@@ -33,6 +33,15 @@
     --vaadin-input-field-value-font-size: 14px;
     --vaadin-input-field-value-font-weight: 400;
     --vaadin-input-field-value-color: var(--cosmos-text-color);
+    --vaadin-input-field-placeholder-color: var(--cosmos-input-placeholder-color);
+}
+
+/* Auch das präzise BigDecimalField zeigt den Standard nur als gedämpften Platzhalter. */
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field):not([disabled]) > input::placeholder {
+    color: var(--cosmos-input-placeholder-color);
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-regular);
+    opacity: 1;
 }
 
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(label) {

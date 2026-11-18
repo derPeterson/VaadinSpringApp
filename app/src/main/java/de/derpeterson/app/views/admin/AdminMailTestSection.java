@@ -401,42 +401,9 @@ public class AdminMailTestSection extends VerticalLayout {
     String mailSubjectText = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
     String mailBodyText = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();
 
-    if (!UserInputRules.isEmailValid(recipientEmailAddress)) {
-      NotificationHelper.getInstance()
-          .showTextNotification(
-              messageProperties::getBaseFailedTitle,
-              messageProperties::getAdminMailValidationRecipient,
-              -1,
-              NotificationHelper.NotificationType.ERROR);
-      testRecipientField.setInvalid(true);
+    if (!validateMailInputs(recipientEmailAddress, mailSubjectText, mailBodyText)) {
       return;
     }
-
-    if (mailSubjectText.isBlank()) {
-      NotificationHelper.getInstance()
-          .showTextNotification(
-              messageProperties::getBaseFailedTitle,
-              messageProperties::getAdminMailValidationSubject,
-              -1,
-              NotificationHelper.NotificationType.ERROR);
-      testSubjectField.setInvalid(true);
-      return;
-    }
-
-    if (mailBodyText.isBlank()) {
-      NotificationHelper.getInstance()
-          .showTextNotification(
-              messageProperties::getBaseFailedTitle,
-              messageProperties::getAdminMailValidationBody,
-              -1,
-              NotificationHelper.NotificationType.ERROR);
-      testBodyField.setInvalid(true);
-      return;
-    }
-
-    testRecipientField.setInvalid(false);
-    testSubjectField.setInvalid(false);
-    testBodyField.setInvalid(false);
 
     try {
       emailService.sendAdminEmail(recipientEmailAddress, mailSubjectText, mailBodyText);
@@ -455,5 +422,31 @@ public class AdminMailTestSection extends VerticalLayout {
               -1,
               NotificationHelper.NotificationType.ERROR);
     }
+  }
+
+  private boolean validateMailInputs(
+      String recipientEmailAddress, String mailSubjectText, String mailBodyText) {
+    testRecipientField.setInvalid(!UserInputRules.isEmailValid(recipientEmailAddress));
+    testSubjectField.setInvalid(mailSubjectText.isBlank());
+    testBodyField.setInvalid(mailBodyText.isBlank());
+
+    Supplier<String> errorMessageSupplier;
+    if (testRecipientField.isInvalid()) {
+      errorMessageSupplier = messageProperties::getAdminMailValidationRecipient;
+    } else if (testSubjectField.isInvalid()) {
+      errorMessageSupplier = messageProperties::getAdminMailValidationSubject;
+    } else if (testBodyField.isInvalid()) {
+      errorMessageSupplier = messageProperties::getAdminMailValidationBody;
+    } else {
+      return true;
+    }
+
+    NotificationHelper.getInstance()
+        .showTextNotification(
+            messageProperties::getBaseFailedTitle,
+            errorMessageSupplier,
+            -1,
+            NotificationHelper.NotificationType.ERROR);
+    return false;
   }
 }

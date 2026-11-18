@@ -280,6 +280,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-icon-size-s: 16px;
     --cosmos-icon-size-m: 20px;
     --cosmos-icon-size-l: 24px;
+    --cosmos-close-icon-size: 18px;
     --cosmos-focus-ring-color: var(--cosmos-primary-text-color);
 
     /* 5. EINGABEFELDER

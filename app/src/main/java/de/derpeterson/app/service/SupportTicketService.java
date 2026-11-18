@@ -73,13 +73,32 @@ public class SupportTicketService {
       Instant createdAt,
       Long assignee,
       UserIdentity assigneeIdentity,
-      boolean instructionSent,
+      InstructionDelivery instructionDelivery,
       boolean developmentAccount,
       long unreadMessages,
       boolean subscribed,
       boolean subscriptionAllowed,
       UserIdentity requesterIdentity)
       implements java.io.Serializable {}
+
+  public enum InstructionBlock {
+    NONE,
+    EMAIL_PENDING,
+    COOLDOWN
+  }
+
+  public record InstructionDelivery(Instant availableAt, boolean emailPending)
+      implements java.io.Serializable {
+    public InstructionBlock blockReason(Instant now) {
+      if (emailPending) {
+        return InstructionBlock.EMAIL_PENDING;
+      }
+      if (availableAt != null && now.isBefore(availableAt)) {
+        return InstructionBlock.COOLDOWN;
+      }
+      return InstructionBlock.NONE;
+    }
+  }
 
   public enum ReplyAuthor {
     REQUESTER,
@@ -623,7 +642,8 @@ public class SupportTicketService {
   @Transactional(readOnly = true)
   public void validateInstructionPreview(HttpServletRequest httpRequest, Long id) {
     SupportTicketEntity ticket = requireAccessibleTicketEntity(httpRequest, id, true);
-    if (ticket.getOwner().isDevelopmentAccount() || !ticket.getStatus().acceptsMessages()) {
+    if (!ticket.getStatus().acceptsMessages()
+        || instructionDelivery(ticket).blockReason(Instant.now()) != InstructionBlock.NONE) {
       throw new AccessDeniedException("Instruction delivery unavailable");
     }
   }
@@ -636,8 +656,7 @@ public class SupportTicketService {
     requireAssignee(ticket, actor);
     UserEntity recipient = ticket.getOwner();
     entityManager.refresh(recipient);
-    if (ticket.getInstructionSentAt() != null
-        || recipient.isDevelopmentAccount()
+    if (instructionDelivery(ticket).blockReason(Instant.now()) != InstructionBlock.NONE
         || !ticket.getStatus().acceptsMessages()
         || !recipient.isEnabled()
         || recipient.isVerificationPending()) {
@@ -646,22 +665,26 @@ public class SupportTicketService {
     MessageProperties messageProperties =
         accountSecurityMail.messagePropertiesForRecipient(recipient);
     String body = messageProperties.getSupportRecoveryInstructions();
-    emailQueueService.addAddressedNotification(
-        recipient,
-        recipient.getEmail(),
-        messageProperties.getSupportRecoverySubject(),
-        accountSecurityMail.render(
-            "two_factor",
-            recipient,
-            Map.of(
-                "TITLE",
-                messageProperties.getSupportRecoverySubject(),
-                "MESSAGE",
-                body,
-                "CODE",
-                "",
-                "NOTICE",
-                messageProperties.getSupportNoUnlock())));
+    if (!recipient.isDevelopmentAccount()) {
+      Long instructionQueueId =
+          emailQueueService.addAddressedNotification(
+              recipient,
+              recipient.getEmail(),
+              messageProperties.getSupportRecoverySubject(),
+              accountSecurityMail.render(
+                  "two_factor",
+                  recipient,
+                  Map.of(
+                      "TITLE",
+                      messageProperties.getSupportRecoverySubject(),
+                      "MESSAGE",
+                      body,
+                      "CODE",
+                      "",
+                      "NOTICE",
+                      messageProperties.getSupportNoUnlock())));
+      ticket.setInstructionEmailQueueId(instructionQueueId);
+    }
     appendTicketReply(
         ticket,
         userRepository.getReferenceById(actor.id()),
@@ -671,7 +694,11 @@ public class SupportTicketService {
         Kind.RECOVERY_INSTRUCTIONS);
     ticket.setInstructionSentAt(Instant.now());
     supportTicketRepository.saveAndFlush(ticket);
-    AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
+    if (recipient.isDevelopmentAccount()) {
+      AfterCommitLog.info(log, "Recovery instructions recorded without email: ticketId={}", id);
+    } else {
+      AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
+    }
     return buildTicketView(ticket, true);
   }
 
@@ -787,6 +814,17 @@ public class SupportTicketService {
     supportReplyRepository.saveAndFlush(event);
   }
 
+  private InstructionDelivery instructionDelivery(SupportTicketEntity ticket) {
+    Instant availableAt =
+        ticket.getInstructionSentAt() == null
+            ? null
+            : ticket.getInstructionSentAt().plusSeconds(60);
+    boolean emailPending =
+        !ticket.getOwner().isDevelopmentAccount()
+            && emailQueueService.hasOpenEmail(ticket.getInstructionEmailQueueId());
+    return new InstructionDelivery(availableAt, emailPending);
+  }
+
   private Ticket buildTicketView(SupportTicketEntity ticket, boolean administration) {
     return buildTicketView(ticket, ticket.getUpdatedAt(), 0L, false, false, administration);
   }
@@ -820,7 +858,7 @@ public class SupportTicketService {
         ticket.getCreatedAt(),
         ticket.getAssignee() == null ? null : ticket.getAssignee().getId(),
         assigneeIdentity,
-        ticket.getInstructionSentAt() != null,
+        instructionDelivery(ticket),
         ticket.getOwner().isDevelopmentAccount(),
         unread,
         subscribed && allowed,

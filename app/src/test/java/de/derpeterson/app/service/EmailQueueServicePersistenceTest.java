@@ -138,6 +138,29 @@ class EmailQueueServicePersistenceTest {
   }
 
   @ParameterizedTest
+  @EnumSource(EmailStatus.class)
+  void addressedMailReturnsItsOwnQueueIdAndOnlyPendingOrRunningMailBlocksResending(
+      EmailStatus status) {
+    UserEntity recipient = userRepository.findById(userId).orElseThrow();
+    Long queueId =
+        service.addAddressedNotification(recipient, recipient.getEmail(), "Instructions", "Body");
+    assertNotNull(queueId);
+    assertTrue(service.hasOpenEmail(queueId));
+    tx.executeWithoutResult(transaction -> {
+      EmailQueueEntity email = emailQueueRepository.findById(queueId).orElseThrow();
+      email.setStatus(status);
+      emailQueueRepository.saveAndFlush(email);
+    });
+    assertEquals(
+        status == EmailStatus.PENDING || status == EmailStatus.IN_PROGRESS,
+        service.hasOpenEmail(queueId));
+    assertFalse(service.hasOpenEmail(null));
+    assertFalse(service.hasOpenEmail(Long.MAX_VALUE));
+    tx.executeWithoutResult(transaction -> emailQueueRepository.deleteById(queueId));
+    assertFalse(service.hasOpenEmail(queueId));
+  }
+
+  @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void deletionConfirmationRemovesRecipientDataAfterSuccessfulOrFinalFailedTransport(
       boolean transportFails) throws Exception {

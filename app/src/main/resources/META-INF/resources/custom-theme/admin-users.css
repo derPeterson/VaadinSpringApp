@@ -87,21 +87,9 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     min-width: 0;
 }
 
-/* Vollständige Schaltergestaltung von „Login speichern“; die mehrzeilige
- * Beschriftung behält darunter ihre bestehende Typografie. */
+/* Lokale Anordnung und Beschriftung; die Schaltergrundgestaltung kommt aus cosmos-theme.css. */
 .admin-user-dialog .admin-user-option-switch {
-    --vaadin-switch-width: 34px;
-    --vaadin-switch-height: 20px;
     --vaadin-switch-gap: 9px;
-    --vaadin-switch-background: var(--cosmos-base-color);
-    --vaadin-switch-border-color: var(--cosmos-control-border-color);
-    --vaadin-switch-border-width: 1px;
-    --vaadin-switch-border-radius: 999px;
-    --vaadin-switch-marker-width: 14px;
-    --vaadin-switch-marker-height: 14px;
-    --vaadin-switch-marker-color: var(--cosmos-text-secondary-color);
-    --vaadin-switch-marker-border-width: 0;
-    --vaadin-switch-marker-scale: 1;
     --vaadin-switch-label-color: var(--cosmos-text-secondary-color);
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 400;
@@ -112,21 +100,11 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     margin: var(--cosmos-space-s) 0;
     padding: 0;
 }
-.admin-user-dialog .admin-user-option-switch[checked] {
-    --vaadin-switch-background: var(--cosmos-primary-background);
-    --vaadin-switch-border-color: var(--cosmos-primary-background);
-    --vaadin-switch-marker-color: var(--cosmos-heading-color);
-}
 
 .admin-user-dialog .admin-user-option-switch::part(label) {
     margin: 0;
     padding: 0;
     white-space: normal;
-}
-
-.admin-user-dialog .admin-user-option-switch[focus-ring]::part(switch) {
-    outline: 2px solid var(--cosmos-primary-text-color);
-    outline-offset: 3px;
 }
 
 .admin-user-dialog .admin-user-option-switch::part(label),
@@ -757,18 +735,6 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
     height: 40px;
     flex: 0 0 40px;
     border-radius: 12px;
-}
-.admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close {
-    box-sizing: border-box;
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 9px;
-}
-.admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close vaadin-icon {
-    width: 18px;
-    height: 18px;
 }
 /* !important: ohne Vorrang greifen die Overlay-Standards des Vaadin-Dialogs (per Vergleich geprüft). */
 vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(content) {

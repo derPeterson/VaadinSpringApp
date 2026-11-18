@@ -299,7 +299,9 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     border-radius: var(--cosmos-control-radius);
 }
 
+/* Reine Titelaktionen brauchen keinen nativen Abstand zum leeren Icon-Vorspann. */
 .cosmos-notification-title {
+    --vaadin-button-gap: 0;
     max-width: 100%;
     height: auto;
     min-height: var(--cosmos-size-m);
@@ -386,9 +388,10 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     min-width: 0;
     max-width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
-    gap: var(--cosmos-space-s);
+    column-gap: var(--cosmos-space-m);
+    row-gap: 0;
     padding: var(--cosmos-space-l);
     cursor: pointer;
     background: var(--cosmos-card-background);
@@ -401,15 +404,8 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     border-color: var(--cosmos-primary-color-50pct);
 }
 
-.cosmos-notification-inbox-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--cosmos-space-s);
-    min-width: 0;
-}
-
 #notifications-inbox .cosmos-notification-title {
-    flex: 1;
+    grid-column: 1;
     min-width: 0;
     min-height: 0;
     margin: 0;
@@ -432,6 +428,8 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 }
 
 .cosmos-notification-inbox-message {
+    grid-column: 1;
+    margin-top: var(--cosmos-space-s);
     min-width: 0;
     max-width: 100%;
     color: var(--cosmos-text-secondary-color);
@@ -444,19 +442,24 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 }
 
 .cosmos-notification-inbox-meta {
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--cosmos-space-s);
+    margin-top: var(--cosmos-space-m);
     color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-xs);
 }
 
 .cosmos-notification-inbox-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
     margin-inline-start: auto;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
     gap: var(--cosmos-space-s);
 }
@@ -723,17 +726,19 @@ vaadin-app-layout.cosmos-reference-admin
     line-height: var(--cosmos-line-height-copy);
 }
 
-/* Beschriftungsblock wie bei „Aktiv“ im Benutzerdialog. */
+/* Gleiche Beschriftung und Hinweiszeile wie bei den Switches im Benutzerdialog. */
 
 .cosmos-notification-compose-everyone {
-    --vaadin-switch-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-switch-label-font-weight: var(--cosmos-font-weight-bold);
+    display: inline-grid;
+    align-items: center;
+    --vaadin-switch-label-font-size: var(--cosmos-font-size-s);
+    --vaadin-switch-label-font-weight: var(--cosmos-font-weight-medium);
+    --vaadin-switch-label-line-height: var(--cosmos-line-height-s);
     --vaadin-switch-label-color: var(--vaadin-input-field-value-color, var(--cosmos-text-color));
 }
 
 .cosmos-notification-compose-everyone::part(label) {
-    font-size: var(--cosmos-font-size-m);
-    font-weight: var(--cosmos-font-weight-bold);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     color: var(--vaadin-input-field-value-color, var(--cosmos-text-color));
 }
 
@@ -741,11 +746,14 @@ vaadin-app-layout.cosmos-reference-admin
     display: block;
 }
 
+.cosmos-notification-compose-everyone-label > span:first-child {
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
+}
+
 .cosmos-notification-compose-everyone-hint {
-    margin-top: var(--cosmos-space-xs);
+    margin: 0;
     color: var(--cosmos-text-secondary-color);
-    font-size: var(--cosmos-font-size-xs);
-    font-weight: var(--cosmos-font-weight-regular);
+    font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-relaxed) var(--cosmos-font-family);
 }
 
 /* Die Mehrfachauswahl verwendet lokal dieselben Eingabetokens wie die ComboBox. */
@@ -1323,7 +1331,7 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row {
-    display: block;
+    display: grid;
     position: relative;
     margin: 0;
     padding: var(--cosmos-space-l);
@@ -1336,15 +1344,6 @@ vaadin-app-layout.cosmos-reference-admin
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row.cosmos-notification-row--unread {
     border-left: 3px solid var(--cosmos-primary-background);
     background: var(--cosmos-base-color);
-}
-
-.cosmos-reference-portal .cosmos-notification-inbox-row-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--cosmos-space-s);
-    margin-bottom: var(--cosmos-space-s);
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta {
@@ -1424,11 +1423,6 @@ vaadin-app-layout.cosmos-reference-admin
     color: var(--cosmos-primary-text-color);
 }
 
-.cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-content {
-    display: block;
-    padding: 0;
-}
-
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-title {
     display: flex;
     align-items: flex-start;
@@ -1454,7 +1448,6 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-message {
-    margin-top: 4px;
     color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
@@ -1740,7 +1733,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-meta {
-    margin: var(--cosmos-space-s) 0 var(--cosmos-space-m);
+    margin: var(--cosmos-space-m) 0 0;
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-title {
@@ -1750,6 +1743,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
 }
 
 .cosmos-notification-dialog.cosmos-reference-overlay .cosmos-notification-detail-body {
+    margin-top: var(--cosmos-space-s);
     color: var(--cosmos-text-color);
     font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-l) var(--cosmos-font-family);
 }
@@ -2016,16 +2010,6 @@ vaadin-combo-box-item.portal-pagination-option {
         gap: 12px;
     }
 
-    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-    }
-
-    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-actions {
-        align-self: flex-end;
-    }
-
     .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-pagination-row {
         grid-template-columns: 1fr auto;
         padding: 16px;
@@ -2078,14 +2062,14 @@ vaadin-combo-box-item.portal-pagination-option {
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-message {
     color: var(--cosmos-text-secondary-color);
     grid-column: 1;
-    margin: 5px 0;
+    margin: var(--cosmos-space-xs) 0 0;
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
     -webkit-line-clamp: 1;
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-meta {
     grid-column: 1 / -1;
-    margin-top: 8px;
+    margin-top: var(--cosmos-space-s);
     gap: 5px 9px;
 }
 

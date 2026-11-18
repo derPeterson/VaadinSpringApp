@@ -300,7 +300,8 @@ public class NotificationHelper implements Serializable {
     Button closeButton =
         new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> targetNotification.close());
     closeButton.addThemeVariants(ButtonVariant.TERTIARY);
-    closeButton.addClassNames(CosmosCssClasses.INLINE_BUTTON, CosmosCssClasses.TEXT_PRIMARY);
+    closeButton.addClassNames(
+        "cosmos-overlay-close", CosmosCssClasses.INLINE_BUTTON, CosmosCssClasses.TEXT_PRIMARY);
 
     return closeButton;
   }

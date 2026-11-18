@@ -186,9 +186,15 @@ Bereichs. Die Seitengröße bleibt dabei bedienbar. Seitenzahlen erhalten in
 | Pagination | Kompakte native Controls; aktive Seite in Primärfarbe |
 | Eingaben | Gemeinsame Feldfläche; Höhe und Schrift aus der jeweiligen Controlvariante |
 | Labels | Gemeinsame Labelschrift; rotes Sternchen nur bei tatsächlichem Pflichtfeld |
-| Schließen | `cosmos-overlay-close`, vorhandenes `CLOSE_CIRCLE` |
+| Schließen | `cosmos-overlay-close`, `CLOSE_CIRCLE`, feste Icongröße aus `--cosmos-close-icon-size` |
 | Löschaktionen | `cosmos-delete-button`, gemeinsame Danger-Tokens |
 | Warnaktionen | `cosmos-warning-button`, gemeinsame Warnpalette |
+
+Schließen-Buttons in Dialogköpfen, Popovers und eingeblendeten Notifications teilen
+die Regeln in `cosmos-theme.css`: 36-px-Button und festes 18-px-Kreis-X. Die Icongröße
+kommt ausschließlich aus `--cosmos-close-icon-size` in `cosmos-tokens.css`, unabhängig
+von geerbter Schriftgröße oder Seitenrahmen. Keine em-Größen oder lokalen Kopien
+in Shell-, Aura- oder Bereichs-CSS ergänzen. Die Empfängerliste verwendet denselben Stil.
 
 Beschriftete Felder erhalten keine dekorativen Präfixicons. Suchlupe und native
 rechte Feldaktionen bleiben erhalten. Feldicons sind neutral in Ruhe, heller bei
@@ -292,21 +298,36 @@ schrumpfen, während die Feldhilfe ihren Platz behält.
 In der Benutzeranlage/-bearbeitung belegt die Rollen-Auswahl auf Desktop nur die
 linke Feldspalte; rechts bleibt frei. Zugang gesperrt sowie bei der Anlage durch
 Superadmins Verifikation und Entwicklerkonto sind native Switches. Sie stehen
-jeweils in einer eigenen Zeile über die gesamte Formularbreite. Die lokale Regel
-in `admin-users.css` übernimmt die vollständige Schaltergestaltung von „Login
-speichern“ aus `cosmos-public.css`: Geometrie, Grid-Zentrierung, Labelabstand,
-Zustandsfarben und Fokusrahmen. Keine zusätzliche Pixelverschiebung des Griffs.
-Jeder Switch erhält oben und unten S (`--cosmos-space-s`); zwischen zwei
-Switches ergeben sich damit 16 px.
+jeweils in einer eigenen Zeile über die gesamte Formularbreite. Jeder Switch erhält
+oben und unten S (`--cosmos-space-s`); zwischen zwei Switches ergeben sich damit 16 px.
 Beschriftung und Untertext behalten ihre bisherige Typografie und dürfen umbrechen.
 Umschalten ändert zunächst den Entwurf, erst Speichern übernimmt ihn.
 Boolesche Konfigurationen nutzen native Switches mit `cosmos-config-switch`:
 Label links, Bahn rechts, Hilfe außerhalb. Erst Speichern übernimmt den Entwurf.
-Auch „Alle aktiven Konten“ im Benachrichtigungsentwurf verwendet einen nativen
-Switch mit bisheriger Beschriftung und Untertext. Er verändert die Auswahl für
+Auch „Alle Benutzer“ im Benachrichtigungsentwurf verwendet einen nativen
+Switch. Beschriftung und Untertext entsprechen den Optionen im Benutzerdialog:
+Titel mit Gewicht 500, Hinweis in kleiner sekundärer Schrift mit Gewicht 400. Er verändert die Auswahl für
 die nächste Vorschau; die Freigabe zum Senden entsteht weiterhin erst durch Prüfung.
 
-**Zeitfelder:** Aufrufer verwenden `CosmosDurationCustomField`. Die Hülle trägt
+**Zentrales Switch-Grundstyling:** `cosmos-theme.css` gestaltet alle nativen
+`vaadin-switch` direkt, auch in ausgelagerten Overlays. Eine zusätzliche Klasse
+oder Java-Hülle ist dafür nicht nötig. Bahn, runder Griff, aktive Ein-/Aus-Farben
+und Tastaturfokus haben genau eine gemeinsame Quelle. Disabled-/Read-only-Farben
+bleiben bei Aura; die normale Farbregel schließt diese Zustände ausdrücklich aus.
+Die Griffgröße bleibt beim Drücken stabil. Keine lokale Pixelverschiebung des Griffs.
+
+Die Bereichsdateien regeln weiterhin Labeltypografie, Untertext, Umbruch,
+Labelabstand, Reihenfolge links/rechts, Breite, Grid und äußere Abstände. Das
+betrifft Login, Benutzeranlage/-bearbeitung, Konfiguration und Anbieter,
+2FA-Regeln/-Wiederherstellung, Ticketbeobachtung und Benachrichtigungsentwurf.
+Dort keine erneuten Kopien von Bahn-/Griffmaßen, Zustandsfarben oder Fokusrahmen
+anlegen. Die bisherigen Grundregelkopien sind entfernt; die Anordnungen bleiben lokal.
+
+**Zeitfelder:** Platzhalter im Zahlenanteil sind über `cosmos-duration-field.css`
+ausdrücklich mit `--cosmos-input-placeholder-color` gedämpft, auch im präzisen
+`BigDecimalField`. Der Standardwert als Platzhalter bleibt von einer tatsächlichen
+Eingabe unterscheidbar; Leeren setzt keinen neuen Zahlenwert.
+Aufrufer verwenden `CosmosDurationCustomField`. Die Hülle trägt
 Label sowie Enabled/Read-only/Invalid; in der Konfiguration stehen Fehlertexte
 in der Notification statt unter dem Feld.
 `CosmosDurationField` liefert innen Zahl und Einheit.
@@ -358,15 +379,23 @@ Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
 Mitteilungskarten verwenden einheitliche Innenabstände: Gesamtübersicht und
 geöffneter Dialog L, kompakte Glockenvorschau M. Der zusätzliche linke Statusrahmen
 reserviert unabhängig vom Zustand dieselbe Breite, ohne das Padding umzurechnen.
-Zwischen Werkzeugleiste und Titel der Gesamtübersicht liegt S. Der native
+Glockenvorschau, Gesamtübersicht und Detaildialog zeigen Titel, Nachricht und
+Metadaten in dieser Reihenfolge. Übersicht und Vorschau nutzen dasselbe Raster:
+Titel und Nachricht links, Werkzeuge rechts über beide Zeilen, Metadaten darunter
+über die Kartenbreite. Dadurch erhöht die Werkzeughöhe nicht den Abstand zwischen
+Titel und Nachricht. Die Werkzeuge bleiben auch mobil rechts oben; lange Titel
+umbrechen neben ihnen. Der native
 Titelbutton behält Flexdarstellung statt des früheren lokalen Blocklayouts,
 damit seine Shadow-DOM-Slots keinen zusätzlichen Textzeilenraum erzeugen.
 Die sichtbare Wirkung ist noch manuell zu beurteilen; XL ist keine Voreinstellung.
 
 Die Nachrichtenkarte im geöffneten Dialog ist eine fachliche `Div`-Zusammensetzung.
 Ihr äußerer Innenabstand stammt aus `cosmos-notifications.css`, nicht aus Aura oder
-der nativen Card. Er ist einheitlich L; die Metadaten erhalten S nach oben und M
-nach unten. Frühere lokale 14-/20-px-Metadatenabstände sind entfernt. Die Werte
+der nativen Card. Er ist einheitlich L. Für Übersicht und Detaildialog gilt:
+Titel zur Nachricht S, Nachricht zu den Metadaten M. Die kompakte Glockenvorschau
+verwendet entsprechend XS und S. Zusätzliche Layoutgaps und untere Nachrichtenränder
+werden nicht addiert. Nach den Metadaten bleibt es beim äußeren Kartenpadding.
+Frühere lokale 14-/20-px-Metadatenabstände sind entfernt. Die Werte
 gelten unabhängig von der Fensterbreite; der Dialogaußenraum bleibt getrennt.
 
 „Als gelesen markieren“ in einer geöffneten Nachricht ist ein nativer Primary-Button.
@@ -616,6 +645,16 @@ Liste aus; Filter, Auswahl und Antwortentwurf bleiben erhalten.
 - `tab=all`/`tab=recovery` und Ticketnummer bleiben ohne Formularnavigation in der URL.
 - `RecoveryInstructionsComponent` nutzt native Layouts, nummerierte Badges und Details.
   Nachrichten sind Text, kein HTML.
+- Der Sperrgrund von „Anleitung senden“ nutzt einen nativen Markdown-Tooltip am
+  `HorizontalLayout` um den Button (`support-instructions-target`), damit Maus und
+  Tastatur ihn auch beim deaktivierten Button erreichen. Das Layout übernimmt
+  ausschließlich die bisherige Position; Button- und Tooltipgestaltung bleiben zentral.
+  Flow hängt freie Tooltips direkt an die UI. Die vorhandene Zuordnung über das öffentliche
+  native Ziel ergänzt deshalb beim Anhängen die lokale Klasse `support-instructions-tooltip`.
+  `cosmos-mfa-confirmation.css` entfernt damit die zusätzlichen Markdown-Absatzränder
+  und den formatierten Abschlussumbruch; der gemeinsame Tooltip-Innenabstand bleibt erhalten.
+  Während Mailauftrag oder Wartezeit sperren, aktualisiert natives UI-Polling den
+  Status und wird bei Freigabe beziehungsweise Verlassen wieder entfernt.
 - Listen-/Verlaufsgeometrie bleibt lokal; globale Scrollregeln liefern die Leisten.
 
 Fachliche Zustände, Zähler und Beobachtung:
@@ -715,7 +754,7 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
-kleinerer Aufklapppfeil der Seitennavigation, runder Schaltergriff, nativer Pflichtfeldindikator direkt hinter dem Label,
+kleinerer Aufklapppfeil der Seitennavigation, nativer Pflichtfeldindikator direkt hinter dem Label,
 Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
 ohne Einrückung um die Pfeilbreite, Kalender (Datumsauswahl) im Cosmos-Stil mit
 dunkler Kalenderfläche, 36 px hohen Tagen (am Desktop auch 36 px breit,
@@ -798,7 +837,7 @@ Vollständigkeit und den Verzicht auf `@import`:
 | | cosmos-duration-field.css | Integrierte Zeiteinheit im Dauerfeld |
 | | cosmos-breadcrumbs.css | Native Seitenpfade |
 | | cosmos-segmented-tabs.css | Segmentierte Auswahl mit nativen Tabs |
-| | cosmos-theme.css | Formulare, Felder, Buttons, Grids, Badges, Systemmeldungen, Anwendungsicons |
+| | cosmos-theme.css | Formulare, Felder, Switch-Grundstyling, Buttons, Grids, Badges, Systemmeldungen, Anwendungsicons |
 | | cosmos-utilities.css | Ersatzklassen aus `CosmosCssClasses` |
 | | cosmos-cards.css | Hüllen für native Karten |
 | | cosmos-avatar.css | Avatarkern und Statuspunkte |
@@ -897,6 +936,9 @@ Nur die feste Hintergrundebene verwendet `overflow: hidden`, keine Inhaltsfläch
 
 Die Benachrichtigungsbausteine sind bereits Teil des gemeinsamen Standards:
 `cosmos-notifications.css` verwendet die gemeinsamen Controls, Panelregeln und Tokens.
+Reine Nachrichtentitel bleiben native Aktionsbuttons. Ihre Klasse
+`cosmos-notification-title` setzt den nativen Icon-/Textzwischenraum auf null,
+damit ein leerer Vorspann den Titel gegenüber Nachricht und Metadaten nicht einrückt.
 Ähnliche neue Komponenten knüpfen daran an, statt eine zweite Gestaltung zu beginnen.
 
 ### Theme ersetzen oder erweitern

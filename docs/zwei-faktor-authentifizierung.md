@@ -398,17 +398,42 @@ greift die beschriebene Lesequittierung für die dargestellten Nachrichten.
 #### Anleitung und Grenzen der Hilfe
 
 „Anleitung senden“ zeigt die Anleitung in der aktuellen Oberflächensprache vorab.
-Ein sichtbarer Button bleibt auch bei eigener Bearbeiterzuordnung und Status
-„In Bearbeitung“ deaktiviert, wenn die anfragende Person ein Entwicklerkonto hat
-oder die Anleitung bereits für dieses Ticket beauftragt wurde. Entwicklerkonten
-erhalten keine E-Mails; ein bereits angelegter Versandauftrag wird nicht durch
-erneutes Klicken dupliziert. Reguläre, zugewiesene Tickets ohne bisherigen Auftrag
-behalten die Aktion. Diese Sperren sind beabsichtigt und werden auch fachlich geprüft.
-Ein Sprachwechsel aktualisiert auch die bereits geöffnete Vorschau. Beim Senden
-wird die Anleitung in der gespeicherten Kontosprache des Empfängers als öffentliche
-Antwort abgelegt und eine E-Mail an die bestehende
-bestätigte Kontaktadresse in die Mailqueue aufgenommen. Queueaufnahme ist keine bestätigte
-Zustellung. Ein fehlgeschlagener Queueauftrag bleibt wiederholbar. Die Anleitung
+Der Untertitel im Dialogkopf nennt bei regulären Konten E-Mail-Versand und
+Ticketablage, bei Entwicklerkonten ausschließlich die Ticketablage. Titel und
+Bestätigungsbutton heißen in beiden Fällen „Anleitung senden“.
+Bei einem zugewiesenen Ticket „In Bearbeitung“ ist die Aktion auch für
+Entwicklerkonten verfügbar. Deren Vorschau zeigt ganz oben vor Überschrift und Einleitung der Anleitung
+einen gelben Sicherheitshinweis:
+Es wird keine E-Mail versendet; die Anleitung wird nur im Ticketverlauf hinterlegt.
+Ein Sprachwechsel aktualisiert die bereits geöffnete Vorschau einschließlich Warnung.
+
+Nach Bestätigung wird die Anleitung in der gespeicherten Kontosprache des Empfängers
+als öffentliche Antwort hinterlegt. Für reguläre Konten wird zusätzlich eine E-Mail
+an die bestehende bestätigte Kontaktadresse in die Mailqueue aufgenommen.
+Die Erfolgsmeldung unterscheidet Ticketablage und Queueaufnahme. Queueaufnahme ist
+keine bestätigte Zustellung. Ein fehlgeschlagener Queueauftrag bleibt wiederholbar.
+Eine Anleitung kann nach erneuter Vorschau und Bestätigung wiederholt werden.
+Für beide Kontotypen gilt eine feste Wartezeit von 60 Sekunden ab der letzten
+Beauftragung. Bei regulären Konten verhindert zusätzlich der eigene letzte
+Mailauftrag im Zustand `PENDING` oder `IN_PROGRESS` eine erneute Anforderung.
+Diese Prüfung hat Vorrang vor der Wartezeit; fremde Mailaufträge sperren die Aktion
+nicht. Nach Abschluss oder Entfernung des Auftrags und abgelaufener Wartezeit ist
+eine Wiederholung möglich. Entwicklerkonten erzeugen weiterhin keinen Mailauftrag;
+bei ihnen gilt ausschließlich die Wartezeit, jeder bestätigte Lauf wird im Ticket
+hinterlegt.
+
+Der native Tooltip nennt mit fett hervorgehobenem „Gesperrt:“ entweder den offenen
+Mailauftrag oder die Wartezeit. Er ist am umgebenden Layout verankert, damit er auch
+beim deaktivierten Button per Maus oder Tastatur erreichbar ist. Solange die Aktion
+wartet, lädt die Ansicht ihren Status regelmäßig nach und gibt sie automatisch frei;
+beim Verlassen oder Verlust der Berechtigung wird dieses Nachladen wieder beendet.
+Vorschau und Bestätigung prüfen
+die Regeln auf dem Server erneut. Das Ticket speichert hierfür den letzten
+Beauftragungszeitpunkt und die ID seines letzten eigenen Mailauftrags; die
+Aufbewahrung der Mailqueue bleibt davon unabhängig.
+
+Zuweisung, Ticketstatus, Kontofreigabe und bestätigte E-Mail bleiben fachliche
+Voraussetzungen. Die Anleitung
 enthält keine neuen Codes. Freier Tickettext, Name, Geburtsdatum und ein E-Mail-Link
 sind keine Wiederherstellungsnachweise. Ohne Authenticator und gültigen Ersatzcode
 wird die Sperre nicht über das Ticketsystem aufgehoben.

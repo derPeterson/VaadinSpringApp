@@ -320,7 +320,8 @@ create table if not exists support_tickets (
  created_at timestamp(6) with time zone not null,
  updated_at timestamp(6) with time zone not null,
  public_updated_at timestamp(6) with time zone not null,
- instruction_sent_at timestamp(6) with time zone
+ instruction_sent_at timestamp(6) with time zone,
+ instruction_email_queue_id bigint
 );
 create index if not exists idx_support_owner on support_tickets(owner_id, public_updated_at);
 create table if not exists support_replies (

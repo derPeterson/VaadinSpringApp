@@ -65,9 +65,14 @@ class AdminMailTestSectionTest {
     assertFalse(bodyField.isInvalid());
     ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
     assertTrue(recipientField.isInvalid());
+    assertTrue(subjectField.isInvalid());
+    assertTrue(bodyField.isInvalid());
     assertMailError(messageProperties.getAdminMailValidationRecipient());
+    verifyNoInteractions(emailService);
     recipientField.setValue("test@example.test");
     assertFalse(recipientField.isInvalid());
+    assertTrue(subjectField.isInvalid());
+    assertTrue(bodyField.isInvalid());
     ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
     assertTrue(subjectField.isInvalid());
     assertMailError(messageProperties.getAdminMailValidationSubject());
@@ -79,6 +84,7 @@ class AdminMailTestSectionTest {
     assertMailError(messageProperties.getAdminMailValidationSubject());
     subjectField.setValue("Test subject");
     assertFalse(subjectField.isInvalid());
+    assertTrue(bodyField.isInvalid());
     ReflectionTestUtils.invokeMethod(mailSection, "sendTestMail");
     assertTrue(bodyField.isInvalid());
     assertMailError(messageProperties.getAdminMailValidationBody());

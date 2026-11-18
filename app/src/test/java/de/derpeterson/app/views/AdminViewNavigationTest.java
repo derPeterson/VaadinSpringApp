@@ -61,6 +61,7 @@ import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.InstructionDelivery;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
@@ -219,7 +220,7 @@ class AdminViewNavigationTest {
             Instant.EPOCH,
             null,
             null,
-            false,
+            new InstructionDelivery(null, false),
             false,
             0L,
             false,

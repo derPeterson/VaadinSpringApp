@@ -32,11 +32,6 @@ vaadin-tabs.cosmos-theme {
     width: auto;
 }
 
-/* Schalter: runder Griff wie bisher statt Auras abgerundetem Quadrat. */
-vaadin-switch {
-    --vaadin-switch-marker-border-radius: 50%;
-}
-
 /* Feldfehler wie bisher in der kleinen Feldschrift und ohne Auras Warnsymbol. Aura setzt die
  * Fehlerfarbe auch direkt an Elementen mit theme-Attribut; daher dort ebenfalls zuweisen. */
 :is(.cosmos-theme, .cosmos-reference-overlay),
@@ -64,13 +59,6 @@ vaadin-switch {
 vaadin-button:has(> :is(vaadin-icon, svg):not([slot])),
 vaadin-button.cosmos-icon-button {
     --vaadin-button-gap: 0;
-}
-
-/* Schließen-Buttons: Symbol mittig in 18 px. */
-vaadin-button.cosmos-overlay-close {
-    --vaadin-button-gap: 0;
-    --vaadin-icon-size: 18px;
-    padding: 0;
 }
 
 /* Seitenzahlen haben ebenfalls kein Präfix: Der native Abstand würde sie nach rechts versetzen. */

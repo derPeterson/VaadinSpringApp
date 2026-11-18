@@ -340,19 +340,6 @@ vaadin-avatar {
     font-size: var(--cosmos-font-size-m);
 }
 
-.cosmos-theme vaadin-button.cosmos-overlay-close {
-    min-height: var(--cosmos-control-height);
-    width: var(--cosmos-control-height);
-    height: var(--cosmos-control-height);
-    margin: 0;
-    padding: 0;
-}
-
-.cosmos-theme vaadin-button.cosmos-overlay-close > vaadin-icon {
-    width: var(--cosmos-icon-size-em-m);
-    height: var(--cosmos-icon-size-em-m);
-}
-
 .cosmos-user-menu .user-popover-body {
     padding-block: 0;
     gap: var(--cosmos-space-m);
@@ -1568,10 +1555,11 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
     border-top: 1px solid var(--cosmos-border-color);
 }
 
-.cosmos-reference-overlay .portal-menu-footer > vaadin-button {
+/* Die Fachklasse hält das Footer-Padding stärker als Auras Tertiary-/Präfixregel. */
+.cosmos-reference-overlay .portal-menu-footer > vaadin-button.portal-menu-action {
     width: auto;
     margin: 0;
-    padding: 0 12px;
+    padding: 0 var(--cosmos-space-m);
     border: 0;
     background: transparent;
 }

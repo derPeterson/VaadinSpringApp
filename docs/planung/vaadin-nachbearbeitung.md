@@ -130,11 +130,20 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   allein bestätigt noch keinen Anwendungsfehler.
 - Einen berechtigten Sperrgrund erklären. Falls das Verhalten falsch ist, die Ursache
   beheben und mit einer gezielten Regression absichern.
-- Ergebnis der Prüfung: Bei sichtbarer Aktion sind ein Entwicklerkonto oder eine
-  bereits beauftragte Anleitung die beiden beabsichtigten Sperrgründe. Beide Fälle
-  und das freigegebene reguläre Konto sind isoliert abgesichert. Der konkrete
-  Screenshot unterscheidet diese beiden Ursachen nicht; vorhandene Kontodaten
-  wurden nicht gelesen. Keine Fachsperre wurde entfernt.
+- Aktuell freigegebener Vertrag: Entwicklerkonten dürfen die Anleitung als öffentliche
+  Ticketnachricht erhalten, ohne E-Mail-Auftrag. Die Vorschau warnt ganz oben vor
+  Überschrift und Einleitung der Anleitung gelb vor dem ausbleibenden Mailversand;
+  die Erfolgsmeldung bestätigt nur die Ticketablage.
+  Reguläre Konten behalten Ticketnachricht und E-Mail-Auftrag.
+- Wiederholung nach 60 Sekunden für beide Kontotypen mit erneuter Vorschau und
+  Bestätigung. Bei regulären Konten sperrt zusätzlich der eigene letzte offene
+  Mailauftrag; dieser Grund hat Vorrang. Der native Tooltip am umgebenden Layout
+  nennt den aktuellen Grund mit fett hervorgehobenem „Gesperrt:“ und bleibt auch bei
+  deaktiviertem Button erreichbar. Der Status wird während der Wartephase nachgeladen.
+- Zuweisung, Status, Kontofreigabe und Verifikation bleiben maßgeblich. JUnit prüft
+  die fachlichen Grenzen und Statuswechsel. Die automatische Freigabe nach der
+  Wartezeit wurde vom Benutzer bestätigt; weitere manuelle Varianten stehen im
+  Abnahmekatalog, der automatisierte Browsernachtest bleibt im Testbedarf.
 - Keine fachliche Sperre nur entfernen, um den Button anklickbar zu machen.
   Nötige neue Vertragsentscheidungen mit dem Benutzer klären.
 
@@ -155,9 +164,9 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 - [x] Umsetzung und passende JUnit-Prüfungen abgeschlossen.
 - [x] Review abgeschlossen und eigener Commit erstellt.
 
-## 8. Benachrichtigungen: „Alle aktiven Konten“ als Switch
+## 8. Benachrichtigungen: „Alle Benutzer“ als Switch
 
-- Die Checkbox für das Senden an **„Alle aktiven Konten“** durch einen nativen
+- Die Checkbox für das Senden an **„Alle Benutzer“** durch einen nativen
   Switch ersetzen.
 - Beschriftung, erklärenden Untertext, Empfängerauswahl und Funktion erhalten.
 - Dieser Punkt betrifft Benachrichtigungen, nicht das Ticketsystem.
@@ -226,8 +235,13 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 
 ## 12. Benachrichtigungsdialog: Metadaten und Innenabstände
 
-- Die Metadatenzeile mit Typ, Datum und Status erhält nach oben **S**
-  (`--cosmos-space-s`, 8 px) und nach unten **M** (`--cosmos-space-m`, 12 px).
+- Einheitliche Lesereihenfolge in Vorschau, Übersicht und Dialog:
+  **Titel → Nachricht → Metadaten**. Übersicht und Overlay verwenden dasselbe Raster:
+  Titel und Nachricht links, Werkzeuge rechts über beide Zeilen, Metadaten darunter.
+- Übersicht und Detaildialog: Titel zur Nachricht **S**, Nachricht zu Metadaten
+  **M**. Kompaktes Overlay: **XS** und **S**. Vorhandene Cosmos-Tokens verwenden;
+  keine zusätzlichen Layoutgaps oder Nachrichtenränder addieren. Nach den Metadaten
+  entsteht kein zusätzlicher Abstand zum äußeren Kartenpadding.
 - Individuelle Pixelwerte dort durch die vorhandenen Cosmos-Tokens ersetzen.
 - Die Herkunft des äußeren Paddings prüfen: Aura-Standard, gemeinsamer Cosmos-Baustein
   oder lokale Sonderregel. Vergleichbare Mitteilungskarten einbeziehen.
@@ -243,8 +257,9 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
 
 - Unter „Alle Benachrichtigungen anzeigen“ den großen Leerraum über einzelnen
   Mitteilungstiteln untersuchen, einschließlich Titelbutton und oberer Werkzeugleiste.
-- Zwischen Werkzeugleiste und Titel einen passenden Cosmos-Abstand **S oder M**
-  anhand der bestehenden Gestaltung wählen; die endgültige Wirkung beurteilt der Benutzer.
+- Titel und Nachricht in der linken Rasterspalte zeigen, Werkzeuge rechts über
+  beide Zeilen und Metadaten darunter. Für die Trennung zur Nachricht **S** verwenden;
+  die endgültige Wirkung beurteilt der Benutzer.
 - Für das äußere Padding gelten die zuletzt vereinbarten Werte:
 
   | Mitteilungsdarstellung | Innenabstand |

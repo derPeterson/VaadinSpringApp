@@ -823,6 +823,9 @@ class AdminConfigurationGroupTest {
     ConfigInfoButton info = (ConfigInfoButton) infos.get(ConfigEntry.SERVICE_NAME);
 
     assertEquals("Configured default", serviceName.getPlaceholder());
+    PasswordField secretField =
+        (PasswordField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
+    assertEquals(messages.getAdminConfigPlaceholderSecretKey(), secretField.getPlaceholder());
     assertTrue(
         info.getTooltip()
             .getText()
@@ -838,6 +841,10 @@ class AdminConfigurationGroupTest {
     configurationSection.refreshTexts();
 
     assertEquals("Unsaved draft", serviceName.getValue());
+    assertEquals(
+        MessageProperties.forLocale(i18nProvider, localeReference.get())
+            .getAdminConfigPlaceholderSecretKey(),
+        secretField.getPlaceholder());
     assertTrue(
         info.getTooltip()
             .getText()

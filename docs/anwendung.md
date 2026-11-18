@@ -87,11 +87,17 @@ leerer Wert; die vorhandenen Regeln für Standardwerte und unbegrenzte Aufbewahr
 gelten weiterhin nur bei tatsächlich leeren Feldern. Berechtigungen und erforderliche
 Identitätsbestätigungen beim Speichern bleiben erhalten.
 
+Die Konfigurationsprüfung setzt bei Fehlern keinen zusätzlichen Feldfokus;
+Fehlermarkierungen und Notification bleiben erhalten.
+
 Diese Einstellung gilt für Registrierung, Anmeldung, persönliche Daten,
 Benutzeranlage/-bearbeitung, Konfiguration und Mail-Test. Beim Mail-Test löst erst
-„Test-E-Mail senden“ die Prüfung aus; ein Sprachwechsel erhält auch bewusst geleerte
-Entwürfe. Auch das Ticketsystem prüft Anfragen, Antworten und interne Vermerke erst
-beim Absenden und erklärt fehlenden oder zu langen Text konkret. Weitere Formulare
+„Test-E-Mail senden“ die Prüfung aus: Alle ungültigen Felder werden gemeinsam markiert,
+eine Notification erklärt den ersten Fehler in der Reihenfolge Empfänger, Betreff,
+Text. Änderungen entfernen nur die jeweilige Markierung. Ein Sprachwechsel erhält
+auch bewusst geleerte Entwürfe. Auch das Ticketsystem prüft Anfragen, Antworten und
+interne Vermerke erst beim Absenden und erklärt fehlenden oder zu langen Text konkret.
+Weitere Formulare
 sind noch nicht umgestellt.
 
 ### Entwicklerkonten
@@ -237,6 +243,13 @@ Die Sammel-Lesebestätigung verwendet die beim Öffnen erfassten ungelesenen IDs
 zwischenzeitlich neue Hinweise werden davon nicht erfasst.
 
 Superadmins versenden Hinweise an ausgewählte Konten oder alle berechtigten Empfänger.
+
+Für „Alle Benutzer“ und die manuelle Empfängerauswahl gelten dieselben Regeln:
+Das Konto muss freigegeben und bestätigt sein. Administrativ gesperrte, selbst
+deaktivierte und noch nicht bestätigte Konten sind ausgeschlossen; sie erscheinen
+auch nicht in der manuellen Auswahlliste. Die Auswahl wird bei Vorschau und Versand
+serverseitig erneut geprüft.
+
 Vorschau, ausdrückliche Bestätigung und Vorgangsschlüssel sichern den Versand gegen
 unbeabsichtigte Wiederholung. Das Versandarchiv ist von der persönlichen Inbox getrennt.
 Interne Mitteilungen werden innerhalb der Anwendung versendet, nicht automatisch per E-Mail.

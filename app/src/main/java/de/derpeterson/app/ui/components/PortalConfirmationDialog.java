@@ -71,6 +71,7 @@ public class PortalConfirmationDialog extends ConfirmDialog {
   private final Div dialogIconDiv = new Div();
   private final Button closeDialogButton = new Button(AppIcon.CLOSE_CIRCLE.create());
 
+  private final Div confirmationLeadDiv = new Div();
   private final Span confirmationQuestionSpan = new Span();
   private final Span confirmationExplanationSpan = new Span();
   private final Span confirmationHintSpan = new Span();
@@ -143,7 +144,7 @@ public class PortalConfirmationDialog extends ConfirmDialog {
     confirmationQuestionSpan.addClassName("portal-confirm-question");
     confirmationExplanationSpan.addClassName("portal-confirm-explanation");
 
-    Div confirmationLeadDiv = new Div(confirmationQuestionSpan, confirmationExplanationSpan);
+    confirmationLeadDiv.add(confirmationQuestionSpan, confirmationExplanationSpan);
     confirmationLeadDiv.addClassName("portal-confirm-lead");
     confirmationContextDiv.addClassName("portal-confirm-context");
     confirmationNoticeDiv.add(AppIcon.INFO_CIRCLE.create(), confirmationHintSpan);
@@ -285,6 +286,9 @@ public class PortalConfirmationDialog extends ConfirmDialog {
     dialogDescriptionSpan.setText(confirmationPrompt.dialogDescription().get());
     confirmationQuestionSpan.setText(confirmationPrompt.confirmationQuestion().get());
     confirmationExplanationSpan.setText(confirmationPrompt.confirmationExplanation().get());
+    confirmationLeadDiv.setVisible(
+        !confirmationQuestionSpan.getText().isBlank()
+            || !confirmationExplanationSpan.getText().isBlank());
     confirmationHintSpan.setText(confirmationPrompt.confirmationHint().get());
     confirmationNoticeDiv.setVisible(!confirmationHintSpan.getText().isBlank());
     confirmButton.setText(confirmationPrompt.actionLabel().get());

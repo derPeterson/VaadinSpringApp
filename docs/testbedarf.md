@@ -2,16 +2,56 @@
 
 ## Browser-Tests
 
+- **Einheitliche Schließen-Icons — offen.**
+  In DE/EN auf Desktop/Smartphone Glockenvorschau, Nachrichtendialog,
+  Sammel-Lesebestätigung, Passwort/E-Mail/Profilbild, Kontolöschung/-deaktivierung,
+  2FA-/Anbieterbestätigungen, Benutzerverwaltung, Feldhilfen und gemeinsame
+  Bestätigungsdialoge prüfen: Kreis-X überall 18 × 18 px im 36-px-Button,
+  unabhängig von geerbter Schriftgröße. Empfänger-Popover und eingeblendete
+  Notifications verwenden denselben Schließen-Stil. Zentrierung, Fokus,
+  Maus-/Tastaturschließen und Tooltip erhalten. Benutzer sichtet selbst;
+  kein Browserlauf freigegeben.
+
+- **Benutzermenü: Innenabstand der Footer-Aktionen — offen.**
+  In DE/EN Desktop/Smartphone Startseite und Abmelden mit Icon prüfen: beidseitiger
+  M-Innenabstand ohne zusätzliche Hoverfläche; Auras Präfixregel darf links nicht auf 0 kürzen.
+  Text, Icon, Klick- und Tastaturfunktion erhalten. Kein Browserlauf freigegeben.
+
+- **Dauerfeld-Platzhalter nach Leeren — offen.**
+  In DE/EN Desktop/Smartphone alle vier Zeitfelder der Link-/Tokenlaufzeiten leeren:
+  Zahl bleibt leer, sichtbarer Standard ist ein gedämpfter Platzhalter und kein
+  eingetragener Wert. Integer- und präzise Dauerfelder berücksichtigen; nach Eingabe
+  normale Wertfarbe, deaktiviert weiterhin gedämpft. Kein Browserlauf freigegeben.
+
+- **Zentrales Switch-Grundstyling — offen.**
+  In DE/EN Desktop/Smartphone Login speichern, Benutzeranlage/-bearbeitung,
+  Konfiguration einschließlich Anbieter/2FA, gespeicherte Ersatzcodes,
+  Ticketbeobachtung und „Alle Benutzer“ prüfen. Einheitliche Bahn, runder
+  Griff, Ein-/Aus-Farben und Fokusrahmen; Disabled-/Read-only-Farben bleiben nativ
+  gedämpft. Anordnung links/rechts, Klickfläche, Beschriftung, Untertext, Umbruch
+  und äußere Abstände unverändert. Kein Browserlauf freigegeben; Benutzer sichtet
+  selbst. CSS-Prüfungen ersetzen diesen sichtbaren Nachtest nicht.
+
 - **Mitteilungskarten: einheitliche Dichte — offen.**
   In DE/EN Desktop/Smartphone Gesamtübersicht und geöffneten Dialog mit L-Padding,
-  kompaktes Overlay mit M prüfen. Werkzeugleiste zum Inbox-Titel S; Titel ohne
+  kompaktes Overlay mit M prüfen. Titel und Nachricht stehen links, Werkzeuge rechts
+  über beide Zeilen; ihre Höhe darf den Titel-/Nachrichtenabstand nicht vergrößern. Titel ohne
   zusätzliche Block-/Leerzeile. Kurze/lange Titel, Nachrichten und Statuswechsel
   prüfen: linke Statuslinie darf die Inhaltsausrichtung nicht verschieben.
+  Titel bleiben native Buttons zum Öffnen der Nachricht; ohne Icon darf kein
+  Zwischenraum vor dem Titel bleiben. Titel, Nachricht und Metadaten links bündig
+  sowohl in der Glockenvorschau als auch in der Übersicht prüfen.
+  In Glockenvorschau, Gesamtübersicht und Detaildialog gilt die Lesereihenfolge
+  Titel, Nachricht, Metadaten. Werkzeuge bleiben rechts oben, auch auf Smartphone;
+  lange Titel umbrechen innerhalb des verfügbaren Platzes.
+  Übersicht und Dialog: Titel zur Nachricht S, Nachricht zu Metadaten M.
+  Kompakte Vorschau: XS und S; keine addierten Nachrichtenränder oder Layoutgaps.
   Keine Browserfreigabe; die Wirkung wird vom Benutzer gesichtet.
 
 - **Nachrichtendialog: Abstände der Mitteilung — offen.**
   In DE/EN auf Desktop/Smartphone mit kurzen und langen Inhalten prüfen: Kartenpadding
-  L, Metadaten oben S/unten M; Button innerhalb des Kartenrands. Keine Addierung
+  L, Nachricht unter dem Titel mit S-Abstand, danach Metadaten mit M-Abstand;
+  kein zusätzlicher Abstand nach den Metadaten. Button innerhalb des Kartenrands. Keine Addierung
   zusätzlicher Layoutgaps oder horizontales Überlaufen. Reine Tokenanpassung;
   keine Browserfreigabe.
 
@@ -45,7 +85,10 @@
   nur die Markierung des geänderten Feldes zurücknehmen. Keine Empfänger und
   zwischenzeitlich geänderte Empfänger unterscheiden. Senden bleibt ohne aktuelle
   gültige Vorschau gesperrt. JUnit deckt den Ablauf ab; kein Browserlauf freigegeben.
-  „Alle aktiven Konten“ ist ein nativer Switch. Umschalten muss die manuelle
+  Beschriftung „Alle Benutzer“, Untertext zu registrierten empfangsberechtigten
+  Benutzerkonten und Anzeige „Alle Benutzer (Zahl)“ prüfen; gesperrte, selbst
+  deaktivierte und unbestätigte Konten bleiben ausgeschlossen.
+  „Alle Benutzer“ ist ein nativer Switch. Umschalten muss die manuelle
   Empfängerauswahl entsprechend deaktivieren/reaktivieren und die Vorschau verwerfen.
 
 - **Ticketsystem: konkrete Eingabefehler beim Absenden — offen.**
@@ -57,14 +100,28 @@
   sensiblen Daten von der Erklärung der Leserechte. JUnit prüft die Komponenten;
   kein Browserlauf freigegeben.
   Bei einem eigenen Ticket „In Bearbeitung“ zusätzlich „Anleitung senden“ prüfen:
-  reguläres Konto ohne bisherigen Auftrag aktiviert, Entwicklerkonto oder bereits
-  beauftragte Anleitung deaktiviert. Die beabsichtigten Fachsperren nicht umgehen.
+  Untertitel im Dialogkopf nennt bei regulären Konten E-Mail und Ticketablage,
+  bei Entwicklerkonten nur die Ticketablage; Titel und Button bleiben „Anleitung senden“.
+  Beide Kontotypen dürfen die Anleitung nach jeweils 60 Sekunden erneut mit Vorschau
+  und Bestätigung beauftragen. Reguläre Konten bleiben zusätzlich gesperrt, solange
+  ihr letzter eigener Mailauftrag PENDING/IN_PROGRESS ist. Tooltip am Layout um den
+  deaktivierten Button per Maus und Tastatur prüfen: „Gesperrt:“ fett, offener
+  Mailauftrag vor Wartezeit; bei Entwicklerkonten ausschließlich Wartezeit.
+  Der Markdown-Tooltip verwendet den normalen Innenabstand ohne zusätzliche
+  Absatzränder oder Leerzeile unter dem Text.
+  Automatische Freigabe ohne F5 und Beenden des Nachladens beim Verlassen prüfen.
+  Bei Entwicklerkonten zeigt die Vorschau ganz oben vor Überschrift/Einleitung den
+  gelben Hinweis; jeder bestätigte Lauf erscheint nur im Ticket ohne Mailauftrag.
+  Bei regulären Konten entstehen Ticketnachricht und eigener Mailauftrag.
+  DE/EN einschließlich Sprachwechsel im geöffneten Dialog prüfen. Die übrigen
+  Fachsperren bleiben erhalten; keine Browserfreigabe.
 
 - **Mail-Test: Prüfung erst beim Senden — offen.**
   In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem
-  Senden keine Rotmarkierung. Erst „Test-E-Mail senden“ markiert das jeweilige
-  fehlerhafte Feld und zeigt die konkrete übersetzte Notification ohne Inline-Fehler.
-  Änderungen entfernen dessen Markierung. Ein Sprachwechsel erhält auch bewusst
+  Senden keine Rotmarkierung. Erst „Test-E-Mail senden“ markiert alle ungültigen
+  Felder gemeinsam. Eine konkrete übersetzte Notification erklärt den ersten Fehler
+  in der Reihenfolge Empfänger, Betreff, Text, ohne Inline-Fehler.
+  Änderungen entfernen nur die Markierung des geänderten Feldes. Ein Sprachwechsel erhält auch bewusst
   geleerte Betreff-/Textentwürfe. Versandverfügbarkeit bleibt maßgeblich.
   JUnit prüft den Ablauf mit gemocktem Versand; kein Browserlauf freigegeben.
 
@@ -81,6 +138,9 @@
   Standard-/Leerwertvertrag. Fehlerhafte 2FA-Inaktivitätswerte vor der
   Identitätsbestätigung melden; gültiges Speichern bleibt entsprechend geschützt.
   JUnit prüft Komponenten und Regeln; kein Browserlauf freigegeben.
+  Bei Fehlern kein automatischer Fokuswechsel zum ersten ungültigen Feld;
+  rote Markierungen und Notification bleiben erhalten.
+
 
 - **Benutzer anlegen/bearbeiten: Prüfung beim Speichern — offen.**
   In DE/EN auf Desktop und Smartphone Pflichtfelder leeren, E-Mail-Format,
@@ -96,7 +156,8 @@
   stehen native Switches für Zugang gesperrt sowie bei berechtigter Anlage
   Verifikation und Entwicklerkonto, jeweils über die gesamte Breite. Auf Smartphone
   bleiben alle Zeilen einspaltig. Bahn und runder Griff müssen dem vorhandenen
-  Login-Schalter „Login speichern“ entsprechen: Zentrierung, Labelabstand und Fokus
+  Login-Schalter „Login speichern“ entsprechen (gemeinsames Grundstyling):
+  Zentrierung, Labelabstand und Fokus
   ohne 1-px-Korrektur; Beschriftung und Untertext unverändert. Jeder Switch erhält
   oben und unten S. Ein/Aus, Tastaturfokus und deaktivierte Verifikation beim
   Entwicklerkonto prüfen. Aktivierung verändert nur den Entwurf; vorhandene

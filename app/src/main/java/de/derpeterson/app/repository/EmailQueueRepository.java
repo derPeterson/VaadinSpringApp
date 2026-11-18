@@ -43,6 +43,8 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
   boolean existsOpenEmailForCurrentAddress(
       UserEntity userEntity, EmailType emailType, Collection<EmailStatus> statuses);
 
+  boolean existsByIdAndStatusIn(Long id, Collection<EmailStatus> statuses);
+
   void deleteByUserEntityAndEmailTypeAndStatus(
       UserEntity userEntity, EmailType emailType, EmailStatus emailStatus);
 

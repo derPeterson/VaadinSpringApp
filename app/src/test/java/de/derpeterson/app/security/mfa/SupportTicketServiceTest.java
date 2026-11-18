@@ -2,6 +2,7 @@ package de.derpeterson.app.security.mfa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,6 +44,8 @@ import de.derpeterson.app.service.SupportTicketFilter.Assignment;
 import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.InboxQuery;
+import de.derpeterson.app.service.SupportTicketService.InstructionBlock;
+import de.derpeterson.app.service.SupportTicketService.InstructionDelivery;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
@@ -819,7 +822,7 @@ class SupportTicketServiceTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
-  void liveTicketDataKeepsDevelopmentMailRestrictionWithoutAnotherRequest(
+  void instructionsAreRecordedForBothAccountTypesButOnlyRegularAccountsReceiveEmail(
       boolean developmentAccount) {
     UserEntity requesterUserEntity = create(RoleType.ROLE_USER, developmentAccount);
     MockHttpServletRequest requesterHttpRequest =
@@ -845,24 +848,29 @@ class SupportTicketServiceTest {
     assertTrue(
         liveTicketView.messages().stream()
             .anyMatch(reply -> reply.body().equals("Neue Information")));
-    if (developmentAccount) {
-      Long createdTicketId = createdTicket.id();
-      Ticket selectedLiveTicket = liveTicketView.selected();
-      Long selectedTicketId = selectedLiveTicket.id();
-      Long selectedTicketVersion = selectedLiveTicket.version();
+    Ticket selectedLiveTicket = liveTicketView.selected();
+    supportTicketService.validateInstructionPreview(administrator, selectedLiveTicket.id());
+    Ticket completedTicket =
+        supportTicketService.sendTicketRecoveryInstructions(
+            administrator, selectedLiveTicket.id(), selectedLiveTicket.version());
 
-      assertThrows(
-          AccessDeniedException.class,
-          () -> supportTicketService.validateInstructionPreview(administrator, createdTicketId));
-      assertThrows(
-          AccessDeniedException.class,
-          () ->
-              supportTicketService.sendTicketRecoveryInstructions(
-                  administrator, selectedTicketId, selectedTicketVersion));
+    assertNotNull(completedTicket.instructionDelivery().availableAt());
+    List<Reply> ticketReplies =
+        supportTicketService.loadTicketConversation(
+            requesterHttpRequest, completedTicket.id(), false);
+    assertEquals(Kind.RECOVERY_INSTRUCTIONS, ticketReplies.getLast().kind());
+    assertEquals(ReplyAuthor.SUPPORT, ticketReplies.getLast().author());
+    if (developmentAccount) {
       verify(emailQueueService, never()).addAddressedNotification(any(), any(), any(), any());
     } else {
-      supportTicketService.validateInstructionPreview(administrator, createdTicket.id());
+      verify(emailQueueService)
+          .addAddressedNotification(any(), eq(requesterUserEntity.getEmail()), any(), any());
     }
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            supportTicketService.sendTicketRecoveryInstructions(
+                administrator, completedTicket.id(), completedTicket.version()));
   }
 
   @Test
@@ -1092,7 +1100,7 @@ class SupportTicketServiceTest {
         supportTicketService.loadTicketConversation(owner, claimed.id(), false).getLast().kind());
     verify(emailQueueService)
         .addAddressedNotification(any(), eq(testUserEntity.getEmail()), any(), any());
-    assertTrue(sent.instructionSent());
+    assertNotNull(sent.instructionDelivery().availableAt());
     Long copiedTextId = copiedText.id();
     Long copiedTextVersion = copiedText.version();
 
@@ -1111,6 +1119,87 @@ class SupportTicketServiceTest {
   }
 
   @Test
+  void instructionWaitEndsAtSixtySecondsAndOpenEmailHasPriority() {
+    Instant boundary = Instant.parse("2026-11-18T12:01:00Z");
+    InstructionDelivery waiting = new InstructionDelivery(boundary, false);
+    assertEquals(InstructionBlock.COOLDOWN, waiting.blockReason(boundary.minusNanos(1)));
+    assertEquals(InstructionBlock.NONE, waiting.blockReason(boundary));
+    assertEquals(InstructionBlock.NONE, waiting.blockReason(boundary.plusSeconds(1)));
+    assertEquals(
+        InstructionBlock.EMAIL_PENDING,
+        new InstructionDelivery(boundary, true).blockReason(boundary.minusSeconds(1)));
+    assertEquals(
+        InstructionBlock.EMAIL_PENDING,
+        new InstructionDelivery(boundary, true).blockReason(boundary.plusSeconds(1)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void instructionsCanBeRequestedAgainAfterWaitingWhenTheirOwnEmailIsNoLongerOpen(
+      boolean developmentAccount) {
+    UserEntity requester = create(RoleType.ROLE_USER, developmentAccount);
+    MockHttpServletRequest request = TwoFactorAuthorizationTest.requestFor(requester.getEmail());
+    Ticket created = supportTicketService.createRecovery(request, "Hilfe bitte.");
+    Ticket claimed =
+        supportTicketService.claimTicket(administrator, created.id(), created.version());
+    if (!developmentAccount) {
+      when(emailQueueService.addAddressedNotification(any(), any(), any(), any())).thenReturn(700L);
+    }
+    Ticket first =
+        supportTicketService.sendTicketRecoveryInstructions(
+            administrator, claimed.id(), claimed.version());
+    assertEquals(InstructionBlock.COOLDOWN, first.instructionDelivery().blockReason(Instant.now()));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> supportTicketService.validateInstructionPreview(administrator, first.id()));
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            supportTicketService.sendTicketRecoveryInstructions(
+                administrator, first.id(), first.version()));
+
+    transactionTemplate.executeWithoutResult(status ->
+        entityManager
+            .find(SupportTicketEntity.class, first.id())
+            .setInstructionSentAt(Instant.now().minusSeconds(61)));
+    if (!developmentAccount) {
+      when(emailQueueService.hasOpenEmail(700L)).thenReturn(true);
+      Ticket pending = supportTicketService.listTicketsForViewer(request, false).getFirst();
+      assertEquals(
+          InstructionBlock.EMAIL_PENDING, pending.instructionDelivery().blockReason(Instant.now()));
+      assertThrows(
+          AccessDeniedException.class,
+          () -> supportTicketService.validateInstructionPreview(administrator, pending.id()));
+      assertThrows(
+          AccessDeniedException.class,
+          () ->
+              supportTicketService.sendTicketRecoveryInstructions(
+                  administrator, pending.id(), pending.version()));
+      when(emailQueueService.hasOpenEmail(700L)).thenReturn(false);
+    }
+    Ticket available = supportTicketService.listTicketsForViewer(request, false).getFirst();
+    assertEquals(InstructionBlock.NONE, available.instructionDelivery().blockReason(Instant.now()));
+    supportTicketService.validateInstructionPreview(administrator, available.id());
+    Ticket second =
+        supportTicketService.sendTicketRecoveryInstructions(
+            administrator, available.id(), available.version());
+    assertEquals(
+        2,
+        supportTicketService.loadTicketConversation(request, second.id(), false).stream()
+            .filter(reply -> reply.kind() == Kind.RECOVERY_INSTRUCTIONS)
+            .count());
+    assertEquals(
+        InstructionBlock.COOLDOWN, second.instructionDelivery().blockReason(Instant.now()));
+    if (developmentAccount) {
+      verify(emailQueueService, never()).addAddressedNotification(any(), any(), any(), any());
+      verify(emailQueueService, never()).hasOpenEmail(any());
+    } else {
+      verify(emailQueueService, times(2))
+          .addAddressedNotification(any(), eq(requester.getEmail()), any(), any());
+    }
+  }
+
+  @Test
   void queueFailureKeepsInstructionsUnsentAndLeavesConversationUnchanged() {
     Ticket ticket = supportTicketService.createRecovery(owner, "Hilfe.");
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
@@ -1125,8 +1214,12 @@ class SupportTicketServiceTest {
         () ->
             supportTicketService.sendTicketRecoveryInstructions(
                 administrator, claimedId, claimedVersion));
-    assertFalse(
-        supportTicketService.listTicketsForViewer(owner, false).getFirst().instructionSent());
+    assertNull(
+        supportTicketService
+            .listTicketsForViewer(owner, false)
+            .getFirst()
+            .instructionDelivery()
+            .availableAt());
     assertEquals(1, supportTicketService.loadTicketConversation(owner, claimed.id(), false).size());
   }
 

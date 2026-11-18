@@ -1046,28 +1046,21 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private boolean validateVisibleInputs() {
-    boolean allValid = true;
-    Component firstInvalidConfigInput = null;
     ConfigEntry firstInvalidConfigEntry = null;
     String firstInvalidSubmittedValue = null;
 
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
-      ValidationResult inputValidationResult = validateInput(configEntry);
-
-      if (inputValidationResult.invalid()) {
-        if (firstInvalidConfigInput == null) {
-          firstInvalidConfigInput = inputValidationResult.configInputComponent();
+      if (!validateInput(configEntry)) {
+        if (firstInvalidConfigEntry == null) {
           firstInvalidConfigEntry = configEntry;
           firstInvalidSubmittedValue = extractInputValue(configEntry);
         }
-        allValid = false;
       }
     }
 
-    if (firstInvalidConfigInput != null) {
+    if (firstInvalidConfigEntry != null) {
       logger.debug(
           "Configuration validation rejected field: key={}", firstInvalidConfigEntry.name());
-      firstInvalidConfigInput.getElement().callJsFunction("focus");
       ConfigEntry invalidConfigEntry = firstInvalidConfigEntry;
       String invalidSubmittedValue = firstInvalidSubmittedValue;
       NotificationHelper.getInstance()
@@ -1077,13 +1070,13 @@ public class AdminConfigurationSection extends VerticalLayout {
               NotificationHelper.NotificationType.ERROR);
     }
 
-    return allValid;
+    return firstInvalidConfigEntry == null;
   }
 
-  private ValidationResult validateInput(ConfigEntry configEntry) {
+  private boolean validateInput(ConfigEntry configEntry) {
     Component configInputComponent = configInputs.get(configEntry);
     if (configInputComponent == null) {
-      return ValidationResult.valid();
+      return true;
     }
 
     clearValidationState(configInputComponent);
@@ -1092,21 +1085,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     String validationErrorMessage = validateValue(configEntry, submittedConfigValue);
 
     if (validationErrorMessage == null) {
-      return ValidationResult.valid();
+      return true;
     }
 
     setValidationError(configInputComponent);
-    return ValidationResult.invalid(configInputComponent);
-  }
-
-  private record ValidationResult(boolean invalid, Component configInputComponent) {
-    private static ValidationResult valid() {
-      return new ValidationResult(false, null);
-    }
-
-    private static ValidationResult invalid(Component configInputComponent) {
-      return new ValidationResult(true, configInputComponent);
-    }
+    return false;
   }
 
   private String validateValue(ConfigEntry configEntry, String submittedConfigValue) {
@@ -1299,6 +1282,10 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private String buildPlaceholder(ConfigEntry configEntry) {
+    if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY) {
+      return messageProperties.getAdminConfigPlaceholderSecretKey();
+    }
+
     if (isNotificationRetention(configEntry)) {
       return messageProperties.getAdminConfigUnlimited();
     }

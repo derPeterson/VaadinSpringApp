@@ -4,7 +4,15 @@
 
 ### DE
 
+- Wiederherstellungsanleitungen im Ticket nach 60 Sekunden erneut anfordern;
+  offene zugehörige Mailaufträge verhindern Doppelversand. Entwicklerkonten
+  erhalten die Anleitung ausschließlich im Ticketverlauf.
+
 ### EN
+
+- Request recovery instructions again after 60 seconds within a support ticket;
+  pending associated emails prevent duplicate delivery. Development accounts
+  receive the instructions only in the ticket conversation.
 
 ## [0.1.0] - 2026-11-18
 

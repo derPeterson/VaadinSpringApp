@@ -11,11 +11,15 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
-Die nächsten 14 vereinbarten Punkte stehen in der
+Die vereinbarten Nachbearbeitungen stehen in der
 [Abarbeitungsliste zur Nachbearbeitung](vaadin-nachbearbeitung.md).
 Die Umsetzung ist nach Review und Commit der Liste ausdrücklich freigegeben.
-Punkte 1–13 erhalten jeweils Review und Commit, Punkt 14 bleibt als letzter
-Designversuch uncommittet.
+Punkte 1–13 sind umgesetzt; die übrige manuelle Sichtung bleibt offen. Die
+Anwesenheitsauswahl behält auf Benutzerentscheidung ihre bisherige Darstellung.
+Zusätzlich ist das zentrale Switch-Grundstyling freigegeben und umgesetzt:
+Geometrie, Farben und Fokus liegen gemeinsam in `cosmos-theme.css`;
+Anordnung und Beschriftung bleiben lokal. Die Sichtung durch den Benutzer steht
+noch aus, keine Browserrunde für diesen Auftrag.
 
 Die Gesamtumsetzung bleibt ausdrücklich offen. Der bisherige Komponentenstand
 liegt auf `main`; die Integration war kein Featureabschluss.

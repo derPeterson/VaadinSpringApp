@@ -798,7 +798,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-info {
 vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     align-self: end;
 }
-/* Lumo richtet Label und Bahn im Innencontainer aus; ein zweites Host-Grid würde den Tooltipslot mitzählen. */
+/* Konfigurationszeile: Label links, Schalter rechts; das native Grid erhält die Klickfläche. */
 .cosmos-reference-admin vaadin-switch.cosmos-config-switch {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -810,17 +810,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     border: 0;
     background: transparent;
     font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
-    --vaadin-switch-width: 34px;
-    --vaadin-switch-height: 20px;
-    --vaadin-switch-background: var(--cosmos-base-color);
-    --vaadin-switch-border-color: var(--cosmos-control-border-color);
-    --vaadin-switch-border-width: 1px;
-    --vaadin-switch-border-radius: 999px;
-    --vaadin-switch-marker-width: 14px;
-    --vaadin-switch-marker-height: 14px;
-    --vaadin-switch-marker-color: var(--cosmos-text-secondary-color);
-    --vaadin-switch-marker-border-width: 0;
-    --vaadin-switch-marker-scale: 1;
     --vaadin-switch-label-color: var(--cosmos-label-color);
     --vaadin-switch-label-font-size: 12px;
     --vaadin-switch-label-font-weight: 500;
@@ -851,15 +840,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     grid-column: 2;
     grid-row: 1;
     align-self: stretch;
-}
-.cosmos-reference-admin vaadin-switch.cosmos-config-switch[checked] {
-    --vaadin-switch-background: var(--cosmos-primary-background);
-    --vaadin-switch-border-color: var(--cosmos-primary-background);
-    --vaadin-switch-marker-color: var(--cosmos-heading-color);
-}
-.cosmos-reference-admin vaadin-switch.cosmos-config-switch[focus-ring]::part(switch) {
-    outline: 2px solid var(--cosmos-primary-text-color);
-    outline-offset: 3px;
 }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox::part(checkbox) {
     width: 16px;

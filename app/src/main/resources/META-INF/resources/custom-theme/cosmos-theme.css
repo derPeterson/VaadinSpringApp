@@ -15,6 +15,43 @@
     cursor: inherit;
 }
 
+/* Gemeinsame native Switch-Gestaltung für alle Bereiche einschließlich ausgelagerter Overlays.
+ * Anordnung, Labeltypografie und äußere Abstände bleiben bei der jeweiligen Ansicht. */
+vaadin-switch {
+    --vaadin-switch-width: 34px;
+    --vaadin-switch-height: 20px;
+    --vaadin-switch-border-width: var(--cosmos-border-width);
+    --vaadin-switch-border-radius: 999px;
+    --vaadin-switch-marker-width: 14px;
+    --vaadin-switch-marker-height: 14px;
+    --vaadin-switch-marker-border-radius: 50%;
+    --vaadin-switch-marker-border-width: 0;
+    --vaadin-switch-marker-scale: 1;
+}
+
+/* Gedämpfte Disabled-/Read-only-Farben bleiben bei Aura. */
+vaadin-switch:not([disabled], [readonly]) {
+    --vaadin-switch-background: var(--cosmos-base-color);
+    --vaadin-switch-border-color: var(--cosmos-control-border-color);
+    --vaadin-switch-marker-color: var(--cosmos-text-secondary-color);
+}
+
+vaadin-switch[checked]:not([disabled], [readonly]) {
+    --vaadin-switch-background: var(--cosmos-primary-background);
+    --vaadin-switch-border-color: var(--cosmos-primary-background);
+    --vaadin-switch-marker-color: var(--cosmos-heading-color);
+}
+
+/* Der Griff behält auch beim Drücken seine bisherige Größe. */
+vaadin-switch[active]:not([disabled], [readonly]) {
+    --vaadin-switch-marker-scale: 1;
+}
+
+vaadin-switch[focus-ring]::part(switch) {
+    outline: 2px solid var(--cosmos-primary-text-color);
+    outline-offset: 3px;
+}
+
 .cosmos-security-warning {
     box-sizing: border-box;
     width: 100%;
@@ -706,33 +743,46 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[disabled] {
     opacity: 0.45;
 }
+/* Gemeinsamer Schließen-Button; feste Icongröße auch außerhalb des Seitenrahmens. */
+vaadin-button.cosmos-overlay-close,
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close {
+    --vaadin-button-gap: 0;
+    --vaadin-icon-size: var(--cosmos-close-icon-size);
+    --vaadin-icon-visual-size: 100%;
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
     padding: 0;
+    border: var(--cosmos-border-width) solid var(--cosmos-control-border-color);
+    border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-base-color);
+    color: var(--cosmos-primary-text-color);
     --vaadin-button-tertiary-background: var(--cosmos-base-color);
 }
+vaadin-button.cosmos-overlay-close:hover:not([disabled]),
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close:hover:not([disabled]) {
     background: var(--cosmos-hover-background);
     --vaadin-button-tertiary-background: var(--cosmos-hover-background);
     border-color: color-mix(in srgb, var(--cosmos-color-white) 22%, transparent);
 }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(prefix),
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(suffix) {
+vaadin-button.cosmos-overlay-close::part(prefix),
+vaadin-button.cosmos-overlay-close::part(suffix) {
     margin: 0;
 }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close::part(label) {
+vaadin-button.cosmos-overlay-close::part(label) {
     display: flex;
     align-items: center;
     justify-content: center;
 }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-overlay-close > vaadin-icon {
-    width: 18px;
-    height: 18px;
+vaadin-button.cosmos-overlay-close > vaadin-icon {
+    width: var(--cosmos-close-icon-size);
+    height: var(--cosmos-close-icon-size);
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay)
@@ -1077,12 +1127,6 @@ vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) {
     align-items: center;
     justify-content: center;
 }
-vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon {
-    width: 18px;
-    height: 18px;
-    padding: 0;
-}
-
 /* Hoverflächen teilen einen Wert. Auswahl, aktive Seitennummern und Disabled bleiben erhalten. */
 .cosmos-theme
     vaadin-button:hover:not(

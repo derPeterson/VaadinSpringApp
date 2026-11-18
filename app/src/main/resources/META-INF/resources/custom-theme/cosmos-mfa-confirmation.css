@@ -8,6 +8,14 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
     text-overflow: ellipsis;
 }
 
+/* Markdown erzeugt Absatzränder und einen abschließenden Umbruch zusätzlich zum Tooltip-Padding. */
+vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] {
+    white-space: normal;
+}
+vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
+    margin: 0;
+}
+
 .two-factor-confirmation > .account-panel-body,
 .two-factor-restore > .account-panel-body,
 .support-recovery-help .account-panel-body {
@@ -502,7 +510,7 @@ vaadin-tooltip.support-identity-tooltip > [slot="overlay"] {
 #support-subscription > input[slot="input"] {
     grid-column: 1;
 }
-.support-admin-ticket-tools > :is(#support-claim, #support-instructions) {
+.support-admin-ticket-tools > :is(#support-claim, #support-instructions-target) {
     margin-inline-start: auto;
 }
 #support-ticket-policy > vaadin-icon {

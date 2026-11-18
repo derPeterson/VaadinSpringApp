@@ -138,6 +138,10 @@ public class EmailQueueService {
         userEntity, emailType, OPEN_STATUSES);
   }
 
+  public boolean hasOpenEmail(Long queueId) {
+    return queueId != null && emailQueueRepository.existsByIdAndStatusIn(queueId, OPEN_STATUSES);
+  }
+
   @Transactional
   public void addEmailToQueue(
       UserEntity userEntity, String subject, String body, EmailType emailType) {
@@ -184,10 +188,11 @@ public class EmailQueueService {
 
   /**
    * Sicherheitsereignisse werden vollständig angelegt, nicht als beliebige NOTIFICATION
-   * dedupliziert.
+   * dedupliziert. Die Queue-ID erlaubt dem Aufrufer die Zuordnung seines Auftrags; bei
+   * Entwicklerkonten entsteht kein Auftrag und die Rückgabe ist {@code null}.
    */
   @Transactional
-  public void addAddressedNotification(
+  public Long addAddressedNotification(
       UserEntity user, String recipient, String subject, String body) {
     requireUserAndType(user, EmailType.NOTIFICATION);
     if (!UserInputRules.isEmailValid(recipient)) {
@@ -195,7 +200,7 @@ public class EmailQueueService {
     }
     UserEntity stored = userRepository.lockVerificationUser(user.getId()).orElseThrow();
     if (stored.isDevelopmentAccount()) {
-      return;
+      return null;
     }
     EmailQueueEntity email = new EmailQueueEntity();
     email.setUserEntity(stored);
@@ -212,6 +217,7 @@ public class EmailQueueService {
         email.getId(),
         email.getUserEntity().getId(),
         email.getEmailType());
+    return email.getId();
   }
 
   @Transactional

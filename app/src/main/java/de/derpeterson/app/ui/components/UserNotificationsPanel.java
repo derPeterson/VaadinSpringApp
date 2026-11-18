@@ -566,17 +566,14 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
     Div rowActionsDiv =
         new Div(openNotificationButton, markNotificationReadButton, dismissButton(item));
     rowActionsDiv.addClassName("cosmos-notification-inbox-actions");
-    Div rowHeadingDiv = new Div(notificationMetadataDiv, rowActionsDiv);
-    rowHeadingDiv.addClassName("cosmos-notification-inbox-row-header");
-
     Div notificationBodyDiv = new Div();
     notificationBodyDiv.setText(
         UserNotificationTexts.getNotificationBodyText(messageProperties, item));
     notificationBodyDiv.addClassNames(
         COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-inbox-message");
-    Div content = new Div(notificationTitleButton, notificationBodyDiv);
-    content.addClassName("cosmos-notification-inbox-content");
-    Div notificationRowDiv = new Div(rowHeadingDiv, content);
+    Div notificationRowDiv =
+        new Div(
+            notificationTitleButton, notificationBodyDiv, notificationMetadataDiv, rowActionsDiv);
     notificationRowDiv.addClassNames("cosmos-notification-row", "cosmos-notification-inbox-row");
     notificationRowDiv.getElement().setAttribute("data-notification-id", item.id().toString());
     notificationRowDiv.setClassName("cosmos-notification-row--unread", item.unread());
@@ -898,7 +895,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
         COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-detail-body");
 
     Div notificationMessageDiv =
-        new Div(notificationTitleRowDiv, notificationMetadataDiv, notificationBodyDiv);
+        new Div(notificationTitleRowDiv, notificationBodyDiv, notificationMetadataDiv);
     notificationMessageDiv.addClassName("cosmos-notification-detail-message");
     if (openedNotification.unread()) {
       notificationMessageDiv.addClassName("cosmos-notification-detail-message--unread");

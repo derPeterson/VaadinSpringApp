@@ -151,7 +151,10 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Neun Nachbearbeitungen | Warnsymbole, Texte, lange Identitäten, mobile Aktionen und Reiterüberlauf nach Screenshots am 15.11.2026 abgenommen |
 | Native Notification-Texte | Repräsentative Varianten in DE/EN auf Desktop/Smartphone abgenommen; übrige Aufrufer auf Wunsch ohne eigene Browserrunde übernommen |
 | Einheitliche Dauerfelder | 2FA-Pilot mit Vergleichsaufnahmen; übrige Felder vom Benutzer gesichtet und ohne weitere Screenshotrunde übernommen |
+| Zentrales Switch-Grundstyling | Gemeinsame Bahn-/Griffgestaltung, Farben und Fokus umgesetzt; Sichtung der betroffenen Bereiche durch den Benutzer noch offen. Anordnung und Beschriftung bleiben lokal. |
+| Einheitliche Schließen-Icons | Gemeinsamer 18-px-Wert für Dialoge, Popovers und Notifications umgesetzt; Empfängerliste auf Kreis-X angeglichen. Manuelle Sichtung der Größe, Zentrierung und Bedienung bleibt offen. |
 | Formular-/Benachrichtigungs-Nachbearbeitung 1–13 | Punkt 1 mit Rollenfeld links und drei Switches im Login-Stil sowie S-Abständen oben/unten vom Benutzer gesichtet und abgenommen; übrige Punkte warten auf Sichtung, siehe [Abarbeitungsliste](../planung/vaadin-nachbearbeitung.md). Anwesenheitsstatus-Farbversuch auf Benutzerentscheidung zurückgenommen. |
+| Wiederherstellungsanleitung: erneute Anforderung | Automatische Button-Freigabe nach der Wartezeit vom Benutzer in der laufenden Anwendung bestätigt. Weitere Varianten, Sprache und automatisierter Browsernachtest bleiben offen. |
 | Native AvatarGroup | Vollständige suchbare Popover-Liste über die gesamte Avatarreihe wartet auf Sichtung; ersetzt Details und natives Überlaufmenü |
 | Gemeinsame Inbox-Pagination und zentrierte Seitenzahlen | Vom Benutzer nach den Vorher-/Nachher-Vergleichen von Benutzerverwaltung, Versandhistorie und Inbox in DE/EN auf Desktop/Smartphone abgenommen |
 | Löschsymbol in der Glockenvorschau nach Aura-Umstellung | Vom Benutzer in der laufenden Anwendung wieder sichtbar bestätigt und abgenommen; automatisierter DE-/EN-Nachtest separat offen |

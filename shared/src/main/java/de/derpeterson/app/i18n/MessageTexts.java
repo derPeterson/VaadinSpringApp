@@ -440,6 +440,30 @@ public class MessageTexts {
     return getTranslation("support.instructions");
   }
 
+  public String getSupportInstructionsEmailDescription() {
+    return getTranslation("support.instructionsEmailDescription");
+  }
+
+  public String getSupportInstructionsTicketDescription() {
+    return getTranslation("support.instructionsTicketDescription");
+  }
+
+  public String getSupportInstructionsPending() {
+    return getTranslation("support.instructionsPending");
+  }
+
+  public String getSupportInstructionsCooldown() {
+    return getTranslation("support.instructionsCooldown");
+  }
+
+  public String getSupportInstructionsDevelopmentNotice() {
+    return getTranslation("support.instructionsDevelopmentNotice");
+  }
+
+  public String getSupportInstructionsRecorded() {
+    return getTranslation("support.instructionsRecorded");
+  }
+
   public String getSupportQueued() {
     return getTranslation("support.queued");
   }
@@ -2039,6 +2063,10 @@ public class MessageTexts {
 
   public String getAdminConfigPlaceholderEmpty() {
     return getTranslation("adminView.config.placeholder.empty");
+  }
+
+  public String getAdminConfigPlaceholderSecretKey() {
+    return getTranslation("adminView.config.placeholder.secret_key");
   }
 
   public String getAdminConfigRuleInteger(int minimumValue, int maximumValue) {

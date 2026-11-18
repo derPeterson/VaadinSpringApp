@@ -201,6 +201,37 @@ class UserNotificationsUiTest {
     VaadinSession.setCurrent(null);
   }
 
+  @ParameterizedTest
+  @CsvSource({"de,true", "en,true", "de,false", "en,false"})
+  void notificationViewsShowTitleThenMessageThenMetadata(String languageTag, boolean compact) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    UserNotificationsPanel panel = createAndRefreshNotificationsPanel(compact);
+    assertNotificationReadingOrder(
+        panel,
+        "cosmos-notification-title",
+        compact ? "cosmos-notification-preview-message" : "cosmos-notification-inbox-message",
+        compact ? "cosmos-notification-preview-meta" : "cosmos-notification-inbox-meta");
+
+    findNotificationTitleButton(panel).click();
+    Dialog detailDialog = readComponentField(panel, "notificationDetailDialog");
+    assertTrue(detailDialog.isOpened());
+    assertNotificationReadingOrder(
+        detailDialog,
+        "cosmos-notification-detail-title",
+        "cosmos-notification-detail-body",
+        "cosmos-notification-detail-meta");
+  }
+
+  private void assertNotificationReadingOrder(
+      Component notification, String titleClass, String messageClass, String metadataClass) {
+    List<String> expectedOrder = List.of(titleClass, messageClass, metadataClass);
+    List<String> actualOrder =
+        streamComponentTree(notification)
+            .flatMap(component -> expectedOrder.stream().filter(component::hasClassName))
+            .toList();
+    assertEquals(expectedOrder, actualOrder);
+  }
+
   // Aktivität in der Ticketnavigation
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})

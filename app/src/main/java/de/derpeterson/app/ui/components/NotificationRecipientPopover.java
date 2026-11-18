@@ -49,8 +49,9 @@ public class NotificationRecipientPopover extends Popover {
 
     configureRecipientGrid(reviewedRecipientTargets, messageProperties);
 
-    Button closeButton = new Button(AppIcon.CLOSE.create(), _ -> close());
+    Button closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), _ -> close());
     closeButton.addThemeVariants(ButtonVariant.TERTIARY);
+    closeButton.addClassNames("cosmos-overlay-close", CosmosCssClasses.INLINE_BUTTON);
     closeButton.setAriaLabel(messageProperties.getNotificationsClose());
     Span headingSpan = new Span(messageProperties.getNotificationsRecipients());
     HorizontalLayout headingLayout = new HorizontalLayout(headingSpan, closeButton);

@@ -598,21 +598,10 @@
     padding-inline-start: 8px;
 }
 .cosmos-reference-public .cosmos-remember vaadin-switch {
-    --vaadin-switch-width: 34px;
-    --vaadin-switch-height: 20px;
     --vaadin-switch-gap: 9px;
-    --vaadin-switch-background: var(--cosmos-base-color);
-    --vaadin-switch-border-color: var(--cosmos-control-border-color);
-    --vaadin-switch-border-width: 1px;
-    --vaadin-switch-border-radius: 999px;
-    --vaadin-switch-marker-width: 14px;
-    --vaadin-switch-marker-height: 14px;
-    --vaadin-switch-marker-color: var(--cosmos-text-secondary-color);
-    --vaadin-switch-marker-border-width: 0;
-    --vaadin-switch-marker-scale: 1;
     --vaadin-switch-label-color: var(--cosmos-text-secondary-color);
     --vaadin-switch-label-font-size: 12px;
-    --vaadin-switch-label-font-weight: 400;
+    --vaadin-switch-label-font-weight: 500;
     --vaadin-switch-label-line-height: var(--cosmos-line-height-m);
     /* Grid der Vaadin-Basisstile: das native input liegt über der Bahn und bleibt klickbar. */
     display: inline-grid;
@@ -620,21 +609,12 @@
     margin: 0;
     padding: 0;
 }
-.cosmos-reference-public .cosmos-remember vaadin-switch[checked] {
-    --vaadin-switch-background: var(--cosmos-primary-background);
-    --vaadin-switch-border-color: var(--cosmos-primary-background);
-    --vaadin-switch-marker-color: var(--cosmos-heading-color);
-}
 .cosmos-reference-public .cosmos-remember vaadin-switch::part(label) {
     margin: 0;
     padding: 0;
     white-space: nowrap;
-    font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     color: var(--cosmos-text-secondary-color);
-}
-.cosmos-reference-public .cosmos-remember vaadin-switch[focus-ring]::part(switch) {
-    outline: 2px solid var(--cosmos-primary-text-color);
-    outline-offset: 3px;
 }
 
 @media (max-width: 440px) {
