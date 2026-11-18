@@ -130,11 +130,16 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   allein bestätigt noch keinen Anwendungsfehler.
 - Einen berechtigten Sperrgrund erklären. Falls das Verhalten falsch ist, die Ursache
   beheben und mit einer gezielten Regression absichern.
+- Ergebnis der Prüfung: Bei sichtbarer Aktion sind ein Entwicklerkonto oder eine
+  bereits beauftragte Anleitung die beiden beabsichtigten Sperrgründe. Beide Fälle
+  und das freigegebene reguläre Konto sind isoliert abgesichert. Der konkrete
+  Screenshot unterscheidet diese beiden Ursachen nicht; vorhandene Kontodaten
+  wurden nicht gelesen. Keine Fachsperre wurde entfernt.
 - Keine fachliche Sperre nur entfernen, um den Button anklickbar zu machen.
   Nötige neue Vertragsentscheidungen mit dem Benutzer klären.
 
-- [ ] Ursache geklärt, Ergebnis erklärt und nötige Korrektur geprüft.
-- [ ] Review abgeschlossen und eigener Commit erstellt; bei unverändert richtigem
+- [x] Ursache geklärt, Ergebnis erklärt und nötige Korrektur geprüft.
+- [x] Review abgeschlossen und eigener Commit erstellt; bei unverändert richtigem
       Verhalten nur die erforderliche Dokumentation beziehungsweise Tests committen.
 
 ## 7. Benachrichtigungen: Prüfung bei der Vorschau

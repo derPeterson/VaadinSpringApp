@@ -10,6 +10,9 @@
   bleiben wirksam. Beim internen Vermerk trennt ein Zeilenumbruch die Warnung vor
   sensiblen Daten von der Erklärung der Leserechte. JUnit prüft die Komponenten;
   kein Browserlauf freigegeben.
+  Bei einem eigenen Ticket „In Bearbeitung“ zusätzlich „Anleitung senden“ prüfen:
+  reguläres Konto ohne bisherigen Auftrag aktiviert, Entwicklerkonto oder bereits
+  beauftragte Anleitung deaktiviert. Die beabsichtigten Fachsperren nicht umgehen.
 
 - **Mail-Test: Prüfung erst beim Senden — offen.**
   In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem

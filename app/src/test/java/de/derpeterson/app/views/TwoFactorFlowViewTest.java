@@ -96,6 +96,52 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class TwoFactorFlowViewTest {
   @ParameterizedTest
+  @CsvSource({
+    "de,false,false",
+    "en,false,false",
+    "de,true,false",
+    "en,true,false",
+    "de,false,true",
+    "en,false,true"
+  })
+  @SuppressWarnings("unchecked")
+  void instructionsRemainAvailableOnlyForAnUnsentRegularAccountTicket(
+      String language, boolean alreadySent, boolean developmentAccount) {
+    openTwoFactorPage(language, false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    Ticket baseTicket = filterTicket(1L, Status.IN_PROGRESS, 9L);
+    Ticket ticket =
+        new Ticket(
+            baseTicket.id(),
+            baseTicket.version(),
+            baseTicket.subject(),
+            baseTicket.type(),
+            baseTicket.status(),
+            baseTicket.updatedAt(),
+            baseTicket.createdAt(),
+            baseTicket.assignee(),
+            baseTicket.assigneeIdentity(),
+            alreadySent,
+            developmentAccount,
+            baseTicket.unreadMessages(),
+            baseTicket.subscribed(),
+            baseTicket.subscriptionAllowed(),
+            baseTicket.requesterIdentity());
+    stubInbox(ticketService, List.of(ticket));
+    when(ticketService.administratorId(mockHttpRequest)).thenReturn(9L);
+    SupportTicketsComponent ticketsComponent =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, true);
+    ((Grid<Ticket>) find(ticketsComponent, "support-ticket-grid"))
+        .asSingleSelect()
+        .setValue(ticket);
+    ticketsComponent.refreshTicketWorkspace();
+    Button instructionsButton = (Button) find(ticketsComponent, "support-instructions");
+    assertTrue(instructionsButton.isVisible());
+    assertEquals(!alreadySent && !developmentAccount, instructionsButton.isEnabled());
+    assertTrue(find(ticketsComponent, "support-add-reply").isVisible());
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   @SuppressWarnings("unchecked")
   void ticketRepliesValidateOnlyOnSendingAndExplainTheSelectedMessageType(String language) {

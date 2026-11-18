@@ -398,6 +398,12 @@ greift die beschriebene Lesequittierung für die dargestellten Nachrichten.
 #### Anleitung und Grenzen der Hilfe
 
 „Anleitung senden“ zeigt die Anleitung in der aktuellen Oberflächensprache vorab.
+Ein sichtbarer Button bleibt auch bei eigener Bearbeiterzuordnung und Status
+„In Bearbeitung“ deaktiviert, wenn die anfragende Person ein Entwicklerkonto hat
+oder die Anleitung bereits für dieses Ticket beauftragt wurde. Entwicklerkonten
+erhalten keine E-Mails; ein bereits angelegter Versandauftrag wird nicht durch
+erneutes Klicken dupliziert. Reguläre, zugewiesene Tickets ohne bisherigen Auftrag
+behalten die Aktion. Diese Sperren sind beabsichtigt und werden auch fachlich geprüft.
 Ein Sprachwechsel aktualisiert auch die bereits geöffnete Vorschau. Beim Senden
 wird die Anleitung in der gespeicherten Kontosprache des Empfängers als öffentliche
 Antwort abgelegt und eine E-Mail an die bestehende
