@@ -91,6 +91,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanelDialog {
     assignmentFilter.addValueChangeListener(event -> refreshDraftFilterCountBadge());
     readingFilterTabs.addValueChangeListener(event -> refreshDraftFilterCountBadge());
     ticketNumberField.setId("support-jump-number");
+    ticketNumberField.setClearButtonVisible(true);
     ticketNumberField.setWidthFull();
     ticketNumberField.setAllowedCharPattern("[0-9#]");
     ticketNumberField.setMaxLength(20);

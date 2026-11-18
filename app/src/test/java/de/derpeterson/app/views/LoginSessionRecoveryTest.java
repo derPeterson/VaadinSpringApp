@@ -28,6 +28,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.router.AfterNavigationEvent;
@@ -45,6 +47,7 @@ import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.ComponentTestTree;
+import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -170,6 +173,85 @@ class LoginSessionRecoveryTest {
   }
 
   @ParameterizedTest
+  @CsvSource({
+    "de,loginEmailField",
+    "en,loginEmailField",
+    "de,loginPasswordField",
+    "en,loginPasswordField"
+  })
+  void clearingLoginInputsWaitsForSubmissionAndDoesNotAuthenticate(
+      String language, String fieldName) {
+    Locale loginLocale = Locale.forLanguageTag(language);
+    when(VaadinSession.getCurrent().getLocale()).thenReturn(loginLocale);
+    LanguageChangeEvent.fire(ui, loginLocale);
+    field("loginEmailField", EmailField.class).setValue("own@example.test");
+    field("loginPasswordField", PasswordField.class).setValue("Secret!Password8");
+    TextFieldBase<?, ?> loginTextField = field(fieldName, TextFieldBase.class);
+    assertEquals(ValueChangeMode.EAGER, loginTextField.getValueChangeMode());
+    assertTrue(loginTextField.isRequiredIndicatorVisible());
+    loginTextField.clear();
+
+    assertFalse(loginTextField.isInvalid());
+    assertNull(ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier"));
+    field("loginButton", Button.class).click();
+
+    assertTrue(loginTextField.isInvalid());
+    Supplier<?> notificationMessageSupplier =
+        (Supplier<?>)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+    assertEquals(
+        messageProperties.getBaseValidationRequiredMessage(), notificationMessageSupplier.get());
+    verifyNoInteractions(authentication, sessions);
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void malformedLoginEmailIsMarkedOnlyOnSubmissionAndAnEditResetsItsMarker(String language) {
+    Locale loginLocale = Locale.forLanguageTag(language);
+    when(VaadinSession.getCurrent().getLocale()).thenReturn(loginLocale);
+    LanguageChangeEvent.fire(ui, loginLocale);
+    EmailField loginEmailField = field("loginEmailField", EmailField.class);
+    PasswordField loginPasswordField = field("loginPasswordField", PasswordField.class);
+    loginEmailField.setValue("not-an-email");
+    loginPasswordField.setValue("Secret!Password8");
+
+    assertFalse(loginEmailField.isInvalid());
+    field("loginButton", Button.class).click();
+
+    assertTrue(loginEmailField.isInvalid());
+    assertFalse(loginPasswordField.isInvalid());
+    Supplier<?> notificationMessageSupplier =
+        (Supplier<?>)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+    assertEquals(
+        messageProperties.getBaseValidationEmailInvalidMessage(),
+        notificationMessageSupplier.get());
+    loginEmailField.setValue("still-invalid");
+
+    assertFalse(loginEmailField.isInvalid());
+    field("loginButton", Button.class).click();
+
+    assertTrue(loginEmailField.isInvalid());
+    verifyNoInteractions(authentication, sessions);
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+  }
+
+  @Test
+  void submittingAnEmptyLoginMarksBothFieldsWithoutAuthenticating() {
+    EmailField loginEmailField = field("loginEmailField", EmailField.class);
+    PasswordField loginPasswordField = field("loginPasswordField", PasswordField.class);
+    assertFalse(loginEmailField.isInvalid());
+    assertFalse(loginPasswordField.isInvalid());
+    field("loginButton", Button.class).click();
+
+    assertTrue(loginEmailField.isInvalid());
+    assertTrue(loginPasswordField.isInvalid());
+    verifyNoInteractions(authentication, sessions);
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"invalid", "maintenance", "sessions", "throttled", "unavailable"})
   void navigationFailureUsesTheAttachedPublicTheme(String reason) {
     ui.remove(view);
@@ -190,6 +272,8 @@ class LoginSessionRecoveryTest {
 
     assertTrue(notification.isOpened());
     assertTrue(notification.getElement().getThemeList().contains("cosmos-reference-error"));
+    assertFalse(field("loginEmailField", EmailField.class).isInvalid());
+    assertFalse(field("loginPasswordField", PasswordField.class).isInvalid());
     Supplier<String> message =
         (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
     String expected =
@@ -352,6 +436,16 @@ class LoginSessionRecoveryTest {
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
 
     assertEquals(messageProperties.getLoginFailedMessage(), text.get());
+    assertTrue(field("loginEmailField", EmailField.class).isInvalid());
+    assertTrue(field("loginPasswordField", PasswordField.class).isInvalid());
+    field("loginEmailField", EmailField.class).setValue("changed@example.test");
+
+    assertFalse(field("loginEmailField", EmailField.class).isInvalid());
+    assertTrue(field("loginPasswordField", PasswordField.class).isInvalid());
+    field("loginPasswordField", PasswordField.class).setValue("Changed!Password8");
+
+    assertFalse(field("loginPasswordField", PasswordField.class).isInvalid());
+    verify(authentication, times(1)).authenticate(any());
   }
 
   @Test

@@ -42,6 +42,37 @@ keine Verifikationsmail; administrative Sperren bleiben wirksam. Unveränderte A
 lösen keinen Versand aus. Der manuelle Button verwendet weiterhin die gespeicherte
 Adresse. Ein Mailauftrag ist keine Zustellbestätigung.
 
+### Eingabeprüfung bei Registrierung, Anmeldung und persönlichen Daten
+
+Die Registrierung prüft Pflichtangaben, E-Mail-Format und -Bestätigung, Passwortregeln
+und Geburtsdatum erst beim Absenden auf dem Server. Vorher bleiben die Felder ohne
+rote Fehlermarkierung. Eine fehlgeschlagene Prüfung zeigt eine übersetzte Notification
+und markiert die betroffenen Felder. Beim Ändern eines Werts verschwindet dessen alte
+Markierung; beim nächsten Absenden wird erneut geprüft. Pflichtfeldindikatoren bleiben
+sichtbar. Ein unlesbares Geburtsdatum wird auch dann abgewiesen, wenn Vaadin keinen
+Datumswert daraus bilden konnte. Die Prüfungen erfolgen weiterhin vor Anlage und Mailversand.
+
+Auch die Anmeldung prüft leere Pflichtfelder und das E-Mail-Format erst beim Absenden
+auf dem Server, bevor sie den Authentifizierungsdienst aufruft. Fehlende Angaben und
+Formatfehler zeigen eine Notification und markieren die betroffenen Felder. Beim
+Bearbeiten verschwindet jeweils die alte Markierung. Falsche Zugangsdaten bei einer
+Passwortanmeldung markieren beide Felder mit derselben allgemeinen Meldung, ohne
+eine Aussage darüber zu machen, ob die Adresse existiert oder das Passwort falsch
+ist. Wartung, Anmeldedrosselung,
+Sitzungslimit und technische Störungen erhalten ihre eigenen Meldungen ohne neue
+Eingabemarkierung. Rückmeldungen nach einer Weiterleitung markieren ebenfalls keine
+Loginfelder. Die Sicherheits- und Sitzungsabläufe nach gültiger Eingabe bleiben erhalten.
+
+Die persönlichen Daten prüfen Vorname, Nachname, Sprache und Geburtsdatum ebenfalls
+erst beim Speichern. Vor- und Nachname haben native Löschkreuze. Beim Bearbeiten
+verschwindet die alte Feldmarkierung. Der Schutz vor ungespeicherten Änderungen
+berücksichtigt unlesbare Datumseingaben auch ohne roten Rahmen und ohne geänderten
+Datumswert. Die E-Mail-Adresse bleibt hier schreibgeschützt; Änderungen erfolgen im
+eigenen geschützten Dialog.
+
+Diese Einstellung gilt zunächst für Registrierung, Anmeldung und persönliche Daten.
+Andere Formulare wurden dadurch nicht umgestellt.
+
 ### Entwicklerkonten
 
 Ein **Entwicklerkonto** ist davon unabhängig ausdrücklich gekennzeichnet. Nur

@@ -21,6 +21,8 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
@@ -128,6 +130,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     getContent().removeAll();
 
     formComponents = createFormComponents();
+    configureValidationOnSubmission();
     requiredFormComponents = createRequiredFormComponents();
     Button submitRegistrationButton = buildRegistrationButton();
 
@@ -483,6 +486,33 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         confirmPasswordField,
         genderComboBox,
         birthDatePicker);
+  }
+
+  private void configureValidationOnSubmission() {
+    firstNameField.setManualValidation(true);
+    lastNameField.setManualValidation(true);
+    emailField.setManualValidation(true);
+    confirmEmailField.setManualValidation(true);
+    passwordField.setManualValidation(true);
+    confirmPasswordField.setManualValidation(true);
+    birthDatePicker.setManualValidation(true);
+
+    // Pflichtfeldindikatoren bleiben sichtbar; Fehler setzen nur die Prüfungen beim Absenden.
+    List<TextFieldBase<?, ?>> registrationTextFields =
+        List.of(
+            firstNameField,
+            lastNameField,
+            emailField,
+            confirmEmailField,
+            passwordField,
+            confirmPasswordField);
+    for (TextFieldBase<?, ?> registrationTextField : registrationTextFields) {
+      registrationTextField.setValueChangeMode(ValueChangeMode.EAGER);
+      registrationTextField.addValueChangeListener(_ -> registrationTextField.setInvalid(false));
+    }
+    birthDatePicker.addValueChangeListener(_ -> birthDatePicker.setInvalid(false));
+    // Unlesbare Datumseingaben können sich ändern, obwohl der Modellwert weiterhin null bleibt.
+    birthDatePicker.addValidationStatusChangeListener(_ -> birthDatePicker.setInvalid(false));
   }
 
   private String formatGenderLabel(Gender gender) {

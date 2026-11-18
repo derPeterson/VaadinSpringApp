@@ -26,7 +26,7 @@ vaadin-tabs.cosmos-theme {
     --vaadin-icon-visual-size: 0.55lh;
 }
 
-/* Pflichtfeldpunkt steht wie bisher direkt hinter dem Label statt absolut davor. */
+/* Der native Pflichtfeldindikator steht direkt hinter dem Label statt absolut davor. */
 :is(.cosmos-theme, .cosmos-reference-overlay) ::part(required-indicator) {
     position: static;
     width: auto;

@@ -158,6 +158,11 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | DatePicker-Overlay | Rahmenlose Akzentaktionen und abgedunkelte Jahresspalte mit Trennlinie und nativer seitlicher Markierung vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | Checkbox-Markierung | Weiße Haken und Teilauswahlstriche in aktiven Checkboxen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | ComboBox-Overlayabstände | Gemeinsamer Außenabstand von 8 px für Einfach-/Mehrfachauswahl samt Pagination und 2 px zwischen Auswahlflächen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
+| Registrierungsvalidierung | Serverseitige Prüfung erst beim Absenden mit Notification, Feldmarkierung und Rücknahme alter Markierungen beim Bearbeiten wartet auf Sichtung durch den Benutzer |
+| Loginvalidierung | Prüfung erst beim Anmelden und Rücknahme alter Feldmarkierungen beim Bearbeiten wartet auf Sichtung durch den Benutzer; falsche Zugangsdaten bleiben allgemein beschrieben |
+| Pflichtfeldindikatoren | Native rote Sternchen statt blauer Punkte einschließlich Konfiguration und Tickets warten auf Sichtung durch den Benutzer |
+| Persönliche Daten | Validierung erst beim Speichern, Rücknahme alter Fehlermarkierungen und native Löschkreuze bei Vor-/Nachname warten auf Sichtung durch den Benutzer |
+| Einheitliche Löschkreuze | Native X-Aktionen in bearbeitbaren Text-, E-Mail-, Passwortfeldern und TextAreas warten auf Sichtung; OTP-Codeeingaben und reine Anzeige-/Kopierfelder bleiben ausgenommen |
 
 Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
 kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem

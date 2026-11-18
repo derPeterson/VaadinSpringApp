@@ -78,8 +78,11 @@ public final class ExternalRegistrationView extends VerticalLayout
     registrationTitleH2.addClassName("cosmos-headline");
 
     firstNameField.setId("external-register-first");
+    firstNameField.setClearButtonVisible(true);
     lastNameField.setId("external-register-last");
+    lastNameField.setClearButtonVisible(true);
     registrationEmailField.setId("external-register-email");
+    registrationEmailField.setClearButtonVisible(true);
     firstNameField.setRequiredIndicatorVisible(true);
     lastNameField.setRequiredIndicatorVisible(true);
     registrationEmailField.setRequiredIndicatorVisible(true);

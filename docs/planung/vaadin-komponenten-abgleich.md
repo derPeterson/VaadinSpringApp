@@ -20,6 +20,22 @@ einheitlichen Warn-/Fehlersymbolen einschließlich der übrigen Einsatzstellen s
 umgesetzt und vom Benutzer abgenommen. Die automatisierten Browsernachtests bleiben
 zentral im [Testbedarf](../testbedarf.md) offen.
 
+Registrierung, Anmeldung und persönliche Daten verwenden die native manuelle
+Validierung: Fehler erscheinen erst beim Absenden, Änderungen nehmen die alte
+Feldmarkierung zurück. Die Benutzerabnahme steht noch aus. Der Client-/Blur-Nachtest
+bleibt zentral im Testbedarf offen.
+
+**Der Formularabgleich bleibt ausdrücklich offen; dies ist ein Zwischenstand.**
+Weitere Formulare auf vorzeitige rote Markierungen, erklärende Meldungen und
+konsistentes Zurücknehmen alter Fehler prüfen. Kandidaten sind Benutzeranlage und
+-bearbeitung, externer Registrierungsabschluss, Konto-/Passwortdialoge, Konfiguration,
+Mail-Test sowie Benachrichtigungs- und Ticketformulare. Den konkreten nächsten
+Umfang jeweils gemeinsam festlegen; noch keine pauschale Umstellung dieser Formulare.
+
+Die vereinheitlichten nativen Löschkreuze in Texteingaben und TextAreas warten
+auf Benutzerabnahme; der gemeinsame Vertrag steht in der Theme-Anleitung,
+offene Browserprüfungen zentral im Testbedarf.
+
 Die Inbox-Seitennavigation mit `CosmosPagination` und die Korrektur verschobener
 Seitenzahlen sind nach den isolierten DE-/EN-Vergleichen bei 1280/390 px vom
 Benutzer abgenommen. Daraus bleibt kein offenes Paket.

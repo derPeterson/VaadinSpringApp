@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
@@ -36,6 +37,8 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldBase;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.Router;
 import com.vaadin.flow.server.RouteRegistry;
@@ -173,6 +176,81 @@ public class RegistrationViewTest {
 
   private void click() {
     field("registrationButton", Button.class).click();
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "firstNameField",
+        "lastNameField",
+        "emailField",
+        "confirmEmailField",
+        "passwordField",
+        "confirmPasswordField"
+      })
+  void clearingARequiredFieldWaitsForSubmissionBeforeMarkingAndNotifying(String fieldName) {
+    TextFieldBase<?, ?> registrationTextField = field(fieldName, TextFieldBase.class);
+    assertTrue(registrationTextField.isRequiredIndicatorVisible());
+    assertEquals(ValueChangeMode.EAGER, registrationTextField.getValueChangeMode());
+    registrationTextField.clear();
+
+    assertFalse(registrationTextField.isInvalid());
+    assertNull(ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"));
+    click();
+
+    assertTrue(registrationTextField.isInvalid());
+    assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+    assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.GERMAN);
+    verifyNoInteractions(userService, passwordEncoder, verificationService);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"emailField", "confirmEmailField"})
+  void malformedEmailIsRejectedOnSubmissionAndAnEditClearsOnlyItsOldMarker(String fieldName) {
+    EmailField registrationEmailField = field(fieldName, EmailField.class);
+    registrationEmailField.setValue("not-an-email");
+
+    assertFalse(registrationEmailField.isInvalid());
+    assertNull(ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"));
+    click();
+
+    assertTrue(registrationEmailField.isInvalid());
+    assertNotification(MessageProperties::getBaseValidationEmailInvalidMessage, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+    assertNotification(MessageProperties::getBaseValidationEmailInvalidMessage, Locale.GERMAN);
+    field("lastNameField", TextField.class).setInvalid(true);
+    registrationEmailField.setValue("still-invalid");
+
+    assertFalse(registrationEmailField.isInvalid());
+    assertTrue(field("lastNameField", TextField.class).isInvalid());
+    click();
+
+    assertTrue(registrationEmailField.isInvalid());
+    assertNotification(MessageProperties::getBaseValidationEmailInvalidMessage, Locale.GERMAN);
+    verifyNoInteractions(userService, passwordEncoder, verificationService);
+  }
+
+  @Test
+  void unparseableOptionalBirthDateStillBlocksSubmissionInManualValidationMode() {
+    DatePicker registrationBirthDatePicker = field("birthDatePicker", DatePicker.class);
+    registrationBirthDatePicker.getElement().setProperty("_inputElementValue", "31022026");
+    ReflectionTestUtils.invokeMethod(registrationBirthDatePicker, "setModelValue", null, true);
+
+    assertNull(registrationBirthDatePicker.getValue());
+    assertFalse(registrationBirthDatePicker.isInvalid());
+    click();
+
+    assertTrue(registrationBirthDatePicker.isInvalid());
+    assertNotification(MessageProperties::getBaseValidationBirthDatePastMessage, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+    assertNotification(MessageProperties::getBaseValidationBirthDatePastMessage, Locale.GERMAN);
+    verify(userService).findByEmail("test@example.com");
+    verifyNoMoreInteractions(userService);
+    verifyNoInteractions(passwordEncoder, verificationService);
+    registrationBirthDatePicker.clear();
+
+    assertFalse(registrationBirthDatePicker.isInvalid());
   }
 
   @Test
@@ -427,6 +505,7 @@ public class RegistrationViewTest {
     field("firstNameField", TextField.class).setValue(" ");
     click();
     field("firstNameField", TextField.class).setValue(" Test ");
+    assertFalse(field("firstNameField", TextField.class).isInvalid());
     when(verificationService.sendVerificationEmailByUser(any())).thenReturn(true);
     click();
 
@@ -513,7 +592,7 @@ public class RegistrationViewTest {
   }
 
   @Test
-  void longEmailInputIsSafeBeforeTheRegistrationCallbackRuns() {
+  void longEmailInputRemainsUnmarkedUntilSubmissionAndIsRejectedSafely() {
     EmailField email = field("emailField", EmailField.class);
     EmailField confirmation = field("confirmEmailField", EmailField.class);
     String address = "a@" + "b.".repeat(8192) + "test";
@@ -529,9 +608,14 @@ public class RegistrationViewTest {
           email.setValue(address + " x");
           confirmation.setValue(address + " x");
 
+          assertFalse(email.isInvalid());
+          assertFalse(confirmation.isInvalid());
+          click();
+
           assertTrue(email.isInvalid());
           assertTrue(confirmation.isInvalid());
         });
-    verifyNoInteractions(userService, verificationService);
+    assertNotification(MessageProperties::getBaseValidationEmailInvalidMessage, Locale.ENGLISH);
+    verifyNoInteractions(userService, passwordEncoder, verificationService);
   }
 }

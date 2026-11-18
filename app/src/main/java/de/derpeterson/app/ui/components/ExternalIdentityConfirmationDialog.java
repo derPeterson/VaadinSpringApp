@@ -98,6 +98,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     dialogHeaderDiv.addClassName("account-change-dialog-header");
     getHeader().add(dialogHeaderDiv);
     passwordField.setId("external-confirm-password");
+    passwordField.setClearButtonVisible(true);
     passwordField.setWidthFull();
     passwordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     passwordField.setManualValidation(true);

@@ -31,6 +31,8 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.ValueContext;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.function.SerializableRunnable;
@@ -513,9 +515,28 @@ public class AccountSettingsComponent extends PageContentLayout {
     genderSelector.setClearButtonVisible(true);
 
     firstNameField.setRequiredIndicatorVisible(true);
+    firstNameField.setClearButtonVisible(true);
+    firstNameField.setManualValidation(true);
+    firstNameField.setValueChangeMode(ValueChangeMode.EAGER);
+    firstNameField.addValueChangeListener(_ -> firstNameField.setInvalid(false));
     lastNameField.setRequiredIndicatorVisible(true);
+    lastNameField.setClearButtonVisible(true);
+    lastNameField.setManualValidation(true);
+    lastNameField.setValueChangeMode(ValueChangeMode.EAGER);
+    lastNameField.addValueChangeListener(_ -> lastNameField.setInvalid(false));
     birthDatePicker.setClearButtonVisible(true);
+    birthDatePicker.setManualValidation(true);
+    birthDatePicker.addValueChangeListener(_ -> birthDatePicker.setInvalid(false));
+    birthDatePicker.addValidationStatusChangeListener(_ -> {
+      birthDatePicker.setInvalid(false);
+      if (browserProfileChangesGuard != null) {
+        browserProfileChangesGuard.refresh();
+      }
+    });
     preferredLanguageSelector.setRequiredIndicatorVisible(true);
+    preferredLanguageSelector.setManualValidation(true);
+    preferredLanguageSelector.addValueChangeListener(
+        _ -> preferredLanguageSelector.setInvalid(false));
 
     profileEmailField.setReadOnly(true);
     profileEmailField.setSuffixComponent(AppIcon.LOCK.create());
@@ -639,8 +660,15 @@ public class AccountSettingsComponent extends PageContentLayout {
   }
 
   public boolean hasUnsavedProfileChanges() {
+    // Unlesbare Eingaben bleiben Änderungen, auch ohne roten Rahmen und bei unverändertem
+    // null-Wert.
     return selectedSection == AccountSection.PROFILE
-        && (!readProfileChanges(null).equals(savedProfileFields) || birthDatePicker.isInvalid());
+        && (!readProfileChanges(null).equals(savedProfileFields)
+            || birthDatePicker.isInvalid()
+            || birthDatePicker
+                .getDefaultValidator()
+                .apply(birthDatePicker.getValue(), new ValueContext(birthDatePicker))
+                .isError());
   }
 
   public void discardProfileChanges() {

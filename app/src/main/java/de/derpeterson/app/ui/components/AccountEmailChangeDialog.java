@@ -86,8 +86,11 @@ public class AccountEmailChangeDialog extends Dialog {
     confirmEmailField.setId("account-email-confirm");
     currentPasswordField.setId("account-email-password");
     newEmailField.setRequiredIndicatorVisible(true);
+    newEmailField.setClearButtonVisible(true);
     confirmEmailField.setRequiredIndicatorVisible(true);
+    confirmEmailField.setClearButtonVisible(true);
     currentPasswordField.setRequiredIndicatorVisible(true);
+    currentPasswordField.setClearButtonVisible(true);
     // Escape löst nicht zuverlässig einen Blur aus. Auch unbestätigte Eingaben
     // rechtzeitig synchronisieren, damit Schließen sie tatsächlich verwerfen kann.
     newEmailField.setValueChangeMode(ValueChangeMode.EAGER);

@@ -289,11 +289,13 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       redirectUriRowLayout.addClassName("provider-redirect");
 
       clientIdTextField.setWidthFull();
+      clientIdTextField.setClearButtonVisible(true);
       clientIdTextField.setMaxLength(512);
       clientIdTextField.setId(PROVIDER_PREFIX + providerId + "-client-id");
       clientIdTextField.setValueChangeMode(ValueChangeMode.EAGER);
 
       clientSecretPasswordField.setWidthFull();
+      clientSecretPasswordField.setClearButtonVisible(true);
       clientSecretPasswordField.setMaxLength(2048);
       clientSecretPasswordField.setId(PROVIDER_PREFIX + providerId + "-secret");
       clientSecretPasswordField.getElement().setAttribute("autocomplete", "new-password");

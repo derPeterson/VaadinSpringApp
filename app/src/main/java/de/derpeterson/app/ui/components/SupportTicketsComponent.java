@@ -361,6 +361,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void configureEditor() {
     ticketMessageInput.setId("support-reply");
+    ticketMessageInput.setClearButtonVisible(true);
     ticketMessageInput.setWidthFull();
     ticketMessageInput.setMinRows(4);
     ticketMessageInput.addClassName("support-message-input");

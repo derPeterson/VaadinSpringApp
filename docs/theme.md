@@ -185,7 +185,7 @@ Bereichs. Die Seitengröße bleibt dabei bedienbar. Seitenzahlen erhalten in
 | Tabellenaktionen | 32 × 32 px, 16-px-Icon |
 | Pagination | Kompakte native Controls; aktive Seite in Primärfarbe |
 | Eingaben | Gemeinsame Feldfläche; Höhe und Schrift aus der jeweiligen Controlvariante |
-| Labels | Gemeinsame Labelschrift; Pflichtpunkt nur bei tatsächlichem Pflichtfeld |
+| Labels | Gemeinsame Labelschrift; rotes Sternchen nur bei tatsächlichem Pflichtfeld |
 | Schließen | `cosmos-overlay-close`, vorhandenes `CLOSE_CIRCLE` |
 | Löschaktionen | `cosmos-delete-button`, gemeinsame Danger-Tokens |
 | Warnaktionen | `cosmos-warning-button`, gemeinsame Warnpalette |
@@ -196,10 +196,30 @@ Hover und akzentblau bei Fokus beziehungsweise geöffnetem Picker.
 Disabled ist auch an Label, Wert und Platzhalter erkennbar. Read-only, Fehler und
 Tastaturfokus bleiben unterscheidbar.
 
+Bearbeitbare `TextField`-, `EmailField`-, `PasswordField`- und `TextArea`-Eingaben
+aktivieren das native Löschkreuz mit `setClearButtonVisible(true)`. Das gilt auch
+für neue Eingabefelder. Vaadin blendet das X bei leeren, deaktivierten und
+schreibgeschützten Feldern selbst aus. Keine zusätzlichen Clear-Buttons oder
+CSS-Nachbauten verwenden. Die native Einstellung aktiviert auch Esc zum Leeren;
+bei einer TextArea betrifft das den gesamten Entwurf.
+
+Ausgenommen bleiben einzelne OTP-Ziffern und die E-Mail-Codeeingabe der 2FA;
+Ersatzcodes als zusammenhängende Texteingabe haben ein X. Reine Anzeige-/Kopierfelder
+bleiben schreibgeschützt und ohne Löschkreuz. Zahlen- und Cosmos-Dauerfelder
+verwenden weiterhin ihre bereits vorhandenen nativen Löschaktionen.
+
 Checkboxen verwenden für den Haken und den Strich einer Teilauswahl die weiße
 Überschriftenfarbe über `--vaadin-checkbox-marker-color` in `cosmos-tokens.css`.
 Dies gilt auch innerhalb von Checkbox-Gruppen. Deaktivierte und schreibgeschützte
 Checkboxen behalten Auras eigene Markerfarben; Radio-Buttons und Switches sind davon unabhängig.
+
+Pflichtfelder verwenden Vaadins natives Sternchen `*` statt eines eigenen Punkts.
+Die gemeinsame Farbe steht in `--vaadin-input-field-required-indicator-color` und
+verweist auf `--cosmos-error-color`. Das helle Rot erreicht auf den üblichen dunklen
+Seiten-, Panel-, Eingabe- und Overlayflächen etwa 6,5:1 bis 7,2:1 Kontrast. Der Indikator
+bleibt direkt hinter dem Label. Die vorhandenen separaten Konfigurationslabels zeigen
+dieselbe Kennzeichnung; Ticket-Vermerke verwenden dafür ebenfalls Rot statt Violett.
+Das Sternchen kennzeichnet eine Pflichtangabe unabhängig vom aktuellen Fehlerzustand.
 
 #### ComboBox-Auswahllisten
 
@@ -632,7 +652,7 @@ Utility-Klassen in Systemmeldungen und Konfigurationsfeldern stehen ebenfalls do
 
 `cosmos-aura.css` lädt direkt nach den Tokens und setzt Aura-Standards zurück, die von der
 Cosmos-Gestaltung abweichen: freistehende Reiter statt gefüllter Segmentleiste,
-kleinerer Aufklapppfeil der Seitennavigation, runder Schaltergriff, Pflichtfeldpunkt direkt hinter dem Label,
+kleinerer Aufklapppfeil der Seitennavigation, runder Schaltergriff, nativer Pflichtfeldindikator direkt hinter dem Label,
 Feldsymbole mit 16 px breiter Symbolfläche (Klickfläche bleibt 24 px), Aufklappbereiche
 ohne Einrückung um die Pfeilbreite, Kalender (Datumsauswahl) im Cosmos-Stil mit
 dunkler Kalenderfläche, 36 px hohen Tagen (am Desktop auch 36 px breit,

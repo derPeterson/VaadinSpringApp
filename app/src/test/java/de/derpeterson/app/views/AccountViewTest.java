@@ -21,6 +21,7 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.internal.PendingJavaScriptInvocation;
@@ -32,6 +33,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -75,6 +77,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -607,6 +610,68 @@ class AccountViewTest {
 
   private Stream<Component> streamComponentTree(Component rootComponent) {
     return ComponentTestTree.streamComponentTree(rootComponent);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "de,account-first-name",
+    "en,account-first-name",
+    "de,account-last-name",
+    "en,account-last-name"
+  })
+  void clearedProfileNameIsMarkedOnlyOnSaveAndEditingRemovesItsOldMarker(
+      String language, String fieldId) {
+    Locale profileLocale = Locale.forLanguageTag(language);
+    LanguageChangeEvent.fire(testUi, profileLocale);
+    AccountSettingsComponent accountSettingsComponent = getAccountSettingsComponent();
+    TextField profileNameField = (TextField) findComponentById(accountSettingsComponent, fieldId);
+    assertTrue(profileNameField.isClearButtonVisible());
+    assertEquals(ValueChangeMode.EAGER, profileNameField.getValueChangeMode());
+    profileNameField.clear();
+
+    assertFalse(profileNameField.isInvalid());
+    assertTrue(accountSettingsComponent.hasUnsavedProfileChanges());
+    findSaveProfileButton(accountSettingsComponent).click();
+
+    assertTrue(profileNameField.isInvalid());
+    Supplier<?> notificationMessageSupplier =
+        (Supplier<?>)
+            ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+    MessageProperties expectedTexts =
+        MessageProperties.forLocale(new CustomI18NProvider(), profileLocale);
+    assertEquals(
+        expectedTexts.getBaseValidationRequiredMessage(), notificationMessageSupplier.get());
+    verify(accountProfileService, never()).save(any(), any());
+    profileNameField.setValue("Draft");
+
+    assertFalse(profileNameField.isInvalid());
+    assertTrue(accountSettingsComponent.hasUnsavedProfileChanges());
+    accountSettingsComponent.discardProfileChanges();
+
+    assertFalse(accountSettingsComponent.hasUnsavedProfileChanges());
+  }
+
+  @Test
+  void unparseableEmptyBirthdayStillProtectsUnsavedChangesAndBlocksSaving() {
+    testAccount.setBirthDate(null);
+    accountView = createAccountView();
+    AccountSettingsComponent accountSettingsComponent = getAccountSettingsComponent();
+    DatePicker profileBirthDatePicker =
+        (DatePicker) findComponentById(accountSettingsComponent, "account-birth-date");
+    assertFalse(accountSettingsComponent.hasUnsavedProfileChanges());
+    profileBirthDatePicker.getElement().setProperty("_inputElementValue", "31022026");
+    ReflectionTestUtils.invokeMethod(profileBirthDatePicker, "setModelValue", null, true);
+
+    assertFalse(profileBirthDatePicker.isInvalid());
+    assertTrue(accountSettingsComponent.hasUnsavedProfileChanges());
+    findSaveProfileButton(accountSettingsComponent).click();
+
+    assertTrue(profileBirthDatePicker.isInvalid());
+    verify(accountProfileService, never()).save(any(), any());
+    profileBirthDatePicker.clear();
+
+    assertFalse(profileBirthDatePicker.isInvalid());
+    assertFalse(accountSettingsComponent.hasUnsavedProfileChanges());
   }
 
   @Test

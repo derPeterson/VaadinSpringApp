@@ -948,6 +948,3 @@ vaadin-badge.support-instruction-number {
 .support-admin-editor[data-internal="true"] #support-internal-note[selected] vaadin-icon {
     color: var(--cosmos-system-text);
 }
-.support-admin-editor[data-internal="true"] #support-reply::part(required-indicator)::after {
-    color: var(--cosmos-system-accent);
-}

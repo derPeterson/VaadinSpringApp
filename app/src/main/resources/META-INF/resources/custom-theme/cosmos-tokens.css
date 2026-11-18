@@ -95,6 +95,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-icon-border-color: color-mix(in srgb, var(--cosmos-color-primary) 40%, transparent);
     --cosmos-hint-border-color: color-mix(in srgb, var(--cosmos-color-primary) 20%, transparent);
     --cosmos-error-color: var(--cosmos-color-danger);
+    --vaadin-input-field-required-indicator-color: var(--cosmos-error-color);
     --cosmos-error-text-color: var(--cosmos-color-danger-light);
     --cosmos-error-color-10pct: color-mix(in srgb, var(--cosmos-color-danger) 13%, transparent);
     --cosmos-error-color-50pct: color-mix(in srgb, var(--cosmos-color-danger) 50%, transparent);

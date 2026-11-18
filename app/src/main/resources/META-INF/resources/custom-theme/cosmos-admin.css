@@ -778,8 +778,8 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-field > vaadin-horizonta
     color: var(--cosmos-label-color);
 }
 vaadin-app-layout.cosmos-reference-admin .admin-config-required::after {
-    content: " •";
-    color: var(--cosmos-primary-text-color);
+    content: " *";
+    color: var(--vaadin-input-field-required-indicator-color);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-input-row {
     gap: 8px;
@@ -1257,12 +1257,7 @@ vaadin-app-layout.cosmos-reference-admin #admin-notifications-everyone-recipient
     opacity: 1;
 }
 vaadin-app-layout.cosmos-reference-admin #admin-notifications-everyone-recipients::part(required-indicator) {
-    color: var(--cosmos-primary-text-color);
-    -webkit-text-fill-color: currentColor;
-    opacity: 1;
-}
-vaadin-app-layout.cosmos-reference-admin #admin-notifications-everyone-recipients::part(required-indicator)::after {
-    color: var(--cosmos-primary-text-color);
+    color: var(--vaadin-input-field-required-indicator-color);
     -webkit-text-fill-color: currentColor;
     opacity: 1;
 }

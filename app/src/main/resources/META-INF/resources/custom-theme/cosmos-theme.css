@@ -826,19 +826,6 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
     color: var(--cosmos-text-disabled-color);
     -webkit-text-fill-color: var(--cosmos-text-disabled-color);
 }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) [required]::part(required-indicator) {
-    visibility: visible;
-    display: inline-flex;
-    font: 500 var(--cosmos-font-size-l)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
-}
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) [required]::part(required-indicator)::after {
-    content: "•";
-    color: var(--cosmos-primary-text-color);
-    opacity: 1;
-    position: static;
-    width: auto;
-    margin-left: 0;
-}
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) [focused]::part(input-field) {
     outline: 1px solid var(--cosmos-primary-text-color);
     outline-offset: 2px;

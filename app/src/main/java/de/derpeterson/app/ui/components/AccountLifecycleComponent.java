@@ -253,6 +253,7 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     currentPasswordField.setId("account-lifecycle-password");
     currentPasswordField.setWidthFull();
     currentPasswordField.setRequiredIndicatorVisible(true);
+    currentPasswordField.setClearButtonVisible(true);
     currentPasswordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     Span passwordHintSpan = new Span(messageProperties.getExternalPasswordProofHint());
     passwordHintSpan.addClassName("account-lifecycle-password-hint");

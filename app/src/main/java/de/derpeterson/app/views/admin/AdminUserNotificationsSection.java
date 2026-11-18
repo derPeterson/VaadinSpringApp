@@ -190,7 +190,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     everyoneRecipientsTextField.setWidthFull();
 
     notificationTitleField.setId("admin-notifications-title");
+    notificationTitleField.setClearButtonVisible(true);
     notificationBodyField.setId("admin-notifications-body");
+    notificationBodyField.setClearButtonVisible(true);
     notificationTitleField.setMaxLength(UserNotificationService.TITLE_LIMIT);
     notificationBodyField.setMaxLength(UserNotificationService.BODY_LIMIT);
     notificationBodyField.setMinRows(4);

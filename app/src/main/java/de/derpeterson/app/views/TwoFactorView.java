@@ -185,6 +185,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private void configureTwoFactorStepInputs() {
     setupPasswordField.setId("two-factor-password");
+    setupPasswordField.setClearButtonVisible(true);
     setupPasswordField.setWidthFull();
     setupPasswordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     setupPasswordField.setManualValidation(true);
@@ -222,6 +223,8 @@ public final class TwoFactorView extends VerticalLayout
 
   private TextField configureAdditionalProofTextField(
       String proofLabelText, int maximumProofLength) {
+    // Dasselbe Feld dient auch Ersatzcodes; OTP-Eingaben erhalten kein Löschkreuz.
+    additionalProofTextField.setClearButtonVisible(false);
     additionalProofTextField.removeClassName("two-factor-recovery-input");
     additionalProofTextField.setLabel(proofLabelText);
     additionalProofTextField.setPlaceholder(messageProperties.getTwoFactorCodePlaceholder());

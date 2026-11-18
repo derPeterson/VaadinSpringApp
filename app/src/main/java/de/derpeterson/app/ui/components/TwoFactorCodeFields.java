@@ -49,6 +49,7 @@ public final class TwoFactorCodeFields {
   }
 
   public static void configureRecoveryCodeField(TextField recoveryCodeField) {
+    recoveryCodeField.setClearButtonVisible(true);
     recoveryCodeField.setMaxLength(RECOVERY_CODE_EXAMPLE.length());
     recoveryCodeField.setPlaceholder(RECOVERY_CODE_EXAMPLE);
     recoveryCodeField.setAutocomplete(Autocomplete.OFF);

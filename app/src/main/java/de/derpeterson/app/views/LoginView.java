@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -32,6 +33,7 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.AccountActionNotice;
@@ -143,8 +145,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     this.loginEmailField = new EmailField(messageProperties.getPublicEmailField());
     loginEmailField.setPattern(UserInputRules.EMAIL_REGEX);
+    loginEmailField.setManualValidation(true);
+    loginEmailField.setValueChangeMode(ValueChangeMode.EAGER);
+    loginEmailField.addValueChangeListener(_ -> loginEmailField.setInvalid(false));
 
     this.loginPasswordField = new PasswordField(messageProperties.getLoginPasswordField());
+    loginPasswordField.setManualValidation(true);
+    loginPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
+    loginPasswordField.addValueChangeListener(_ -> loginPasswordField.setInvalid(false));
 
     this.forgotPasswordRouterLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
@@ -362,6 +370,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
   private void submitPasswordLogin(
       AuthenticationManager authenticationManager, SecurityService securityService) {
+    if (!ValidationHelper.validateRequiredInputs(
+            List.of(loginEmailField, loginPasswordField), messageProperties)
+        || !ValidationHelper.validateEmailValidInputs(
+            List.of(loginEmailField), messageProperties)) {
+      return;
+    }
+
     try {
       Authentication passwordAuthentication =
           authenticationManager.authenticate(
@@ -402,7 +417,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         return;
       }
 
-      showLoginFailureNotification(authenticationFailureCode(authenticationFailure));
+      String loginFailureCode = authenticationFailureCode(authenticationFailure);
+      if (LOGIN_ERROR_INVALID.equals(loginFailureCode)) {
+        // Beide Angaben markieren, ohne die Existenz eines Kontos oder die falsche Angabe
+        // offenzulegen.
+        loginEmailField.setInvalid(true);
+        loginPasswordField.setInvalid(true);
+      }
+      showLoginFailureNotification(loginFailureCode);
     }
   }
 

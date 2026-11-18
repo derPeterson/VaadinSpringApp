@@ -83,8 +83,11 @@ public class AccountPasswordChangeDialog extends Dialog {
     confirmPasswordField.setId("account-password-confirm");
     newPasswordField.setId("account-password-new");
     currentPasswordField.setRequiredIndicatorVisible(true);
+    currentPasswordField.setClearButtonVisible(true);
     confirmPasswordField.setRequiredIndicatorVisible(true);
+    confirmPasswordField.setClearButtonVisible(true);
     newPasswordField.setRequiredIndicatorVisible(true);
+    newPasswordField.setClearButtonVisible(true);
     // Escape löst nicht zuverlässig einen Blur aus. Auch unbestätigte Eingaben
     // rechtzeitig synchronisieren, damit Schließen sie tatsächlich verwerfen kann.
     currentPasswordField.setValueChangeMode(ValueChangeMode.EAGER);

@@ -130,10 +130,12 @@ public class AdminMailTestSection extends VerticalLayout {
     }
 
     testSubjectField = new TextField();
+    testSubjectField.setClearButtonVisible(true);
     testSubjectField.setWidthFull();
     testSubjectField.setRequiredIndicatorVisible(true);
 
     testBodyField = new TextArea();
+    testBodyField.setClearButtonVisible(true);
     testBodyField.setWidthFull();
     testBodyField.setRequiredIndicatorVisible(true);
     testBodyField.addClassName("cosmos-mail-body-field");

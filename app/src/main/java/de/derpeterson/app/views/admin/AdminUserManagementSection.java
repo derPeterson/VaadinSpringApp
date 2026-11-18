@@ -945,11 +945,13 @@ public class AdminUserManagementSection extends VerticalLayout {
       sendPasswordResetMailButton.addClickListener(event -> requestAdministrativeMail(false));
 
       firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
+      firstNameField.setClearButtonVisible(true);
       firstNameField.setRequiredIndicatorVisible(true);
       firstNameField.setWidthFull();
       firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
 
       lastNameField = new TextField(messageProperties.getAdminUsersFieldLastName());
+      lastNameField.setClearButtonVisible(true);
       lastNameField.setRequiredIndicatorVisible(true);
       lastNameField.setWidthFull();
       lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
@@ -963,6 +965,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       emailField.setClearButtonVisible(true);
 
       passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
+      passwordField.setClearButtonVisible(true);
       passwordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
       passwordField.setWidthFull();
       passwordField.setRevealButtonVisible(true);
@@ -978,6 +981,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       passwordField.setAriaDescribedBy(passwordHintSpan);
 
       confirmPasswordField = new PasswordField(messageProperties.getPublicConfirmPasswordField());
+      confirmPasswordField.setClearButtonVisible(true);
       confirmPasswordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
       confirmPasswordField.setWidthFull();
       confirmPasswordField.setRevealButtonVisible(true);
