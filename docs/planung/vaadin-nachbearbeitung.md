@@ -259,8 +259,8 @@ bleibt offen. Ausgangsstand ist `86f9cb25` auf
   Startwerte ersetzt. Bei zu gedrängter Wirkung kann nach Sichtung auf **XL**, 20 px,
   nachjustiert werden.
 
-- [ ] Umsetzung und passende Prüfungen abgeschlossen.
-- [ ] Review abgeschlossen und eigener Commit erstellt.
+- [x] Umsetzung und passende Prüfungen abgeschlossen.
+- [x] Review abgeschlossen und eigener Commit erstellt.
 
 ## 14. Anwesenheitsstatus: Designversuch zuletzt, ohne Commit
 

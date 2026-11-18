@@ -1326,8 +1326,9 @@ vaadin-app-layout.cosmos-reference-admin
     display: block;
     position: relative;
     margin: 0;
-    padding: 18px 20px;
+    padding: var(--cosmos-space-l);
     border: 1px solid var(--cosmos-border-color);
+    border-left-width: 3px;
     border-radius: 12px;
     background: var(--cosmos-card-background);
 }
@@ -1342,8 +1343,8 @@ vaadin-app-layout.cosmos-reference-admin
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: var(--cosmos-space-s);
+    margin-bottom: var(--cosmos-space-s);
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta {
@@ -1429,7 +1430,9 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-reference-portal #notifications-inbox .cosmos-notification-title {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
     width: 100%;
     height: auto;
     min-height: 0;
@@ -1669,7 +1672,7 @@ vaadin-popover[theme~="cosmos-reference"][theme~="cosmos-notifications"]::part(c
     column-gap: 12px;
     row-gap: 0;
     margin: 0;
-    padding: 13px 12px;
+    padding: var(--cosmos-space-m);
     border-radius: 9px;
     border-left: 3px solid var(--cosmos-text-secondary-color);
     background: var(--cosmos-card-background);
@@ -1727,6 +1730,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(overla
     margin: 0;
     padding: var(--cosmos-space-l);
     border: 1px solid var(--cosmos-border-color);
+    border-left-width: 3px;
     border-radius: 10px;
     background: var(--cosmos-base-color);
 }
@@ -2010,10 +2014,6 @@ vaadin-combo-box-item.portal-pagination-option {
     .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-rows {
         padding: 16px;
         gap: 12px;
-    }
-
-    .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row {
-        padding: 16px;
     }
 
     .cosmos-reference-portal #notifications-inbox .cosmos-notification-inbox-row-header {

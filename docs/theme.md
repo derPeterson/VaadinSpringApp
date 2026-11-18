@@ -350,6 +350,14 @@ Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls m
 Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
 [Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
 
+Mitteilungskarten verwenden einheitliche Innenabstände: Gesamtübersicht und
+geöffneter Dialog L, kompakte Glockenvorschau M. Der zusätzliche linke Statusrahmen
+reserviert unabhängig vom Zustand dieselbe Breite, ohne das Padding umzurechnen.
+Zwischen Werkzeugleiste und Titel der Gesamtübersicht liegt S. Der native
+Titelbutton behält Flexdarstellung statt des früheren lokalen Blocklayouts,
+damit seine Shadow-DOM-Slots keinen zusätzlichen Textzeilenraum erzeugen.
+Die sichtbare Wirkung ist noch manuell zu beurteilen; XL ist keine Voreinstellung.
+
 Die Nachrichtenkarte im geöffneten Dialog ist eine fachliche `Div`-Zusammensetzung.
 Ihr äußerer Innenabstand stammt aus `cosmos-notifications.css`, nicht aus Aura oder
 der nativen Card. Er ist einheitlich L; die Metadaten erhalten S nach oben und M

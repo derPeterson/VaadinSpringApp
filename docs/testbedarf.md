@@ -2,6 +2,13 @@
 
 ## Browser-Tests
 
+- **Mitteilungskarten: einheitliche Dichte — offen.**
+  In DE/EN Desktop/Smartphone Gesamtübersicht und geöffneten Dialog mit L-Padding,
+  kompaktes Overlay mit M prüfen. Werkzeugleiste zum Inbox-Titel S; Titel ohne
+  zusätzliche Block-/Leerzeile. Kurze/lange Titel, Nachrichten und Statuswechsel
+  prüfen: linke Statuslinie darf die Inhaltsausrichtung nicht verschieben.
+  Keine Browserfreigabe; die Wirkung wird vom Benutzer gesichtet.
+
 - **Nachrichtendialog: Abstände der Mitteilung — offen.**
   In DE/EN auf Desktop/Smartphone mit kurzen und langen Inhalten prüfen: Kartenpadding
   L, Metadaten oben S/unten M; Button innerhalb des Kartenrands. Keine Addierung
