@@ -720,8 +720,14 @@ bei Platzmangel bleibt nativ. Rahmen/Farben entsprechen Cosmos, die Namen-Toolti
 Die gesamte Reihe öffnet per Klick, Enter oder Leertaste die vollständige Liste,
 auch ohne „+N“. `NotificationRecipientPopover` setzt diese aus nativem Popover,
 Suchfeld und Grid zusammen: Name, darunter sekundäre E-Mail; Suche über beide Werte,
-keine Zeilenauswahl. Die Höhe bleibt auf 650 px beziehungsweise die verfügbare
-Fensterhöhe begrenzt; das Grid scrollt und virtualisiert seine Zeilen.
+keine Zeilenauswahl. Der Kopf verwendet Personen-Icon und Schließen-Button im
+gemeinsamen Dialogstil; eine Trennlinie trennt ihn von Suche und Liste auf der
+Content-Fläche. Das Suchfeld hat eine Lupe. Die Breite folgt dem Inhalt bis maximal
+480 px und bleibt innerhalb des Fensters. Das Grid verwendet die gemeinsamen
+Tabellenfarben und zeigt höchstens fünf 60-px-Zeilen; bei weniger Treffern schrumpft
+es, ohne Treffer bleibt eine Zeile für den Leerzustand. Die Zeilenhöhe wird aus
+Zeilenhöhen-/Abstandstokens abgeleitet. Weitere Zeilen scrollt und virtualisiert
+das Grid; bei kleinen Fenstern darf die sichtbare Liste weiter schrumpfen.
 Der freigegebene, gekapselte Listener in `notification-recipient-popover.js` fängt
 Klick/Tastatur vor dem nativen Überlaufmenü ab. Er nutzt nur DOM-Ereignisse und
 öffentliche Light-DOM-Slots, keine privaten Vaadin-Methoden. „Details“ entfällt.

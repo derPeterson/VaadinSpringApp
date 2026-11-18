@@ -5,6 +5,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -20,6 +22,7 @@ import java.util.Locale;
 /** Vollständige, durchsuchbare Empfängerliste für die freigegebene Avatar-Vorschau. */
 @JsModule("./notification-recipient-popover.js")
 public class NotificationRecipientPopover extends Popover {
+  private static final int MAX_VISIBLE_RECIPIENTS = 5;
   private final TextField searchTextField = new TextField();
   private final Grid<Target> recipientGrid = new Grid<>();
 
@@ -29,7 +32,8 @@ public class NotificationRecipientPopover extends Popover {
       MessageProperties messageProperties) {
     List<Target> reviewedRecipientTargets = List.copyOf(recipientTargets);
     setId("admin-notifications-preview-recipients");
-    addClassName("cosmos-recipient-popover");
+    addClassNames("cosmos-recipient-popover", "cosmos-theme", CosmosCssClasses.REFERENCE_OVERLAY);
+    addThemeName("cosmos");
     setTarget(recipientAvatarGroup);
     setOpenOnClick(false);
     setOpenOnFocus(false);
@@ -46,6 +50,7 @@ public class NotificationRecipientPopover extends Popover {
     searchTextField.setValueChangeMode(ValueChangeMode.EAGER);
     searchTextField.setWidthFull();
     searchTextField.setAutofocus(true);
+    searchTextField.setPrefixComponent(AppIcon.SEARCH.create());
 
     configureRecipientGrid(reviewedRecipientTargets, messageProperties);
 
@@ -54,18 +59,27 @@ public class NotificationRecipientPopover extends Popover {
     closeButton.addClassNames("cosmos-overlay-close", CosmosCssClasses.INLINE_BUTTON);
     closeButton.setAriaLabel(messageProperties.getNotificationsClose());
     Span headingSpan = new Span(messageProperties.getNotificationsRecipients());
-    HorizontalLayout headingLayout = new HorizontalLayout(headingSpan, closeButton);
+    headingSpan.addClassName(CosmosCssClasses.PANEL_TITLE);
+    Span headingIconSpan = new Span(AppIcon.USERS.create());
+    headingIconSpan.addClassName(CosmosCssClasses.PANEL_ICON);
+    headingIconSpan.getElement().setAttribute("aria-hidden", "true");
+    HorizontalLayout headingLayout =
+        new HorizontalLayout(headingIconSpan, headingSpan, closeButton);
     headingLayout.setWidthFull();
     headingLayout.setAlignItems(HorizontalLayout.Alignment.CENTER);
     headingLayout.expand(headingSpan);
     headingLayout.addClassName("cosmos-recipient-heading");
 
-    VerticalLayout contentLayout =
-        new VerticalLayout(headingLayout, searchTextField, recipientGrid);
+    VerticalLayout contentLayout = new VerticalLayout(searchTextField, recipientGrid);
     contentLayout.setPadding(false);
     contentLayout.setSpacing(false);
     contentLayout.addClassName("cosmos-recipient-content");
-    add(contentLayout);
+    VerticalLayout popoverLayout = new VerticalLayout(headingLayout, contentLayout);
+    popoverLayout.setPadding(false);
+    popoverLayout.setSpacing(false);
+    popoverLayout.setWidth(null);
+    popoverLayout.addClassName("cosmos-recipient-layout");
+    add(popoverLayout);
     configureAvatarTrigger(recipientAvatarGroup, messageProperties);
   }
 
@@ -74,19 +88,29 @@ public class NotificationRecipientPopover extends Popover {
     recipientGrid.setId("admin-notifications-recipient-list");
     recipientGrid.addClassName("cosmos-recipient-grid");
     recipientGrid.setSelectionMode(Grid.SelectionMode.NONE);
+    recipientGrid.addThemeVariants(GridVariant.ROW_STRIPES);
     recipientGrid.setAriaLabel(messageProperties.getNotificationsRecipients());
     recipientGrid.setEmptyStateText(messageProperties.getNotificationsRecipientSearchEmpty());
     recipientGrid.addComponentColumn(this::createRecipientRow).setFlexGrow(1);
-    recipientGrid.setItems(reviewedRecipientTargets);
+    GridListDataView<Target> recipientDataView = recipientGrid.setItems(reviewedRecipientTargets);
+    updateRecipientGridHeight(recipientDataView.getItemCount());
     searchTextField.addValueChangeListener(valueChangeEvent -> {
       String searchText = valueChangeEvent.getValue().strip().toLowerCase(Locale.ROOT);
-      recipientGrid.setItems(
-          reviewedRecipientTargets.stream()
-              .filter(recipientTarget ->
-                  recipientTarget.name().toLowerCase(Locale.ROOT).contains(searchText)
-                      || recipientTarget.email().toLowerCase(Locale.ROOT).contains(searchText))
-              .toList());
+      recipientDataView.setFilter(recipientTarget ->
+          recipientTarget.name().toLowerCase(Locale.ROOT).contains(searchText)
+              || recipientTarget.email().toLowerCase(Locale.ROOT).contains(searchText));
+      updateRecipientGridHeight(recipientDataView.getItemCount());
     });
+  }
+
+  private void updateRecipientGridHeight(int recipientCount) {
+    // Eine leere Trefferliste braucht Platz für den nativen Leerzustand. Ab fünf
+    // Zeilen bleibt die Höhe fest und das Grid virtualisiert/scrollt weitere Empfänger.
+    int visibleRecipientRows = Math.max(1, Math.min(recipientCount, MAX_VISIBLE_RECIPIENTS));
+    recipientGrid.setHeight(
+        "calc("
+            + visibleRecipientRows
+            + " * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))");
   }
 
   private void configureAvatarTrigger(

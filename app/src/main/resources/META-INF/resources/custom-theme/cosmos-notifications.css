@@ -949,7 +949,9 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-recipient-popover::part(overlay) {
-    width: min(480px, calc(100vw - 2 * var(--cosmos-space-l)));
+    width: max-content;
+    max-width: min(480px, calc(100vw - 2 * var(--cosmos-space-l)));
+    overflow: hidden;
     background: var(--cosmos-dialog-background);
     border: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
     border-radius: var(--cosmos-control-radius);
@@ -959,31 +961,51 @@ vaadin-app-layout.cosmos-reference-admin
 .cosmos-recipient-popover::part(content) {
     box-sizing: border-box;
     display: flex;
-    padding: var(--cosmos-space-l);
+    padding: 0;
+}
+
+.cosmos-recipient-layout {
+    max-width: 100%;
+    max-height: calc(100dvh - 2 * var(--cosmos-space-l));
 }
 
 .cosmos-recipient-content {
-    height: min(650px, calc(100dvh - 6 * var(--cosmos-space-l)));
+    box-sizing: border-box;
     min-height: 0;
-    gap: var(--cosmos-space-s);
+    padding: var(--cosmos-space-l);
+    gap: var(--cosmos-space-m);
+    background: var(--cosmos-base-color);
 }
 
 .cosmos-recipient-heading {
     flex: none;
+    box-sizing: border-box;
+    gap: var(--cosmos-space-m);
+    padding: var(--cosmos-space-l);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
+    background: var(--cosmos-dialog-header-background);
     font-weight: var(--cosmos-font-weight-semibold);
 }
 
 .cosmos-recipient-grid {
-    flex: 1;
+    --cosmos-recipient-row-height: calc(2 * var(--cosmos-line-height-s) + 2 * var(--cosmos-space-m));
+    --vaadin-grid-row-background-color: var(--cosmos-table-row-background);
+    --vaadin-grid-cell-padding: var(--cosmos-space-m) var(--cosmos-space-l);
+    flex: 1 1 auto;
     min-height: 0;
     width: 100%;
-    border: 0;
-    background: transparent;
-    --vaadin-grid-cell-background: var(--cosmos-dialog-background);
+    max-height: calc(5 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width));
+    border: var(--cosmos-border-width) solid var(--cosmos-table-border-color);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-table-row-background);
 }
 
-.cosmos-recipient-grid::part(cell) {
-    padding: var(--cosmos-space-s);
+.cosmos-recipient-grid::part(body-cell) {
+    height: var(--cosmos-recipient-row-height);
+}
+
+.cosmos-recipient-grid::part(odd-row-cell) {
+    --vaadin-grid-cell-background-color: var(--cosmos-table-alternate-row-background);
 }
 
 .cosmos-recipient-row {
@@ -993,8 +1015,16 @@ vaadin-app-layout.cosmos-reference-admin
 
 .cosmos-recipient-identity {
     min-width: 0;
-    overflow-wrap: anywhere;
-    line-height: var(--cosmos-line-height-copy);
+    flex: 1;
+    line-height: var(--cosmos-line-height-s);
+}
+
+.cosmos-recipient-identity > span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .cosmos-recipient-name {

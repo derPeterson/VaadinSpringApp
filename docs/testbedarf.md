@@ -81,14 +81,19 @@
   Vorhandene JUnit-Prüfungen decken die Zustandszuordnung ab, keine Browserfreigabe.
 
 - **Empfängervorschau: vollständige Popover-Liste — offen.**
-  In DE/EN auf Desktop und Smartphone mit 1/5/6/7/200 synthetischen Empfängern:
+  In DE/EN auf Desktop und Smartphone mit 1/2/5/6/7/200 synthetischen Empfängern:
   Klick auf ersten Avatar, Zwischenraum und „+N“ sowie Enter/Leertaste öffnet
   jeweils dieselbe vollständige Liste; kein zweites natives Überlaufmenü.
   Namen-Tooltips erhalten, Suche nach Name/E-Mail inklusive Leeren/keine Treffer,
-  E-Mail sekundär unter Namen, Scrollen bis zum letzten Treffer. Overlayhöhe
+  E-Mail sekundär unter Namen, Scrollen bis zum letzten Treffer. Kopf im gemeinsamen
+  Dialogstil mit Personen-Icon und Trennlinie, abgesetzte Content-Fläche und Suchlupe.
+  Maximal fünf Zeilen sichtbar; bei weniger Treffern schrumpft die Liste, kein leerer
+  Restbereich. Ohne Treffer lesbarer Leerzustand. Breite inhaltsbezogen mit Maximalbreite;
+  lange Namen/E-Mails dürfen die Zeilenhöhe nicht vergrößern. Overlayhöhe
   bleibt im Fenster, kein horizontaler Überlauf. Escape, Außenklick, Schließen,
   Rückfokus und erneute Vorschau ohne doppelte Listener prüfen. Keine Details-Liste
-  mehr. JUnit und JS-Offlinetests sind vorhanden; kein Browserlauf freigegeben.
+  mehr. JUnit zu Suche, 1–200 Empfängern und Höhenbegrenzung erfolgreich;
+  JS-Offlinetests sind vorhanden. Kein Browserlauf freigegeben.
 
 
 - **Benachrichtigungsentwurf: konkrete Vorschauvalidierung — offen.**

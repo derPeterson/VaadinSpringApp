@@ -248,26 +248,35 @@ Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
 
 **Umsetzung freigegeben; konkretisiert den bisherigen offenen Punkt 9. Abnahme bleibt offen.**
 
-- [ ] Das an der Avatargruppe verankerte Overlay beibehalten. Die zuletzt gewünschte
+- [x] Das an der Avatargruppe verankerte Overlay beibehalten. Die zuletzt gewünschte
       Variante ist kein mittiger Dialog mit abgedunkeltem Seitenhintergrund.
-- [ ] Den vorhandenen Dialogstil für die Gestaltung aufgreifen: Header mit dem
+- [x] Den vorhandenen Dialogstil für die Gestaltung aufgreifen: Header mit dem
       bestehenden Accounts-/Personengruppen-Icon (zwei Personen), Titel „Empfänger“
       und gemeinsamem Schließen-Button; darunter eine Trennlinie.
-- [ ] Den Content-Bereich mit der dafür bestehenden, vom Header abgesetzten
+- [x] Den Content-Bereich mit der dafür bestehenden, vom Header abgesetzten
       Hintergrundfläche gestalten. Vorhandene Cosmos-Farben und Abstände verwenden.
-- [ ] Die Suche nach Name und E-Mail mit sichtbarer Lupe wie in den vorhandenen
+- [x] Die Suche nach Name und E-Mail mit sichtbarer Lupe wie in den vorhandenen
       Filtern gestalten. Reihenfolge: Header, Suche, Empfängerliste.
-- [ ] Die Größe am Inhalt ausrichten und eine Maximalbreite statt unnötig großer
+- [x] Die Größe am Inhalt ausrichten und eine Maximalbreite statt unnötig großer
       fester Breite verwenden; auf kleinen Bildschirmen den verfügbaren Platz einhalten.
-- [ ] Höchstens fünf Empfängerzeilen gleichzeitig anzeigen, weitere Einträge innerhalb
+- [x] Höchstens fünf Empfängerzeilen gleichzeitig anzeigen, weitere Einträge innerhalb
       der Liste scrollbar machen. Bei beispielsweise zwei Empfängern soll die Höhe
       entsprechend schrumpfen; keinen leeren Listenbereich reservieren.
-- [ ] Die native Liste mit Avatar, Name und sekundärer E-Mail beibehalten und ihre
+- [x] Die native Liste mit Avatar, Name und sekundärer E-Mail beibehalten und ihre
       Zeilen an den bestehenden Tabellenfarben der Benutzerverwaltung ausrichten,
       einschließlich abwechselnder Zeilenflächen. Details innerhalb dieses Rahmens
       bei der späteren Bearbeitung sinnvoll abstimmen.
 - [ ] Nach Umsetzung gemeinsam sichten; die AvatarGroup bleibt bis zur ausdrücklichen
       Abnahme offen.
+
+Technisch umgesetzt und reviewed. Suche über die native `GridListDataView`,
+Höhenbegrenzung auf fünf Zeilen bei weiter aktiver Virtualisierung; die Höhe passt
+sich auch nach Filtern und Leeren an. Pro Zeile zwei 18-px-Textzeilen plus M-Padding
+oben/unten (60 px), maximal 480 px Overlaybreite. Bestehender Avatar-Ereignislistener
+und Versand-/Empfängerregeln unverändert. 180 JUnit-Prüfungen in `UserNotificationsUiTest`
+erfolgreich, einschließlich DE/EN und 1/2/3/5/6/7/9/200 Empfängern. Java-Formatierung,
+Spotless-/Checkstyle-Prüfung sowie Prettier und Stylelint erfolgreich. Kein Browserlauf;
+sichtbare Breite, fünf Zeilen, Scrollverhalten und Fokus im zentralen Testbedarf offen.
 
 Screenshot-Referenz für die spätere Bearbeitung (lokale temporäre Datei):
 
@@ -303,8 +312,8 @@ durch diesen gemeinsamen Einstieg ersetzt.
 
 ### Noch offen
 
-- [ ] Die unter neuem Punkt 5 festgehaltenen Nachbesserungen nach Startfreigabe bearbeiten.
-- [ ] Vereinbarte Änderungen umsetzen, passende JUnit-Regressionen prüfen und reviewen.
+- [x] Die unter neuem Punkt 5 festgehaltenen Nachbesserungen bearbeiten.
+- [x] Vereinbarte Änderungen umsetzen, passende JUnit-Regressionen prüfen und reviewen.
 - [ ] Ausdrückliche Benutzerfreigabe der Avatar-/Empfängergruppe erhalten.
 - [ ] Erst nach dieser Freigabe das offene AvatarGroup-Paket im Komponentenplan schließen
       und diesen dann erledigten Restplan entfernen.

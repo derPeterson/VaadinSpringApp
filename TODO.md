@@ -13,9 +13,9 @@
   [Punkt 9, Avatar-/Empfängergruppe](docs/planung/vaadin-nachbearbeitung.md),
   benötigt Nachbesserungen und die ausdrückliche Benutzerfreigabe.
   [Neue Nachbearbeitung, Punkte 1–5](docs/planung/vaadin-nachbearbeitung.md):
-  Badge-, Eingabe-, Button- und Typografie-Bestandsaufnahme mit Vorschlägen sowie
-  Korrekturen an Zahlenfeldern, TextArea-Fokusrahmen und Empfänger-Overlay bearbeiten.
-  Größen-/Gestaltungsvorschläge aus Punkten 1 und 2 vor Umsetzung gemeinsam abstimmen.
+  Die Bestandsaufnahmen mit Größen-/Gestaltungsvorschlägen aus Punkten 1 und 2
+  vor Umsetzung gemeinsam abstimmen. Korrekturen an Zahlenfeldern, TextArea-Fokusrahmen
+  und Empfänger-Overlay sind technisch umgesetzt; manuelle Sichtung steht aus.
   Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
   Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
   gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen

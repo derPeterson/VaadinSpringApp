@@ -3485,6 +3485,10 @@ class UserNotificationsUiTest {
         searchTextField.getAriaLabel().orElseThrow());
     assertEquals(Grid.SelectionMode.NONE, recipientGrid.getSelectionMode());
     assertEquals(fixture.recipientTargets(), recipientGrid.getListDataView().getItems().toList());
+    assertTrue(searchTextField.getPrefixComponent() instanceof SvgIcon);
+    assertEquals(
+        "calc(4 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
+        recipientGrid.getHeight());
     assertTrue(
         streamComponentTree(fixture.adminNotificationsSection())
             .noneMatch(component ->
@@ -3504,6 +3508,9 @@ class UserNotificationsUiTest {
     assertEquals(
         List.of(fixture.recipientTargets().get(1)),
         recipientGrid.getListDataView().getItems().toList());
+    assertEquals(
+        "calc(1 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
+        recipientGrid.getHeight());
     searchTextField.setValue("THIRD@EXAMPLE.TEST");
     assertEquals(
         List.of(fixture.recipientTargets().get(2)),
@@ -3511,10 +3518,16 @@ class UserNotificationsUiTest {
     searchTextField.setValue("no-match");
     assertEquals(0, recipientGrid.getListDataView().getItemCount());
     assertEquals(
+        "calc(1 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
+        recipientGrid.getHeight());
+    assertEquals(
         messageProperties.getNotificationsRecipientSearchEmpty(),
         recipientGrid.getEmptyStateText());
     searchTextField.clear();
     assertEquals(fixture.recipientTargets().size(), recipientGrid.getListDataView().getItemCount());
+    assertEquals(
+        "calc(4 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
+        recipientGrid.getHeight());
     recipientPopover.close();
     assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
@@ -3568,11 +3581,11 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @CsvSource({
-    "de,1", "en,1", "de,3", "en,3", "de,5", "en,5", "de,6", "en,6", "de,7", "en,7", "de,9", "en,9",
-    "de,200", "en,200"
+    "de,1,1", "en,1,1", "de,2,2", "en,2,2", "de,3,3", "en,3,3", "de,5,5", "en,5,5",
+    "de,6,5", "en,6,5", "de,7,5", "en,7,5", "de,9,5", "en,9,5", "de,200,5", "en,200,5"
   })
   void nativeRecipientGroupKeepsEveryReviewedTargetAndLocalizesItsAccessibleLabels(
-      String languageTag, int recipientCount) {
+      String languageTag, int recipientCount, int expectedVisibleRows) {
     List<Target> recipientTargets =
         IntStream.range(0, recipientCount)
             .mapToObj(recipientIndex ->
@@ -3598,6 +3611,11 @@ class UserNotificationsUiTest {
     Grid<Target> recipientGrid = readComponentField(recipientPopover, "recipientGrid");
     assertEquals(recipientTargets, recipientGrid.getListDataView().getItems().toList());
     assertFalse(recipientGrid.isAllRowsVisible());
+    assertEquals(
+        "calc("
+            + expectedVisibleRows
+            + " * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
+        recipientGrid.getHeight());
     assertEquals(6, recipientAvatarGroup.getMaxItemsVisible());
     assertEquals(
         recipientTargets.stream().map(Target::name).toList(),
