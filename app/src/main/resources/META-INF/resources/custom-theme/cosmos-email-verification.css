@@ -65,12 +65,29 @@
 }
 
 .pending-email-verification-view .pending-verification-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: max-content;
     max-width: 100%;
-    flex-wrap: wrap;
+    margin-inline-start: auto;
     gap: var(--cosmos-space-s);
 }
 
 .pending-email-verification-view .pending-verification-actions > vaadin-button {
-    max-width: 100%;
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    margin: 0;
     --vaadin-button-label-wrap: normal;
+}
+
+.pending-email-verification-view .pending-verification-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 479px) {
+    .pending-email-verification-view .pending-verification-actions {
+        grid-template-columns: minmax(0, 1fr);
+        width: 100%;
+    }
 }

@@ -20,7 +20,6 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -189,12 +188,9 @@ public class PendingEmailVerificationView extends VerticalLayout
 
     HorizontalLayout verificationActionsLayout =
         new HorizontalLayout(cancelVerificationButton, resendVerificationButton);
-    verificationActionsLayout.setWidthFull();
     verificationActionsLayout.setPadding(false);
     verificationActionsLayout.setSpacing(false);
-    verificationActionsLayout.setJustifyContentMode(JustifyContentMode.END);
     verificationActionsLayout.addClassName("pending-verification-actions");
-    EqualButtonWidths.configureEqualButtonWidths(verificationActionsLayout);
 
     publicPageComponent.getCardContainer().removeAll();
     SvgIcon verificationHeaderSvgIcon = AppIcon.ENVELOPE.create();

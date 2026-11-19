@@ -1918,6 +1918,17 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions > vaadin-bu
     width: 100%;
     min-width: 0;
 }
+
+vaadin-app-layout.cosmos-reference-admin .cosmos-mfa-settings .cosmos-config-card-actions > vaadin-button {
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    --vaadin-button-label-wrap: normal;
+}
+
+vaadin-app-layout.cosmos-reference-admin .cosmos-mfa-settings .cosmos-config-card-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 600px) {
     vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions {
         --cosmos-equal-button-width: 100%;

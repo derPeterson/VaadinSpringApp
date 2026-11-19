@@ -9,7 +9,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.views.AccountView;
 import de.derpeterson.app.views.UserNotificationsView;
@@ -51,7 +50,7 @@ public class PortalHomeComponent extends Div {
 
     Div portalActionsDiv = new Div(openNotificationsButton, openAccountButton);
     portalActionsDiv.addClassName("portal-home-actions");
-    EqualButtonWidths.configureEqualButtonWidths(portalActionsDiv);
+
     Div welcomeContentDiv =
         new Div(
             welcomeEyebrowSpan, welcomeTitleHeading, portalDescriptionParagraph, portalActionsDiv);

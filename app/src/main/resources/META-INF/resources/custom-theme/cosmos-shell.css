@@ -839,6 +839,33 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
     white-space: nowrap;
     font-size: var(--cosmos-font-size-s);
 }
+
+.portal-home-card:not(.public-home) .portal-home-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    width: max-content;
+    max-width: 100%;
+}
+
+.portal-home-card:not(.public-home) .portal-home-actions > vaadin-button {
+    min-width: 0;
+    height: auto;
+    white-space: normal;
+    --vaadin-button-label-wrap: normal;
+}
+
+.portal-home-card:not(.public-home) .portal-home-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 479px) {
+    .portal-home-card:not(.public-home) .portal-home-actions {
+        grid-template-columns: minmax(0, 1fr);
+        width: 100%;
+    }
+}
+
 .portal-home-art {
     min-width: 0;
     display: flex;

@@ -23,7 +23,6 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.RoleType;
@@ -282,7 +281,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
     Div policyActionsDiv = new Div(reloadPolicyButton, savePolicyButton);
     policyActionsDiv.addClassName("cosmos-config-card-actions");
-    EqualButtonWidths.configureEqualButtonWidths(policyActionsDiv);
+
     Div policyPanelFooterDiv = new Div(saveHintDiv, policyActionsDiv);
     policyPanelFooterDiv.addClassName("cosmos-panel-footer");
 

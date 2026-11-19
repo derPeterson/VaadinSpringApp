@@ -13,7 +13,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -23,7 +22,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -159,14 +157,12 @@ public final class PendingAccountReactivationView extends VerticalLayout
       PendingAccountReactivationFlow.cancel(httpRequest);
       UI.getCurrent().navigate(LoginView.class);
     });
+
     HorizontalLayout reactivationActionsLayout =
         new HorizontalLayout(cancelReactivationButton, resendLinkButton);
-    reactivationActionsLayout.setWidthFull();
     reactivationActionsLayout.setPadding(false);
     reactivationActionsLayout.setSpacing(false);
-    reactivationActionsLayout.setJustifyContentMode(JustifyContentMode.END);
     reactivationActionsLayout.addClassName("pending-verification-actions");
-    EqualButtonWidths.configureEqualButtonWidths(reactivationActionsLayout);
 
     return reactivationActionsLayout;
   }
