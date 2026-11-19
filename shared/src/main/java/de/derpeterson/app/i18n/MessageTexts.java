@@ -1849,10 +1849,6 @@ public class MessageTexts {
     return getTranslation("adminView.dashboard.hero_description");
   }
 
-  public String getAdminDashboardFutureHint() {
-    return getTranslation("adminView.dashboard.future_hint");
-  }
-
   public String getAdminDashboardShortcuts() {
     return getTranslation("adminView.dashboard.shortcuts");
   }

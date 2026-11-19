@@ -114,16 +114,8 @@ public class AdminDashboardSection extends VerticalLayout {
 
     Image dashboardImage = new Image("images/admin-dashboard.jpg", "");
     dashboardImage.addClassName("admin-dashboard-image");
-    Div heroIntroDiv = new Div(heroTextDiv, dashboardImage);
-    heroIntroDiv.addClassName("admin-dashboard-intro");
 
-    Div heroHintDiv =
-        new Div(
-            AppIcon.INFO_CIRCLE.create(),
-            createTranslatedSpan(messageProperties::getAdminDashboardFutureHint));
-    heroHintDiv.addClassName("admin-dashboard-hint");
-
-    Div dashboardHeroDiv = new Div(heroIntroDiv, heroHintDiv);
+    Div dashboardHeroDiv = new Div(heroTextDiv, dashboardImage);
     dashboardHeroDiv.addClassName("admin-dashboard-hero");
     return dashboardHeroDiv;
   }
