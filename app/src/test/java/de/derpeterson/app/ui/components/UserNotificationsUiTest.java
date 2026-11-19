@@ -3465,15 +3465,9 @@ class UserNotificationsUiTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void reviewedPreviewRecipientPopoverShowsAllRecipientsAndFiltersNameOrEmail(String languageTag) {
+  void reviewedPreviewShowsAllRecipientsAndSupportsAnAccessiblePopoverTrigger(String languageTag) {
     AdminDraftFixture fixture = createAdminDraftFixture(languageTag);
-    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
-    NotificationRecipientPopover recipientPopover =
-        streamComponentTree(fixture.adminNotificationsSection())
-            .filter(NotificationRecipientPopover.class::isInstance)
-            .map(NotificationRecipientPopover.class::cast)
-            .findFirst()
-            .orElseThrow();
+    NotificationRecipientPopover recipientPopover = showPreviewAndGetRecipientPopover(fixture);
     AvatarGroup recipientAvatarGroup = (AvatarGroup) recipientPopover.getTarget();
     TextField searchTextField = readComponentField(recipientPopover, "searchTextField");
     VirtualList<Target> recipientVirtualList =
@@ -3508,14 +3502,23 @@ class UserNotificationsUiTest {
                 component.getId().orElse("").equals("admin-notifications-preview-details")));
 
     Element avatarGroupElement = recipientAvatarGroup.getElement();
-    avatarGroupElement
-        .getNode()
-        .getFeature(ElementListenerMap.class)
-        .fireEvent(
-            new DomEvent(
-                avatarGroupElement, "recipient-list-open", JsonNodeFactory.instance.objectNode()));
+    activateRecipientPopoverTrigger(avatarGroupElement);
     assertTrue(recipientPopover.isOpened());
     assertEquals("true", avatarGroupElement.getAttribute("aria-expanded"));
+    recipientPopover.close();
+    assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void reviewedPreviewFiltersRecipientsAndRestoresTheListOnClear(String languageTag) {
+    AdminDraftFixture fixture = createAdminDraftFixture(languageTag);
+    NotificationRecipientPopover recipientPopover = showPreviewAndGetRecipientPopover(fixture);
+    activateRecipientPopoverTrigger(recipientPopover.getTarget().getElement());
+    TextField searchTextField = readComponentField(recipientPopover, "searchTextField");
+    VirtualList<Target> recipientVirtualList =
+        readComponentField(recipientPopover, "recipientVirtualList");
+    VerticalLayout emptyResultLayout = readComponentField(recipientPopover, "emptyResultLayout");
 
     searchTextField.setValue(" SECOND ");
     assertEquals(
@@ -3555,21 +3558,33 @@ class UserNotificationsUiTest {
         "calc(4 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
         recipientVirtualList.getHeight());
     recipientPopover.close();
-    assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
+  }
+
+  private NotificationRecipientPopover showPreviewAndGetRecipientPopover(
+      AdminDraftFixture fixture) {
+    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
+    return streamComponentTree(fixture.adminNotificationsSection())
+        .filter(NotificationRecipientPopover.class::isInstance)
+        .map(NotificationRecipientPopover.class::cast)
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private void activateRecipientPopoverTrigger(Element avatarGroupElement) {
+    avatarGroupElement
+        .getNode()
+        .getFeature(ElementListenerMap.class)
+        .fireEvent(
+            new DomEvent(
+                avatarGroupElement, "recipient-list-open", JsonNodeFactory.instance.objectNode()));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void recipientSelectionCanSwitchAndClearWithoutChangingDelivery(String languageTag) {
     AdminDraftFixture fixture = createAdminDraftFixture(languageTag);
-    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
-    NotificationRecipientPopover recipientPopover =
-        streamComponentTree(fixture.adminNotificationsSection())
-            .filter(NotificationRecipientPopover.class::isInstance)
-            .map(NotificationRecipientPopover.class::cast)
-            .findFirst()
-            .orElseThrow();
+    NotificationRecipientPopover recipientPopover = showPreviewAndGetRecipientPopover(fixture);
     ComponentRenderer<Button, Target> recipientRenderer =
         readComponentField(recipientPopover, "recipientRenderer");
     Target firstRecipient = fixture.recipientTargets().getFirst();

@@ -214,6 +214,22 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     for (int index = 0; index < 11; index++) {
       send(recipient, prefix + " item " + index, "Archive body " + index);
     }
+
+    verifySentArchivePagination(prefix, viewportWidth);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(recipient, BrowserTestAccounts.USER_PASSWORD);
+      Page recipientBrowserPage = browserActor.browserPage;
+      new UserMenu(recipientBrowserPage).selectTestLanguage();
+      recipientBrowserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+      NotificationInboxPage inbox = new NotificationInboxPage(recipientBrowserPage);
+      inbox.open();
+
+      verifyInboxPaginationAndSearch(inbox, recipientBrowserPage, prefix, viewportWidth);
+      verifyPreviewBulkReadPersists(inbox, recipientBrowserPage);
+    }
+  }
+
+  private void verifySentArchivePagination(String prefix, int viewportWidth) {
     Locator archive = browserPage.locator("#admin-notifications-sent");
 
     assertThat(archive.locator(".cosmos-notification-sent-row")).hasCount(5);
@@ -239,73 +255,68 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
 
     assertThat(archive.locator(".cosmos-notification-sent-row").first())
         .containsText(prefix + " item 5");
-    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
-      browserActor.login(recipient, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(browserActor.browserPage).selectTestLanguage();
-      browserActor.browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
-      NotificationInboxPage inbox = new NotificationInboxPage(browserActor.browserPage);
-      inbox.open();
+  }
 
-      assertThat(inbox.rows(inbox.inbox())).hasCount(10);
-      assertThat(browserActor.browserPage.locator("#notifications-inbox-total")).hasText("11");
-      assertEquals(
-          64,
-          browserActor.browserPage.locator("#notifications-inbox-page-size").boundingBox().width,
-          1);
-      capturePagination(
-          browserActor.browserPage,
-          inbox.inbox().locator(".cosmos-notification-inbox-pagination-row"),
-          "Inbox",
-          viewportWidth);
-      inbox.button(inbox.inbox(), uiTexts.getNotificationsNext()).click();
+  private void verifyInboxPaginationAndSearch(
+      NotificationInboxPage inbox, Page recipientBrowserPage, String prefix, int viewportWidth) {
+    assertThat(inbox.rows(inbox.inbox())).hasCount(10);
+    assertThat(recipientBrowserPage.locator("#notifications-inbox-total")).hasText("11");
+    assertEquals(
+        64, recipientBrowserPage.locator("#notifications-inbox-page-size").boundingBox().width, 1);
+    capturePagination(
+        recipientBrowserPage,
+        inbox.inbox().locator(".cosmos-notification-inbox-pagination-row"),
+        "Inbox",
+        viewportWidth);
+    inbox.button(inbox.inbox(), uiTexts.getNotificationsNext()).click();
 
-      assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      assertThat(inbox.row(inbox.inbox(), prefix + " item 0")).hasCount(1);
-      assertThat(inbox.button(inbox.inbox(), uiTexts.getNotificationsNext())).isDisabled();
-      for (String size : new String[] {"20", "50"}) {
-        inbox.pageSize(inbox.inbox(), size);
-
-        assertThat(inbox.rows(inbox.inbox())).hasCount(11);
-      }
-      inbox.search(prefix + " item 10");
-
-      assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.filter(inbox.inbox(), uiTexts.getNotificationsRead());
-
-      assertThat(inbox.rows(inbox.inbox())).hasCount(0);
-      inbox.filter(inbox.inbox(), uiTexts.getNotificationsUnread());
-
-      assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.filter(inbox.inbox(), uiTexts.getNotificationsAll());
-
-      assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.search("no-result-" + UUID.randomUUID());
-
-      assertThat(inbox.rows(inbox.inbox())).hasCount(0);
-      assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
-          .containsText(uiTexts.getNotificationsSearchEmpty());
-      inbox.search("");
+    assertThat(inbox.rows(inbox.inbox())).hasCount(1);
+    assertThat(inbox.row(inbox.inbox(), prefix + " item 0")).hasCount(1);
+    assertThat(inbox.button(inbox.inbox(), uiTexts.getNotificationsNext())).isDisabled();
+    for (String size : new String[] {"20", "50"}) {
+      inbox.pageSize(inbox.inbox(), size);
 
       assertThat(inbox.rows(inbox.inbox())).hasCount(11);
-      inbox.openPreview();
-
-      assertThat(inbox.rows(inbox.preview())).hasCount(5);
-      inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll()).click();
-      inbox.confirm();
-
-      assertThat(inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll())).isDisabled();
-      inbox.button(inbox.preview(), uiTexts.getNotificationsHistory()).click();
-
-      assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
-          .hasText("0");
-      browserActor.browserPage.reload();
-
-      assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
-          .hasText("0");
-      assertThat(browserActor.browserPage.locator("#notifications-inbox-total")).hasText("11");
-      AllurePlaywright.attachScreenshot(
-          "Persistente Inbox und Pagination", browserActor.browserPage);
     }
+    inbox.search(prefix + " item 10");
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(1);
+    inbox.filter(inbox.inbox(), uiTexts.getNotificationsRead());
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(0);
+    inbox.filter(inbox.inbox(), uiTexts.getNotificationsUnread());
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(1);
+    inbox.filter(inbox.inbox(), uiTexts.getNotificationsAll());
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(1);
+    inbox.search("no-result-" + UUID.randomUUID());
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(0);
+    assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
+        .containsText(uiTexts.getNotificationsSearchEmpty());
+    inbox.search("");
+
+    assertThat(inbox.rows(inbox.inbox())).hasCount(11);
+  }
+
+  private void verifyPreviewBulkReadPersists(
+      NotificationInboxPage inbox, Page recipientBrowserPage) {
+    inbox.openPreview();
+
+    assertThat(inbox.rows(inbox.preview())).hasCount(5);
+    inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll()).click();
+    inbox.confirm();
+
+    assertThat(inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll())).isDisabled();
+    inbox.button(inbox.preview(), uiTexts.getNotificationsHistory()).click();
+
+    assertThat(recipientBrowserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+    recipientBrowserPage.reload();
+
+    assertThat(recipientBrowserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+    assertThat(recipientBrowserPage.locator("#notifications-inbox-total")).hasText("11");
+    AllurePlaywright.attachScreenshot("Persistente Inbox und Pagination", recipientBrowserPage);
   }
 
   private void capturePagination(

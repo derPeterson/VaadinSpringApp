@@ -295,6 +295,13 @@ Nachtests sind für die große Testrunde gesammelt.
   Overlayrahmen. Filterung, Scrollen, Tastaturauswahl, Haken und kompakte
   Pagination bleiben bedienbar. Kein Browserlauf für diesen Auftrag freigegeben.
 
+- **Posteingang, Vorschau und Versandarchiv — offen.**
+  Den vorhandenen Fall NOTIFY-04 in DE/EN auf Desktop und Smartphone ausführen.
+  Das Versandarchiv und der Posteingang zeigen die richtigen Seiten. Suche und
+  Lesefilter erhalten ihre Treffer und Leerzustände. Die Glockenvorschau zeigt
+  fünf Einträge, und das Sammellesen bleibt nach dem Neuladen für alle elf
+  Mitteilungen erhalten.
+
 - **Checkboxen: weiße Auswahlmarkierung — offen.**
   In DE/EN auf Desktop und Smartphone Einzelcheckboxen, Checkbox-Gruppen und die
   Tabellen-Gesamtauswahl prüfen: aktive Haken und Teilauswahlstriche weiß, bisherige

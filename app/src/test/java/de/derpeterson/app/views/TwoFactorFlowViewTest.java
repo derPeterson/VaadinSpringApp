@@ -734,8 +734,7 @@ class TwoFactorFlowViewTest {
             twoFactorAuthorization,
             mockHttpRequest);
 
-    VirtualList<?> ticketList =
-        assertInstanceOf(VirtualList.class, find(help, "support-ticket-grid"));
+    assertInstanceOf(VirtualList.class, find(help, "support-ticket-grid"));
 
     assertEquals(
         messageProperties.getSupportRequestCount(2),

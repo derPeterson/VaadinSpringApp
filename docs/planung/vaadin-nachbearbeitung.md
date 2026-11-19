@@ -6,20 +6,12 @@ Die vereinbarten Badge- und Formulargrößen aus den Punkten 1 und 2 stehen in d
 [manuellen Katalog](../manual-tests/README.md) dokumentiert.
 
 Die Gesamtumsetzung des [Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md)
-bleibt offen. Folgebranch 5 wurde lokal in `main` übernommen.
+bleibt offen. Die weitere Arbeit findet auf `codex/vaadin-komponenten-folgearbeiten-6`
+statt. Voraussetzung für den Branchwechsel ist ein sauberer lokaler `main`, für
+den Sonar null offene Findings und ein erfülltes Quality Gate bestätigt.
 
 ## Offene Schritte in vereinbarter Reihenfolge
 
-4. Auf dem integrierten `main` einen frischen Sonar-Scan durchführen, dessen
-   Serverabschluss abwarten und alle Findings des Gesamtcodes fachlich analysieren.
-   Daraus zusammenhängende Arbeitspakete bilden und sämtliche Pakete beheben;
-   nötige Paket-Branches, gezielte Regressionen, Reviews, Commits und lokale
-   Integration nach `main` gemäß Sonar-Ablauf durchführen. Nachscannen und bei
-   verbleibenden oder neuen Findings erneut analysieren und beheben, bis beide
-   Ziele belegt sind: **null offene Findings und Quality Gate erfüllt**.
-   Findings nicht durch pauschale Ausschlüsse oder Unterdrückungen verschwinden lassen.
-5. Erst nach erfolgreicher Bereinigung vom aktuellen sauberen `main` den neuen
-   Folgebranch **`codex/vaadin-komponenten-folgearbeiten-6`** anlegen und dorthin wechseln.
 6. **Als abschließende Prüfung der Umsetzung die große Testrunde auf diesem Folgebranch durchführen.**
    Alle offenen Einträge aus `docs/testbedarf.md` mit der vorhandenen Abdeckung
    abgleichen, fehlende sinnvolle Regressionen ergänzen und vollständig prüfen.

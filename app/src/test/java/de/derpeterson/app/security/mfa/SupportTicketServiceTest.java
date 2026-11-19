@@ -866,11 +866,13 @@ class SupportTicketServiceTest {
       verify(emailQueueService)
           .addAddressedNotification(any(), eq(requesterUserEntity.getEmail()), any(), any());
     }
+    Long completedTicketId = completedTicket.id();
+    Long completedTicketVersion = completedTicket.version();
     assertThrows(
         AccessDeniedException.class,
         () ->
             supportTicketService.sendTicketRecoveryInstructions(
-                administrator, completedTicket.id(), completedTicket.version()));
+                administrator, completedTicketId, completedTicketVersion));
   }
 
   @Test
@@ -1149,32 +1151,36 @@ class SupportTicketServiceTest {
         supportTicketService.sendTicketRecoveryInstructions(
             administrator, claimed.id(), claimed.version());
     assertEquals(InstructionBlock.COOLDOWN, first.instructionDelivery().blockReason(Instant.now()));
+    Long firstTicketId = first.id();
+    Long firstTicketVersion = first.version();
     assertThrows(
         AccessDeniedException.class,
-        () -> supportTicketService.validateInstructionPreview(administrator, first.id()));
+        () -> supportTicketService.validateInstructionPreview(administrator, firstTicketId));
     assertThrows(
         AccessDeniedException.class,
         () ->
             supportTicketService.sendTicketRecoveryInstructions(
-                administrator, first.id(), first.version()));
+                administrator, firstTicketId, firstTicketVersion));
 
     transactionTemplate.executeWithoutResult(status ->
         entityManager
-            .find(SupportTicketEntity.class, first.id())
+            .find(SupportTicketEntity.class, firstTicketId)
             .setInstructionSentAt(Instant.now().minusSeconds(61)));
     if (!developmentAccount) {
       when(emailQueueService.hasOpenEmail(700L)).thenReturn(true);
       Ticket pending = supportTicketService.listTicketsForViewer(request, false).getFirst();
       assertEquals(
           InstructionBlock.EMAIL_PENDING, pending.instructionDelivery().blockReason(Instant.now()));
+      Long pendingTicketId = pending.id();
+      Long pendingTicketVersion = pending.version();
       assertThrows(
           AccessDeniedException.class,
-          () -> supportTicketService.validateInstructionPreview(administrator, pending.id()));
+          () -> supportTicketService.validateInstructionPreview(administrator, pendingTicketId));
       assertThrows(
           AccessDeniedException.class,
           () ->
               supportTicketService.sendTicketRecoveryInstructions(
-                  administrator, pending.id(), pending.version()));
+                  administrator, pendingTicketId, pendingTicketVersion));
       when(emailQueueService.hasOpenEmail(700L)).thenReturn(false);
     }
     Ticket available = supportTicketService.listTicketsForViewer(request, false).getFirst();
