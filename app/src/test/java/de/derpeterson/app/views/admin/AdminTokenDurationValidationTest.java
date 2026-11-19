@@ -2,7 +2,7 @@ package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AdminConfigGroup;
@@ -104,26 +106,20 @@ class AdminTokenDurationValidationTest {
       clearInvocations(configService);
       saveButton().click();
 
-      assertTrue(input.isInvalid(), entry + " / " + value);
-      assertNotNull(field(entry).getErrorMessage());
-      if (!value.isBlank()) {
-        assertEquals(
-            messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-            field(entry).getErrorMessage());
-      } else {
-        assertEquals(
-            messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes()),
-            field(entry).getErrorMessage());
-      }
+      String expectedErrorMessage =
+          value.isBlank()
+              ? messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes())
+              : messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes());
+      assertDurationValidationError(input, expectedErrorMessage);
       verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
-    // Existing invalid field errors must follow a later language switch.
+    // Die geöffnete Meldung folgt dem Sprachwechsel, die Feldmarkierung bleibt.
     localeReference.set(language.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     configurationSection.refreshTexts();
+    NotificationHelper.getInstance().updateText();
 
-    assertEquals(
-        messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-        field(entry).getErrorMessage());
+    assertDurationValidationError(
+        input, messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
   }
 
   @ParameterizedTest
@@ -167,10 +163,8 @@ class AdminTokenDurationValidationTest {
       clearInvocations(configService);
       saveButton().click();
 
-      assertTrue(field(entry).isInvalid());
-      assertEquals(
-          messageProperties.getAdminConfigValidationPositiveDuration(),
-          field(entry).getErrorMessage());
+      assertDurationValidationError(
+          field(entry), messageProperties.getAdminConfigValidationPositiveDuration());
       verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
     field(entry).setValue("1s");
@@ -179,6 +173,23 @@ class AdminTokenDurationValidationTest {
 
     assertFalse(field(entry).isInvalid());
     verify(configService).set(entry, "PT1S");
+  }
+
+  private void assertDurationValidationError(
+      CosmosDurationCustomField durationField, String expectedErrorMessage) {
+    assertTrue(durationField.isInvalid());
+    assertEquals("", durationField.getErrorMessage());
+
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    Notification currentNotification =
+        assertInstanceOf(
+            Notification.class,
+            ReflectionTestUtils.getField(notificationHelper, "currentNotification"));
+    Paragraph messageParagraph =
+        assertInstanceOf(
+            Paragraph.class, ReflectionTestUtils.getField(notificationHelper, "messageText"));
+    assertTrue(currentNotification.isOpened());
+    assertEquals(expectedErrorMessage, messageParagraph.getText());
   }
 
   private CosmosDurationCustomField field(ConfigEntry entry) {

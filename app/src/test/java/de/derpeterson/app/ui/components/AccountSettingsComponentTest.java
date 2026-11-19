@@ -374,12 +374,10 @@ class AccountSettingsComponentTest {
         (Notification) ReflectionTestUtils.getField(notificationHelper, "currentNotification");
 
     assertTrue(notification.isOpened());
-    if (!isErrorNotification) {
-      Paragraph messageParagraph =
-          assertInstanceOf(
-              Paragraph.class, ReflectionTestUtils.getField(notificationHelper, "messageText"));
-      assertEquals(expectedMessageText, messageParagraph.getText());
-    }
+    Paragraph messageParagraph =
+        assertInstanceOf(
+            Paragraph.class, ReflectionTestUtils.getField(notificationHelper, "messageText"));
+    assertEquals(expectedMessageText, messageParagraph.getText());
     Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
 
     assertTrue(
@@ -394,7 +392,7 @@ class AccountSettingsComponentTest {
                         .getAttribute("src")
                         .equals(
                             isErrorNotification
-                                ? "icons/lucide/triangle-alert.svg"
+                                ? "icons/lucide/circle-x.svg"
                                 : "icons/lucide/circle-check.svg")));
   }
 
