@@ -11,12 +11,14 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLA
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
@@ -46,6 +48,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import tools.jackson.databind.JsonNode;
 
 /** Eigener Avatar: Upload und Ausschnitt bleiben bis zum Speichern ein begrenzter Entwurf. */
+@StyleSheet("custom-theme/cosmos-provider-settings.css")
 public class AccountAvatarDialog extends Dialog {
   private static final String ARIA_HIDDEN = "aria-hidden";
 
@@ -65,7 +68,11 @@ public class AccountAvatarDialog extends Dialog {
   private final Button cancelAvatarChangesButton = new Button("", event -> close());
   private final Button saveAvatarButton = new Button();
   private final Button deleteAvatarButton = new Button();
-  private final CosmosSegmentedTabs<AvatarMode> avatarModeTabs = new CosmosSegmentedTabs<>();
+  private final Span initialsTabLabelSpan = new Span();
+  private final Span customImageTabLabelSpan = new Span();
+  private final Tab initialsTab = new Tab();
+  private final Tab customImageTab = new Tab();
+  private final Tabs avatarModeTabs = new Tabs(initialsTab, customImageTab);
   private final AccountAvatarEditor avatarEditor;
   private final PortalConfirmationDialog deleteConfirmation;
 
@@ -103,19 +110,6 @@ public class AccountAvatarDialog extends Dialog {
     avatarDialogHeaderDiv.addClassName("account-change-dialog-header");
     getHeader().add(avatarDialogHeaderDiv);
 
-    avatarModeTabs.setId("account-avatar-mode");
-    avatarModeTabs.setItems(AvatarMode.values());
-    avatarModeTabs.setItemLabelGenerator(value ->
-        value == AvatarMode.INITIALS
-            ? messageProperties.getAccountAvatarInitials()
-            : messageProperties.getAccountAvatarCustom());
-    avatarModeTabs.setRenderer(new ComponentRenderer<>(this::createModeLabel));
-    avatarModeTabs.setValue(AvatarMode.INITIALS);
-    avatarModeTabs.addValueChangeListener(event -> {
-      if (event.getValue() != null) {
-        avatarEditor.setMode(event.getValue());
-      }
-    });
     avatarEditor
         .getElement()
         .addEventListener(
@@ -124,7 +118,7 @@ public class AccountAvatarDialog extends Dialog {
               if (!isOpened()) {
                 return;
               }
-              avatarModeTabs.setValue(AvatarMode.CUSTOM);
+              setAvatarMode(AvatarMode.CUSTOM);
               deleteImageOnSave = false;
               deleteAvatarButton.setVisible(true);
             });
@@ -133,12 +127,11 @@ public class AccountAvatarDialog extends Dialog {
         .addEventListener(
             "avatar-file-cleared",
             event -> {
-              avatarModeTabs.setValue(AvatarMode.INITIALS);
+              setAvatarMode(AvatarMode.INITIALS);
               uploadedImageId = null;
               deleteAvatarButton.setVisible(false);
             });
     avatarEditor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
-    avatarEditor.addComponentAtIndex(0, avatarModeTabs);
 
     SvgIcon avatarInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
     avatarInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -150,6 +143,7 @@ public class AccountAvatarDialog extends Dialog {
     Div avatarDialogBodyDiv = new Div(avatarEditor, avatarInfoDiv);
     avatarDialogBodyDiv.addClassNames(
         "cosmos-dialog-form", "account-change-dialog-form", "account-avatar-form");
+    configureAvatarModeTabs(avatarDialogBodyDiv);
     add(avatarDialogBodyDiv, deleteConfirmation);
 
     deleteAvatarButton.setId("account-avatar-delete");
@@ -180,6 +174,49 @@ public class AccountAvatarDialog extends Dialog {
     refreshTexts();
   }
 
+  private void configureAvatarModeTabs(Div avatarDialogBodyDiv) {
+    Span initialsIconSpan = new Span("Aa");
+    initialsIconSpan.addClassName("account-avatar-mode-icon");
+    initialsIconSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+    initialsTab.setId("account-avatar-initials-tab");
+    initialsTab.add(initialsIconSpan, initialsTabLabelSpan);
+
+    SvgIcon customImageIcon = AppIcon.PICTURE.create();
+    customImageIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+    customImageTab.setId("account-avatar-custom-tab");
+    customImageTab.add(customImageIcon, customImageTabLabelSpan);
+
+    String avatarPanelId = "account-avatar-mode-panel";
+    avatarDialogBodyDiv.setId(avatarPanelId);
+    avatarDialogBodyDiv.getElement().setAttribute("role", "tabpanel");
+    avatarDialogBodyDiv
+        .getElement()
+        .setAttribute("aria-labelledby", initialsTab.getId().orElseThrow());
+    initialsTab.getElement().setAttribute("aria-controls", avatarPanelId);
+    customImageTab.getElement().setAttribute("aria-controls", avatarPanelId);
+
+    avatarModeTabs.setId("account-avatar-mode");
+    avatarModeTabs.addClassName(CosmosCssClasses.PANEL_TABS);
+    avatarModeTabs.setWidthFull();
+    avatarModeTabs.addSelectedChangeListener(event -> {
+      avatarDialogBodyDiv
+          .getElement()
+          .setAttribute("aria-labelledby", event.getSelectedTab().getId().orElseThrow());
+      avatarEditor.setMode(getAvatarMode());
+    });
+    getHeader().add(avatarModeTabs);
+  }
+
+  private AvatarMode getAvatarMode() {
+    return avatarModeTabs.getSelectedTab() == customImageTab
+        ? AvatarMode.CUSTOM
+        : AvatarMode.INITIALS;
+  }
+
+  private void setAvatarMode(AvatarMode avatarMode) {
+    avatarModeTabs.setSelectedTab(avatarMode == AvatarMode.CUSTOM ? customImageTab : initialsTab);
+  }
+
   private void confirmDeleteImage() {
     if (!isOpened() || !deleteAvatarButton.isVisible() || !deleteAvatarButton.isEnabled()) {
       return;
@@ -207,7 +244,7 @@ public class AccountAvatarDialog extends Dialog {
             deleteImageOnSave = true;
             uploadedImageId = null;
             avatarEditor.clearImage();
-            avatarModeTabs.setValue(AvatarMode.INITIALS);
+            setAvatarMode(AvatarMode.INITIALS);
             deleteAvatarButton.setVisible(false);
           }
         });
@@ -224,18 +261,6 @@ public class AccountAvatarDialog extends Dialog {
       avatarEditor.loadSaved(
           userAvatarService, accountUserEntity.getId(), originalAvatarState.imageRevision());
     }
-  }
-
-  private Span createModeLabel(AvatarMode avatarMode) {
-    Span avatarModeIconSpan =
-        avatarMode == AvatarMode.INITIALS ? new Span("Aa") : new Span(AppIcon.PICTURE.create());
-    avatarModeIconSpan.addClassName("account-avatar-mode-icon");
-    avatarModeIconSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Span avatarModeLabelSpan = new Span(avatarModeTabs.getItemLabelGenerator().apply(avatarMode));
-    Span avatarModeContentSpan = new Span(avatarModeIconSpan, avatarModeLabelSpan);
-    avatarModeContentSpan.addClassName("account-avatar-mode-label");
-
-    return avatarModeContentSpan;
   }
 
   public void configure(UserAvatarService userAvatarService, HttpServletRequest httpRequest) {
@@ -306,7 +331,7 @@ public class AccountAvatarDialog extends Dialog {
     uploadedImageId = uploadedAvatarId;
     avatarEditor.getElement().setAttribute("data-image-id", uploadedAvatarId.toString());
     deleteImageOnSave = false;
-    avatarModeTabs.setValue(AvatarMode.CUSTOM);
+    setAvatarMode(AvatarMode.CUSTOM);
     deleteAvatarButton.setVisible(true);
   }
 
@@ -326,7 +351,7 @@ public class AccountAvatarDialog extends Dialog {
               userAvatarService, accountUserEntity.getId(), originalAvatarState.imageRevision());
         }
       }
-      avatarModeTabs.setValue(originalAvatarState.mode());
+      setAvatarMode(originalAvatarState.mode());
       deleteAvatarButton.setVisible(originalAvatarState.hasImage());
       super.open();
     } catch (RuntimeException failure) {
@@ -393,7 +418,7 @@ public class AccountAvatarDialog extends Dialog {
         httpRequest,
         new UserAvatarService.Change(
             originalAvatarState.version(),
-            avatarModeTabs.getValue(),
+            getAvatarMode(),
             deleteImageOnSave,
             avatarDraftId,
             cropImageId,
@@ -464,7 +489,7 @@ public class AccountAvatarDialog extends Dialog {
     uploadedImageId = null;
     deleteImageOnSave = false;
     originalAvatarState = UserAvatarService.State.initial();
-    avatarModeTabs.setValue(AvatarMode.INITIALS);
+    setAvatarMode(AvatarMode.INITIALS);
     avatarEditor.resetDraft();
     avatarEditor.getElement().removeAttribute("data-draft-id");
     avatarEditor.getElement().removeAttribute("data-image-id");
@@ -477,11 +502,13 @@ public class AccountAvatarDialog extends Dialog {
     getElement().setProperty("ariaLabel", avatarDialogTitleHeading.getText());
     avatarDialogDescriptionSpan.setText(messageProperties.getAccountAvatarDescription());
     closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-    avatarModeTabs.setAriaLabel(messageProperties.getAccountAvatarMode());
-    // Texte und Icons aktualisieren; eine noch leere Auswahl startet mit den Initialen.
-    AvatarMode selectedMode = avatarModeTabs.getValue();
-    avatarModeTabs.refreshItems();
-    avatarModeTabs.setValue(selectedMode == null ? AvatarMode.INITIALS : selectedMode);
+
+    avatarModeTabs
+        .getElement()
+        .setAttribute("aria-label", messageProperties.getAccountAvatarMode());
+    initialsTabLabelSpan.setText(messageProperties.getAccountAvatarInitials());
+    customImageTabLabelSpan.setText(messageProperties.getAccountAvatarCustom());
+
     keepAvatarHintSpan.setText(messageProperties.getAccountAvatarKeepHint());
     deleteAvatarButton.setText(messageProperties.getAccountAvatarDelete());
     cancelAvatarChangesButton.setText(messageProperties.getAdminUsersCancel());

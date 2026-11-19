@@ -118,6 +118,87 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     margin-top: var(--cosmos-space-s);
 }
 
+/* Aktiver Reiter und Formular liegen auf derselben Fläche. Die Trennlinie wird nur daneben gezeichnet. */
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(overlay),
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(header),
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(header-content) {
+    background-color: var(--cosmos-page-background);
+}
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(header) {
+    border-bottom: 0;
+}
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(header-content) {
+    row-gap: 0;
+}
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(header)::after {
+    content: none;
+}
+:is(.external-identity-dialog, .account-avatar-dialog) {
+    --dialog-panel-tab-inset: var(--cosmos-space-2xl);
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .account-change-dialog-header {
+    background-color: var(--cosmos-raised-background);
+}
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog)
+    > [slot="header-content"]
+    > vaadin-tabs.cosmos-panel-tabs:not([hidden]) {
+    padding-inline: 0;
+    /* Die Kopffläche liegt hinter den oberen Rundungen, die Inhaltsfläche hinter der Unterkante. */
+    background: linear-gradient(var(--cosmos-raised-background) 50%, transparent 50%);
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs::part(tabs) {
+    display: grid;
+    isolation: isolate;
+    grid-template-columns:
+        [leading] var(--dialog-panel-tab-inset)
+        [first-tab] max-content
+        [second-tab] max-content
+        [trailing] minmax(var(--dialog-panel-tab-inset), 1fr)
+        [end];
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs > vaadin-tab:first-child {
+    grid-area: 1 / first-tab / 2 / second-tab;
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs > vaadin-tab:last-child {
+    grid-area: 1 / second-tab / 2 / trailing;
+}
+/* Jede seitliche Trennlinie liegt auf einer Fläche, auch wenn sie unter einem Reiter verläuft. */
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs::part(tabs)::before,
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs::part(tabs)::after {
+    content: "";
+    grid-row: 1;
+    z-index: -1;
+    pointer-events: none;
+    border-block-end: var(--cosmos-border-width) solid var(--cosmos-border-color);
+    background-color: var(--cosmos-raised-background);
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs::part(tabs)::before {
+    grid-column: leading / first-tab;
+}
+:is(.external-identity-dialog, .account-avatar-dialog) .cosmos-panel-tabs::part(tabs)::after {
+    grid-column: trailing / end;
+}
+:is(.external-identity-dialog, .account-avatar-dialog)
+    .cosmos-panel-tabs:has(> vaadin-tab:last-child[selected])::part(tabs)::before {
+    grid-column-end: second-tab;
+}
+:is(.external-identity-dialog, .account-avatar-dialog)
+    .cosmos-panel-tabs:has(> vaadin-tab:first-child[selected])::part(tabs)::after {
+    grid-column-start: second-tab;
+}
+
 /* PROFILBILD / Bildauswahl und Ausschnitt. Der portalisierte Dialog trägt seine eigene
  * Klasse; Farben und Dialogflächen bleiben die gemeinsamen Cosmos-Tokens. */
 
@@ -157,34 +238,11 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     display: none;
 }
 
-/* Native segmentierte Tabs mit Komponentenlabels. */
-
-.account-avatar-dialog #account-avatar-mode {
-    width: min(360px, 100%);
-    margin-inline: auto;
-    padding: 0;
-    font-size: var(--cosmos-font-size-m);
-}
-
-.account-avatar-dialog .account-avatar-mode-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    white-space: nowrap;
-}
-
 .account-avatar-dialog .account-avatar-mode-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border: var(--cosmos-border-width) solid var(--cosmos-panel-icon-border);
-    border-radius: 50%;
-    background: var(--cosmos-panel-icon-background);
-    font-size: var(--cosmos-font-size-m);
+    width: 16px;
+    text-align: center;
+    color: var(--cosmos-primary-text-color);
 }
 
 .account-avatar-dialog .account-avatar-custom {
@@ -302,12 +360,9 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     color: var(--cosmos-primary-text-color);
 }
 
-@media (max-width: 400px) {
-    .account-avatar-dialog .account-avatar-mode-label {
-        flex-direction: column;
-        gap: var(--cosmos-space-xs);
-        white-space: normal;
-        text-align: center;
+@media (max-width: 639px) {
+    :is(.external-identity-dialog, .account-avatar-dialog) {
+        --dialog-panel-tab-inset: var(--cosmos-space-l);
     }
 }
 
@@ -926,25 +981,6 @@ vaadin-form-layout.account-profile-form {
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-editor {
     gap: 24px;
 }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode {
-    width: 100%;
-}
-.account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon {
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-}
-.account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon > vaadin-icon {
-    width: 16px;
-    height: 16px;
-}
-.account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-label {
-    flex-direction: row;
-    gap: 8px;
-}
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-circle {
     background: var(--cosmos-base-color);
     color: var(--cosmos-text-color);
@@ -1191,8 +1227,4 @@ vaadin-form-layout.account-profile-form {
     color: var(--cosmos-text-secondary-color);
     font-size: var(--cosmos-font-size-s);
     font-weight: 400;
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-tab[selected] .account-avatar-mode-icon {
-    color: var(--cosmos-primary-text-color);
 }

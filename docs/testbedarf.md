@@ -26,6 +26,15 @@ bleiben bis zur erfolgreichen Prüfung offen.
   Echtes Autofill ist als [manuelle Geräteprüfung](manual-tests/README.md#hum-09)
   vorgesehen.
 
+- **Profilbildreiter im Dialogkopf — offen.**
+  `SegmentedSelectionBrowserTest` in DE/EN bei 1280, 390 und 320 px prüfen.
+  Initialen und eigenes Bild per Klick und Tastatur wählen. Der aktive Reiter
+  schließt beim Öffnen und nach beiden Wechselrichtungen bündig am Inhalt an.
+  Bildpixel unter dem aktiven Reiter, entlang der Trennlinie unter und neben
+  dem inaktiven Reiter und an den oberen Rundungen prüfen. Bildvorschau und
+  Dateiauswahl folgen dem aktiven Modus. Die Trennlinie nach dem Zurückwechseln
+  wurde manuell bestätigt.
+
 - **Badge- und Formulargrößen — offen.**
   In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und
   Zähler prüfen. Quellen, Lesestatus und Ticketrelevanz im Glocken-Overlay sind

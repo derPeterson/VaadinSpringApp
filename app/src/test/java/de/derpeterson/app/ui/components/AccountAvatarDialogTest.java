@@ -22,6 +22,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.Command;
@@ -101,10 +102,12 @@ class AccountAvatarDialogTest {
     VaadinSession.setCurrent(null);
   }
 
-  @SuppressWarnings("unchecked")
-  private CosmosSegmentedTabs<AvatarMode> readAvatarModeTabs() {
-    return (CosmosSegmentedTabs<AvatarMode>)
-        ReflectionTestUtils.getField(accountAvatarDialog, "avatarModeTabs");
+  private Tabs readAvatarModeTabs() {
+    return (Tabs) ReflectionTestUtils.getField(accountAvatarDialog, "avatarModeTabs");
+  }
+
+  private String readSelectedAvatarModeTabId() {
+    return readAvatarModeTabs().getSelectedTab().getId().orElseThrow();
   }
 
   private AccountAvatarEditor readAccountAvatarEditor() {
@@ -164,7 +167,7 @@ class AccountAvatarDialogTest {
 
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-custom-tab", readSelectedAvatarModeTabId());
     assertEquals(uploadedImageUuid, readUploadedImageUuid());
     verify(userAvatarService, never()).save(any(), any());
   }
@@ -178,7 +181,7 @@ class AccountAvatarDialogTest {
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
     assertEquals(true, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
-    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-initials-tab", readSelectedAvatarModeTabId());
     assertNull(readUploadedImageUuid());
     verify(userAvatarService, never()).save(any(), any());
 
@@ -254,7 +257,7 @@ class AccountAvatarDialogTest {
     accountAvatarDialog.open();
 
     assertEquals("CD", readAvatarInitialsSpan().getText());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-initials-tab", readSelectedAvatarModeTabId());
     assertTrue(
         readAccountAvatarEditor()
             .getElement()
@@ -277,14 +280,14 @@ class AccountAvatarDialogTest {
   @ValueSource(strings = {"cancelAvatarChangesButton", "closeDialogButton"})
   void closingDiscardsTheSelectedMode(String closeButtonFieldName) {
     accountAvatarDialog.open();
-    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setSelectedIndex(1);
 
     assertEquals("CUSTOM", readAccountAvatarEditor().getElement().getAttribute("data-mode"));
 
     readAvatarActionButton(closeButtonFieldName).click();
 
     assertFalse(accountAvatarDialog.isOpened());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-initials-tab", readSelectedAvatarModeTabId());
     accountAvatarDialog.open();
 
     assertEquals("INITIALS", readAccountAvatarEditor().getElement().getAttribute("data-mode"));
@@ -295,17 +298,18 @@ class AccountAvatarDialogTest {
   @ValueSource(strings = {"de", "en"})
   void labelsFollowLanguageChangesWithoutLosingTheSelectedMode(String languageTag) {
     accountAvatarDialog.open();
-    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setSelectedIndex(1);
     activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountAvatarDialog.refreshTexts();
 
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
+    Tabs avatarModeTabs = readAvatarModeTabs();
+    assertEquals(
+        accountAvatarDialog.getHeader().getElement(), avatarModeTabs.getElement().getParent());
+    assertTrue(avatarModeTabs.hasClassName(CosmosCssClasses.PANEL_TABS));
+    assertEquals("account-avatar-custom-tab", readSelectedAvatarModeTabId());
     assertEquals(
         messageProperties.getAccountAvatarMode(),
-        readAvatarModeTabs().getAriaLabel().orElseThrow());
-    assertEquals(
-        messageProperties.getAccountAvatarCustom(),
-        readAvatarModeTabs().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
+        avatarModeTabs.getElement().getAttribute("aria-label"));
     assertTrue(
         readAvatarModeTabs()
             .getElement()
@@ -375,13 +379,13 @@ class AccountAvatarDialogTest {
                     7L, AvatarMode.INITIALS, hasSavedImage, avatarRevisionUuid),
                 UUID.randomUUID()));
     accountAvatarDialog.open();
-    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setSelectedIndex(1);
     ReflectionTestUtils.setField(accountAvatarDialog, "uploadedImageId", UUID.randomUUID());
     readAvatarActionButton("deleteAvatarButton").setVisible(true);
     ReflectionTestUtils.invokeMethod(accountAvatarDialog, "cancelSelection");
 
     assertNull(readUploadedImageUuid());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-custom-tab", readSelectedAvatarModeTabId());
     assertTrue(accountAvatarDialog.isOpened());
     assertEquals(hasSavedImage, readAvatarActionButton("deleteAvatarButton").isVisible());
     assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
@@ -430,7 +434,7 @@ class AccountAvatarDialogTest {
     assertTrue(accountAvatarDialog.isOpened());
     assertNotEquals(avatarDraftUuid, readAvatarDraftUuid());
     assertNull(readUploadedImageUuid());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-initials-tab", readSelectedAvatarModeTabId());
     assertFalse(readAvatarActionButton("deleteAvatarButton").isVisible());
   }
 
@@ -465,7 +469,7 @@ class AccountAvatarDialogTest {
     avatarUploadHandler.handleUploadRequest(uploadEvent);
 
     verify(vaadinResponse).setHeader("X-Avatar-Image", avatarRevisionUuid.toString());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
+    assertEquals("account-avatar-custom-tab", readSelectedAvatarModeTabId());
     assertTrue(readAvatarActionButton("deleteAvatarButton").isVisible());
 
     accountAvatarDialog.close();

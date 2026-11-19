@@ -628,7 +628,7 @@ Umfang, Paketgrenzen und Historie: [Mailqueue](mailqueue.md).
 ### Segmentierte Auswahl mit nativen Tabs
 
 `CosmosSegmentedTabs<T>` verbindet native Tabs mit einem typisierten CustomField.
-Profilbildmodus und Benachrichtigungs-, Ticket- und Zugangsfilter verwenden ihn.
+Benachrichtigungs-, Ticket- und Zugangsfilter verwenden ihn.
 Icons/Zähler bleiben native Tabinhalte. Textupdates bewahren Tabinstanz, Wert und Fokus.
 
 Der Segmentstil für QR/Schlüssel und Antwort/Vermerk steht in
@@ -637,11 +637,12 @@ App-Code und Ersatzcode verwenden `TwoFactorCodeTabs` mit `cosmos-panel-tabs` au
 `cosmos-provider-settings.css`. Die Panel-Reiter haben wie unter „Konto → Sicherheit“
 eine blaue Oberkante am ausgewählten Reiter. Auf der Bestätigungsseite und in
 Bestätigungsdialogen schließen die Reiter den jeweiligen Kopf ab und übernehmen
-seine Hintergrundfarbe. `cosmos-mfa-confirmation.css` richtet die Leiste an
-der Titelzeile aus. Im Identitätsdialog liegt der aktive Reiter auf derselben
-Fläche wie der Inhalt. Hinter den oberen Rundungen liegt die Kopffläche.
-Die seitlichen Trennlinien laufen jeweils auf einer Fläche bis zum aktiven
-Reiter. Diese Fläche umfasst auch den inaktiven Reiter daneben.
+seine Hintergrundfarbe. Im Profilbilddialog verwenden „Initialen“ und „Eigenes
+Bild“ dieselben Panel-Reiter als direkte Elemente im Dialogkopf.
+Für den Identitäts- und den Profilbilddialog zeichnet `cosmos-account.css` den
+Übergang zum Inhalt. Hinter den oberen Rundungen liegt die Kopffläche. Die
+seitlichen Trennlinien laufen auf durchgehenden Flächen bis zum aktiven Reiter.
+Dieser geht bündig in den Dialoginhalt über.
 Alle Reiterleisten behalten bei Platzmangel die native horizontale Navigation mit
 Pfeilen – mobil und auf schmalem Desktop. Kein Zusammendrücken oder mehrzeiliges Tab-Raster.
 
