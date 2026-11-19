@@ -4,6 +4,12 @@
 
 ### DE
 
+### EN
+
+## [0.2.0] - 2026-11-20
+
+### DE
+
 - Eigene Wiederherstellungsanfragen in einer scrollbaren Liste mit höchstens fünf
   sichtbaren Einträgen durchsuchen; Strg+Klick hebt die Ticketauswahl auf und erhält Antwortentwürfe.
 - Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
