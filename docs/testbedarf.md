@@ -273,5 +273,3 @@ Kein gesonderter offener JUnit-Testbedarf.
 
 Menschliche Sonderprüfungen und Abnahmen stehen im
 [manuellen Katalog](manual-tests/README.md#hum-01).
-Zurückgestellte Folgepakete stehen im
-[Komponentenplan](planung/vaadin-komponenten-abgleich.md).

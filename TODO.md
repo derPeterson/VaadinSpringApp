@@ -1,18 +1,5 @@
 # Offene Aufgaben
 
-## Laufende Umsetzung
-
-- [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
-  weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
-  nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
-  Die ausdrücklich zurückgestellten
-  Pakete bleiben bis zu einer späteren Freigabe offen.
-  Die Gesamtumsetzung bleibt offen. Der aktuelle Stand liegt auf
-  `codex/vaadin-komponenten-folgearbeiten-6`.
-  Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
-  Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen unten
-  erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
-
 ## Zurückgestellte Planungen
 
 - [ ] [Was ist neu?](docs/planung/neuigkeiten.md) später auf eigenen Auftrag umsetzen.

@@ -531,8 +531,11 @@ bereit. Der Kopf bleibt oben; übriger Inhalt und Copyright scrollen im Dokument
 `PortalSidebarPageLayout` ergänzt Identitätskarte und Kontonavigation.
 
 `PageNavigationComponent` nutzt `SideNav`/`SideNavItem`; die aktive Seite trägt
-`aria-current="page"`. Mobile Navigation überlagert den Inhalt und schließt bei
-Seitenwahl, Außenklick oder Escape. Dialoge behalten ihr eigenes Escape-Verhalten.
+`aria-current="page"`. `PageContentLayout` hält die Navigation bei den Inhalten der
+jeweiligen Portal- oder Adminseite. Auf schmalen Ansichten öffnet der Menübutton
+die Navigation über dem Inhalt. Seitenwahl, Außenklick und Escape schließen sie.
+Beim Schließen kehrt der Fokus zum Menübutton zurück. Dialoge behalten ihr eigenes
+Escape-Verhalten.
 Startseite/Dashboard bieten echte Navigation, keine Beispielstatistiken.
 Leere Benachrichtigungslisten und Ladefehler bleiben unterschiedliche Zustände.
 
@@ -800,7 +803,10 @@ Menü, Tabelle und Tickets nutzen denselben Kern mit lokalen Größen.
 - Ohne Namen erscheint das Benutzersymbol; bei Bildfehlern übernimmt Vaadin den Initialen-Rückfall.
 - Anwesenheit ist ein gefüllter grüner, roter, gelber oder grauer Punkt. Seine Mitte
   liegt größenabhängig bei 45 Grad auf der Avatar-Kreislinie. Keine doppelten Ringe.
-- Statusauswahl und Avatarpunkt sind getrennte Darstellungen.
+- Das Profilmenü zeigt die vier Anwesenheitsstatus als Buttons mit Erklärtext.
+  Für die kompakte Auswahl am Avatar in der Portal-Seitenleiste dient ein natives
+  `Select`. Beide Wege verwenden dieselbe Speicherlogik. Der Avatarpunkt zeigt
+  den aktuellen Status unabhängig von der Auswahl an.
 - Der Bildeditor bleibt die freigegebene Canvas-Sonderlösung mit nativen Uploadaktionen.
 
 **AvatarGroup:** Die Empfängervorschau nutzt Initialen ohne zusätzliche Bildabfragen.

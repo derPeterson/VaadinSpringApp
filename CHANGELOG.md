@@ -17,6 +17,8 @@
   Seite oder des Dialogs. Beim Methodenwechsel werden angefangene Eingaben geleert.
 - Im Admin-Ticketsystem öffnet das Vorgangsdetail bei wenig Platz über der
   Liste. Beim Zurückkehren zur Liste bleiben ungesendete Antwortentwürfe erhalten.
+- Vorgänge in der Administration sowie Mitteilungen in der Glockenvorschau und
+  im Posteingang erscheinen mit den neuesten Einträgen zuerst.
 
 ### EN
 
@@ -33,6 +35,8 @@
   or dialog header. Switching methods clears partial entries.
 - In the admin ticket system, ticket details open over the list on narrow screens.
   Returning to the list preserves unsent reply drafts.
+- Admin tickets and notifications in the bell preview and inbox show the newest
+  entries first.
 
 ## [0.1.0] - 2026-11-18
 

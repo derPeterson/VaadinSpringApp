@@ -64,8 +64,10 @@ im [manuellen Katalog](manual-tests/README.md).
 
 - **TextArea:** Beim Ziehen am sichtbaren Griff im isolierten Chromium
   änderte sich die Höhe in MAIL-02, MAIL-03 und NOTIFY-01 (1280 und 390 px)
-  in DE und EN nicht. Die Ursache ist offen. Folgeschritte in den
-  betroffenen Szenarien benötigen einen erfolgreichen Nachtest.
+  in DE und EN nicht. Die Korrektur `0dbced11` ist im Mail-Test und
+  Mitteilungsentwurf manuell am Desktop und in der Smartphone-Ansicht bestätigt.
+  Die Fälle einschließlich ihrer Folgeschritte benötigen einen automatisierten
+  Nachtest in beiden Sprachen.
 - **Gesamtstand:** Die gezielten Nachtests auf dem jüngsten Anwendungsimage
   ergänzen die Gesamtläufe. Ein vollständig grüner DE-/EN-Nachweis
   für den Endstand steht aus. Die bisherige erfolgreiche Baseline bleibt

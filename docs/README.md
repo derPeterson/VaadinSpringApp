@@ -46,8 +46,6 @@ hier stehen Bedienung, Entwicklungsregeln und wesentliche Entscheidungen.
 Offene Umsetzungen stehen unter `docs/planung/`; sie sind von der gültigen
 Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Testauftrag.
 
-- [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
-  mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
 - Zurückgestellte Planungen: [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
   [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
 - Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).

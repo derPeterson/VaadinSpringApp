@@ -146,8 +146,7 @@ Die bisherigen besprochenen Oberflächenänderungen sind vom Benutzer gesichtet
 und abgenommen. Sein „passt“ und der anschließende Wechsel zum nächsten Punkt
 gelten im laufenden Sichtungsablauf als Abnahme; bereits geprüfte Bereiche nicht
 erneut zur Abnahme vorlegen. Automatisierte Browsernachtests bleiben separat
-für die große Testrunde gesammelt. Die noch nicht umgesetzten Größenpakete aus
-der neuen Abarbeitungsliste sind davon nicht betroffen.
+für die große Testrunde gesammelt.
 
 | Bereich | Vorhandene Abnahme / offene Sichtung |
 | --- | --- |
@@ -159,7 +158,8 @@ der neuen Abarbeitungsliste sind davon nicht betroffen.
 | Native Notification-Texte | Repräsentative Varianten in DE/EN auf Desktop/Smartphone abgenommen; übrige Aufrufer auf Wunsch ohne eigene Browserrunde übernommen |
 | Einheitliche Dauerfelder | 2FA-Pilot mit Vergleichsaufnahmen; übrige Felder vom Benutzer gesichtet und ohne weitere Screenshotrunde übernommen |
 | Zahlenposition beim Leeren (neuer Punkt 3) | Korrektur des Positionssprungs zwischen Wert und Placeholder in Zahlen-/Dauerfeldern vom Benutzer gesichtet und abgenommen; automatisierter Browsernachtest bleibt offen. |
-| TextArea-Fokusrahmen (neuer Punkt 4) | Korrektur des abgeschnittenen Fokusrahmens vom Benutzer gesichtet und abgenommen; automatisierter Browsernachtest einschließlich Größenänderung bleibt offen. |
+| TextArea-Fokusrahmen und Größenänderung | Fokusrahmen abgenommen. Größenänderung im Mail-Test und Mitteilungsentwurf vom Benutzer am Desktop und in der Smartphone-Ansicht bestätigt; automatisierter Browsernachtest bleibt offen. |
+| Buttonlayouts | Sichtung der umgestellten Dialog- und Seitenaktionen vom Benutzer abgeschlossen. |
 | Zentrales Switch-Grundstyling | Gemeinsame Bahn-/Griffgestaltung, Farben und Fokus im Rahmen der Nachbearbeitung vom Benutzer abgenommen; Anordnung und Beschriftung bleiben lokal. |
 | Einheitliche Schließen-Icons | Gemeinsamer 18-px-Wert für Dialoge, Popovers und Notifications einschließlich Kreis-X in der Empfängerliste im Rahmen der Nachbearbeitung abgenommen; automatisierter Browsernachtest bleibt offen. |
 | Formular-/Benachrichtigungs-Nachbearbeitung 1–13 | Alle Punkte vom Benutzer abgenommen und abgeschlossen, einschließlich AvatarGroup und vollständiger Empfängerliste nach den Nachbesserungen aus neuem Punkt 5. Anwesenheitsstatus-Farbversuch auf Benutzerentscheidung zurückgenommen. |
@@ -184,8 +184,8 @@ der neuen Abarbeitungsliste sind davon nicht betroffen.
 Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
 kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem
 Mobilgerät oder Screenreader. Systemscrollleisten und Kontrastmodi bleiben
-gesondert unter [HUM-10](#hum-10) zu beurteilen; der technische Stand steht im
-[Prüfstand](../status.md#abnahme-offene-nachbearbeitung-und-grenzen).
+gesondert unter [HUM-10](#hum-10) zu beurteilen. Der technische Stand steht im
+[Prüfstand](../status.md).
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
