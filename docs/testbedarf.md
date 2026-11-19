@@ -5,6 +5,12 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **Rechte Feldhilfe nach Tooltip-Bereinigung — offen.**
+  Die bestehenden Fälle CONFIG-05D, COMPONENT-04, MAIL-02, MFA-03 und OIDC-08
+  in der großen Testrunde ausführen. Die Info-Buttons öffnen per Klick und
+  Tastatur die rechte Feldhilfe mit den passenden Texten. Feldhilfeknöpfe zeigen
+  weder bei Hover noch bei Fokus einen Tooltip.
+
 - **OTP-Styling, Methodenauswahl und Eingabe — offen.**
   `TwoFactorBrowserTest` (MFA-21) in DE/EN auf Desktop/Smartphone prüfen. Das
   fokussierte leere Kästchen hat einen blauen Rahmen und keinen sichtbaren

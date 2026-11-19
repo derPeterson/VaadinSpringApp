@@ -320,13 +320,11 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   private ConfigInfoButton buildMailFieldInfoButton(FieldHelp fieldHelp) {
-    return new ConfigInfoButton(
-        fieldHelp.description(),
-        () -> {
-          selectedMailFieldHelp = fieldHelp;
-          renderMailFieldHelp(fieldHelp);
-          mailFieldHelpPanel.open();
-        });
+    return new ConfigInfoButton(() -> {
+      selectedMailFieldHelp = fieldHelp;
+      renderMailFieldHelp(fieldHelp);
+      mailFieldHelpPanel.open();
+    });
   }
 
   private void renderMailFieldHelp(FieldHelp fieldHelp) {
@@ -367,9 +365,6 @@ public class AdminMailTestSection extends VerticalLayout {
     testSubjectField.setPlaceholder(messageProperties.getAdminMailSubject());
     testBodyField.setPlaceholder(messageProperties.getAdminMailBody());
 
-    recipientInfoButton.refreshText();
-    subjectInfoButton.refreshText();
-    bodyInfoButton.refreshText();
     recipientInfoButton
         .getElement()
         .setAttribute(ARIA_LABEL, messageProperties.getAdminMailRecipient());

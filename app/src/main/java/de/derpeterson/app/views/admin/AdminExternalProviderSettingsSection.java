@@ -426,8 +426,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
 
     private Component buildProviderFieldWithHelpComponent(
         Component fieldInputComponent, ProviderField field) {
-      ConfigInfoButton fieldInfoButton =
-          new ConfigInfoButton(() -> fieldHelp(field), () -> openProviderFieldHelp(field));
+      ConfigInfoButton fieldInfoButton = new ConfigInfoButton(() -> openProviderFieldHelp(field));
       fieldInfoButton.setId(
           PROVIDER_PREFIX
               + providerId
@@ -556,10 +555,9 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
     private void refreshTexts() {
       labelSpansByProviderField.forEach((field, label) -> label.setText(fieldLabel(field)));
 
-      infoButtonsByProviderField.forEach((field, info) -> {
-        info.refreshText();
-        info.setAriaLabel(messageProperties.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
-      });
+      infoButtonsByProviderField.forEach((field, fieldInfoButton) ->
+          fieldInfoButton.setAriaLabel(
+              messageProperties.getAdminConfigHelpTitle() + ": " + fieldLabel(field)));
       String providerNameText = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       assistantKickerTextSpan.setText(messageProperties.getProviderSettingsAssistantKicker());
       assistantTitleH3.setText(

@@ -72,11 +72,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       Supplier<String> descriptionTextSupplier,
       Supplier<String> defaultValueTextSupplier,
       Supplier<List<String>> ruleTextsSupplier,
-      Supplier<String> effectiveUseTextSupplier) {
-    String tooltip() {
-      return descriptionTextSupplier.get() + " " + String.join(" ", ruleTextsSupplier.get());
-    }
-  }
+      Supplier<String> effectiveUseTextSupplier) {}
 
   private final transient MessageProperties messageProperties;
   private final BrowserUnsavedChangesGuard browserChangesGuard =
@@ -88,7 +84,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       ruleModeComboBoxesByRole = new EnumMap<>(RoleType.class);
   private final Map<RoleType, Tab> tabsByRole = new EnumMap<>(RoleType.class);
   private final List<Runnable> fieldTextRefreshActions = new ArrayList<>();
-  private final List<ConfigInfoButton> fieldInfoButtons = new ArrayList<>();
   private final Span configurationTitleSpan = new Span();
   private final Span configurationHintSpan = new Span();
   private final H2 twoFactorPolicyHeadingH2 = new H2();
@@ -577,17 +572,14 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private Component buildPolicyFieldWithHelpComponent(
       Component policyFieldComponent, FieldHelp fieldHelp) {
     ConfigInfoButton fieldInfoButton =
-        new ConfigInfoButton(
-            fieldHelp::tooltip,
-            () -> {
-              refreshFieldHelpAction = () -> renderHelp(fieldHelp);
-              refreshFieldHelpAction.run();
-              fieldHelpPanel.open();
-            });
+        new ConfigInfoButton(() -> {
+          refreshFieldHelpAction = () -> renderHelp(fieldHelp);
+          refreshFieldHelpAction.run();
+          fieldHelpPanel.open();
+        });
 
     FieldHelpRowLayout fieldHelpRowLayout =
         new FieldHelpRowLayout(policyFieldComponent, fieldInfoButton);
-    fieldInfoButtons.add(fieldInfoButton);
     fieldTextRefreshActions.add(() ->
         fieldInfoButton.setAriaLabel(
             messageProperties.getAdminConfigHelpTitle()
@@ -659,7 +651,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     ruleModeComboBoxesByRole.forEach((role, actions) ->
         actions.forEach((action, modeField) -> modeField.setItemLabelGenerator(this::modeLabel)));
     fieldTextRefreshActions.forEach(Runnable::run);
-    fieldInfoButtons.forEach(ConfigInfoButton::refreshText);
 
     reconfirmAfterInactivitySwitch.setLabel(messageProperties.getTwoFactorInactivityEnabled());
     inactivityDurationLabelSpan.setText(messageProperties.getTwoFactorInactivityDuration());

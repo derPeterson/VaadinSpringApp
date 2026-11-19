@@ -813,7 +813,7 @@ Gestaltung: `cosmos-notifications.css`, Klassen `cosmos-recipient-*`.
 
 Native Tooltips verwenden eine dunkle Fläche ohne Pfeil, feinen Rahmen und kleine
 helle Schrift. Tokens: `--cosmos-tooltip-*`; Gestaltung: `cosmos-theme.css`.
-Die rechte Feldhilfe ist ein eigener Baustein.
+Der `ConfigInfoButton` öffnet die rechte Feldhilfe im `AdminSidePanelDialog`.
 
 Name/E-Mail im Header, in Profilkarte, Benutzermenü und Löschbestätigung werden nach
 verfügbarer Breite begrenzt. Normal ist eine Zeile mit Ellipse; im mobilen Löschdialog

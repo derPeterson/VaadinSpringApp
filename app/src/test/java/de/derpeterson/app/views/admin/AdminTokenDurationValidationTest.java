@@ -24,7 +24,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.CosmosDurationCustomField;
 import java.time.Duration;
 import java.util.Locale;
@@ -134,20 +134,17 @@ class AdminTokenDurationValidationTest {
 
     verify(configService).set(entry, minimum.toString());
     assertFalse(field(entry).isInvalid());
-    ConfigInfoButton info =
-        (ConfigInfoButton)
-            ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInfoButtons"))
-                .get(entry);
+    ReflectionTestUtils.invokeMethod(configurationSection, "openHelp", entry);
+    AdminSidePanelDialog panel =
+        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    String content = panel.getElement().getTextRecursively();
 
+    assertTrue(panel.isOpened());
+    assertTrue(content.contains(messageProperties.getAdminConfigDurationNumberRule()));
     assertTrue(
-        info.getTooltip().getText().contains(messageProperties.getAdminConfigDurationNumberRule()));
-    assertTrue(
-        info.getTooltip()
-            .getText()
-            .contains(
-                messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes())));
-    assertTrue(
-        info.getTooltip().getText().contains(messageProperties.getAdminConfigEntryTooltip(entry)));
+        content.contains(
+            messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes())));
+    assertTrue(content.contains(messageProperties.getAdminConfigEntryTooltip(entry)));
     assertFalse(messageProperties.getAdminConfigEntryTooltip(entry).contains("{0}"));
   }
 

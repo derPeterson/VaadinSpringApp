@@ -125,8 +125,6 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers =
       new EnumMap<>(ConfigEntry.class);
   private final EnumMap<ConfigEntry, Span> configLabelSpans = new EnumMap<>(ConfigEntry.class);
-  private final EnumMap<ConfigEntry, ConfigInfoButton> configInfoButtons =
-      new EnumMap<>(ConfigEntry.class);
   private final Map<AdminConfigGroup, Predicate<ConfigEntry>> configGroupFilters =
       new LinkedHashMap<>();
 
@@ -301,7 +299,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     refreshInputLabels();
-    refreshInputHelp();
+    refreshInputPlaceholders();
     refreshCurrentGroupTitle();
   }
 
@@ -557,15 +555,13 @@ public class AdminConfigurationSection extends VerticalLayout {
         configLabelSpan.setText(messageProperties.getAdminConfigEntryLabel(configEntry)));
   }
 
-  private void refreshInputHelp() {
+  private void refreshInputPlaceholders() {
     configInputs.forEach((configEntry, configInputComponent) ->
         updatePlaceholder(
             configInputComponent,
             configInputComponent instanceof CosmosDurationCustomField
                 ? configuredDefault(configEntry)
                 : buildPlaceholder(configEntry)));
-
-    configInfoButtons.values().forEach(ConfigInfoButton::refreshText);
   }
 
   private void updatePlaceholder(Component configInputComponent, String placeholder) {
@@ -761,11 +757,8 @@ public class AdminConfigurationSection extends VerticalLayout {
       labelledConfigInput.setAriaLabelledBy(configLabelId);
     }
 
-    ConfigInfoButton configInfoButton =
-        new ConfigInfoButton(
-            () -> buildConfigTooltipText(configEntry), () -> openHelp(configEntry));
-    configInfoButton.getElement().setAttribute("aria-labelledby", configLabelId);
-    configInfoButtons.put(configEntry, configInfoButton);
+    ConfigInfoButton configInfoButton = new ConfigInfoButton(() -> openHelp(configEntry));
+    configInfoButton.setAriaLabelledBy(configLabelId);
     FieldHelpRowLayout configInputRowLayout =
         new FieldHelpRowLayout(configInputComponent, configInfoButton);
     configFieldLayout.add(configInputRowLayout);
@@ -871,19 +864,6 @@ public class AdminConfigurationSection extends VerticalLayout {
     Span placeholderTokenSpan = new Span(placeholderToken);
     placeholderTokenSpan.addClassName("admin-help-token");
     return new Div(placeholderTokenSpan, new Span(placeholderMeaning));
-  }
-
-  private String buildConfigTooltipText(ConfigEntry configEntry) {
-    StringBuilder tooltipTextBuilder =
-        new StringBuilder(messageProperties.getAdminConfigEntryTooltip(configEntry));
-    tooltipTextBuilder.append("\n\n").append(buildDefaultText(configEntry));
-    tooltipTextBuilder
-        .append("\n\n")
-        .append(messageProperties.getAdminConfigInputRules())
-        .append(":");
-    buildInputRules(configEntry)
-        .forEach(inputRuleText -> tooltipTextBuilder.append("\n• ").append(inputRuleText));
-    return tooltipTextBuilder.toString();
   }
 
   /** Beschreibt die vorhandene Prüfung; führt keine zweite Validierung aus. */
@@ -1297,10 +1277,6 @@ public class AdminConfigurationSection extends VerticalLayout {
     return isSecretEntry(configEntry)
         ? messageProperties.getAdminConfigDefaultConfidential()
         : defaultValue;
-  }
-
-  private String buildDefaultText(ConfigEntry configEntry) {
-    return defaultLabel(configEntry) + ": " + defaultDisplayValue(configEntry);
   }
 
   private String defaultLabel(ConfigEntry configEntry) {

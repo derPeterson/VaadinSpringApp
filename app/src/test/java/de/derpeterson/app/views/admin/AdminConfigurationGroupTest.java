@@ -396,15 +396,14 @@ class AdminConfigurationGroupTest {
     assertEquals(
         MessageProperties.forLocale(i18nProvider, localeReference.get()).getAdminConfigUnlimited(),
         inbox.getPlaceholder());
-    Map<?, ?> infos =
-        (Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInfoButtons");
-    ConfigInfoButton info =
-        (ConfigInfoButton) infos.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
+    fieldHelpButton(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS).click();
+    AdminSidePanelDialog panel = fieldHelpPanel();
+    String content = panel.getElement().getTextRecursively();
     MessageProperties translated = MessageProperties.forLocale(i18nProvider, localeReference.get());
 
-    assertTrue(info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUnlimited()));
-    assertFalse(
-        info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUsesDefault()));
+    assertTrue(panel.isOpened());
+    assertTrue(content.contains(translated.getAdminConfigRuleEmptyUnlimited()));
+    assertFalse(content.contains(translated.getAdminConfigRuleEmptyUsesDefault()));
     de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
   }
 
@@ -808,7 +807,7 @@ class AdminConfigurationGroupTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
-  void tooltipUsesConfiguredDefaultAndRefreshesLanguageWithoutSavingTheDraft(String language) {
+  void fieldHelpUsesConfiguredDefaultAndRefreshesLanguageWithoutSavingTheDraft(String language) {
     when(configService.getDefaultValue(ConfigEntry.SERVICE_NAME)).thenReturn("Configured default");
     when(configService.getDefaultValue(ConfigEntry.REMEMBER_ME_SECRET_KEY))
         .thenReturn("SecretDefault1!");
@@ -816,41 +815,38 @@ class AdminConfigurationGroupTest {
     configurationSection.refreshTexts();
     MessageProperties messages = MessageProperties.forLocale(i18nProvider, localeReference.get());
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    Map<?, ?> infos =
-        (Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInfoButtons");
     TextField serviceName = (TextField) configInputsByEntry.get(ConfigEntry.SERVICE_NAME);
     serviceName.setValue("Unsaved draft");
-    ConfigInfoButton info = (ConfigInfoButton) infos.get(ConfigEntry.SERVICE_NAME);
+    fieldHelpButton(ConfigEntry.SERVICE_NAME).click();
+    AdminSidePanelDialog panel = fieldHelpPanel();
+    String content = panel.getElement().getTextRecursively();
 
+    assertTrue(panel.isOpened());
     assertEquals("Configured default", serviceName.getPlaceholder());
     PasswordField secretField =
         (PasswordField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     assertEquals(messages.getAdminConfigPlaceholderSecretKey(), secretField.getPlaceholder());
-    assertTrue(
-        info.getTooltip()
-            .getText()
-            .contains(messages.getAdminConfigDefault() + ": Configured default"));
-    assertTrue(
-        info.getTooltip().getText().contains(messages.getAdminConfigHelperServiceNameMax(30)));
-    assertFalse(
-        ((ConfigInfoButton) infos.get(ConfigEntry.REMEMBER_ME_SECRET_KEY))
-            .getTooltip()
-            .getText()
-            .contains("SecretDefault1!"));
+    assertTrue(content.contains(messages.getAdminConfigDefault()));
+    assertTrue(content.contains("Configured default"));
+    assertTrue(content.contains(messages.getAdminConfigHelperServiceNameMax(30)));
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     configurationSection.refreshTexts();
+    MessageProperties translated = MessageProperties.forLocale(i18nProvider, localeReference.get());
 
     assertEquals("Unsaved draft", serviceName.getValue());
-    assertEquals(
-        MessageProperties.forLocale(i18nProvider, localeReference.get())
-            .getAdminConfigPlaceholderSecretKey(),
-        secretField.getPlaceholder());
+    assertEquals(translated.getAdminConfigPlaceholderSecretKey(), secretField.getPlaceholder());
+    assertTrue(panel.isOpened());
     assertTrue(
-        info.getTooltip()
-            .getText()
-            .contains(
-                MessageProperties.forLocale(i18nProvider, localeReference.get())
-                    .getAdminConfigDefault()));
+        panel.getElement().getTextRecursively().contains(translated.getAdminConfigDefault()));
+    panel.close();
+
+    configurationSection.showGroup(AdminConfigGroup.SECURITY);
+    fieldHelpButton(ConfigEntry.REMEMBER_ME_SECRET_KEY).click();
+    String secretHelp = panel.getElement().getTextRecursively();
+
+    assertTrue(panel.isOpened());
+    assertTrue(secretHelp.contains(translated.getAdminConfigDefaultConfidential()));
+    assertFalse(secretHelp.contains("SecretDefault1!"));
     verify(configService, never()).set(any(ConfigEntry.class), anyString());
   }
 
@@ -860,16 +856,11 @@ class AdminConfigurationGroupTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
-  @SuppressWarnings("unchecked")
   void everyFieldHelpKeepsRulesAndSafeDefaultsWithoutChangingConfiguration(String language) {
     localeReference.set(Locale.forLanguageTag(language));
     configurationSection.refreshTexts();
     MessageProperties messages = MessageProperties.forLocale(i18nProvider, localeReference.get());
-    Map<ConfigEntry, ConfigInfoButton> infos =
-        (Map<ConfigEntry, ConfigInfoButton>)
-            ReflectionTestUtils.getField(configurationSection, "configInfoButtons");
-    AdminSidePanelDialog panel =
-        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    AdminSidePanelDialog panel = fieldHelpPanel();
     int checkedFields = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       if (group == AdminConfigGroup.EXTERNAL_LOGIN || group == AdminConfigGroup.TWO_FACTOR) {
@@ -879,7 +870,7 @@ class AdminConfigurationGroupTest {
       configurationSection.showGroup(group);
       for (Object value : visibleEntries()) {
         ConfigEntry entry = (ConfigEntry) value;
-        infos.get(entry).click();
+        fieldHelpButton(entry).click();
 
         assertTrue(panel.isOpened());
         String content = panel.getElement().getTextRecursively();
@@ -907,6 +898,23 @@ class AdminConfigurationGroupTest {
     }
     assertEquals(ConfigEntry.values().length, checkedFields);
     verify(configService, never()).set(any(ConfigEntry.class), anyString());
+  }
+
+  private ConfigInfoButton fieldHelpButton(ConfigEntry entry) {
+    Component input = (Component) getConfigInputsByEntry().get(entry);
+    return input
+        .getParent()
+        .orElseThrow()
+        .getChildren()
+        .flatMap(Component::getChildren)
+        .filter(ConfigInfoButton.class::isInstance)
+        .map(ConfigInfoButton.class::cast)
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private AdminSidePanelDialog fieldHelpPanel() {
+    return (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
   }
 
   private List<?> visibleEntries() {
