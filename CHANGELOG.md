@@ -13,6 +13,8 @@
 - Wiederherstellungsanleitungen im Ticket nach 60 Sekunden erneut anfordern;
   offene zugehörige Mailaufträge verhindern Doppelversand. Entwicklerkonten
   erhalten die Anleitung ausschließlich im Ticketverlauf.
+- In der Zwei-Faktor-Bestätigung stehen App-Code und Ersatzcode im Kopf der
+  Seite oder des Dialogs. Beim Methodenwechsel werden angefangene Eingaben geleert.
 
 ### EN
 
@@ -25,6 +27,8 @@
 - Request recovery instructions again after 60 seconds within a support ticket;
   pending associated emails prevent duplicate delivery. Development accounts
   receive the instructions only in the ticket conversation.
+- Two-factor verification shows the app code and recovery code tabs in the page
+  or dialog header. Switching methods clears partial entries.
 
 ## [0.1.0] - 2026-11-18
 

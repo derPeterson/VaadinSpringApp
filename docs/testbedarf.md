@@ -5,11 +5,24 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
-- **OTP-Styling und Eingabe — offen.**
+- **OTP-Styling, Methodenauswahl und Eingabe — offen.**
   `TwoFactorBrowserTest` (MFA-21) in DE/EN auf Desktop/Smartphone prüfen. Das
   fokussierte leere Kästchen hat einen blauen Rahmen und keinen sichtbaren
   blinkenden Cursor. Einfügen und die automatische Bestätigung funktionieren
   weiterhin. Das native Eingabefeld bietet `autocomplete="one-time-code"` an.
+  In Anmelde-/Adminbestätigung und Aktionsdialogen die Panel-Reiter mit blauer
+  Oberkante prüfen. Methodenwechsel per Klick und Tastatur, ARIA-Zuordnung des
+  aktiven Feldbereichs und Darstellung in schmalen Dialogen prüfen. Ein
+  unvollständiger App-Code ist nach Hin- und Zurückwechseln im Dialog gelöscht.
+  Auf der Bestätigungsseite und in den Dialogen schließen die Reiter den
+  jeweiligen Kopf ab und übernehmen dessen Hintergrundfarbe. Bei Passwortnachweis,
+  bereits bestätigter Identität oder im Wiederherstellungsschritt bleibt der Kopf
+  ohne diese Reiter.
+  Bei „Google verbinden“ und beim Ändern des Portalpassworts den Übergang
+  unter der Reiterleiste nach dem Öffnen und nach dem Wechsel in beide
+  Richtungen prüfen. Bildpixel an der gemeinsamen Kante, am Anschluss der
+  Linie rechts und links neben dem inaktiven Reiter sowie an den oberen
+  Rundungen beider Reiter prüfen.
   Echtes Autofill ist als [manuelle Geräteprüfung](manual-tests/README.md#hum-09)
   vorgesehen.
 

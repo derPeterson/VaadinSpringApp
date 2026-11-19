@@ -489,7 +489,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
       assertOtpFocus(actor.browserPage, "two-factor-code");
       TwoFactorPage.selectTestLanguageIfNeeded(actor.browserPage);
-      actor.browserPage.locator("#two-factor-recovery-tab").click();
+      Locator headerTabs =
+          actor.browserPage.locator("#two-factor-panel > [slot=header] > .two-factor-code-tabs");
+
+      assertThat(headerTabs).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+      Locator recoveryCodeTab = headerTabs.locator("#two-factor-recovery-tab");
+      recoveryCodeTab.click();
+      assertSelectedCodeTabStyle(recoveryCodeTab);
       actor.browserPage.locator("#two-factor-authenticator-tab").click();
       checkOtpInputAndConfirm(actor.browserPage, email, "two-factor-code", false);
       actor.browserPage.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
@@ -557,6 +563,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertEquals(
         "rgba(0, 0, 0, 0)",
         firstSlot.evaluate("slot => getComputedStyle(slot, '::after').backgroundColor"));
+  }
+
+  private void assertSelectedCodeTabStyle(Locator codeTab) {
+    assertThat(codeTab).hasAttribute("selected", "");
+    assertThat(codeTab).hasCSS("min-height", "48px");
+    assertThat(codeTab).hasCSS("border-top-color", "rgb(56, 189, 248)");
+    assertThat(codeTab).hasCSS("border-top-left-radius", "10px");
   }
 
   private void checkOtpInputAndConfirm(
@@ -2725,10 +2738,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     BoundingBox headerBounds = header.boundingBox();
 
     assertTrue(close.boundingBox().x > headerBounds.x + headerBounds.width / 2);
-    assertThat(dialog.locator(".cosmos-segmented-tabs")).hasCSS("height", "42px");
-    UiActions.complete(
-        browserPage, browserPage.locator("#two-factor-action-recovery-code-tab")::click);
+    assertSelectedCodeTabStyle(dialog.locator("#two-factor-action-app-code-tab"));
+    Locator recoveryCodeTab = dialog.locator("#two-factor-action-recovery-code-tab");
+    UiActions.complete(browserPage, recoveryCodeTab::click);
 
+    assertSelectedCodeTabStyle(recoveryCodeTab);
     assertThat(browserPage.locator("#two-factor-action-recovery-code input"))
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     assertThat(appCode).isHidden();
@@ -3088,6 +3102,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
     assertThat(browserPage.locator("vaadin-text-field#two-factor-code input"))
         .hasAttribute("maxlength", "35");
+    assertThat(browserPage.locator("#two-factor-panel .two-factor-code-tabs")).hasCount(0);
     assertThat(browserPage.locator(".cosmos-panel-footer #two-factor-recovery-back"))
         .hasText(uiTexts.getTwoFactorReturnToCode());
     assertThat(browserPage.locator("#two-factor-help")).isHidden();

@@ -4,6 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.REGISTRATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
+import com.microsoft.playwright.options.ScreenshotScale;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AccountPage;
@@ -26,10 +28,12 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Feature;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -178,14 +182,25 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   private void assertProviderConfirmationDialog(Locator dialog, int width) {
     Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
+    Locator codeTabs = dialog.locator("[slot=header-content] > vaadin-tabs.two-factor-code-tabs");
 
     assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(dialog.locator("div.account-change-dialog-form")).isVisible();
+    assertThat(codeTabs).isVisible();
+    assertThat(codeTabs).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    Locator appCodeTab = dialog.locator("#external-proof-app-code-tab");
     Locator appCode = browserPage.locator("fc-otp-field#external-confirm-factor");
+    Locator otpInput = appCode.locator("input[slot=input]");
 
     assertThat(appCode.locator("[part=slot]")).hasCount(6);
     assertThat(appCode.locator("[part=slot]").first())
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
-    assertThat(appCode.locator("input[slot=input]")).isFocused();
+    assertThat(otpInput).isFocused();
+    assertCodeTabSurfaces(codeTabs, appCodeTab, content);
+
+    otpInput.pressSequentially("123");
+    assertThat(otpInput).hasValue("123");
+
     Locator recoveryTab = browserPage.locator("#external-proof-recovery-code-tab");
     UiActions.complete(browserPage, recoveryTab::click);
 
@@ -193,9 +208,13 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#external-confirm-recovery-code input"))
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     assertThat(appCode).isHidden();
-    UiActions.complete(browserPage, browserPage.locator("#external-proof-app-code-tab")::click);
+    assertCodeTabSurfaces(codeTabs, recoveryTab, content);
 
+    UiActions.complete(browserPage, appCodeTab::click);
+
+    assertCodeTabSurfaces(codeTabs, appCodeTab, content);
     assertThat(appCode).isVisible();
+    assertThat(otpInput).hasValue("");
     assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
         .hasAttribute("src", "icons/external-login/google.png");
     assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
@@ -206,6 +225,55 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.keyboard().press("Escape");
 
     assertThat(dialog).hasJSProperty("opened", false);
+  }
+
+  private void assertCodeTabSurfaces(Locator tabs, Locator selectedTab, Locator content) {
+    assertThat(selectedTab).hasAttribute("selected", "");
+
+    BoundingBox tabBounds = selectedTab.boundingBox();
+    BoundingBox contentBounds = content.boundingBox();
+    int tabCenterX = (int) Math.round(tabBounds.x + tabBounds.width / 2);
+    int contentTopY = (int) Math.floor(contentBounds.y);
+
+    BoundingBox inactiveTabBounds = tabs.locator("vaadin-tab:not([selected])").boundingBox();
+    int inactiveTabCenterX = (int) Math.round(inactiveTabBounds.x + inactiveTabBounds.width / 2);
+    int adjacentHeaderX =
+        inactiveTabBounds.x < tabBounds.x
+            ? (int) Math.floor(inactiveTabBounds.x) - 4
+            : (int) Math.ceil(inactiveTabBounds.x + inactiveTabBounds.width) + 4;
+
+    byte[] screenshot =
+        browserPage.screenshot(
+            new Page.ScreenshotOptions()
+                .setAnimations(ScreenshotAnimations.DISABLED)
+                .setScale(ScreenshotScale.CSS));
+    BufferedImage dialogImage =
+        assertDoesNotThrow(() -> ImageIO.read(new ByteArrayInputStream(screenshot)));
+    int contentPixel = dialogImage.getRGB(tabCenterX, contentTopY + 3);
+
+    for (int y = contentTopY - 3; y < contentTopY + 3; y++) {
+      assertEquals(
+          contentPixel,
+          dialogImage.getRGB(tabCenterX, y),
+          "Unter dem ausgewählten Reiter geht die Hintergrundfarbe bündig in den Inhalt über");
+      assertEquals(
+          dialogImage.getRGB(adjacentHeaderX, y),
+          dialogImage.getRGB(inactiveTabCenterX, y),
+          "Die Trennlinie unter dem inaktiven Reiter schließt seitlich bündig an");
+    }
+
+    int headerPixel = dialogImage.getRGB(tabCenterX, (int) Math.floor(tabBounds.y) - 3);
+    for (Locator tab : tabs.locator("vaadin-tab").all()) {
+      BoundingBox bounds = tab.boundingBox();
+      int topY = (int) Math.ceil(bounds.y) + 1;
+      int leftX = (int) Math.ceil(bounds.x) + 1;
+      int rightX = (int) Math.floor(bounds.x + bounds.width) - 2;
+
+      assertEquals(
+          headerPixel, dialogImage.getRGB(leftX, topY), "Linke Rundung auf der Kopffläche");
+      assertEquals(
+          headerPixel, dialogImage.getRGB(rightX, topY), "Rechte Rundung auf der Kopffläche");
+    }
   }
 
   private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {

@@ -305,6 +305,15 @@ class ExternalConnectionsComponentTest {
         (PasswordField)
             findProviderUiComponentById(
                 externalIdentityConfirmationDialog, "external-confirm-password");
+
+    assertTrue(portalPasswordField.isVisible());
+    assertFalse(
+        findProviderUiComponentById(
+                externalIdentityConfirmationDialog, "external-proof-app-code-tab")
+            .getParent()
+            .orElseThrow()
+            .isVisible());
+
     portalPasswordField.setValue("OwnPortal1!");
     doAnswer(
             mockInvocation -> {

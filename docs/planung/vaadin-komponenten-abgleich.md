@@ -58,9 +58,11 @@ Benutzer abgenommen. Daraus bleibt kein offenes Paket.
 Die übrigen offenen Kandidaten bleiben in diesem Plan und in
 [TODO](../../TODO.md) erhalten.
 
-Für das vereinfachte OTP-Styling steht die gemeinsame Sichtprüfung des blauen
-Fokusrahmens ohne blinkenden Cursor noch aus. Der [Testbedarf](../testbedarf.md#browser-tests)
-erfasst den automatisierten Nachtest.
+Die Position der Reiter für App-Code und Ersatzcode, der Übergang zum
+Dialoginhalt sowie das Leeren eines Teilcodes beim Reiterwechsel sind manuell
+bestätigt. Für die OTP-Eingabe steht die Sichtprüfung des blauen Fokusrahmens
+ohne blinkenden Cursor aus. Der [Testbedarf](../testbedarf.md#browser-tests)
+erfasst die automatisierten Nachtests.
 
 Native Karten, weitere Bestätigungen
 und vollständige Mailqueue-Bereinigung sind einschließlich Sonar-Bereinigung und

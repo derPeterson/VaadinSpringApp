@@ -59,6 +59,7 @@ import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import de.derpeterson.app.ui.components.TwoFactorCodeFields;
+import de.derpeterson.app.ui.components.TwoFactorCodeTabs;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -396,6 +397,7 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void clearPreviousTwoFactorStep() {
+    twoFactorPanelComponent.setHeaderTabs(null);
     stepContentDiv.removeAll();
     additionalStepActionsDiv.removeAll();
     stepNavigationLayout.removeAll();
@@ -533,37 +535,27 @@ public final class TwoFactorView extends VerticalLayout
         messageProperties.getTwoFactorConfirmSubtitle(),
         "");
 
-    Tab authenticatorCodeTab =
-        new Tab(
-            AppIcon.DEVICES.create(), new Span(messageProperties.getTwoFactorConfirmationAppTab()));
-    Tab recoveryCodeTab =
-        new Tab(AppIcon.KEY.create(), new Span(messageProperties.getTwoFactorRecoveryCodeLabel()));
-    authenticatorCodeTab.setId("two-factor-authenticator-tab");
-    recoveryCodeTab.setId("two-factor-recovery-tab");
-
     VerticalLayout loginCodeInputLayout = new VerticalLayout();
     loginCodeInputLayout.setPadding(false);
     loginCodeInputLayout.setSpacing(false);
     loginCodeInputLayout.setWidthFull();
     loginCodeInputLayout.setId(CONFIRMATION_INPUT_ID);
     loginCodeInputLayout.addClassName(CONFIRMATION_INPUT_ID);
-    loginCodeInputLayout.getElement().setAttribute("role", TABPANEL_ROLE);
-    for (Tab loginMethodTab : List.of(authenticatorCodeTab, recoveryCodeTab)) {
-      loginMethodTab.getElement().setAttribute(ARIA_CONTROLS, CONFIRMATION_INPUT_ID);
-    }
 
-    Tabs loginMethodTabs = new Tabs(authenticatorCodeTab, recoveryCodeTab);
-    loginMethodTabs.setWidthFull();
-    loginMethodTabs.addClassName("cosmos-segmented-tabs");
-    loginMethodTabs.addClassName(CosmosCssClasses.EQUAL_WIDTH_TABS);
-    loginMethodTabs.setSelectedTab(
-        isRecoveryCodeLoginSelected ? recoveryCodeTab : authenticatorCodeTab);
+    TwoFactorCodeTabs loginMethodTabs =
+        new TwoFactorCodeTabs(
+            "two-factor-authenticator-tab",
+            "two-factor-recovery-tab",
+            loginCodeInputLayout,
+            messageProperties);
+    loginMethodTabs.setRecoveryCodeSelected(isRecoveryCodeLoginSelected);
     loginMethodTabs.addSelectedChangeListener(loginMethodChangeEvent -> {
-      isRecoveryCodeLoginSelected = loginMethodChangeEvent.getSelectedTab() == recoveryCodeTab;
+      isRecoveryCodeLoginSelected = loginMethodTabs.isRecoveryCodeSelected();
       showSelectedLoginCodeInput(loginCodeInputLayout);
     });
 
-    stepContentDiv.add(loginMethodTabs, loginCodeInputLayout);
+    twoFactorPanelComponent.setHeaderTabs(loginMethodTabs);
+    stepContentDiv.add(loginCodeInputLayout);
     showSelectedLoginCodeInput(loginCodeInputLayout);
   }
 
@@ -573,14 +565,6 @@ public final class TwoFactorView extends VerticalLayout
     confirmationOtpField.clear();
     additionalProofTextField.setInvalid(false);
     confirmationOtpField.setInvalid(false);
-
-    loginCodeInputLayout
-        .getElement()
-        .setAttribute(
-            ARIA_LABELLED_BY,
-            isRecoveryCodeLoginSelected
-                ? "two-factor-recovery-tab"
-                : "two-factor-authenticator-tab");
 
     String loginCodeHintText =
         isRecoveryCodeLoginSelected

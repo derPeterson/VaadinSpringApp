@@ -58,7 +58,12 @@ public final class TwoFactorActionDialog extends Dialog {
     getHeader().add(dialogHeaderDiv);
     twoFactorCodeInput =
         new TwoFactorCodeInput(
-            messageProperties, httpRequest, "two-factor-action", "two-factor-action", this::close);
+            messageProperties,
+            httpRequest,
+            getHeader(),
+            "two-factor-action",
+            "two-factor-action",
+            this::close);
 
     Div dialogBodyDiv = new Div(twoFactorCodeInput);
     dialogBodyDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");

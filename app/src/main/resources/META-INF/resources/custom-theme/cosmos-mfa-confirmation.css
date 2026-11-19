@@ -25,6 +25,108 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
     gap: var(--cosmos-space-l);
     min-width: 0;
 }
+#two-factor-panel.two-factor-confirmation > .cosmos-panel-header {
+    padding-bottom: 0;
+    row-gap: var(--cosmos-space-xl);
+    border-bottom: 0;
+    background-image: linear-gradient(var(--cosmos-border-color), var(--cosmos-border-color));
+    background-position: bottom;
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+}
+#two-factor-panel.two-factor-confirmation > .cosmos-panel-header > vaadin-tabs.two-factor-code-tabs {
+    grid-column: 1 / -1;
+    padding-inline: 0;
+    background: transparent;
+}
+/* Die Reiter übernehmen die Dialogkopffläche und zeichnen den Übergang zum Inhalt selbst. */
+vaadin-dialog.account-change-dialog > [slot="header-content"] > vaadin-tabs.cosmos-panel-tabs.two-factor-code-tabs {
+    background-color: transparent;
+}
+vaadin-dialog.account-change-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(header) {
+    border-bottom: 0;
+}
+vaadin-dialog.account-change-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(
+        header-content
+    ) {
+    row-gap: 0;
+}
+/* Aktiver Reiter und Formular liegen auf derselben Fläche. Die Trennlinie wird nur daneben gezeichnet. */
+vaadin-dialog.external-identity-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(
+        overlay
+    ),
+vaadin-dialog.external-identity-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(
+        header
+    ),
+vaadin-dialog.external-identity-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(
+        header-content
+    ) {
+    background-color: var(--cosmos-page-background);
+}
+vaadin-dialog.external-identity-dialog:has(> [slot="header-content"] > .two-factor-code-tabs:not([hidden]))::part(
+        header
+    )::after {
+    content: none;
+}
+.external-identity-dialog {
+    --external-identity-tab-inset: var(--cosmos-space-2xl);
+}
+.external-identity-dialog .account-change-dialog-header {
+    background-color: var(--cosmos-raised-background);
+}
+vaadin-dialog.external-identity-dialog.account-change-dialog
+    > [slot="header-content"]
+    > vaadin-tabs.cosmos-panel-tabs.two-factor-code-tabs {
+    padding-inline: 0;
+    /* Die Kopffläche liegt hinter den oberen Rundungen, die Inhaltsfläche hinter der Unterkante. */
+    background: linear-gradient(var(--cosmos-raised-background) 50%, transparent 50%);
+}
+.external-identity-dialog .two-factor-code-tabs::part(tabs) {
+    display: grid;
+    isolation: isolate;
+    grid-template-columns:
+        [leading] var(--external-identity-tab-inset)
+        [app-code] max-content
+        [recovery-code] max-content
+        [trailing] minmax(var(--external-identity-tab-inset), 1fr)
+        [end];
+}
+.external-identity-dialog .two-factor-code-tabs > vaadin-tab:first-child {
+    grid-area: 1 / app-code / 2 / recovery-code;
+}
+.external-identity-dialog .two-factor-code-tabs > vaadin-tab:last-child {
+    grid-area: 1 / recovery-code / 2 / trailing;
+}
+/* Jede seitliche Trennlinie liegt auf einer Fläche, auch wenn sie unter einem Reiter verläuft. */
+.external-identity-dialog .two-factor-code-tabs::part(tabs)::before,
+.external-identity-dialog .two-factor-code-tabs::part(tabs)::after {
+    content: "";
+    grid-row: 1;
+    z-index: -1;
+    pointer-events: none;
+    border-block-end: var(--cosmos-border-width) solid var(--cosmos-border-color);
+    background-color: var(--cosmos-raised-background);
+}
+.external-identity-dialog .two-factor-code-tabs::part(tabs)::before {
+    grid-column: leading / app-code;
+}
+.external-identity-dialog .two-factor-code-tabs::part(tabs)::after {
+    grid-column: trailing / end;
+}
+.external-identity-dialog .two-factor-code-tabs:has(> vaadin-tab:last-child[selected])::part(tabs)::before {
+    grid-column-end: recovery-code;
+}
+.external-identity-dialog .two-factor-code-tabs:has(> vaadin-tab:first-child[selected])::part(tabs)::after {
+    grid-column-start: recovery-code;
+}
+@media (max-width: 639px) {
+    vaadin-dialog.account-change-dialog > [slot="header-content"] > vaadin-tabs.cosmos-panel-tabs.two-factor-code-tabs {
+        padding-inline: 16px;
+    }
+    .external-identity-dialog {
+        --external-identity-tab-inset: var(--cosmos-space-l);
+    }
+}
 .two-factor-confirmation-input {
     gap: 16px;
     min-width: 0;

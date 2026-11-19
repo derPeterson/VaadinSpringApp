@@ -19,8 +19,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -107,6 +105,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
         new TwoFactorCodeInput(
             messageProperties,
             httpRequest,
+            getHeader(),
             "external-confirm",
             "external-proof",
             () -> {
@@ -130,8 +129,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     proofNoticeContainer.addClassName("cosmos-panel-hint");
     developmentWarningSpan.addClassName("cosmos-panel-description");
 
-    VerticalLayout identityProofFormLayout =
-        new VerticalLayout(
+    Div identityProofFormDiv =
+        new Div(
             identityProofExplanation,
             providerReadyHintSpan,
             passwordField,
@@ -140,12 +139,9 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
             proofAlternativesLayout,
             proofNoticeContainer,
             developmentWarningSpan);
-    identityProofFormLayout.setWidthFull();
-    identityProofFormLayout.setPadding(false);
-    identityProofFormLayout.setSpacing(false);
-    identityProofFormLayout.setAlignItems(Alignment.STRETCH);
-    identityProofFormLayout.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(identityProofFormLayout);
+    identityProofFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(identityProofFormDiv);
+
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelButton.addClickListener(event -> close());
     cancelButton.setId("external-proof-cancel");
@@ -211,7 +207,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     passwordField.setVisible(hasPassword && !confirmed && !needsFactor);
     passwordField.setRequiredIndicatorVisible(passwordField.isVisible());
     twoFactorCodeInput.refreshTexts();
-    twoFactorCodeInput.setVisible(needsFactor && !confirmed);
+    twoFactorCodeInput.setCodeEntryVisible(needsFactor && !confirmed);
     refreshAlternatives(confirmed);
     if (!confirmed && !hasPassword && !proofAlternativesLayout.isVisible() && !needsFactor) {
       identityProofExplanation.setText(messageProperties.getExternalProofUnavailable());

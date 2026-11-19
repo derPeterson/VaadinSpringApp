@@ -239,6 +239,7 @@ public final class AccountLifecycleComponent extends VerticalLayout {
           new TwoFactorCodeInput(
               messageProperties,
               httpServletRequest,
+              proofDialog.getHeader(),
               "account-lifecycle",
               "account-lifecycle",
               proofDialog::close);

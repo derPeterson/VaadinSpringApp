@@ -76,6 +76,7 @@ import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.SupportTicketService.UserIdentity;
+import de.derpeterson.app.ui.components.AccountPanelComponent;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
@@ -518,7 +519,18 @@ class TwoFactorFlowViewTest {
             .getParent()
             .map(Tabs.class::cast)
             .orElseThrow();
+    AccountPanelComponent confirmationPanel =
+        assertInstanceOf(AccountPanelComponent.class, find(twoFactorView, "two-factor-panel"));
+
+    assertSame(confirmationPanel.getHeader(), methods.getParent().orElseThrow());
     methods.setSelectedIndex(1);
+
+    assertEquals(
+        "two-factor-recovery-tab",
+        find(twoFactorView, "two-factor-confirmation-input")
+            .getElement()
+            .getAttribute("aria-labelledby"));
+
     TextField recovery = (TextField) find(twoFactorView, "two-factor-code");
     String value = "12345678-12345678-12345678-12345678";
     recovery.setValue(value);

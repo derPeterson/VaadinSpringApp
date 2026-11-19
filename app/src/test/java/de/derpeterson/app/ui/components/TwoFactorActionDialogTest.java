@@ -14,8 +14,6 @@ import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.server.VaadinService;
@@ -128,15 +126,19 @@ class TwoFactorActionDialogTest {
         (OtpField) ReflectionTestUtils.getField(twoFactorCodeInput, "appCodeField");
     TextField recoveryCodeTextField =
         (TextField) ReflectionTestUtils.getField(twoFactorCodeInput, "recoveryCodeField");
+    TwoFactorCodeTabs codeMethodTabs =
+        (TwoFactorCodeTabs) ReflectionTestUtils.getField(twoFactorCodeInput, "codeMethodTabs");
 
     assertTrue(appCodeOtpField.isAutofocus());
     assertEquals(6, appCodeOtpField.getLength());
+    assertTrue(codeMethodTabs.hasClassName(CosmosCssClasses.PANEL_TABS));
+    assertEquals(
+        twoFactorActionDialog.getHeader().getElement(), codeMethodTabs.getElement().getParent());
 
     String verificationCode = "123456";
     appCodeOtpField.setValue(verificationCode);
     if (useRecoveryCode) {
-      Tab recoveryTab = (Tab) ReflectionTestUtils.getField(twoFactorCodeInput, "recoveryTab");
-      ((Tabs) recoveryTab.getParent().orElseThrow()).setSelectedTab(recoveryTab);
+      codeMethodTabs.setSelectedIndex(1);
 
       assertTrue(appCodeOtpField.isEmpty());
       verificationCode = "ABCD1234-ABCD1234-ABCD1234-ABCD1234";

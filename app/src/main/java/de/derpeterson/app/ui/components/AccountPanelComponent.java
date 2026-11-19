@@ -11,14 +11,17 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.tabs.Tabs;
 
-/** Kontopanel verwendet unverändert die vorhandenen Cosmos-Panelbausteine. */
+/** Kontopanel aus den gemeinsamen Cosmos-Bausteinen. */
 public class AccountPanelComponent extends CosmosCardComponent {
   private final H2 panelTitleHeading = new H2();
   private final Span panelDescriptionSpan = new Span();
   private final Span panelMetadataSpan = new Span();
+  private final Div panelHeaderDiv = new Div();
   private final Div panelBodyDiv = new Div();
   private final Div panelIconDiv = new Div();
+  private Tabs panelHeaderTabs;
 
   public AccountPanelComponent(String panelId, AppIcon panelAppIcon) {
     setId(panelId);
@@ -32,7 +35,7 @@ public class AccountPanelComponent extends CosmosCardComponent {
 
     Div panelHeadingDiv = new Div(panelTitleHeading, panelDescriptionSpan);
     panelHeadingDiv.addClassName(PANEL_HEADING);
-    Div panelHeaderDiv = new Div(panelIconDiv, panelHeadingDiv, panelMetadataSpan);
+    panelHeaderDiv.add(panelIconDiv, panelHeadingDiv, panelMetadataSpan);
     panelHeaderDiv.addClassName(PANEL_HEADER);
 
     panelBodyDiv.addClassName("account-panel-body");
@@ -49,6 +52,18 @@ public class AccountPanelComponent extends CosmosCardComponent {
 
   public Div getBody() {
     return panelBodyDiv;
+  }
+
+  /** Ergänzt die Titelzeile um Reiter. {@code null} entfernt die Reiter beim Schrittwechsel. */
+  public void setHeaderTabs(Tabs headerTabs) {
+    if (panelHeaderTabs != null) {
+      panelHeaderDiv.remove(panelHeaderTabs);
+    }
+
+    panelHeaderTabs = headerTabs;
+    if (headerTabs != null) {
+      panelHeaderDiv.add(headerTabs);
+    }
   }
 
   public void setHeading(

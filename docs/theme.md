@@ -631,9 +631,17 @@ Umfang, Paketgrenzen und Historie: [Mailqueue](mailqueue.md).
 Profilbildmodus und Benachrichtigungs-, Ticket- und Zugangsfilter verwenden ihn.
 Icons/Zähler bleiben native Tabinhalte. Textupdates bewahren Tabinstanz, Wert und Fokus.
 
-Der OTP-Stil steht in `cosmos-segmented-tabs.css`; die Glockenvorschau hat eine kompakte
-Variante. App-Code/Ersatzcode, QR/Schlüssel und Antwort/Vermerk teilen die Gestaltung.
-Normale Seitenreiter und RadioButtonGroups bleiben davon getrennt.
+Der Segmentstil für QR/Schlüssel und Antwort/Vermerk steht in
+`cosmos-segmented-tabs.css`. Die Glockenvorschau hat eine kompakte Variante.
+App-Code und Ersatzcode verwenden `TwoFactorCodeTabs` mit `cosmos-panel-tabs` aus
+`cosmos-provider-settings.css`. Die Panel-Reiter haben wie unter „Konto → Sicherheit“
+eine blaue Oberkante am ausgewählten Reiter. Auf der Bestätigungsseite und in
+Bestätigungsdialogen schließen die Reiter den jeweiligen Kopf ab und übernehmen
+seine Hintergrundfarbe. `cosmos-mfa-confirmation.css` richtet die Leiste an
+der Titelzeile aus. Im Identitätsdialog liegt der aktive Reiter auf derselben
+Fläche wie der Inhalt. Hinter den oberen Rundungen liegt die Kopffläche.
+Die seitlichen Trennlinien laufen jeweils auf einer Fläche bis zum aktiven
+Reiter. Diese Fläche umfasst auch den inaktiven Reiter daneben.
 Alle Reiterleisten behalten bei Platzmangel die native horizontale Navigation mit
 Pfeilen – mobil und auf schmalem Desktop. Kein Zusammendrücken oder mehrzeiliges Tab-Raster.
 
