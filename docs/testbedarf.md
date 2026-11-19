@@ -5,6 +5,14 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **OTP-Styling und Eingabe — offen.**
+  `TwoFactorBrowserTest` (MFA-21) in DE/EN auf Desktop/Smartphone prüfen. Das
+  fokussierte leere Kästchen hat einen blauen Rahmen und keinen sichtbaren
+  blinkenden Cursor. Einfügen und die automatische Bestätigung funktionieren
+  weiterhin. Das native Eingabefeld bietet `autocomplete="one-time-code"` an.
+  Echtes Autofill ist als [manuelle Geräteprüfung](manual-tests/README.md#hum-09)
+  vorgesehen.
+
 - **Badge- und Formulargrößen — offen.**
   In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und
   Zähler prüfen. Quellen, Lesestatus und Ticketrelevanz im Glocken-Overlay sind

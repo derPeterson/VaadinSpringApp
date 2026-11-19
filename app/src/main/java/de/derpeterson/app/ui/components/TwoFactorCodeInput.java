@@ -46,7 +46,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
       SerializableRunnable closeAction) {
     this.messageProperties = messageProperties;
     appCodeField.setId(fieldPrefix + "-factor");
-    TwoFactorCodeFields.configureOtpField(appCodeField, request.getContextPath());
+    TwoFactorCodeFields.configureOtpField(appCodeField);
     recoveryCodeField.setId(fieldPrefix + "-recovery-code");
     recoveryCodeField.setWidthFull();
     recoveryCodeField.setManualValidation(true);

@@ -10,8 +10,8 @@
   Die Gesamtumsetzung bleibt offen. Der aktuelle Stand liegt auf
   `codex/vaadin-komponenten-folgearbeiten-6`.
   Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
-  Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
-  gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
+  Gemeinsame Sichtprüfung des vereinfachten OTP-Stylings steht aus. Feldhilfe- und Ticketlayouts
+  bei konkretem Nutzen gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
   unten erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
 
 ## Zurückgestellte Planungen

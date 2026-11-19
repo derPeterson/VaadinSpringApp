@@ -203,7 +203,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private void configureTwoFactorOtpField(OtpField twoFactorOtpField, String otpFieldId) {
     twoFactorOtpField.setId(otpFieldId);
-    TwoFactorCodeFields.configureOtpField(twoFactorOtpField, httpServletRequest.getContextPath());
+    TwoFactorCodeFields.configureOtpField(twoFactorOtpField);
 
     twoFactorOtpField.addCompleteListener(otpCompleteEvent -> {
       if (continueTwoFactorButton.isVisible()

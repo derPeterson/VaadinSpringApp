@@ -655,8 +655,10 @@ Buttons und Statusfarben verwenden die gemeinsamen Bausteine.
   Ein vollständiger OTP bestätigt die wiederkehrende Abfrage automatisch.
   In Aktionsdialogen gilt das nur beim Verbinden eines Anbieters; sonst bleibt
   die ausdrückliche Bestätigung erforderlich.
-- `cosmos-mfa-otp.css` wird in die OTP-Schattenwurzel geladen. Den Eingabewert nicht
-  zusätzlich über den Kästchen zeichnen; native Bedienung und Fehlerzustände erhalten.
+- `cosmos-mfa.css` gestaltet die OTP-Kästchen über die öffentlichen CSS-Eigenschaften
+  und Parts des Add-ons. Der blaue Rahmen markiert das bei Fokus aktive
+  Kästchen. Der blinkende Cursor ist transparent. Das native Eingabefeld hinter den
+  Kästchen verarbeitet Fokus, Einfügen und Autofill.
 - `RecoveryCodeDownload` nutzt einen nativen Button mit DownloadHandler und prüft
   Status, PDF-Inhaltstyp und Signatur. Fehler werden nicht als Datei heruntergeladen.
 - Kopieren/PDF verbrauchen die Ausgabe nicht. Erst „Codes gesichert“ mit bestätigtem
@@ -931,9 +933,7 @@ Fachliche Einzeldateien laden die zuständigen Views und Komponenten selbst per
 `cosmos-external-login.css`, `cosmos-public.css`, `cosmos-confirmation.css`,
 `cosmos-email-verification.css`, `cosmos-metric-card.css`, `cosmos-mailqueue-assistant.css`,
 `cosmos-provider-settings.css` und die `cosmos-mfa*.css`-Dateien.
-Sonderwege: `cosmos-mfa-otp.css` wird von `TwoFactorCodeFields` in die Schattenwurzel des
-OTP-Felds geladen und lässt sich deshalb nicht mit anderen Dateien zusammenfassen;
-`email-fonts.css` dient nur den Mailvorlagen.
+`email-fonts.css` dient ausschließlich den Mailvorlagen.
 
 Die Reihenfolge ist Teil der Kaskade. Stylesheets aus Views und Komponenten verlieren
 Gleichstände gleicher Spezifität gegen die globalen Dateien; eine fachliche Regel, die

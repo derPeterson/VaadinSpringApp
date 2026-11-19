@@ -544,10 +544,19 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void assertOtpFocus(Page actor, String id) {
     Locator otp = actor.locator("#" + id);
+    Locator input = otp.locator("input[slot=input]");
+    Locator firstSlot = otp.locator("[part=slot]").first();
 
-    assertThat(otp.locator("input")).isFocused();
-    assertThat(otp.locator("[part=slot]").first()).hasAttribute("active", "");
-    assertTrue((Boolean) otp.locator("input").evaluate("input => input.selectionStart === 0"));
+    assertThat(input).isFocused();
+    assertThat(input).hasAttribute("autocomplete", "one-time-code");
+    assertTrue((Boolean) input.evaluate("input => input.selectionStart === 0"));
+
+    assertThat(firstSlot).hasAttribute("active", "");
+    assertThat(firstSlot).hasCSS("border-top-width", "2px");
+    assertThat(firstSlot).hasCSS("border-top-color", "rgb(56, 189, 248)");
+    assertEquals(
+        "rgba(0, 0, 0, 0)",
+        firstSlot.evaluate("slot => getComputedStyle(slot, '::after').backgroundColor"));
   }
 
   private void checkOtpInputAndConfirm(

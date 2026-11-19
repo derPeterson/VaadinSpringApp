@@ -206,9 +206,10 @@
     --fc-otp-field-slot-border-radius: var(--cosmos-control-radius);
     --fc-otp-field-slot-font-size: 18px;
     --fc-otp-field-slot-color: var(--cosmos-text-color);
-    --fc-otp-field-caret-color: var(--cosmos-primary-text-color);
+    --fc-otp-field-caret-color: transparent;
     --fc-otp-field-slot-border-color-active: var(--cosmos-primary-text-color);
     --fc-otp-field-slot-border-width-active: 2px;
+    --fc-otp-field-slot-background-active: var(--fc-otp-field-slot-background);
     --fc-otp-field-slot-border-color-invalid: var(--cosmos-error-color);
     --fc-otp-field-slot-background-invalid: var(--cosmos-danger-surface);
     --vaadin-input-field-value-font-weight: 600;
