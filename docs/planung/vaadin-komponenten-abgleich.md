@@ -13,10 +13,21 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 Die bisherigen Nachbearbeitungen einschließlich AvatarGroup und Empfängerliste
 sind vom Benutzer abgenommen. Im [Nachbearbeitungsplan](vaadin-nachbearbeitung.md)
-bleibt die Abstimmung der Größen-/Gestaltungsvorschläge zu Badges, Eingaben,
-Buttons und Formularschrift aus Punkten 1–2 offen.
+stehen die abgestimmten Größen-/Gestaltungsvorgaben zu Badges, Eingaben,
+Buttons und Formularschrift aus Punkten 1–2. Die Abarbeitungsliste wird noch
+gesammelt; deren Umsetzung erst nach ausdrücklicher Startfreigabe beginnen.
+Der anschließende Ablauf steht ebenfalls dort: Merge nach `main`, Sonar-Analyse
+und vollständige Bereinigung mit bestätigenden Nachscans, danach neuer Folgebranch
+`codex/vaadin-komponenten-folgearbeiten-6`. Als abschließende Umsetzungsprüfung folgt dort die große
+Testrunde einschließlich aller offenen automatisierten Testbedarfsfälle.
+Danach ausschließlich die vereinbarten Analysen zu Teststrategie, verbleibenden
+Vaadin-Kandidaten und CSS-Wiederverwendung einschließlich isolierter Machbarkeitsversuche
+durchführen; keine daraus abgeleitete dauerhafte Umsetzung vorwegnehmen.
+Dies schließt die Gesamtumsetzung nicht automatisch ab.
 Die eigene Ticketliste der Wiederherstellungsanfrage ist zusätzlich auf VirtualList
-mit höchstens fünf sichtbaren Zeilen umgestellt; die manuelle Sichtung steht aus.
+mit höchstens fünf sichtbaren Zeilen umgestellt und vom Benutzer abgenommen.
+Die jüngsten Auswahl-, Zeilenflächen- und Leerzustandsänderungen an Ticket- und
+Empfängerlisten sind ebenfalls abgenommen.
 Die Adminliste bleibt bei Grid und Pagination. Gültige Gestaltung und offener
 Nachtest stehen in Theme-Anleitung und zentralem Testbedarf.
 Der Anwesenheitsstatus behält seine bisherige Darstellung.
@@ -35,20 +46,20 @@ zentral im [Testbedarf](../testbedarf.md) offen.
 
 Registrierung, Anmeldung, persönliche Daten, Benutzeranlage/-bearbeitung und Konfiguration verwenden
 die native manuelle Validierung: Fehler erscheinen erst beim Absenden, Änderungen nehmen die alte
-Feldmarkierung zurück. Die Benutzerabnahme der Validierungsabläufe steht noch aus.
+Feldmarkierung zurück. Die umgesetzten Validierungsabläufe sind vom Benutzer abgenommen.
 Die untereinanderstehenden Checkboxen der Benutzeranlage mit nativen Aura-Abständen
 sind vom Benutzer abgenommen. Der Client-/Blur-Nachtest
 bleibt zentral im Testbedarf offen.
 
-**Der Formularabgleich bleibt ausdrücklich offen; dies ist ein Zwischenstand.**
-Weitere Formulare auf vorzeitige rote Markierungen, erklärende Meldungen und
-konsistentes Zurücknehmen alter Fehler prüfen. Kandidaten sind
-externer Registrierungsabschluss, Konto-/Passwortdialoge,
-Mail-Test sowie Benachrichtigungs- und Ticketformulare. Den konkreten nächsten
-Umfang jeweils gemeinsam festlegen; noch keine pauschale Umstellung dieser Formulare.
+Die bisherigen Formularnachbearbeitungen sind abgenommen. Eventuelle weitere
+Kandidaten wie externer Registrierungsabschluss und Konto-/Passwortdialoge nur
+bei einem konkreten neuen Auftrag untersuchen. Mail-Test, Benachrichtigungs- und
+Ticketformulare sind bereits im abgenommenen Nachbearbeitungspaket enthalten;
+sie sind keine erneut offenen Umsetzungspunkte. Automatisierte Nachtests bleiben
+für die große Testrunde im zentralen Testbedarf erhalten.
 
-Die vereinheitlichten nativen Löschkreuze in Texteingaben und TextAreas warten
-auf Benutzerabnahme; der gemeinsame Vertrag steht in der Theme-Anleitung,
+Die vereinheitlichten nativen Löschkreuze und Pflichtfeldindikatoren sind vom
+Benutzer abgenommen; der gemeinsame Vertrag steht in der Theme-Anleitung,
 offene Browserprüfungen zentral im Testbedarf.
 
 Die Inbox-Seitennavigation mit `CosmosPagination` und die Korrektur verschobener

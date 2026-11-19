@@ -9,9 +9,24 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
   Die Gesamtumsetzung bleibt ausdrücklich offen und wird auf
   `codex/vaadin-komponenten-folgearbeiten-5` fortgesetzt.
-  [Neue Nachbearbeitung, Punkte 1 und 2](docs/planung/vaadin-nachbearbeitung.md):
-  Die Bestandsaufnahmen mit Größen-/Gestaltungsvorschlägen aus Punkten 1 und 2
-  vor Umsetzung gemeinsam abstimmen.
+  [Neue Nachbearbeitung und Folgeablauf](docs/planung/vaadin-nachbearbeitung.md):
+  Die Größen-/Gestaltungsvorgaben aus Punkten 1 und 2 sind abgestimmt;
+  Umsetzung erst nach Startfreigabe der gesammelten Abarbeitungsliste beginnen.
+  Danach lokaler Merge nach `main`, vollständige Sonar-Bereinigung bis null offene
+  Findings und grünem Quality Gate, anschließend Folgebranch
+  `codex/vaadin-komponenten-folgearbeiten-6` vom aktuellen `main`.
+  Auf dem neuen Folgebranch abschließend die große Testrunde einschließlich
+  sämtlicher offener automatisierter Testbedarfsfälle durchführen.
+  Erst danach den bestehenden Testumfang auf funktionalen Nutzen und zu kleinteilige
+  Gestaltungsprüfungen analysieren; Empfehlungen vorlegen, noch keine Tests umbauen.
+  Anschließend verbleibende Vaadin-Kandidaten nach konkretem Nutzen, Gesamtaufwand
+  und Risiko bewerten und eine klare Abschlussgrenze für den Komponenten-/
+  Gestaltungsumbau vorschlagen; keine weiteren Umbauten automatisch beginnen.
+  Danach die CSS-Wiederverwendung gründlich analysieren und ein schrittweises
+  Vorgehen für gemeinsame Grundregeln, Varianten und lokale Anordnung vorschlagen.
+  Eine spätere Strukturbereinigung muss Darstellung und Verhalten nachweisbar
+  erhalten. Isolierte temporäre Machbarkeitsversuche samt gezielten DE-/EN-Vorher-/
+  Nachher-Browserprüfungen sind dafür freigegeben; noch keine dauerhafte CSS-Umstellung.
   Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
   Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
   gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen

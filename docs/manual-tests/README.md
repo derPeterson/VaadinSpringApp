@@ -142,6 +142,13 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 
 #### Stand der menschlichen Abnahme
 
+Die bisherigen besprochenen Oberflächenänderungen sind vom Benutzer gesichtet
+und abgenommen. Sein „passt“ und der anschließende Wechsel zum nächsten Punkt
+gelten im laufenden Sichtungsablauf als Abnahme; bereits geprüfte Bereiche nicht
+erneut zur Abnahme vorlegen. Automatisierte Browsernachtests bleiben separat
+für die große Testrunde gesammelt. Die noch nicht umgesetzten Größenpakete aus
+der neuen Abarbeitungsliste sind davon nicht betroffen.
+
 | Bereich | Vorhandene Abnahme / offene Sichtung |
 | --- | --- |
 | Auswahlfelder, Kalender, Formularschutz, Kontoverwaltung und Fristen | Vom Benutzer abgenommen |
@@ -158,21 +165,21 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 | Formular-/Benachrichtigungs-Nachbearbeitung 1–13 | Alle Punkte vom Benutzer abgenommen und abgeschlossen, einschließlich AvatarGroup und vollständiger Empfängerliste nach den Nachbesserungen aus neuem Punkt 5. Anwesenheitsstatus-Farbversuch auf Benutzerentscheidung zurückgenommen. |
 | Wiederherstellungsanleitung: erneute Anforderung | Im Rahmen der Nachbearbeitung vom Benutzer abgenommen; automatische Freigabe nach der Wartezeit zusätzlich in der laufenden Anwendung bestätigt. Automatisierter Browsernachtest bleibt offen. |
 | Native AvatarGroup und Empfängerliste (bisheriger Punkt 9 / neuer Punkt 5) | Vom Benutzer gesichtet und abgenommen: vollständige durchsuchbare VirtualList im 380-px-Popover, höchstens fünf sichtbare Zeilen, gemeinsamer Suchfeld-/Scrollbar-Stil, abgestimmte Farben, Untertitel und einfacher unterer Rahmen. Automatisierte Browsernachtests bleiben separat offen. |
-| Eigene Tickets in der Wiederherstellungsanfrage | Auf VirtualList mit höchstens fünf sichtbaren Einträgen umgestellt; bei mehr Tickets inneres Scrollen. Native Buttons wählen Ticket und Verlauf; Strg+Klick hebt die Auswahl unter Erhalt des Antwortentwurfs auf. Admin-Grid bleibt erhalten. Sichtung auf Desktop/Smartphone steht aus. |
-| Visuelle Empfängerauswahl | Neue Aktivmarkierung per Klick/Tastatur und Abwahl mit Strg+Klick stehen zur Sichtung. Reine Anzeigeauswahl; die Versandempfänger bleiben erhalten. Touch-Abwahl später gemäß TODO abstimmen. |
+| Eigene Tickets in der Wiederherstellungsanfrage | Vom Benutzer gesichtet und abgenommen: VirtualList mit höchstens fünf sichtbaren Einträgen, Auswahl und Strg+Klick-Abwahl unter Erhalt der Antwortentwürfe sowie korrigierte Zeilenflächen. Admin-Grid bleibt erhalten. Automatisierter Browsernachtest für die große Testrunde offen. |
+| Visuelle Empfängerauswahl | Vom Benutzer gesichtet und abgenommen: Aktivmarkierung, Strg+Klick-Abwahl und kompakter Suchleerzustand mit Benutzer-Fragezeichen auf Content-Hintergrund. Reine Anzeigeauswahl; Versandempfänger bleiben erhalten. Touch-Abwahl später gemäß TODO abstimmen. Automatisierter Browsernachtest bleibt offen. |
 | Gemeinsame Inbox-Pagination und zentrierte Seitenzahlen | Vom Benutzer nach den Vorher-/Nachher-Vergleichen von Benutzerverwaltung, Versandhistorie und Inbox in DE/EN auf Desktop/Smartphone abgenommen |
 | Löschsymbol in der Glockenvorschau nach Aura-Umstellung | Vom Benutzer in der laufenden Anwendung wieder sichtbar bestätigt und abgenommen; automatisierter DE-/EN-Nachtest separat offen |
-| Responsive globale Notifications und Statussymbole | Responsive Position, Aura-Innenabstand und Warn-/Fehlersymbole abgenommen; rechter Desktop-Randabstand von 24 px und Titel ohne Ausrufezeichen einschließlich Statusseiten warten auf Sichtung, automatisierte Browsernachtests separat offen |
+| Responsive globale Notifications und Statussymbole | Vom Benutzer abgenommen, einschließlich responsiver Position, Aura-Innenabstand, Warn-/Fehlersymbole, rechtem Desktop-Randabstand und Titel ohne Ausrufezeichen einschließlich Statusseiten. Automatisierte Browsernachtests bleiben separat offen. |
 | Benutzer anlegen/bearbeiten: Prüfung beim Speichern | Im Rahmen der Nachbearbeitung abgenommen: konkrete Notifications und rote Markierungen ohne Inline-Fehler sowie Rollenfeld links und Switches über beide Spalten. Automatisierter Browsernachtest bleibt offen. |
 | Konfiguration: Prüfung beim Speichern | Im Rahmen der Nachbearbeitung abgenommen: konkrete Notifications, rote Markierungen ohne Inline-Fehler oder automatischen Fokuswechsel und bestehende Leerwertregeln. Automatisierter Browsernachtest bleibt offen. |
 | DatePicker-Overlay | Rahmenlose Akzentaktionen und abgedunkelte Jahresspalte mit Trennlinie und nativer seitlicher Markierung vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | Checkbox-Markierung | Weiße Haken und Teilauswahlstriche in aktiven Checkboxen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
 | ComboBox-Overlayabstände | Gemeinsamer Außenabstand von 8 px für Einfach-/Mehrfachauswahl samt Pagination und 2 px zwischen Auswahlflächen vom Benutzer abgenommen; automatisierter Browsernachtest separat offen |
-| Registrierungsvalidierung | Serverseitige Prüfung erst beim Absenden mit Notification, Feldmarkierung und Rücknahme alter Markierungen beim Bearbeiten wartet auf Sichtung durch den Benutzer |
-| Loginvalidierung | Prüfung erst beim Anmelden und Rücknahme alter Feldmarkierungen beim Bearbeiten wartet auf Sichtung durch den Benutzer; falsche Zugangsdaten bleiben allgemein beschrieben |
-| Pflichtfeldindikatoren | Native rote Sternchen statt blauer Punkte einschließlich Konfiguration und Tickets warten auf Sichtung durch den Benutzer |
-| Persönliche Daten | Validierung erst beim Speichern, Rücknahme alter Fehlermarkierungen und native Löschkreuze bei Vor-/Nachname warten auf Sichtung durch den Benutzer |
-| Einheitliche Löschkreuze | Native X-Aktionen in bearbeitbaren Text-, E-Mail-, Passwortfeldern und TextAreas warten auf Sichtung; OTP-Codeeingaben und reine Anzeige-/Kopierfelder bleiben ausgenommen |
+| Registrierungsvalidierung | Vom Benutzer abgenommen: Prüfung erst beim Absenden mit Notification, Feldmarkierung und Rücknahme alter Markierungen beim Bearbeiten. Automatisierter Browsernachtest bleibt offen. |
+| Loginvalidierung | Vom Benutzer abgenommen: Prüfung erst beim Anmelden und Rücknahme alter Feldmarkierungen beim Bearbeiten; falsche Zugangsdaten bleiben allgemein beschrieben. Automatisierter Browsernachtest bleibt offen. |
+| Pflichtfeldindikatoren | Native rote Sternchen statt blauer Punkte einschließlich Konfiguration und Tickets vom Benutzer abgenommen. Automatisierter Browsernachtest bleibt offen. |
+| Persönliche Daten | Prüfung erst beim Speichern, Rücknahme alter Fehlermarkierungen und native Löschkreuze bei Vor-/Nachname vom Benutzer abgenommen. Automatisierter Browsernachtest bleibt offen. |
+| Einheitliche Löschkreuze | Native X-Aktionen in bearbeitbaren Text-, E-Mail-, Passwortfeldern und TextAreas vom Benutzer abgenommen; OTP-Codeeingaben und reine Anzeige-/Kopierfelder bleiben ausgenommen. Automatisierter Browsernachtest bleibt offen. |
 
 Screenshots sind eine Grundlage für die ausdrückliche Abnahme durch den Benutzer,
 kein automatischer Ersatz dafür. Sie ersetzen auch keine Prüfung mit echtem

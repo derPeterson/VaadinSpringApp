@@ -2,6 +2,11 @@
 
 ## Browser-Tests
 
+Die bisherigen umgesetzten Oberflächenänderungen sind vom Benutzer abgenommen.
+Die folgenden offenen Punkte betreffen automatisierte Nachtests, gesammelt für
+die große Testrunde. Sie verlangen keine erneute manuelle Abnahme und werden
+nicht durch deren Abschluss als automatisiert geprüft gewertet.
+
 - **Wiederherstellungsanfrage: eigene Tickets als VirtualList — offen.**
   In DE/EN auf Desktop/Smartphone 0/1/2/5/6/20 eigene Tickets prüfen: vorhandener
   Leerzustand bei 0, schrumpfende Liste bis 5, danach inneres Scrollen mit der
@@ -16,7 +21,7 @@
   dessen dezente einfache Zeilentrenner zusätzlich mit den Kartentrennlinien vergleichen.
   Bestehende `TwoFactorBrowserTest`-Szenarien verwenden weiterhin dieselbe Listen-ID;
   zusätzliche Größen-/Scrollprüfungen ergänzen. JUnit deckt Daten und Bedienablauf ab;
-  kein Browserlauf freigegeben, manuelle Sichtung steht aus.
+  manuell abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
 
 - **TextArea-Fokusrahmen und Größenänderung — offen.**
   In DE/EN auf Desktop/Smartphone Mail-Test, Mitteilungsentwurf und Ticketnachricht
@@ -24,7 +29,7 @@
   Seiten oder Ecken. Vertikale Größenänderung auf Desktop, längere Texte, Scrollen,
   Löschen-Button, Fehlerzustand und unveränderte Mindesthöhen prüfen. Der Griff liegt
   jetzt auf der nativen Eingabefläche statt auf einem abschneidenden Host.
-  Kein Browserlauf freigegeben; manuelle Abnahme steht aus.
+  Manuell abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
 
 - **Einheitliche Schließen-Icons — offen.**
   In DE/EN auf Desktop/Smartphone Glockenvorschau, Nachrichtendialog,
@@ -33,8 +38,8 @@
   Bestätigungsdialoge prüfen: Kreis-X überall 18 × 18 px im 36-px-Button,
   unabhängig von geerbter Schriftgröße. Empfänger-Popover und eingeblendete
   Notifications verwenden denselben Schließen-Stil. Zentrierung, Fokus,
-  Maus-/Tastaturschließen und Tooltip erhalten. Benutzer sichtet selbst;
-  kein Browserlauf freigegeben.
+  Maus-/Tastaturschließen und Tooltip erhalten. Vom Benutzer abgenommen;
+  automatisierter Browsernachtest für die große Testrunde offen.
 
 - **Benutzermenü: Innenabstand der Footer-Aktionen — offen.**
   In DE/EN Desktop/Smartphone Startseite und Abmelden mit Icon prüfen: beidseitiger
@@ -58,8 +63,8 @@
   Ticketbeobachtung und „Alle Benutzer“ prüfen. Einheitliche Bahn, runder
   Griff, Ein-/Aus-Farben und Fokusrahmen; Disabled-/Read-only-Farben bleiben nativ
   gedämpft. Anordnung links/rechts, Klickfläche, Beschriftung, Untertext, Umbruch
-  und äußere Abstände unverändert. Kein Browserlauf freigegeben; Benutzer sichtet
-  selbst. CSS-Prüfungen ersetzen diesen sichtbaren Nachtest nicht.
+  und äußere Abstände unverändert. Vom Benutzer abgenommen; automatisierter
+  Browsernachtest für die große Testrunde offen. CSS-Prüfungen ersetzen ihn nicht.
 
 - **Mitteilungskarten: einheitliche Dichte — offen.**
   In DE/EN Desktop/Smartphone Gesamtübersicht und geöffneten Dialog mit L-Padding,
@@ -75,7 +80,7 @@
   lange Titel umbrechen innerhalb des verfügbaren Platzes.
   Übersicht und Dialog: Titel zur Nachricht S, Nachricht zu Metadaten M.
   Kompakte Vorschau: XS und S; keine addierten Nachrichtenränder oder Layoutgaps.
-  Keine Browserfreigabe; die Wirkung wird vom Benutzer gesichtet.
+  Vom Benutzer abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
 
 - **Nachrichtendialog: Abstände der Mitteilung — offen.**
   In DE/EN auf Desktop/Smartphone mit kurzen und langen Inhalten prüfen: Kartenpadding
@@ -247,7 +252,7 @@
   Pflichtfelder zeigen ein rotes Sternchen hinter der Beschriftung; kein blauer Punkt
   und keine violette Pflichtmarkierung bei internen Vermerken. Optionale Felder
   erhalten keinen Indikator. Disabled, Readonly und Feldfehler bleiben unterscheidbar.
-  Kein Browserlauf für diesen Auftrag freigegeben; sichtbare Abnahme steht aus.
+  Vom Benutzer abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
 
 - **Login: Fehler erst beim Absenden — offen.**
   In DE/EN auf Desktop und Smartphone E-Mail/Passwort eingeben, leeren und verlassen;

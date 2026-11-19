@@ -4,6 +4,8 @@
 
 ### DE
 
+- Eigene Wiederherstellungsanfragen in einer scrollbaren Liste mit höchstens fünf
+  sichtbaren Einträgen durchsuchen; Strg+Klick hebt die Ticketauswahl auf und erhält Antwortentwürfe.
 - Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
   Suche nach Name und E-Mail-Adresse, auch ohne „+N“-Überlauf.
 - Konfiguration, Mail-Test, Tickets und Mitteilungsentwürfe erklären Eingabefehler
@@ -14,6 +16,8 @@
 
 ### EN
 
+- Browse personal recovery requests in a scrollable list with up to five visible
+  entries; Ctrl-click clears the selected ticket while preserving reply drafts.
 - The avatar preview of an announcement opens the complete recipient list with
   search by name and email address, even without a “+N” overflow.
 - Configuration, mail tests, tickets and announcement drafts explain invalid input
