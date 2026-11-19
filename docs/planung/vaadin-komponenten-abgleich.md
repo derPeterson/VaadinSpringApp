@@ -58,11 +58,12 @@ Benutzer abgenommen. Daraus bleibt kein offenes Paket.
 Die übrigen offenen Kandidaten bleiben in diesem Plan und in
 [TODO](../../TODO.md) erhalten.
 
-Die Position der Reiter für App-Code und Ersatzcode, der Übergang zum
-Dialoginhalt sowie das Leeren eines Teilcodes beim Reiterwechsel sind manuell
-bestätigt. Für die OTP-Eingabe steht die Sichtprüfung des blauen Fokusrahmens
-ohne blinkenden Cursor aus. Der [Testbedarf](../testbedarf.md#browser-tests)
-erfasst die automatisierten Nachtests.
+Die OTP-Eingabe ist manuell abgenommen. Der blaue Fokusrahmen erscheint nur
+am aktiven Kästchen, der Cursor blinkt nicht und das Autofill mit einem
+Passwortmanager funktioniert. Die Position der Reiter für App-Code und
+Ersatzcode, der Übergang zum Dialoginhalt und das Leeren eines Teilcodes
+beim Reiterwechsel sind ebenfalls bestätigt. Die automatisierten Nachtests
+bleiben im [Testbedarf](../testbedarf.md#browser-tests) offen.
 
 Native Karten, weitere Bestätigungen
 und vollständige Mailqueue-Bereinigung sind einschließlich Sonar-Bereinigung und

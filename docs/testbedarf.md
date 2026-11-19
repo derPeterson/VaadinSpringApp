@@ -29,8 +29,6 @@ bleiben bis zur erfolgreichen Prüfung offen.
   Richtungen prüfen. Bildpixel an der gemeinsamen Kante, am Anschluss der
   Linie rechts und links neben dem inaktiven Reiter sowie an den oberen
   Rundungen beider Reiter prüfen.
-  Echtes Autofill ist als [manuelle Geräteprüfung](manual-tests/README.md#hum-09)
-  vorgesehen.
 
 - **Profilbildreiter im Dialogkopf — offen.**
   `SegmentedSelectionBrowserTest` in DE/EN bei 1280, 390 und 320 px prüfen.
