@@ -1931,7 +1931,6 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mfa-settings .cosmos-config-car
 
 @media (max-width: 600px) {
     vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions {
-        --cosmos-equal-button-width: 100%;
         grid-template-columns: 1fr;
         padding: 16px 20px;
     }

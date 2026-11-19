@@ -399,10 +399,6 @@ Benutzerlöschung verwenden `ConfirmDialog`. Formular-/Identitätsdialoge bleibe
 - Eine fehlgeschlagene administrative Löschung öffnet denselben Kontext erneut.
   Erst eine neue ausdrückliche Bestätigung wiederholt den Versuch.
 
-`EqualButtonWidths` gleicht sichtbare Textaktionen nach der längeren Beschriftung an.
-Sprachwechsel, Sichtbarkeit und verfügbare Breite werden berücksichtigt; Iconbuttons
-zählen nicht. Mobile Vollbreite wird am zuständigen Container gesetzt.
-
 Bei festen Paaren aus Abbrechen und Bestätigen aktiviert
 `cosmos-equal-width-dialog-actions` zusätzlich zu `cosmos-dialog-actions`
 das CSS Grid in `cosmos-account.css`. Es gilt in den Dialogen für E-Mail,
@@ -422,6 +418,19 @@ Formularschutz und „Alle anderen abmelden“ wechseln bereits bis 600 px zur
 Anordnung untereinander. Beim Formularschutz erhält Weiterbearbeiten den
 Anfangsfokus. Der Browserhinweis bei F5 oder beim Schließen eines Tabs schützt
 ebenfalls [ungespeicherte Änderungen](anwendung.md#ungespeicherte-formularänderungen).
+
+Die angemeldete Startseite und die gemeinsamen Aktionen bei ausstehender
+E-Mail-Bestätigung oder Reaktivierung nutzen in `cosmos-shell.css` und
+`cosmos-email-verification.css` gleich breite CSS-Grid-Spalten. Bis 479 px
+stehen die Aktionen in voller Breite untereinander. Die Administration nutzt
+für die Zwei-Faktor-Richtlinie das Konfigurationsraster in `cosmos-admin.css`.
+
+In den Zwei-Faktor-Schritten und auf der Authenticator-Karte richtet sich die
+Spaltenzahl in `cosmos-mfa-confirmation.css` und `cosmos-mfa.css` nach den
+sichtbaren Aktionen. Im Benutzereditor ordnet `admin-users.css` auf breiten
+Ansichten zwei oder drei Aktionen gleich breit an. Bis 767 px steht „Löschen“
+in der unteren Zeile, bis 479 px stehen alle Aktionen untereinander.
+Lange Beschriftungen können umbrechen.
 
 Mitteilungskarten verwenden einheitliche Innenabstände: Gesamtübersicht und
 geöffneter Dialog L, kompakte Glockenvorschau M. Der zusätzliche linke Statusrahmen
@@ -602,7 +611,10 @@ optionalen Schnellzugang aus `ExternalLoginButtons`. Ohne verfügbare Anbieter b
 nur das lokale Formular. Bei Platzmangel stehen die Panels untereinander.
 
 `ExternalConnectionsComponent` nutzt Sicherheitskarten mit Anbieterlogo, Status
-und Aktion. `ExternalIdentityConfirmationDialog` liegt außerhalb der Tabinhalte,
+und Aktion. Ein gemeinsames Spaltenraster mit Subgrid in
+`cosmos-external-login.css` richtet die Anbieterbuttons untereinander aus.
+Bis 600 px wandert die Aktion unter den Text der jeweiligen Karte.
+`ExternalIdentityConfirmationDialog` liegt außerhalb der Tabinhalte,
 damit ein inaktiver Tab ihn nicht sperrt. Die letzte nutzbare Anmeldung bleibt geschützt.
 Details: [Externe Anmeldung](externe-anmeldung.md).
 

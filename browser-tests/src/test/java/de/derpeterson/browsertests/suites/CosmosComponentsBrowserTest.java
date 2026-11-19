@@ -21,6 +21,7 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
@@ -1225,14 +1226,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       browserPage.navigate(path(HOME_ROUTE));
 
       assertThat(browserPage.locator("#portal-home-account")).isVisible();
-      browserPage.waitForFunction(
-          """
-          () => {
-            const buttons = [...document.querySelectorAll('.portal-home-actions vaadin-button')];
-            return buttons.length === 2 && Math.abs(buttons[0].getBoundingClientRect().width
-              - buttons[1].getBoundingClientRect().width) < 1;
-          }
-          """);
+      ActionGridChecks.assertActions(browserPage.locator(".portal-home-actions"), 2, width <= 479);
       openPortalNavigation();
       checkNav(browserPage.locator("#account-nav-home"), "600", true);
       checkNav(browserPage.locator("#account-nav-notifications"), "500", false);

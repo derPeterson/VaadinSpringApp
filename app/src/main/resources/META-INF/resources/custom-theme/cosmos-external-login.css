@@ -45,14 +45,25 @@
 }
 .external-connections-overview {
     display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) fit-content(40%);
     gap: 16px;
     padding: 24px;
 }
-.cosmos-reference-portal #account-panel-security .external-connection-row {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+.cosmos-reference-portal #account-panel-security .external-connections-overview > .external-connection-row {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    column-gap: normal;
 }
 .cosmos-reference-portal #account-panel-security .external-connection-row > vaadin-button {
     width: auto;
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    justify-self: stretch;
+    --vaadin-button-label-wrap: normal;
+}
+.external-connection-row > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
 }
 .external-connection-row .cosmos-panel-icon {
     width: 36px;
@@ -133,15 +144,12 @@
 }
 @media (max-width: 600px) {
     .external-connections-overview {
-        padding: 20px;
-    }
-    .cosmos-reference-portal #account-panel-security .external-connection-row {
         grid-template-columns: 32px minmax(0, 1fr);
+        column-gap: 12px;
+        padding: 20px;
     }
     .external-connection-row > vaadin-button {
         grid-column: 2;
-        justify-self: end;
-        max-width: 100%;
     }
 }
 

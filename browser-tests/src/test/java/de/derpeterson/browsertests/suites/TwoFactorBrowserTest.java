@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
@@ -512,6 +513,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.browserPage).selectTestLanguage();
       actor.browserPage.navigate("/account?section=security&tab=portal");
+      ActionGridChecks.assertActions(
+          actor.browserPage.locator(".two-factor-account-actions"), 1, width <= 600);
       actor.browserPage.locator("#account-two-factor-setup").click();
       actor
           .browserPage
@@ -520,6 +523,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.browserPage.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.browserPage, email, false);
 
+      ActionGridChecks.assertActions(
+          actor.browserPage.locator(".two-factor-account-actions"), 3, width <= 600);
       actor.browserPage.locator("#account-two-factor-replace").click();
       AccountFormAppearanceChecks.assertEqualDialogActions(
           actor.browserPage,
@@ -536,6 +541,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
       assertOtpFocus(actor.browserPage, "two-factor-code");
       TwoFactorPage.selectTestLanguageIfNeeded(actor.browserPage);
+      ActionGridChecks.assertActions(
+          actor.browserPage.locator(".two-factor-footer > .cosmos-dialog-actions"),
+          2,
+          width <= 480);
       Locator headerTabs =
           actor.browserPage.locator("#two-factor-panel > [slot=header] > .two-factor-code-tabs");
 
@@ -590,6 +599,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     TwoFactorPage.rememberEnrollment(actor, email);
     checkOtpInputAndConfirm(actor, email, "two-factor-enrollment-code", pasteValidCode);
     TwoFactorPage.captureCodes(actor, email);
+    ActionGridChecks.assertActions(
+        actor.locator(".two-factor-footer > .cosmos-dialog-actions"),
+        1,
+        actor.viewportSize().width <= 480);
     actor.locator("#two-factor-codes-saved input").setChecked(true);
     actor.locator("#two-factor-submit").click();
     actor.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));

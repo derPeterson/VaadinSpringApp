@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AccountSecurityPage;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
@@ -68,6 +69,8 @@ public class PublicPanelsBrowserTest extends BrowserFixture {
     loginPage.signInFirstFactor(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator("#pending-verification-email"))
         .containsText(accountEmailAddress);
+    ActionGridChecks.assertActions(
+        browserPage.locator(".pending-verification-actions"), 2, viewportWidth <= 479);
     capturePanelEvidence(browserPage, "verification-pending", viewportWidth);
 
     try (Page verificationPage = mailpitInbox.openVerificationLink(verificationMail)) {
@@ -177,6 +180,8 @@ public class PublicPanelsBrowserTest extends BrowserFixture {
     loginPage.signInFirstFactor(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator("#pending-reactivation-email"))
         .containsText(accountEmailAddress);
+    ActionGridChecks.assertActions(
+        browserPage.locator(".pending-verification-actions"), 2, viewportWidth <= 479);
     capturePanelEvidence(browserPage, "reactivation-pending", viewportWidth);
 
     MailpitInbox mailpitInbox = new MailpitInbox(browserContext);

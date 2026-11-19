@@ -9,6 +9,7 @@ import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
@@ -34,6 +35,8 @@ public class DurationCustomFieldBrowserTest extends BrowserFixture {
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.setViewportSize(width, width == 390 ? 844 : 900);
     new AdminConfigurationPage(browserPage).open(AdminConfigGroup.TWO_FACTOR);
+    ActionGridChecks.assertActions(
+        browserPage.locator(".cosmos-mfa-settings .cosmos-config-card-actions"), 2, width <= 600);
     assertThat(amountInput()).isDisabled();
     assertThat(amountInput()).hasValue("12");
     capture("Ausgeschaltet");

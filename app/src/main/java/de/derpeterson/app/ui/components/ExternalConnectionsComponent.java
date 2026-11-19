@@ -15,7 +15,6 @@ import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -58,7 +57,6 @@ public final class ExternalConnectionsComponent extends Div {
     setId("account-external-connections");
     addClassName("account-external-connections");
     providerOverviewDiv.addClassName("external-connections-overview");
-    EqualButtonWidths.configureEqualButtonWidths(providerOverviewDiv);
     add(providerOverviewDiv);
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshAccount());

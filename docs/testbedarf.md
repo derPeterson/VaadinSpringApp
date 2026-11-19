@@ -5,6 +5,15 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **CSS Grid in den übrigen Aktionsleisten — offen.**
+  Portal-Startseite, ausstehende E-Mail-Bestätigung und Konto-Reaktivierung,
+  Zwei-Faktor-Richtlinie, Zwei-Faktor-Schritte, Authenticator-Karte,
+  Benutzereditor und Anmeldeanbieter in DE/EN prüfen. Auf breiten und
+  schmalen Ansichten bleiben relevante Textaktionen gleich breit und
+  vollständig lesbar. Ein- und ausgeblendete Aktionen lassen keine
+  leere Spalte entstehen. „Löschen“ steht im schmalen Benutzereditor
+  in einer eigenen Zeile. Anbieterkarten richten ihre Buttons gemeinsam aus.
+
 - **Gleich breite Aktionen in nativen Bestätigungsdialogen — offen.**
   Suite `native-confirmations` in DE/EN ausführen. Der Footer zeigt bei
   1280 px zwei gleich breite Aktionen nebeneinander. Bei 390 und 320 px

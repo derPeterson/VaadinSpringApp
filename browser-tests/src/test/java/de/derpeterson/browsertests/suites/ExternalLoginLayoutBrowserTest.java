@@ -16,7 +16,9 @@ import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
@@ -139,7 +141,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#account-password-edit-security")).isHidden();
     assertThat(browserPage.locator("#external-security-action")).hasCount(0);
     assertThat(browserPage.locator(".external-connection-row vaadin-badge")).hasCount(2);
-    assertAccountProviderRows(portalTab, providersTab);
+    assertAccountProviderRows(portalTab, providersTab, width);
     attachPanels("Kontosicherheit: Anbieterübersicht bei " + width + " px");
     browserPage.locator("#external-connect-google").click();
     Locator dialog = browserPage.locator("#external-identity-dialog");
@@ -157,7 +159,8 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.navigate("/admin");
     new AdminUsersPage(browserPage).open();
     AdminUserDialog editor = new AdminUsersPage(browserPage).openCreate();
-    assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
+    ActionGridChecks.assertActions(
+        editor.root().locator(".cosmos-dialog-actions"), 2, width <= 479);
     editor.cancel();
 
     browserPage.navigate("/account?section=security&tab=portal");
@@ -214,7 +217,8 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(otpInput).hasValue("");
     assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
         .hasAttribute("src", "icons/external-login/google.png");
-    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
+    AccountFormAppearanceChecks.assertEqualDialogActions(
+        browserPage, dialog, uiTexts.getAdminUsersCancel(), uiTexts.getExternalConnect("Google"));
     attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
     BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
 
@@ -224,7 +228,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(dialog).hasJSProperty("opened", false);
   }
 
-  private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {
+  private void assertAccountProviderRows(Locator portalTab, Locator providersTab, int width) {
     Locator connectionBadge = browserPage.locator(".external-connection-row vaadin-badge").first();
 
     assertThat(connectionBadge).hasCSS("border-radius", "4px");
@@ -238,89 +242,35 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertThat(providersTab.locator("vaadin-icon")).hasCSS("width", "20px");
     Locator google = browserPage.locator("#external-connect-google");
     Locator microsoft = browserPage.locator("#external-connect-microsoft");
-    browserPage.waitForCondition(
-        () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
+    Locator microsoftRow = microsoft.locator("xpath=..");
+    assertThat(microsoftRow).hasCSS("grid-template-columns", Pattern.compile("^subgrid.*"));
+    assertEquals(google.boundingBox().width, microsoft.boundingBox().width, 1);
+    assertEquals(google.boundingBox().x, microsoft.boundingBox().x, 1);
 
     assertTrue(
         microsoft.boundingBox().width > 110,
         "Anbieteraktionen erhalten ihre eigene natürliche Breite statt der Änderungsbreite");
     for (Locator button : List.of(google, microsoft)) {
-      assertTrue(
-          (Boolean)
-              button
-                  .locator("[part=label]")
-                  .evaluate("label => label.scrollWidth <= label.clientWidth + 1"),
-          "Der gesamte Anbietertext bleibt sichtbar");
+      ActionGridChecks.assertLabelFits(button);
     }
+
     double bothWidth = google.boundingBox().width;
-    Locator microsoftRow = microsoft.locator("xpath=..");
-    microsoftRow.evaluate("row => row.style.display = 'none'");
-    browserPage.waitForCondition(() -> google.boundingBox().width < bothWidth - 1);
+    microsoftRow.evaluate("row => row.hidden = true");
+    try {
+      assertThat(microsoft).isHidden();
+      if (width > 600) {
+        assertTrue(google.boundingBox().width < bothWidth - 1);
+      } else {
+        assertEquals(bothWidth, google.boundingBox().width, 1);
+      }
+      ActionGridChecks.assertLabelFits(google);
+    } finally {
+      microsoftRow.evaluate("row => row.hidden = false");
+    }
 
-    assertTrue(
-        (Boolean)
-            google
-                .locator("[part=label]")
-                .evaluate("label => label.scrollWidth <= label.clientWidth + 1"));
-    microsoftRow.evaluate("row => row.style.removeProperty('display')");
-    browserPage.waitForCondition(
-        () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
-
+    assertEquals(google.boundingBox().width, microsoft.boundingBox().width, 1);
     assertTrue(
         (Boolean) browserPage.evaluate("document.documentElement.scrollWidth <= innerWidth"));
-  }
-
-  private void assertDynamicTextWidths(Locator group) {
-    group.evaluate(
-        """
-        async element => {
-          const animations = new Set();
-          for (let node = element; node; node = node.parentElement || node.getRootNode().host) {
-            node.getAnimations?.().forEach(animation => animations.add(animation));
-          }
-          await Promise.all([...animations]
-            .filter(animation => animation.effect?.getComputedTiming().endTime !== Infinity)
-            .map(animation => animation.finished.catch(() => {})));
-        }
-        """);
-    Locator buttons = group.locator("vaadin-button,button");
-    browserPage.waitForCondition(() ->
-        (Boolean)
-            buttons
-                .nth(0)
-                .evaluate("button => button.style.getPropertyPriority('width') === 'important'"));
-    browserPage.waitForCondition(() ->
-        Math.abs(buttons.nth(0).boundingBox().width - buttons.nth(1).boundingBox().width) < 1);
-    double original = buttons.nth(0).boundingBox().width;
-
-    assertTrue(original < 200, "Textbuttons erhalten keine feste 200-px-Breite");
-    group.evaluate(
-        """
-        root => {
-          const extra = document.createElement('button');
-          extra.dataset.widthProbe = 'text';
-          extra.textContent = 'Synthetic action with a much longer caption';
-          extra.hidden = true;
-          const icon = document.createElement('button');
-          icon.dataset.widthProbe = 'icon';
-          icon.setAttribute('aria-label', 'Synthetic icon action');
-          icon.style.width = '32px';
-          root.append(extra, icon);
-        }
-        """);
-
-    assertEquals(original, buttons.nth(0).boundingBox().width, 1);
-    assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
-    Locator extra = group.locator("[data-width-probe=text]");
-    extra.evaluate("button => button.hidden = false");
-    browserPage.waitForCondition(() -> buttons.nth(0).boundingBox().width > original + 20);
-    extra.evaluate("button => button.style.display = 'none'");
-    browserPage.waitForCondition(() -> Math.abs(buttons.nth(0).boundingBox().width - original) < 1);
-
-    assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
-    group
-        .locator("[data-width-probe]")
-        .evaluateAll("buttons => buttons.forEach(button => button.remove())");
   }
 
   @ParameterizedTest

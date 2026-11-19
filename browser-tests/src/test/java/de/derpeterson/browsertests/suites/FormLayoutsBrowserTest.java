@@ -16,6 +16,7 @@ import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AccountSecurityPage;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
@@ -130,6 +131,8 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     adminUsersPage.open();
     AdminUserDialog createUserDialog = adminUsersPage.openCreate();
+    ActionGridChecks.assertActions(
+        createUserDialog.root().locator(".cosmos-dialog-actions"), 2, viewportWidth <= 479);
     AccountFormAppearanceChecks.captureUserDialog(browserPage, "Superadmin Benutzer anlegen");
     Locator developmentCheckboxLocator =
         createUserDialog.root().locator("#admin-development-account").getByRole(AriaRole.CHECKBOX);
@@ -150,6 +153,14 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     createUserDialog.cancel();
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(BrowserTestAccounts.SUPERADMIN_EMAIL);
+    Locator editActionsLocator = editUserDialog.root().locator(".cosmos-dialog-actions");
+    ActionGridChecks.assertActions(editActionsLocator, 3, viewportWidth <= 479);
+    if (viewportWidth <= 479) {
+      Locator deleteButtonLocator = editActionsLocator.locator(".cosmos-delete-button");
+      assertTrue(
+          deleteButtonLocator.boundingBox().y
+              > editActionsLocator.locator("vaadin-button[theme~='primary']").boundingBox().y);
+    }
     editUserDialog.openSignInDetails();
     AccountFormAppearanceChecks.captureUserDialog(
         browserPage, "Superadmin Benutzer bearbeiten Details");
