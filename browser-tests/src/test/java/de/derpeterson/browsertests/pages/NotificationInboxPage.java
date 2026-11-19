@@ -159,15 +159,27 @@ public final class NotificationInboxPage {
     assertThat(dialog()).hasCount(0);
   }
 
-  @Step("Iconaktionen und Metadaten bilden eine gemeinsame Zeile")
+  @Step("Titel, Nachricht und Metadaten teilen die linke Spalte")
   public void assertRowLayout(Locator root, boolean compact) {
-    String footerClass =
-        compact ? ".cosmos-notification-preview-actions" : ".cosmos-notification-inbox-row-header";
+    String actionsClass =
+        compact ? ".cosmos-notification-preview-actions" : ".cosmos-notification-inbox-actions";
+    String messageClass =
+        compact ? ".cosmos-notification-preview-message" : ".cosmos-notification-inbox-message";
+    String metadataClass =
+        compact ? ".cosmos-notification-preview-meta" : ".cosmos-notification-inbox-meta";
     for (Locator row : rows(root).all()) {
-      Locator notificationFooterLocator = row.locator(footerClass);
+      Locator notificationActionsLocator = row.locator(actionsClass);
+      Locator titleLocator = row.locator(".cosmos-notification-title");
+      Locator messageLocator = row.locator(messageClass);
+      Locator metadataLocator = row.locator(metadataClass);
 
-      assertThat(notificationFooterLocator).isVisible();
-      for (Locator action : row.locator(".cosmos-notification-row-action").all()) {
+      assertThat(notificationActionsLocator).isVisible();
+      assertEquals(titleLocator.boundingBox().x, messageLocator.boundingBox().x, 1);
+      assertEquals(titleLocator.boundingBox().x, metadataLocator.boundingBox().x, 1);
+      assertTrue(titleLocator.boundingBox().y < messageLocator.boundingBox().y);
+      assertTrue(messageLocator.boundingBox().y < metadataLocator.boundingBox().y);
+
+      for (Locator action : notificationActionsLocator.locator("vaadin-button:visible").all()) {
         // Tooltiptexte gehören zur Zugänglichkeit; nur die sichtbare Buttonbeschriftung muss leer
         // sein.
         assertEquals(
@@ -175,11 +187,11 @@ public final class NotificationInboxPage {
             action.evaluate(
                 "el => Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join('').trim()"));
         assertThat(action.locator("vaadin-icon")).hasCount(1);
-        assertTrue(action.boundingBox().y >= notificationFooterLocator.boundingBox().y - 1);
+        assertTrue(action.boundingBox().y >= notificationActionsLocator.boundingBox().y - 1);
         assertTrue(
             action.boundingBox().y + action.boundingBox().height
-                <= notificationFooterLocator.boundingBox().y
-                    + notificationFooterLocator.boundingBox().height
+                <= notificationActionsLocator.boundingBox().y
+                    + notificationActionsLocator.boundingBox().height
                     + 1);
       }
     }

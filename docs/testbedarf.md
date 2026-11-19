@@ -5,39 +5,13 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
-- **CSS Grid in den übrigen Aktionsleisten — offen.**
-  Portal-Startseite, ausstehende E-Mail-Bestätigung und Konto-Reaktivierung,
-  Zwei-Faktor-Richtlinie, Zwei-Faktor-Schritte, Authenticator-Karte,
-  Benutzereditor und Anmeldeanbieter in DE/EN prüfen. Auf breiten und
-  schmalen Ansichten bleiben relevante Textaktionen gleich breit und
-  vollständig lesbar. Ein- und ausgeblendete Aktionen lassen keine
-  leere Spalte entstehen. „Löschen“ steht im schmalen Benutzereditor
-  in einer eigenen Zeile. Anbieterkarten richten ihre Buttons gemeinsam aus.
-
-- **Gleich breite Aktionen in nativen Bestätigungsdialogen — offen.**
-  Suite `native-confirmations` in DE/EN ausführen. Der Footer zeigt bei
-  1280 px zwei gleich breite Aktionen nebeneinander. Bei 390 und 320 px
-  stehen beide in voller Breite untereinander, mit lesbaren Beschriftungen.
-  Formularschutz und „Alle anderen abmelden“ wechseln bereits bis 600 px
-  zur Anordnung untereinander. Beim Formularschutz bleiben Reihenfolge und
-  Anfangsfokus erhalten. Abbruch und Bestätigung weiterhin fachlich prüfen.
-
-- **Gleich breite Aktionen in Konto- und Identitätsdialogen — offen.**
-  `FormLayoutsBrowserTest` (E-Mail, Passwort, Google verbinden), AVATAR-01
-  (Profilbild), ACCOUNT-CARDS-01 (Konto deaktivieren oder löschen) und MFA-21
-  (Zwei-Faktor-Bestätigung) in DE/EN ausführen. Bei 1280 px stehen die beiden
-  Textaktionen gleich breit nebeneinander. Bei 390 und 320 px stehen beide
-  in voller Breite untereinander. Beschriftungen bleiben vollständig lesbar,
-  und der Footer verwendet CSS Grid. „Bild löschen“ bleibt separat erreichbar.
-
 - **Admin-Vorgangsliste mit MasterDetailLayout — offen.**
-  MFA-19, MFA-22 und MFA-23 in DE/EN prüfen. Auf breiten Ansichten Liste und
-  Detail nebeneinander, Auswahlhinweis und Fokusmodus vergleichen. Bei 390 und
-  320 px müssen direkter Ticketlink und Auswahl das scrollbare Detail-Overlay
-  öffnen. Rückkehr per Button und Escape gibt den Fokus an den aktiven
-  Kategorienreiter zurück und entfernt nur die Ticketnummer aus der URL.
-  Listenseite, Filter und Entwurf bleiben beim Wiederöffnen erhalten. Filter-
-  und Live-Aktualisierungen, Größenwechsel und erreichbare Aktionen prüfen.
+  MFA-19, MFA-22 und MFA-23 decken in DE/EN die breite Ansicht und das
+  mobile Detail bei 390 px ab, einschließlich Rückkehr, Filter und Entwurf.
+  Bei 320 px bleiben Direktlink, Auswahl und Scrollen im Detail-Overlay offen.
+  Rückkehr per Button und Escape soll den Fokus an den aktiven Kategorienreiter
+  zurückgeben und nur die Ticketnummer aus der URL entfernen. Beim Wiederöffnen
+  Listenseite, Filter, Entwurf und erreichbare Aktionen prüfen.
 
 - **Rechte Feldhilfe nach Tooltip-Bereinigung — offen.**
   Die bestehenden Fälle CONFIG-05D, COMPONENT-04, MAIL-02, MFA-03 und OIDC-08
@@ -63,15 +37,6 @@ bleiben bis zur erfolgreichen Prüfung offen.
   Richtungen prüfen. Bildpixel an der gemeinsamen Kante, am Anschluss der
   Linie rechts und links neben dem inaktiven Reiter sowie an den oberen
   Rundungen beider Reiter prüfen.
-
-- **Profilbildreiter im Dialogkopf — offen.**
-  `SegmentedSelectionBrowserTest` in DE/EN bei 1280, 390 und 320 px prüfen.
-  Initialen und eigenes Bild per Klick und Tastatur wählen. Der aktive Reiter
-  schließt beim Öffnen und nach beiden Wechselrichtungen bündig am Inhalt an.
-  Bildpixel unter dem aktiven Reiter, entlang der Trennlinie unter und neben
-  dem inaktiven Reiter und an den oberen Rundungen prüfen. Bildvorschau und
-  Dateiauswahl folgen dem aktiven Modus. Die Trennlinie nach dem Zurückwechseln
-  wurde manuell bestätigt.
 
 - **Badge- und Formulargrößen — offen.**
   In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und
@@ -108,7 +73,10 @@ bleiben bis zur erfolgreichen Prüfung offen.
   Löschen-Button, Fehlerzustand und die Mindesthöhen von 122 px
   (Mitteilungsentwurf und Ticketnachricht) sowie 144 px (Mail-Test) prüfen. Der Griff liegt
   jetzt auf der nativen Eingabefläche statt auf einem abschneidenden Host.
-  Manuell abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
+  Manuell abgenommen. In der großen Testrunde blieb die gemessene Höhe beim
+  Ziehen am sichtbaren Griff in MAIL-02, MAIL-03 und NOTIFY-01 (1280 und 390 px)
+  in beiden Sprachen unverändert. Ursache im isolierten Chromium ermitteln und
+  die abgebrochenen Prüfabläufe erneut ausführen.
 
 - **Einheitliche Schließen-Icons — offen.**
   In DE/EN auf Desktop/Smartphone Glockenvorschau, Nachrichtendialog,
@@ -123,7 +91,8 @@ bleiben bis zur erfolgreichen Prüfung offen.
 - **Benutzermenü: Innenabstand der Footer-Aktionen — offen.**
   In DE/EN Desktop/Smartphone Startseite und Abmelden mit Icon prüfen: beidseitiger
   M-Innenabstand ohne zusätzliche Hoverfläche; Auras Präfixregel darf links nicht auf 0 kürzen.
-  Text, Icon, Klick- und Tastaturfunktion erhalten. Kein Browserlauf freigegeben.
+  Text, Icon, Klick- und Tastaturfunktion erhalten. Die Browserprüfung belegt bereits
+  die rechte Ausrichtung von „Abmelden“ am Footer-Rand.
 
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
   In DE/EN Desktop/Smartphone alle vier Zeitfelder der Link-/Tokenlaufzeiten leeren:
@@ -212,8 +181,9 @@ bleiben bis zur erfolgreichen Prüfung offen.
   nicht vergrößern. Overlayhöhe
   bleibt im Fenster, kein horizontaler Überlauf. Escape, Außenklick, Schließen,
   Rückfokus und erneute Vorschau ohne doppelte Listener prüfen. Keine Details-Liste
-  mehr. JUnit zu Suche, 1–200 Empfängern und Höhenbegrenzung erfolgreich;
-  JS-Offlinetests sind vorhanden. Kein Browserlauf freigegeben.
+  mehr. Der Browsernachtest in DE/EN deckt Enter und Escape mit Rückfokus,
+  „+N“, E-Mail-Suche und Vorschau ohne Versand mit 3/5/6/9 Empfängern ab.
+  JUnit deckt Suche, 1–200 Empfänger und Höhenbegrenzung ab.
 
 
 - **Benachrichtigungsentwurf: konkrete Vorschauvalidierung — offen.**

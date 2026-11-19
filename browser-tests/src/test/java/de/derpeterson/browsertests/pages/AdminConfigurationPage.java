@@ -206,10 +206,10 @@ public final class AdminConfigurationPage {
   public void reject(String fieldSelector, String expectedErrorText) {
     findActionButtonLocator(uiTexts.getAdminConfigSave()).click();
 
-    assertThat(browserPage.locator(fieldSelector + "[invalid]")).hasCount(1);
-    assertThat(browserPage.locator(fieldSelector + "[invalid]"))
-        .hasJSProperty("errorMessage", expectedErrorText);
-    assertAndDismissNotice(uiTexts.getAdminConfigValidationInvalidFields());
+    Locator invalidFieldLocator = browserPage.locator(fieldSelector + "[invalid]");
+    assertThat(invalidFieldLocator).hasCount(1);
+    assertThat(invalidFieldLocator).hasJSProperty("errorMessage", "");
+    assertAndDismissNotice(expectedErrorText);
   }
 
   private void assertAndDismissNotice(String expectedNotificationText) {

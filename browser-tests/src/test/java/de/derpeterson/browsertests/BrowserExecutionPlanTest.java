@@ -162,8 +162,7 @@ class BrowserExecutionPlanTest {
               Set.of(
                   "nativeFieldsShareDisabledColorsAndErrorPresentation",
                   "calendarAndTimePickerKeepTheirCosmosPresentation");
-          case "avatar-group" ->
-              Set.of("recipientAvatarGroupPreservesPreviewAndExposesNativeOverflow");
+          case "avatar-group" -> Set.of("recipientAvatarGroupOpensSearchablePreviewWithoutSending");
           case "duration-custom-field" ->
               Set.of("inactivityDurationPreservesPresentationAndItsSavedValue");
           case "notification-variants" ->

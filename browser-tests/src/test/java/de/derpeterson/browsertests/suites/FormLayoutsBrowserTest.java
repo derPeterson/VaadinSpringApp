@@ -134,22 +134,17 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     ActionGridChecks.assertActions(
         createUserDialog.root().locator(".cosmos-dialog-actions"), 2, viewportWidth <= 479);
     AccountFormAppearanceChecks.captureUserDialog(browserPage, "Superadmin Benutzer anlegen");
-    Locator developmentCheckboxLocator =
-        createUserDialog.root().locator("#admin-development-account").getByRole(AriaRole.CHECKBOX);
-    Locator verificationCheckboxLocator =
-        createUserDialog
-            .root()
-            .locator("#admin-email-verification-required")
-            .getByRole(AriaRole.CHECKBOX);
-    assertThat(verificationCheckboxLocator).isChecked();
-    developmentCheckboxLocator.check();
-    assertThat(verificationCheckboxLocator).not().isChecked();
-    assertThat(verificationCheckboxLocator).isDisabled();
+    Locator developmentSwitchLocator = createUserDialog.developmentAccountSwitch();
+    Locator verificationSwitchLocator = createUserDialog.emailVerificationSwitch();
+    assertThat(verificationSwitchLocator).isChecked();
+    developmentSwitchLocator.check();
+    assertThat(verificationSwitchLocator).not().isChecked();
+    assertThat(verificationSwitchLocator).isDisabled();
     AccountFormAppearanceChecks.captureUserDialog(
         browserPage, "Superadmin Entwicklerkonto anlegen");
-    developmentCheckboxLocator.uncheck();
-    assertThat(verificationCheckboxLocator).isEnabled();
-    assertThat(verificationCheckboxLocator).isChecked();
+    developmentSwitchLocator.uncheck();
+    assertThat(verificationSwitchLocator).isEnabled();
+    assertThat(verificationSwitchLocator).isChecked();
     createUserDialog.cancel();
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(BrowserTestAccounts.SUPERADMIN_EMAIL);

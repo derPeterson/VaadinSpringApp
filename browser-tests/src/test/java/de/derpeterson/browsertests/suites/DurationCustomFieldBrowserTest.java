@@ -74,7 +74,7 @@ public class DurationCustomFieldBrowserTest extends BrowserFixture {
         .hasText(uiTexts.getAdminConfigDurationUnitHours());
     UiActions.completeValueChange(browserPage, () -> amountInput().clear());
     browserPage.locator("#two-factor-save").click();
-    closeNotice(uiTexts.getTwoFactorFailed());
+    closeNotice(uiTexts.getTwoFactorInactivityRange());
     assertThat(amountInput()).hasValue("");
     browserPage.locator("#two-factor-reload").click();
     UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);

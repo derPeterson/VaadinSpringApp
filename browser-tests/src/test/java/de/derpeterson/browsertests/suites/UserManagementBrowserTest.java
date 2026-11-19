@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -146,8 +147,8 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Eigenes bestehendes Konto vorbereiten, dann neues Formular öffnen.
-      2. Leeres Formular und schwaches Passwort blockieren Speichern; lokalisierte Regelbeschreibung prüfen.
-      3. Blanken Vornamen, ungültige E-Mail und Dublette korrigieren; jeweils Speichern gesperrt.
+      2. Leeres Formular und schwaches Passwort absenden; konkrete Meldung und markiertes Feld prüfen.
+      3. Blanken Vornamen, ungültige E-Mail und Dublette beim Speichern ablehnen und korrigieren.
       4. Mit ABCDEFG! speichern: acht Zeichen, Großbuchstaben/Sonderzeichen, ohne Zahl/Kleinbuchstaben.
       5. Die empfangene Verifikationsmail bestätigen und mit dem neuen Konto anmelden.
       **Erwartet:** Gemeinsame UserInputRules greifen; erfolgreicher UI-Ablauf nach Korrektur.
@@ -158,12 +159,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.createActiveUser(existing, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openCreate();
 
-    assertThat(form.saveButton()).isDisabled();
+    assertUserValidationOnSave(form, form.firstName(), uiTexts.getBaseValidationRequiredMessage());
     String email = unique("validated") + "@example.test";
     form.fillNewUser(email, "weak", true, false);
 
-    assertThat(form.saveButton()).isDisabled();
     assertThat(form.root()).containsText(uiTexts.getAdminUsersPasswordHelperCreate());
+    assertUserValidationOnSave(
+        form, form.password(), uiTexts.getAdminUsersPasswordValidationCreate());
     form.password().fill("ABCDEFG!");
     form.confirmPassword().fill("ABCDEFG!");
     form.password().press("Tab");
@@ -172,17 +174,16 @@ public class UserManagementBrowserTest extends BrowserFixture {
     form.firstName().fill("   ");
     form.firstName().press("Tab");
 
-    assertThat(form.saveButton()).isDisabled();
+    assertUserValidationOnSave(form, form.firstName(), uiTexts.getBaseValidationRequiredMessage());
     form.firstName().fill("Browser");
     form.email().fill("not-an-email");
     form.email().press("Tab");
 
-    assertThat(form.saveButton()).isDisabled();
+    assertUserValidationOnSave(form, form.email(), uiTexts.getBaseValidationEmailInvalidMessage());
     form.email().fill(existing);
     form.email().press("Tab");
 
-    assertThat(form.saveButton()).isDisabled();
-    assertThat(form.root()).containsText(uiTexts.getBaseValidationEmailExistsMessage());
+    assertUserValidationOnSave(form, form.email(), uiTexts.getBaseValidationEmailExistsMessage());
     form.email().fill(email);
     form.email().press("Tab");
     AllurePlaywright.attachScreenshot(
@@ -193,6 +194,20 @@ public class UserManagementBrowserTest extends BrowserFixture {
     assertThat(users.emailCells(email)).hasCount(1);
     users.verifyCreatedAccount(email);
     signInAsCreatedUser(email, "ABCDEFG!");
+  }
+
+  private void assertUserValidationOnSave(
+      AdminUserDialog userDialog, Locator fieldInputLocator, String expectedMessage) {
+    Locator fieldLocator = fieldInputLocator.locator("xpath=..");
+    assertThat(fieldLocator).hasJSProperty("invalid", false);
+    assertThat(userDialog.saveButton()).isEnabled();
+
+    userDialog.saveButton().click();
+    assertThat(fieldLocator).hasJSProperty("invalid", true);
+    assertTrue((Boolean) fieldLocator.evaluate("field => !field.errorMessage"));
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(expectedMessage);
+    NotificationAppearanceChecks.close(browserPage);
   }
 
   @Tag("account-forms")
@@ -379,7 +394,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @DisplayName("USER-06F: Passwortänderung im Adminformular lehnt das alte Passwort danach ab")
   @Description(
       """
-      1. Eigenes Konto anlegen und bearbeiten; schwaches neues Passwort sperrt Speichern.
+      1. Eigenes Konto anlegen und bearbeiten; Speichern lehnt ein schwaches Passwort ab.
       2. Gültiges neues Passwort speichern, Dialog schließen und als Admin abmelden.
       3. Alte Zugangsdaten werden abgelehnt; neue Zugangsdaten melden dasselbe Konto an.
       **Erwartet:** Dieselbe Passwortregel gilt beim Editieren; Änderung ist tatsächlich wirksam.
@@ -390,9 +405,11 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
     form.password().fill("weak");
-    form.password().press("Tab");
+    form.confirmPassword().fill("weak");
+    form.confirmPassword().press("Tab");
 
-    assertThat(form.saveButton()).isDisabled();
+    assertUserValidationOnSave(
+        form, form.password(), uiTexts.getAdminUsersPasswordValidationCreate());
     form.password().fill(changed);
     form.confirmPassword().fill(changed);
     form.confirmPassword().press("Tab");
@@ -509,13 +526,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @Tag("fast")
   @Test
   @DisplayName(
-      "USER-12A: Passwortbestätigung bleibt optional, zeigt Fehler erst nach Blur und wird beim Leeren zurückgesetzt")
+      "USER-12A: Passwortbestätigung bleibt optional, zeigt Fehler beim Speichern und wird beim Leeren zurückgesetzt")
   @Description(
       """
       1. Eigenes Konto anlegen und bearbeiten: leeres Passwort, deaktivierte Bestätigung und erlaubtes Speichern.
-      2. Einen Buchstaben eingeben: Bestätigung aktiv, keine roten Fehler während des Tippens, Speichern gesperrt.
-      3. Passwort verlassen: Passwortregel sichtbar, unberührte Bestätigung ohne Fehler.
-      4. Gültiges Passwort und abweichende Bestätigung eingeben: Fehler erst beim Verlassen der Bestätigung.
+      2. Einen Buchstaben eingeben und Feld verlassen: Bestätigung aktiv, beide Felder ohne Fehler.
+      3. Gültiges Passwort und abweichende Bestätigung eingeben und Feld verlassen: weiterhin kein Fehler.
+      4. Speichern: Beide Felder werden markiert und die Abweichung erscheint als Meldung.
       5. Erstes Passwort leeren: Bestätigung leer/deaktiviert, Speichern wieder erlaubt. Abbrechen erhält das Konto.
       **Erwartet:** Keine frühe Fehlermeldung; kein versehentlicher Passwortwechsel und exakter Vergleich.
       """)
@@ -532,12 +549,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
     form.password().fill("w");
 
     assertThat(form.confirmPassword()).isEnabled();
-    assertThat(form.saveButton()).isDisabled();
+    assertThat(form.saveButton()).isEnabled();
     assertThat(passwordHost).hasJSProperty("invalid", false);
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.password().press("Tab");
 
-    assertThat(passwordHost).hasJSProperty("invalid", true);
+    assertThat(passwordHost).hasJSProperty("invalid", false);
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.password().fill("ChangedBrowser2!");
     form.confirmPassword().fill("DifferentBrowser2!");
@@ -545,8 +562,9 @@ public class UserManagementBrowserTest extends BrowserFixture {
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.firstName().click();
 
-    assertThat(confirmHost).hasJSProperty("invalid", true);
-    assertThat(form.root()).containsText(uiTexts.getBaseValidationPasswordConfirmMessage());
+    assertUserValidationOnSave(
+        form, form.confirmPassword(), uiTexts.getBaseValidationPasswordConfirmMessage());
+    assertThat(passwordHost).hasJSProperty("invalid", true);
     form.password().fill("");
 
     assertThat(form.confirmPassword()).isDisabled();

@@ -22,18 +22,7 @@ public final class NotificationAppearanceChecks {
     // Der Schweregrad ist ein vollständiger Bestandteil der gemeinsamen Theme-Liste.
     assertThat(card)
         .hasAttribute("theme", Pattern.compile(".*\\bcosmos-reference-" + type + "\\b.*"));
-    assertTrue(
-        (boolean)
-            page.locator("vaadin-notification")
-                .evaluateAll(
-                    """
-                    (notifications, duration) => {
-                      const opened = notifications.filter(notification => notification.opened);
-                      return opened.length === 1 && opened[0].duration === duration
-                        && opened[0].position === 'top-center';
-                    }
-                    """,
-                    duration));
+    assertPositionAndDuration(page, duration);
     page.mouse().move(0, 0);
     String name = "Notification " + scenario + " " + page.viewportSize().width;
     Allure.attachment(
@@ -66,6 +55,24 @@ public final class NotificationAppearanceChecks {
             page.screenshot(
                 new Page.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
         AttachmentOptions.empty());
+  }
+
+  public static void assertPositionAndDuration(Page page, int duration) {
+    String expectedPosition = page.viewportSize().width >= 768 ? "top-end" : "bottom-center";
+    assertThat(page.locator("vaadin-notification-card:not([closing])"))
+        .hasAttribute("slot", expectedPosition);
+    assertTrue(
+        (Boolean)
+            page.locator("vaadin-notification")
+                .evaluateAll(
+                    """
+                    (notifications, duration) => {
+                      const opened = notifications.filter(notification => notification.opened);
+                      return opened.length === 1 && opened[0].duration === duration;
+                    }
+                    """,
+                    duration),
+        () -> "Die Vorschau meldet eine andere Anzeigedauer als " + duration + " ms.");
   }
 
   public static void close(Page page) {

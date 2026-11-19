@@ -158,10 +158,16 @@ public class NotificationRecipientPopover extends Popover {
         .setAttribute("aria-label", messageProperties.getNotificationsRecipientOpen());
     recipientAvatarGroup.getElement().setAttribute("aria-controls", getId().orElseThrow());
     recipientAvatarGroup.getElement().addEventListener("recipient-list-open", _ -> open());
-    addOpenedChangeListener(openedChangeEvent ->
-        recipientAvatarGroup
-            .getElement()
-            .setAttribute("aria-expanded", Boolean.toString(openedChangeEvent.isOpened())));
+    addOpenedChangeListener(openedChangeEvent -> {
+      recipientAvatarGroup
+          .getElement()
+          .setAttribute("aria-expanded", Boolean.toString(openedChangeEvent.isOpened()));
+
+      // Beim Öffnen über das eigene Ereignis stellt Vaadin den Zielfokus nicht wieder her.
+      if (!openedChangeEvent.isOpened() && recipientAvatarGroup.isAttached()) {
+        recipientAvatarGroup.getElement().callJsFunction("focus");
+      }
+    });
     // Der gekapselte Listener fängt auch den nativen Überlauf ab, ohne dessen private API.
     addAttachListener(_ ->
         recipientAvatarGroup.getElement().executeJs("window.CosmosRecipientPopover.connect(this)"));

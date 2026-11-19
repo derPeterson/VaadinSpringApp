@@ -1,105 +1,79 @@
 # Prüfstand
 
-## Große Testrunde vom 18.11.2026
+## Große Testrunde vom 19.11.2026
 
-Geprüft wurde der saubere Stand `486a54c0b848cdf1a8b78a15b00f527521abce9c`
-auf main, gegenüber der letzten vollständigen QA `f3c21623`.
-Dieser Stand ist der lokale Release **0.1.0**, annotiert als `v0.1.0`.
-Die Aura-Umstellung ist damit technisch abgeschlossen. Die weitergehende
-[Vaadin-Komponentenumstellung](planung/vaadin-komponenten-abgleich.md) bleibt offen.
+Verglichen wurde der Folgebranch `codex/vaadin-komponenten-folgearbeiten-6`
+mit der letzten vollständig erfolgreichen Testrunde auf `486a54c0`.
+Die aktuellen Gesamtläufe gehören zum Anwendungsstand `1272bcf4` mit
+den überarbeiteten Browserprüfungen. Danach wurde der Rückfokus der
+Empfängerliste korrigiert und auf dem neu gebauten Image gezielt geprüft.
 
-Der anschließende Entwicklungsstand **0.1.1-SNAPSHOT** enthält die gemeinsame
-Versionsfortschreibung und den Dokumentationsabschluss. Er wurde nicht als eigener
-neuer Anwendungsstand vollständig browsergetestet; die folgenden Belege gehören
-zum unveränderten Releasecommit.
-
-### Ergebnisse
-
-| Prüfung | Tatsächliches Ergebnis |
+| Prüfung | Ergebnis |
 | --- | --- |
-| Optimierter Root-Reactor mit Produktion und Coverage | Bestanden; Shared vor seinen Verbrauchern gebaut |
-| Anwendungs-JUnit | 3.129 bestanden, keine Fehler; zwei optionale IDE-/Caddy-HTTPS-Prüfungen übersprungen |
-| Browser-Helfertests | 142 bestanden, keine Fehler oder Skips |
-| Frontend-Offlineprüfungen | 20 bestanden |
-| Coverage-/Sonar-Pythonprüfungen | 18 beziehungsweise 49 bestanden |
-| Release-Helfertests | 14 bestanden; eigene temporäre Git-Repositories und synthetische JARs |
-| Browser Deutsch, gesamte Suite | 386 von 386 bestanden, keine Skips |
-| Browser Englisch, gesamte Suite und gezielter Nachtest | Alle 386 Fälle erfolgreich abgedeckt; ursprünglicher Gesamtlauf 385/386, Nachtest siehe unten |
-| Aufbau, Abbau und HTML-Berichte | Für beide Gesamtläufe und den Nachtest bestanden |
-| Java-, Python- und CSS-Stilprüfungen | Spotless, Checkstyle, Ruff, Prettier und Stylelint bestanden |
+| Optimierter Root-Reactor mit Produktion und Coverage | Bestanden. Die Anwendung und der Browserrunner verwenden dasselbe im Reactor gebaute Shared-Modul. |
+| Anwendungs-JUnit | 3.270 bestanden, zwei optionale IDE-/Caddy-HTTPS-Prüfungen übersprungen |
+| Browser-Helfertests | 143 bestanden |
+| Frontend-Offlineprüfungen | 23 bestanden |
+| Coverage-, Sonar- und Release-Helfer | 18, 49 und 14 bestanden |
+| Lokale Zeilenabdeckung | Anwendung 86,10 %, Shared 100 %. Gemeinsame Coverage-Prüfung bestanden. |
+| Java- und CSS-Stilprüfungen | Spotless, Checkstyle, Prettier und Stylelint bestanden |
+| Browser Deutsch, gesamte Suite | 373 von 387 bestanden, 14 fehlgeschlagen, keine Skips |
+| Browser Englisch, gesamte Suite | 374 von 387 bestanden, 13 fehlgeschlagen, keine Skips |
+| Aufbau, Abbau und HTML-Bericht | In beiden Gesamtläufen bestanden |
 
-Die zwei optionalen JUnit-Sonderprüfungen für die reale IDE-/Caddy-Umgebung wurden
-nicht aktiviert. Die isolierten HTTPS-Browserfälle waren Bestandteil der Gesamtrunde.
+Die beiden Gesamtläufe verwendeten je vier isolierte Worker und dasselbe
+unveränderte Anwendungsimage
+`sha256:50bf676f078080c2b35d722a2d657de3ea4fe7687dc5d6db3a67044524687886`.
+Die Browsernachtests nach der Fokuskorrektur verwenden das Image
+`sha256:a2ef1dacbfe5dc8ed7202461f8504ad9cf4354c76a064481a4468c40554f82b3`.
 
-DE und EN verwendeten dasselbe unveränderte Image:
+| Browsernachtest | Deutsch | Englisch |
+| --- | --- | --- |
+| Empfängerliste | 2/2 | 2/2 |
+| Sitzungen | 9/9 | 9/9 |
+| Benutzerverwaltung | 22/22 | 22/22 |
+| Konfiguration | 19/19 | 19/19 |
+| Kontoeinstellungen | 22/22 | 22/22 |
+| Ticketdetails | 7/7 | 7/7 |
 
-`sha256:807e7ad79b13fd907f254d899a5a0aa25082de9f4e37565144676348e84ba195`
+Reale Anbieter, echter SMTP-Versand und menschliche Sonderprüfungen stehen
+im [manuellen Katalog](manual-tests/README.md).
 
-Die Gesamtläufe nutzten je vier eigene Testumgebungen, innerhalb jedes Workers
-sequenziell. Geprüft wurde mit Chromium auf Desktop und emulierten Smartphones.
-Die Hintergrundprüfung umfasst 1440, 1280, 1100 und 390 px sowie reduzierte Bewegung.
+## Geprüfte Änderungen
 
-### Englischer Browser-Nachtest
+- **Aktionsleisten:** Die übrigen acht Aufrufer des Skripts zur
+  Breitenangleichung verwenden CSS Grid oder Subgrid. In beiden Sprachen
+  bestanden je 27 einschlägige Browserfälle, darunter feste Dialogpaare,
+  variable Aktionsleisten, schmaler Benutzereditor und Anbieterkarten.
+  Alle 16 zur Suite für native Bestätigungen gehörenden Fälle bestanden
+  pro Sprache. Die Gruppen überschneiden sich.
+- **Korrekturen beim Layout:** Anbieterkarten teilen die Spalten auch auf
+  schmalen Ansichten. Die Aktionen im mobilen Benutzereditor füllen ihre
+  Rasterzeile. „Abmelden“ steht wieder rechts im Benutzermenü.
+  Die Profilbildreiter bestanden je drei Größenprüfungen. Der Übergang
+  unter den Reitern wurde auch in OTP- und Identitätsdialogen geprüft.
+- **Empfängerliste:** Schließen des Popovers gibt den Fokus an die
+  Avatargruppe zurück. Der Nachtest bestand auf Desktop und schmaler
+  Ansicht in DE und EN mit je zwei Fällen.
+- **Browserprüfungen:** Selektoren und Erwartungen an native Schalter,
+  Validierung beim Absenden, lokalisierte Meldungen, responsive Notifications,
+  Escape und das mobile Vorgangsdetail angepasst. Die Messung nativer
+  Bestätigungen wartet das Ende der Öffnungsanimation ab.
 
-Im englischen Gesamtlauf brach MFA-03 bei 1280 px während der Navigation mit
-`net::ERR_NO_BUFFER_SPACE` ab. Die übrigen 385 Fälle bestanden. Eine anschließende
-Ressourcenaufnahme zeigte keinen anhaltenden Speicher- oder Verbindungsengpass;
-die genaue Ursache des einmaligen Transportabbruchs ist nicht belegt.
+## Offene Nachweise
 
-Die vorhandene Suite `two-factor-configuration` wurde danach mit frischem Browser
-und eigener neuer Testumgebung vollständig in EN wiederholt: **2/2 bestanden**
-bei 1280 und 390 px, ohne Änderung an Anwendung, Tests oder Image.
-Der Abgleich von vollständigem Testnamen und Parameteranzeige bestätigt, dass der
-zuvor abgebrochene Fall enthalten ist. Zusammen sind damit alle 386 englischen
-Fälle am finalen Image erfolgreich abgedeckt; der ursprüngliche Gesamtlauf wird
-nicht nachträglich als fehlerfrei ausgegeben.
+- **TextArea:** Beim Ziehen am sichtbaren Griff im isolierten Chromium
+  änderte sich die Höhe in MAIL-02, MAIL-03 und NOTIFY-01 (1280 und 390 px)
+  in DE und EN nicht. Die Ursache ist offen. Folgeschritte in den
+  betroffenen Szenarien benötigen einen erfolgreichen Nachtest.
+- **Gesamtstand:** Die gezielten Nachtests auf dem jüngsten Anwendungsimage
+  ergänzen die Gesamtläufe. Ein vollständig grüner DE-/EN-Nachweis
+  für den Endstand steht aus. Die bisherige erfolgreiche Baseline bleibt
+  `486a54c0`. Konkrete offene Szenarien stehen im [Testbedarf](testbedarf.md).
 
-## Sonar und Coverage
+## Sonar
 
-- Analyse `8da158f2-42a7-4e72-b55c-f6708adab628` gehört exakt zum Releasecommit.
-- **Quality Gate OK, null offene Issues und null Hotspots.**
-- Die 46 bestehenden Ausnahmen blieben unverändert; keine neuen Suppressions,
-  Statusausnahmen oder Scope-Einschränkungen.
-- Umfang: 604 Java-Dateien, vier Maven-POMs und alle 32 eigenen CSS-Dateien.
-- Sonar-Coverage: 83,0 % insgesamt, 86,0 % Zeilen, 73,7 % Branches.
-- Gemeinsamer lokaler Coverage-Prüfer und wirksames Maven-Modell bestanden;
-  lokale Zeilenabdeckung der Anwendung 85,29 %, Shared 100 %.
-
-## Geprüfte Änderungen und Korrekturen
-
-- **Versionierung:** Einheitliche Modulversionen und interne Abhängigkeiten,
-  ausführbares `app.jar`, Build-Herkunft, DE-/EN-Changelog und lokaler Release-Ablauf.
-  Das tatsächlich im Browser getestete JAR wurde aus dem Image übernommen,
-  auf Version, saubere Git-Revision und SHA-256 geprüft und mit Manifest archiviert.
-  Tag und nächster Patch-Snapshot wurden anschließend mit dem neuen Helfer erstellt.
-- **Aura:** Native Reiter und Overlays, Icon-Zentrierung, Filter-Chips, Feldfehler,
-  deaktivierte Felder, Kalender, erneut geöffnete Zeitauswahl und Hintergrund geprüft.
-  Die Dauerfeldtests lesen die Meldung am äußeren CustomField; der alte
-  Dauerfeld-Nachtest ist in DE und EN bestanden.
-- **Darstellung korrigiert:** Kalenderaktionen überstimmen nun die allgemeine
-  Buttonfläche; deaktivierte Textbereiche nutzen dieselbe Text-/Platzhalterfarbe
-  wie die übrigen Felder; normale Aktionsbuttons haben die vereinbarte weiße Schrift.
-- **Testtreiber präzisiert:** Kurzlebige Queue-Meldung vor den längeren Aufnahmen
-  prüfen, mobile Kalenderbreite nativ verteilen lassen, Checkbox-/Schalterzustand
-  am tatsächlichen Input und Marker prüfen und das geladene Pfeil-SVG absichern.
-  Die gezielten Aura-Fälle bestanden vor den abschließenden Gesamtläufen.
-- **Fachliche Regressionen:** Anmeldung, Registrierung, Verifikation, Anmeldeanbieter,
-  Rollen und administrative Sperre, 2FA und Wiederherstellung, Sitzungen,
-  Kontolebenszyklus, Benachrichtigungen, Konfiguration und Mailqueue einschließlich
-  Warten auf Versand und vollständiger Bereinigung über mehrere 100er-Pakete.
-
-## Abschluss und Grenzen
-
-Erledigte Aura-/Releasepläne und ihre Verweise sind entfernt. Der bestandene
-Dauerfeld-Nachtest sowie die abgedeckten Aura- und Queue-Einträge sind aus
-[BUGS](../BUGS.md) und [Testbedarf](testbedarf.md) entfernt.
-
-Echte Mobilgeräte, reale Passwortmanager, Screenreader, Systemscrollleisten sowie
-echte Anbieter-/SMTP-Integrationen bleiben gesonderte menschliche Prüfungen im
-[manuellen Katalog](manual-tests/README.md). Die automatisierten Läufe verwendeten
-ausschließlich eigene isolierte Daten und Testdienste; bestehende Entwicklerdaten,
-gespeicherte Passwörter und echter Mailversand wurden nicht verwendet.
-
-Der Release ist lokal archiviert. Bedienung und Grenzen stehen unter
-[Versionierung und Releases](releases.md). Die sichtbare Neuigkeiten-Seite und die
-übrigen [offenen Aufgaben](../TODO.md) sind keine Bestandteile dieses Abschlusses.
+Die verfügbare Main-Analyse `452d3e46-52bf-4f20-b0f5-f600651fc1d9`
+gehört zu `aa9c70fa`. Das Quality Gate steht auf OK, mit null offenen
+Issues, null offenen Hotspots und 45 bestehenden Ausnahmen. Für den
+Folgebranch liegt keine eigene Sonar-Analyse vor.

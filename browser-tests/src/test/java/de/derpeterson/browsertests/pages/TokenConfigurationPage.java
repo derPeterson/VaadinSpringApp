@@ -62,7 +62,7 @@ public final class TokenConfigurationPage {
     new AdminConfigurationPage(browserPage).enterSeconds(fieldLabelText, tokenDurationSeconds);
   }
 
-  @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
+  @Step("Dauer ablehnen und die lokalisierte Fehlermeldung prüfen")
   public void reject(String fieldLabelText, String expectedErrorText) {
     findActionButtonLocator(uiTexts.getAdminConfigSave()).click();
 
@@ -71,9 +71,9 @@ public final class TokenConfigurationPage {
 
     assertThat(field(fieldLabelText)).hasAttribute("invalid", "");
     assertThat(durationCustomFieldLocator).hasAttribute("invalid", "");
-    assertThat(durationCustomFieldLocator).hasJSProperty("errorMessage", expectedErrorText);
-    assertThat(notificationCardLocator())
-        .containsText(uiTexts.getAdminConfigValidationInvalidFields());
+    assertThat(durationCustomFieldLocator).hasJSProperty("errorMessage", "");
+    assertThat(notificationCardLocator()).containsText(uiTexts.getBaseFailedTitle());
+    assertThat(notificationCardLocator()).containsText(expectedErrorText);
     dismissNotificationCard();
   }
 
@@ -99,7 +99,7 @@ public final class TokenConfigurationPage {
     dismissNotificationCard();
   }
 
-  @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
+  @Step("Mindestdauer und Erklärung in der Feldhilfe prüfen")
   public void explain(
       String fieldLabelText, long minimumDurationMinutes, String helpDescriptionText) {
     new AdminConfigurationPage(browserPage)

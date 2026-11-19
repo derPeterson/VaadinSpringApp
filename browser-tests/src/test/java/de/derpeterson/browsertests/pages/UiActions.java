@@ -1,5 +1,7 @@
 package de.derpeterson.browsertests.pages;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -106,13 +108,15 @@ public final class UiActions {
     // Für den Ziehweg mehr Höhe bereitstellen; die tatsächlich geprüfte Breite bleibt gleich.
     browserPage.setViewportSize(viewport.width, 1800);
     try {
-      field.scrollIntoViewIfNeeded();
+      Locator inputSurfaceLocator = field.locator("[part~='input-field']");
+      inputSurfaceLocator.scrollIntoViewIfNeeded();
+      assertThat(inputSurfaceLocator).hasCSS("resize", "vertical");
+
       BoundingBox original = field.boundingBox();
-      dragCorner(browserPage, original, 260);
-      org.junit.jupiter.api.Assertions.assertTrue(
-          field.boundingBox().height > original.height + 220);
+      dragCorner(browserPage, inputSurfaceLocator.boundingBox(), 260);
+      browserPage.waitForCondition(() -> field.boundingBox().height > original.height + 220);
       org.junit.jupiter.api.Assertions.assertEquals(original.width, field.boundingBox().width, 1);
-      BoundingBox input = field.locator("[part~='input-field']").boundingBox();
+      BoundingBox input = inputSurfaceLocator.boundingBox();
       org.junit.jupiter.api.Assertions.assertEquals(
           field.boundingBox().y + field.boundingBox().height,
           input.y + input.height,
@@ -121,8 +125,8 @@ public final class UiActions {
       double grown = field.boundingBox().height;
       field.locator("textarea").fill("Resize regression");
       org.junit.jupiter.api.Assertions.assertEquals(grown, field.boundingBox().height, 1);
-      dragCorner(browserPage, field.boundingBox(), -200);
-      org.junit.jupiter.api.Assertions.assertTrue(field.boundingBox().height < grown - 160);
+      dragCorner(browserPage, inputSurfaceLocator.boundingBox(), -200);
+      browserPage.waitForCondition(() -> field.boundingBox().height < grown - 160);
       field.locator("textarea").clear();
     } finally {
       browserPage.setViewportSize(viewport.width, viewport.height);
@@ -130,14 +134,14 @@ public final class UiActions {
   }
 
   private static void dragCorner(Page browserPage, BoundingBox bounds, double delta) {
-    browserPage.mouse().move(bounds.x + bounds.width - 3, bounds.y + bounds.height - 3);
+    // Der native Ziehgriff liegt innerhalb der gerundeten Ecke.
+    double gripX = bounds.x + bounds.width - 7;
+    double gripY = bounds.y + bounds.height - 7;
+    browserPage.mouse().move(gripX, gripY);
     browserPage.mouse().down();
     browserPage
         .mouse()
-        .move(
-            bounds.x + bounds.width - 3,
-            bounds.y + bounds.height - 3 + delta,
-            new com.microsoft.playwright.Mouse.MoveOptions().setSteps(12));
+        .move(gripX, gripY + delta, new com.microsoft.playwright.Mouse.MoveOptions().setSteps(12));
     browserPage.mouse().up();
   }
 

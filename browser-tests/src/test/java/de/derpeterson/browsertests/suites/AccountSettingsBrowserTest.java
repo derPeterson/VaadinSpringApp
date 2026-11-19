@@ -27,6 +27,7 @@ import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
 import de.derpeterson.browsertests.pages.ConfirmationAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.ProfileFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -48,6 +49,7 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -511,22 +513,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(notificationCardLocator).hasCount(1);
     assertThat(notificationCardLocator).containsText(uiTexts.getBaseSuccessTitle());
     assertThat(notificationCardLocator)
-        .hasAttribute("theme", "cosmos cosmos-reference cosmos-reference-success");
-    // Vaadin veröffentlicht opened als Property, nicht als HTML-Attribut.
-    assertTrue(
-        (boolean)
-            browserPage
-                .locator("vaadin-notification")
-                .evaluateAll(
-                    """
-                    notifications => {
-                      const openedNotifications = notifications.filter(notification => notification.opened);
-                      return openedNotifications.length === 1
-                        && openedNotifications[0].duration === 3000
-                        && openedNotifications[0].position === 'top-center';
-                    }
-                    """),
-        "Die Profilmeldung muss oben mittig mit drei Sekunden Anzeigedauer geöffnet sein.");
+        .hasAttribute("theme", Pattern.compile(".*\\bcosmos-reference-success\\b.*"));
+    NotificationAppearanceChecks.assertPositionAndDuration(browserPage, 3000);
     browserPage.mouse().move(0, 0);
     Allure.attachment(
         "Profil-Erfolgsmeldung Messwerte " + browserPage.viewportSize().width,
@@ -698,6 +686,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-email-new").fill("draft@example.test");
     form.input("account-email-confirm").fill("draft@example.test");
     form.input("account-email-password").fill("Local-Draft-Only!");
+    if ("escape".equals(closeAction)) {
+      Locator passwordInputLocator = form.input("account-email-password");
+      passwordInputLocator.press("Escape");
+      assertThat(passwordInputLocator).hasValue("");
+      assertThat(form.dialog()).hasCount(1);
+    }
     form.closeEmail(closeAction);
     form.openEmail();
 
@@ -1028,7 +1022,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @Test
   @DisplayName("INPUT-01: Kompakte Geburtstage werden bei Blur und Enter lokalisiert übernommen")
   @Description(
-      "Im echten Kontodatumsfeld vier/sechs/acht Ziffern und 1950/2049 prüfen; ungültiger Tag bleibt ungültig. Enter und Tab verwenden den geladenen Frontend-Parser in DE/EN.")
+      "Im Kontodatumsfeld vier/sechs/acht Ziffern und 1950/2049 per Enter und Tab prüfen. Ein ungültiger Tag wird beim Speichern abgelehnt.")
   void compactBirthDatesUseTheRealFrontendParser() {
     account();
     AccountPage form = new AccountPage(browserPage);
@@ -1055,7 +1049,11 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-birth-date").fill(german ? "310286" : "023186");
     form.input("account-birth-date").press("Tab");
 
+    assertThat(form.host("account-birth-date")).not().hasAttribute("invalid", "");
+    form.save();
     assertThat(form.host("account-birth-date")).hasAttribute("invalid", "");
+    form.assertMessage(uiTexts.getBaseValidationBirthDatePastMessage());
+    form.closeNotification();
   }
 
   @Test

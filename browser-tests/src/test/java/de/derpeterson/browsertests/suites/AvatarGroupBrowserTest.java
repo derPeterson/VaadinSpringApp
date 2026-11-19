@@ -30,7 +30,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class AvatarGroupBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
-  void recipientAvatarGroupPreservesPreviewAndExposesNativeOverflow(int width) {
+  void recipientAvatarGroupOpensSearchablePreviewWithoutSending(int width) {
     LoginPage loginPage = new LoginPage(browserPage);
     loginPage.open();
     loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
@@ -79,26 +79,17 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
       capture("Empfaenger " + recipientCount);
       composePage.review().focus();
       composePage.review().press("Tab");
-      for (Locator recipientAvatarLocator :
-          recipientAvatarGroupLocator.locator(":scope > vaadin-avatar:visible").all()) {
-        assertThat(recipientAvatarLocator).isFocused();
-        recipientAvatarLocator.press("Tab");
-      }
-      assertThat(browserPage.locator("#admin-notifications-preview-details")).isFocused();
-      browserPage.locator("#admin-notifications-preview-details").click();
-      Locator recipientDetailsLocator =
-          browserPage.locator("#admin-notifications-preview-recipients");
-      assertThat(recipientDetailsLocator).hasAttribute("opened", "");
-      for (String email : recipientEmails.subList(0, recipientCount)) {
-        assertThat(recipientDetailsLocator).containsText(email);
-      }
-      browserPage.locator("#admin-notifications-preview-details").click();
-      assertThat(composePage.send()).isEnabled();
+      assertThat(recipientAvatarGroupLocator).isFocused();
+      recipientAvatarGroupLocator.press("Enter");
+      verifyRecipientPopover(recipientEmails.get(recipientCount - 1), width);
+      closeRecipientPopoverAndAssertSendEnabled(composePage, recipientAvatarGroupLocator);
+
       if (recipientCount == 9) {
-        checkNativeOverflow(recipientAvatarGroupLocator, overflowAvatarLocator, width);
+        overflowAvatarLocator.click();
+        verifyRecipientPopover(recipientEmails.getFirst(), width);
+        closeRecipientPopoverAndAssertSendEnabled(composePage, recipientAvatarGroupLocator);
       }
     }
-    checkNativeOverflowWithTwoHundredSyntheticItems();
     assertThat(browserPage.locator(".cosmos-notification-sent-row"))
         .hasCount(sentRowCountBeforePreview);
   }
@@ -114,77 +105,37 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
         recipientAvatarLocator.evaluate(frameStyleScript));
   }
 
-  /**
-   * Reiner Widget-Mengenfall; die neun real geprüften Empfänger werden danach wiederhergestellt.
-   */
-  private void checkNativeOverflowWithTwoHundredSyntheticItems() {
-    Locator recipientAvatarGroupLocator =
-        browserPage.locator("#admin-notifications-recipient-avatars");
-    Object reviewedAvatarItems = recipientAvatarGroupLocator.evaluate("group => group.items");
-    recipientAvatarGroupLocator.evaluate(
-        """
-        group => { group.items = Array.from({length:200}, (_,index) => ({name:`Recipient ${index + 1}`})); }
-        """);
-    Locator overflowAvatarLocator =
-        recipientAvatarGroupLocator.locator("vaadin-avatar[slot='overflow']");
-    assertThat(overflowAvatarLocator).hasJSProperty("abbr", "+195");
-    overflowAvatarLocator.click();
-    Locator menuItemLocators = browserPage.locator("vaadin-avatar-group-menu-item:visible");
-    assertThat(menuItemLocators).hasCount(195);
-    Locator overlayFrameLocator =
-        browserPage.locator("vaadin-avatar-group-overlay[opened]").locator("[part='overlay']");
-    assertTrue(overlayFrameLocator.boundingBox().height <= 361);
-    assertTrue(
-        ((Number) overlayFrameLocator.evaluate("frame => frame.scrollHeight")).doubleValue()
-            > ((Number) overlayFrameLocator.evaluate("frame => frame.clientHeight")).doubleValue());
-    browserPage.keyboard().press("End");
-    assertThat(menuItemLocators.last()).isFocused();
-    assertThat(menuItemLocators.last()).containsText("Recipient 200");
-    assertTrue(
-        ((Number) overlayFrameLocator.evaluate("frame => frame.scrollTop")).doubleValue() > 0);
-    assertTrue(menuItemLocators.last().boundingBox().y >= overlayFrameLocator.boundingBox().y);
-    assertTrue(
-        menuItemLocators.last().boundingBox().y + menuItemLocators.last().boundingBox().height
-            <= overlayFrameLocator.boundingBox().y + overlayFrameLocator.boundingBox().height + 1);
-    capture("200 Eintraege");
-    browserPage.keyboard().press("Escape");
+  private void verifyRecipientPopover(String emailAddress, int viewportWidth) {
+    Locator recipientPopoverLocator =
+        browserPage.locator("#admin-notifications-preview-recipients");
+    Locator searchInputLocator =
+        recipientPopoverLocator.locator("#admin-notifications-recipient-search input");
+    assertThat(recipientPopoverLocator).hasAttribute("opened", "");
+    assertThat(searchInputLocator).isFocused();
     assertThat(browserPage.locator("vaadin-avatar-group-menu:visible")).hasCount(0);
-    assertThat(overflowAvatarLocator).isFocused();
-    recipientAvatarGroupLocator.evaluate(
-        "(group,items) => { group.items = items; }", reviewedAvatarItems);
-    assertThat(overflowAvatarLocator).hasJSProperty("abbr", "+4");
+
+    Locator popoverFrameLocator = recipientPopoverLocator.locator("[part~='overlay']");
+    assertTrue(popoverFrameLocator.boundingBox().x >= 0);
+    assertTrue(
+        popoverFrameLocator.boundingBox().x + popoverFrameLocator.boundingBox().width
+            <= viewportWidth + 1);
+    searchInputLocator.fill(emailAddress);
+    Locator recipientButtonLocator =
+        recipientPopoverLocator.locator(".cosmos-recipient-button:visible");
+    assertThat(recipientButtonLocator).hasCount(1);
+    assertThat(recipientButtonLocator).containsText(emailAddress);
+    capture("Gefilterte Empfaengerliste");
+    searchInputLocator.clear();
   }
 
-  @SuppressWarnings("unchecked")
-  private void checkNativeOverflow(
-      Locator recipientAvatarGroupLocator, Locator overflowAvatarLocator, int width) {
-    List<String> hiddenNames =
-        (List<String>)
-            recipientAvatarGroupLocator.evaluate(
-                "group => group.items.slice(5).map(item => item.name)");
-    overflowAvatarLocator.click();
-    Locator menuItemLocators = browserPage.locator("vaadin-avatar-group-menu-item:visible");
-    assertThat(menuItemLocators).hasCount(4);
-    assertAvatarFrameMatchesHeader(menuItemLocators.first().locator("vaadin-avatar"));
-    for (int recipientIndex = 0; recipientIndex < hiddenNames.size(); recipientIndex++) {
-      assertThat(menuItemLocators.nth(recipientIndex))
-          .containsText(hiddenNames.get(recipientIndex));
-    }
-    Locator recipientMenuLocator = browserPage.locator("vaadin-avatar-group-menu:visible");
-    assertTrue(recipientMenuLocator.boundingBox().x >= 0);
-    assertTrue(
-        recipientMenuLocator.boundingBox().x + recipientMenuLocator.boundingBox().width
-            <= width + 1);
-    capture("Native Liste");
+  private void closeRecipientPopoverAndAssertSendEnabled(
+      NotificationComposePage composePage, Locator recipientAvatarGroupLocator) {
     browserPage.keyboard().press("Escape");
-    assertThat(recipientMenuLocator).not().isVisible();
-    assertThat(overflowAvatarLocator).isFocused();
-    overflowAvatarLocator.press("Enter");
-    assertThat(recipientMenuLocator).isVisible();
-    assertThat(menuItemLocators).hasCount(4);
-    browserPage.keyboard().press("Escape");
-    assertThat(recipientMenuLocator).not().isVisible();
-    assertThat(overflowAvatarLocator).isFocused();
+    assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
+        .not()
+        .hasAttribute("opened", "");
+    assertThat(recipientAvatarGroupLocator).isFocused();
+    assertThat(composePage.send()).isEnabled();
   }
 
   private List<String> createRecipients() {

@@ -87,7 +87,7 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       }
       AdminUserDialog stored = new AdminUsersPage(browserPage).openEdit(account);
 
-      assertThat(stored.administrativeBlockCheckbox()).isChecked();
+      assertThat(stored.administrativeBlockSwitch()).isChecked();
       stored.cancel();
       browserActor.login(account, BrowserTestAccounts.USER_PASSWORD);
       new LoginPage(browserActor.browserPage).assertRejected();

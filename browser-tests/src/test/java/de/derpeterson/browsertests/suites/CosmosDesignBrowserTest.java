@@ -567,7 +567,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     assertThat(target.locator(".cosmos-footer")).isVisible();
     for (Locator input :
         target.locator(".public-panel input[placeholder]:placeholder-shown").all()) {
-      assertEquals("14px", input.evaluate("el => getComputedStyle(el, '::placeholder').fontSize"));
+      assertEquals("13px", input.evaluate("el => getComputedStyle(el, '::placeholder').fontSize"));
       assertEquals("400", input.evaluate("el => getComputedStyle(el, '::placeholder').fontWeight"));
     }
     target.evaluate("() => document.fonts.ready");

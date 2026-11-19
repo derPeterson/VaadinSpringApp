@@ -455,7 +455,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     amountInputLocator.press("Tab");
     configurationPage.submit();
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
-        .containsText(uiTexts.getAdminConfigValidationInvalidFields());
+        .containsText(uiTexts.getAdminConfigDurationInvalid());
     browserPage
         .locator("vaadin-notification-card:not([closing])")
         .getByRole(AriaRole.BUTTON)
@@ -1512,7 +1512,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     for (Locator pageButtonLocator :
         browserPage.locator(".admin-user-pagination vaadin-button").all()) {
       assertThat(pageButtonLocator)
-          .hasCSS("cursor", pageButtonLocator.isEnabled() ? "pointer" : "default");
+          .hasCSS("cursor", pageButtonLocator.isEnabled() ? "pointer" : "not-allowed");
     }
     assertThat(browserPage.locator("#notifications-inbox-search input")).hasCSS("cursor", "text");
     browserPage.locator("#account-header-notifications").click();

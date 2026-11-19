@@ -74,8 +74,10 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
       assertThat(notice.locator("ul.cosmos-notification-details > li"))
           .hasCSS("font-weight", "700");
       NotificationAppearanceChecks.capture(browserPage, "Warnung-Aufzaehlung", "warning", 0);
-      NotificationAppearanceChecks.close(browserPage);
     } finally {
+      if (browserPage.locator("vaadin-notification-card:not([closing])").isVisible()) {
+        NotificationAppearanceChecks.close(browserPage);
+      }
       configuration.enter(keyLabel, originalKey);
       configuration.save();
     }

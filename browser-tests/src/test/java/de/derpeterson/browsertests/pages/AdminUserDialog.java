@@ -81,23 +81,26 @@ public final class AdminUserDialog {
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
 
-    check(uiTexts.getAdminUsersFieldBlocked(), !enabled);
+    administrativeBlockSwitch().setChecked(!enabled);
     setRole(uiTexts.getRoleUser(), true);
     setRole(uiTexts.getRoleAdmin(), administrator);
   }
 
   @Step("Freigabe im Benutzerformular ändern")
   public void setEnabled(boolean enabled) {
-    check(uiTexts.getAdminUsersFieldBlocked(), !enabled);
+    administrativeBlockSwitch().setChecked(!enabled);
   }
 
-  public Locator administrativeBlockCheckbox() {
-    return root()
-        .getByRole(
-            AriaRole.CHECKBOX,
-            new Locator.GetByRoleOptions()
-                .setName(uiTexts.getAdminUsersFieldBlocked())
-                .setExact(true));
+  public Locator administrativeBlockSwitch() {
+    return root().locator("vaadin-switch.admin-user-blocked-switch").getByRole(AriaRole.SWITCH);
+  }
+
+  public Locator developmentAccountSwitch() {
+    return root().locator("#admin-development-account").getByRole(AriaRole.SWITCH);
+  }
+
+  public Locator emailVerificationSwitch() {
+    return root().locator("#admin-email-verification-required").getByRole(AriaRole.SWITCH);
   }
 
   @Step("Anmeldedetails im Benutzerformular aufklappen")
@@ -210,11 +213,5 @@ public final class AdminUserDialog {
   private Locator button(String name) {
     return root()
         .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(name).setExact(true));
-  }
-
-  private void check(String label, boolean checked) {
-    root()
-        .getByRole(AriaRole.CHECKBOX, new Locator.GetByRoleOptions().setName(label).setExact(true))
-        .setChecked(checked);
   }
 }

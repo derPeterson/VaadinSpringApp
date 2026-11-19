@@ -20,6 +20,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
@@ -218,14 +219,20 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         new UserMenu(browserPage).selectLanguage(other.language());
 
         assertThat(settings.input(other.getAdminConfigEntryBaseUrl())).hasValue("invalid");
-        assertThat(browserPage.locator("vaadin-text-field[invalid]"))
-            .hasJSProperty("errorMessage", other.getAdminConfigValidationUrl());
+        assertThat(browserPage.locator("vaadin-text-field[invalid]")).hasCount(1);
+        browserPage
+            .getByRole(
+                AriaRole.BUTTON,
+                new Page.GetByRoleOptions().setName(other.getAdminConfigSave()).setExact(true))
+            .click();
+        assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+            .containsText(other.getAdminConfigValidationUrl());
+        NotificationAppearanceChecks.close(browserPage);
       } finally {
         new UserMenu(browserPage).selectTestLanguage();
       }
       assertThat(settings.input(url)).hasValue("invalid");
-      assertThat(browserPage.locator("vaadin-text-field[invalid]"))
-          .hasJSProperty("errorMessage", uiTexts.getAdminConfigValidationUrl());
+      assertThat(browserPage.locator("vaadin-text-field[invalid]")).hasCount(1);
       settings.reload();
 
       assertThat(settings.input(url)).hasValue(originalUrl);

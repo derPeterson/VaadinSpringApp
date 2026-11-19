@@ -108,7 +108,7 @@ public class VerificationBrowserTest extends BrowserFixture {
       AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
       Locator signInDetailsLocator = editUserDialog.root().locator("#admin-user-sign-in-details");
       assertThat(signInDetailsLocator).not().hasAttribute("opened", "");
-      assertThat(editUserDialog.administrativeBlockCheckbox()).not().isChecked();
+      assertThat(editUserDialog.administrativeBlockSwitch()).not().isChecked();
       CosmosFollowUpChecks.assertDetailsWithoutHover(
           editUserDialog.root().locator("#admin-user-sign-in-toggle"));
       editUserDialog.openSignInDetails();
@@ -366,12 +366,8 @@ public class VerificationBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     adminUsersPage.open();
     AdminUserDialog createUserDialog = adminUsersPage.openCreate();
-    Locator verificationCheckboxLocator =
-        createUserDialog
-            .root()
-            .locator("#admin-email-verification-required")
-            .getByRole(AriaRole.CHECKBOX);
-    assertThat(verificationCheckboxLocator).isChecked();
+    Locator verificationSwitchLocator = createUserDialog.emailVerificationSwitch();
+    assertThat(verificationSwitchLocator).isChecked();
     assertThat(
             createUserDialog
                 .root()
@@ -381,7 +377,7 @@ public class VerificationBrowserTest extends BrowserFixture {
         .isVisible();
     String emailAddress = newVerificationEmailAddress();
     createUserDialog.fillNewUser(emailAddress, BrowserTestAccounts.USER_PASSWORD, true, false);
-    verificationCheckboxLocator.uncheck();
+    verificationSwitchLocator.uncheck();
     AllurePlaywright.attachScreenshot("Verifikation bei der Kontoanlage", browserPage);
     createUserDialog.save();
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
@@ -416,20 +412,15 @@ public class VerificationBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     adminUsersPage.open();
     AdminUserDialog createUserDialog = adminUsersPage.openCreate();
-    Locator developmentCheckbox =
-        createUserDialog.root().locator("#admin-development-account").getByRole(AriaRole.CHECKBOX);
-    Locator verificationCheckbox =
-        createUserDialog
-            .root()
-            .locator("#admin-email-verification-required")
-            .getByRole(AriaRole.CHECKBOX);
-    assertThat(developmentCheckbox).not().isChecked();
-    assertThat(verificationCheckbox).isChecked();
+    Locator developmentSwitchLocator = createUserDialog.developmentAccountSwitch();
+    Locator verificationSwitchLocator = createUserDialog.emailVerificationSwitch();
+    assertThat(developmentSwitchLocator).not().isChecked();
+    assertThat(verificationSwitchLocator).isChecked();
     String developmentEmail = newVerificationEmailAddress();
     createUserDialog.fillNewUser(developmentEmail, BrowserTestAccounts.USER_PASSWORD, true, false);
-    developmentCheckbox.check();
-    assertThat(verificationCheckbox).not().isChecked();
-    assertThat(verificationCheckbox).isDisabled();
+    developmentSwitchLocator.check();
+    assertThat(verificationSwitchLocator).not().isChecked();
+    assertThat(verificationSwitchLocator).isDisabled();
     AllurePlaywright.attachScreenshot(
         "Entwicklungskonto anlegen bei " + viewportWidth + " px", browserPage);
     createUserDialog.save();

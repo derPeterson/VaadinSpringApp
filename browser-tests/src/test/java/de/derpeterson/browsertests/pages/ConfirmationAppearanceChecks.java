@@ -89,6 +89,8 @@ public final class ConfirmationAppearanceChecks {
   public static void capture(Page browserPage, Locator confirmationDialogLocator, String caseName) {
     Locator overlayLocator = confirmationDialogLocator.locator("[part~='overlay']").first();
     assertThat(overlayLocator).isVisible();
+    assertThat(confirmationDialogLocator.locator("vaadin-confirm-dialog-overlay[opening]"))
+        .hasCount(0);
     browserPage.evaluate("() => document.fonts.ready");
 
     ViewportSize viewportSize = browserPage.viewportSize();

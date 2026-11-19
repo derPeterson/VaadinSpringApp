@@ -209,10 +209,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 view.locator(rowSelector)
                     .filter(new Locator.FilterOptions().setHasText("#" + assigned)))
             .hasCount(0);
-        if (view != mobile) {
-          assertThat(view.locator("#support-reply textarea"))
-              .hasValue("Draft retained outside the filtered list.");
-        }
+        assertThat(view.locator("#support-ticket-panel")).hasCount(0);
         Locator next = view.locator("#support-pagination .cosmos-pagination-next");
         Locator range = view.locator("#support-pagination .admin-user-pagination-total");
         String firstRange = range.innerText();
@@ -253,15 +250,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           assertThat(view.locator(rowSelector)).hasCount(remaining == 0 ? 10 : remaining);
           assertThat(view.locator("#support-pagination .cosmos-pagination-next")).isDisabled();
           assertThat(view.locator("#support-active-filter-count")).hasText("1");
-          if (view != mobile) {
-            assertThat(view.locator("#support-reply textarea"))
-                .hasValue("Draft retained outside the filtered list.");
-          }
+          assertThat(view.locator("#support-ticket-panel")).hasCount(0);
         }
       }
-      jumpToTicket(mobile, assigned);
-      assertThat(mobile.locator("#support-reply textarea"))
-          .hasValue("Draft retained outside the filtered list.");
+      for (Page view : List.of(browserPage, mobile)) {
+        jumpToTicket(view, assigned);
+        assertThat(view.locator("#support-reply textarea"))
+            .hasValue("Draft retained outside the filtered list.");
+      }
     }
   }
 
@@ -785,7 +781,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertNotificationCount(admin, 1);
 
     assertThat(ticketCard(admin, unassignedNumber).locator(".support-ticket-unread")).hasText("1");
-    UiActions.complete(admin, () -> ticketCard(admin, unassignedNumber).click());
+    openAdminTicketFromList(admin, unassignedNumber);
     assertNotificationCount(admin, 0);
     UiActions.complete(admin, () -> admin.locator("#support-close").click());
     assertNotificationCount(browserPage, previousNotifications);
@@ -1033,17 +1029,25 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator unread = ticketCard(admin, other).locator(".support-ticket-unread");
 
     assertThat(unread).hasText("1");
-    UiActions.complete(admin, () -> ticketCard(admin, closed).click());
+    openAdminTicketFromList(admin, closed);
 
     assertThat(admin.locator("#support-ticket-panel .support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber(closed));
     assertThat(unread).hasText("1");
     assertNotificationCount(admin, 1);
-    UiActions.complete(admin, () -> ticketCard(admin, other).click());
+    openAdminTicketFromList(admin, other);
     assertNotificationCount(admin, 0);
     UiActions.complete(admin, () -> admin.locator("#support-claim").click());
     verifyInternalNoteLeavesHiddenConversationUnread(admin, requester, closed, other);
     UiActions.complete(admin, () -> admin.locator("#support-close").click());
+  }
+
+  private void openAdminTicketFromList(Page administratorPage, String ticketNumber) {
+    if (administratorPage.locator("#support-return-to-list").isVisible()) {
+      returnToTicketList(administratorPage);
+    }
+    UiActions.complete(
+        administratorPage, () -> ticketCard(administratorPage, ticketNumber).click());
   }
 
   private Locator requesterCard(Page requester, String number) {
@@ -1120,7 +1124,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               .locator("#support-ticket-grid .support-ticket-number")
               .first()
               .innerText();
-      UiActions.complete(browserPage, () -> ticketCard(browserPage, number).click());
+      openAdminTicketFromList(browserPage, number);
       assertIdentityTooltip(browserPage, avatar, "Browser Testuser", otherEmail, false);
       String followUp = "Ergänzung des zweiten Testkontos im Live-Verlauf.";
       other.browserPage.locator("#support-reply textarea").fill(followUp);
@@ -1227,12 +1231,6 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(foreign.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
     assertThat(own.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
     assertIdentityTooltip(
-        browserPage,
-        ticketCard(browserPage, number).locator(".cosmos-user-avatar"),
-        assigneeName,
-        assigneeEmail,
-        false);
-    assertIdentityTooltip(
         browserPage, foreign.locator(".cosmos-user-avatar"), assigneeName, assigneeEmail, true);
 
     assertThat(requester.locator(".support-admin-person-email")).hasText(requesterEmail);
@@ -1250,6 +1248,24 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AvatarAppearanceChecks.captureAvatar(
         foreign.locator(".cosmos-user-avatar"),
         "Avatar Ticket Bearbeiter " + browserPage.viewportSize().width);
+
+    Locator returnButtonLocator = browserPage.locator("#support-return-to-list");
+    boolean detailOverlayOpen = returnButtonLocator.isVisible();
+    if (detailOverlayOpen) {
+      UiActions.complete(browserPage, returnButtonLocator::click);
+      assertThat(foreign).hasCount(0);
+    }
+    Locator assignedTicketCardLocator = ticketCard(browserPage, number);
+    assertIdentityTooltip(
+        browserPage,
+        assignedTicketCardLocator.locator(".cosmos-user-avatar"),
+        assigneeName,
+        assigneeEmail,
+        false);
+    if (detailOverlayOpen) {
+      UiActions.complete(browserPage, assignedTicketCardLocator::click);
+      assertThat(foreign).isVisible();
+    }
   }
 
   private void assertIdentityTooltip(
@@ -1481,13 +1497,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator ticketLayout = browserPage.locator("#support-master-detail");
     Locator replyInput = ticketPanel.locator("#support-reply textarea");
     Locator returnButton = ticketPanel.locator("#support-return-to-list");
+    String previousDraft = replyInput.inputValue();
     String draft = "Unsaved mobile reply";
 
     assertThat(ticketLayout).hasAttribute("overlay", "");
     assertThat(returnButton).hasAttribute("aria-label", uiTexts.getSupportReturnToTicketList());
     assertThat(ticketPanel.locator("#support-focus-toggle")).not().isVisible();
     replyInput.fill(draft);
-    UiActions.complete(browserPage, () -> replyInput.press("Escape"));
+    returnButton.focus();
+    UiActions.complete(browserPage, () -> returnButton.press("Escape"));
     assertTicketLocation("all", null);
 
     assertThat(ticketPanel).hasCount(0);
@@ -1498,7 +1516,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
     assertThat(replyInput).hasValue(draft);
     AllurePlaywright.attachScreenshot("Vorgangsdetail als Overlay bei 390 px", browserPage);
-    replyInput.clear();
+    replyInput.fill(previousDraft);
   }
 
   private Object selectedTabStyle(Locator tab) {

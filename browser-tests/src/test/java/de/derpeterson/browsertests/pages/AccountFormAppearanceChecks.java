@@ -53,7 +53,7 @@ public final class AccountFormAppearanceChecks {
       double footerContentWidth =
           ((Number)
                   dialogLocator
-                      .locator("[part~='footer']")
+                      .locator("vaadin-dialog-overlay footer[part~='footer']")
                       .evaluate(
                           """
                           footer => {
@@ -114,7 +114,7 @@ public final class AccountFormAppearanceChecks {
     Locator lastFormFieldLocator =
         signInDetailsLocator.count() == 1
             ? signInDetailsLocator
-            : userDialogLocator.locator(".cosmos-dialog-form vaadin-checkbox:visible").last();
+            : userDialogLocator.locator(".cosmos-dialog-form vaadin-switch:visible").last();
     lastFormFieldLocator.scrollIntoViewIfNeeded();
     attachUserDialogScreenshot(browserPage, userDialogLocator, evidenceName + " unten");
     attachDialogScrollMeasurements(userDialogLocator, evidenceName + " Scrollmaße unten");
