@@ -11,13 +11,10 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
-Die Nachbearbeitung ist mit Ausnahme von **Punkt 9, Avatar-/Empfängergruppe**
-abgeschlossen und vom Benutzer abgenommen. Der [Nachbearbeitungsplan](vaadin-nachbearbeitung.md)
-enthält die noch nötigen Nachbesserungen und die ausstehende Freigabe dieser Gruppe.
-Die neue Nachbearbeitung umfasst fünf freigegebene Punkte: Bestandsaufnahmen zu
-Badges sowie Eingaben, Buttons und Formularschrift; Korrekturen am Zahlen-/Placeholder-
-Versatz, am TextArea-Fokusrahmen und am Empfänger-Overlay. Die Gestaltungsvorschläge
-aus den beiden Bestandsaufnahmen werden vor Umsetzung gemeinsam abgestimmt.
+Die bisherigen Nachbearbeitungen einschließlich AvatarGroup und Empfängerliste
+sind vom Benutzer abgenommen. Im [Nachbearbeitungsplan](vaadin-nachbearbeitung.md)
+bleibt die Abstimmung der Größen-/Gestaltungsvorschläge zu Badges, Eingaben,
+Buttons und Formularschrift aus Punkten 1–2 offen.
 Der Anwesenheitsstatus behält seine bisherige Darstellung.
 Gemeinsames Switch-Grundstyling, Schließen-Icons und die übrigen freigegebenen
 Gestaltungsregeln stehen in der Theme-Anleitung. Automatisierte Browsernachtests
@@ -87,24 +84,6 @@ Passkeys und Hosting gehören zu eigenen Themen nach dem Komponentenumbau.
 Die offenen Aufgaben bleiben in [TODO](../../TODO.md). Diese Abgrenzung behebt
 oder erledigt die betreffenden Aufgaben nicht.
 
-## Offen: AvatarGroup und Empfängerliste nachbessern
-
-Die Empfängervorschau unter Administration → Benachrichtigungen verwendet die
-native `AvatarGroup` im Cosmos-Avatarstil: bis sechs alle, ab sieben fünf plus
-„+N“, bei Platzmangel früherer nativer Überlauf. Namen-Tooltips bleiben erhalten.
-Die freigegebene Folgearbeit ersetzt die bisherige Details-Liste und das native
-Überlaufmenü durch eine gemeinsame vollständige Empfängerliste: natives Popover,
-Suchfeld und Grid mit Namen/E-Mail, scrollbar und ohne Auswahlzustand. Die gesamte
-Avatarreihe öffnet diese Liste auch ohne Überlauf; der genehmigte kleine
-Ereignis-Listener verwendet keine private Vaadin-API. Keine Versand-/Rechteänderung.
-
-Die neue Liste ist ausdrücklich noch nicht vom Benutzer freigegeben und benötigt
-Nachbesserungen. Die konkreten Änderungen sind als neuer Punkt 5 beauftragt;
-Anforderungen und offener Ablauf stehen im [Restplan zu Punkt 9](vaadin-nachbearbeitung.md).
-Die gezielten Browsernachtests bleiben im [Testbedarf](../testbedarf.md). Ältere Vergleichsaufnahmen
-belegen die bisherige Variante, nicht diese neue Bedienung. Das Paket erst nach
-ausdrücklicher Benutzerabnahme schließen.
-
 ## Grundlage für weitere Pakete
 
 Die folgenden Kandidaten dienen der nächsten gemeinsamen Entscheidung. Vor
@@ -144,9 +123,9 @@ oder die Präsenzsteuerung. In der Empfängervorschau der Admin-Benachrichtigung
 wird jetzt die native `AvatarGroup` eingesetzt.
 
 Die vorhandene Identitätshülle mit Bildberechtigungen, Aktualisierung, Fallback,
-Größen und Tickettooltip bleibt erhalten. Die beauftragte Empfängervorschau ist
-oben beschrieben. Die vollständige Empfängerliste im Popover bleibt Gegenstand
-der offenen Nachbesserung und ausdrücklichen Benutzerfreigabe.
+Größen und Tickettooltip bleibt erhalten. Die Empfängervorschau und ihre
+vollständige Empfängerliste im Popover mit VirtualList sind ebenfalls
+abgenommen; der gültige Aufbau steht in der [Theme-Anleitung](../theme.md#icons-und-identität).
 [Vaadin Avatar und Avatar Group](https://vaadin.com/docs/latest/components/avatar).
 
 ### Formulare, Karten und Dialoge

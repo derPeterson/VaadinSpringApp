@@ -48,9 +48,8 @@ Fachdokumentation getrennt. Ein Plan ist noch kein Umsetzungs-, Release- oder Te
 
 - [Vaadin-Komponenten](planung/vaadin-komponenten-abgleich.md): Gesamtumsetzung und
   mögliche Folgepakete. Freigegebene Bausteine beschreibt die Theme-Anleitung.
-- [Nachbearbeitungen](planung/vaadin-nachbearbeitung.md): Avatar-/Empfängergruppe
-  (bisheriger Punkt 9) nachbessern; fünf neue freigegebene Arbeitspunkte zu
-  Größenanalysen, Formularfehlern und dem Empfänger-Overlay.
+- [Nachbearbeitungen](planung/vaadin-nachbearbeitung.md): Größen- und
+  Typografievorschläge aus Punkten 1–2 gemeinsam abstimmen.
 - Zurückgestellte Planungen: [Neuigkeiten](planung/neuigkeiten.md), [Passkeys](planung/passkeys.md) und
   [öffentlicher Testbetrieb](planung/oeffentlicher-testbetrieb.md).
 - Weitere bewertete Ideen: [Portal-Erweiterungen](planung/portal-erweiterungen.md).

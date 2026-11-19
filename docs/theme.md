@@ -719,15 +719,27 @@ Bis sechs Empfänger alle anzeigen; ab sieben fünf Avatare plus „+N“. Früh
 bei Platzmangel bleibt nativ. Rahmen/Farben entsprechen Cosmos, die Namen-Tooltips bleiben.
 Die gesamte Reihe öffnet per Klick, Enter oder Leertaste die vollständige Liste,
 auch ohne „+N“. `NotificationRecipientPopover` setzt diese aus nativem Popover,
-Suchfeld und Grid zusammen: Name, darunter sekundäre E-Mail; Suche über beide Werte,
+Suchfeld und VirtualList zusammen: Name, darunter sekundäre E-Mail; Suche über beide Werte,
 keine Zeilenauswahl. Der Kopf verwendet Personen-Icon und Schließen-Button im
-gemeinsamen Dialogstil; eine Trennlinie trennt ihn von Suche und Liste auf der
-Content-Fläche. Das Suchfeld hat eine Lupe. Die Breite folgt dem Inhalt bis maximal
-480 px und bleibt innerhalb des Fensters. Das Grid verwendet die gemeinsamen
-Tabellenfarben und zeigt höchstens fünf 60-px-Zeilen; bei weniger Treffern schrumpft
-es, ohne Treffer bleibt eine Zeile für den Leerzustand. Die Zeilenhöhe wird aus
+gemeinsamen Dialogstil. Unter „Empfänger“ steht der übersetzte Untertitel
+„Auswahl prüfen und durchsuchen.“ mit der gemeinsamen `cosmos-panel-description`-
+Gestaltung; eine Trennlinie trennt den Kopf von Suche und Liste auf der
+Content-Fläche. Header, Außenrahmen und Content übernehmen die Farben der
+Benachrichtigungsvorschau: `--cosmos-raised-background`, `--cosmos-control-border-color`
+und `--cosmos-page-background`; die Trennlinie nutzt `--cosmos-border-color`.
+Das Suchfeld übernimmt die Benutzerfilter-Geometrie: 40-px-Feld,
+13-px-Eingabeschrift, 14-px-Lupe und M-Innenabstand. Die Breite beträgt 380 px und wird bei
+kleineren Fenstern auf die verfügbare Breite mit seitlichem L-Abstand begrenzt.
+Die innere Hülle füllt diese Breite aus. Die Liste verwendet die dunkle Tabellenvariante
+der Benutzerverwaltung mit abwechselnden Zeilenflächen. Die Streifen folgen den
+festen Zeilenpositionen als mitscrollender Hintergrund, damit auch wiederverwendete
+Renderknoten korrekt abwechseln. Sie zeigt höchstens fünf 60-px-Zeilen; bei weniger
+Treffern schrumpft sie, ohne Treffer bleibt eine Zeile für den Leerzustand. Die Zeilenhöhe wird aus
 Zeilenhöhen-/Abstandstokens abgeleitet. Weitere Zeilen scrollt und virtualisiert
-das Grid; bei kleinen Fenstern darf die sichtbare Liste weiter schrumpfen.
+die VirtualList; bei kleinen Fenstern darf die sichtbare Liste weiter schrumpfen.
+Ihr Scrollbereich liegt am öffentlich gestaltbaren Host; die bestehenden Regeln
+aus `cosmos-scrollbars.css` greifen dort direkt. Keine zusätzlichen Scrollbar-Regeln
+oder Zugriffe auf interne Grid-Elemente verwenden.
 Der freigegebene, gekapselte Listener in `notification-recipient-popover.js` fängt
 Klick/Tastatur vor dem nativen Überlaufmenü ab. Er nutzt nur DOM-Ereignisse und
 öffentliche Light-DOM-Slots, keine privaten Vaadin-Methoden. „Details“ entfällt.

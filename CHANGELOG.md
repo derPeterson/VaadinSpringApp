@@ -4,6 +4,8 @@
 
 ### DE
 
+- Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
+  Suche nach Name und E-Mail-Adresse, auch ohne „+N“-Überlauf.
 - Konfiguration, Mail-Test, Tickets und Mitteilungsentwürfe erklären Eingabefehler
   konkret beim Speichern, Senden oder Öffnen der Vorschau.
 - Wiederherstellungsanleitungen im Ticket nach 60 Sekunden erneut anfordern;
@@ -12,6 +14,8 @@
 
 ### EN
 
+- The avatar preview of an announcement opens the complete recipient list with
+  search by name and email address, even without a “+N” overflow.
 - Configuration, mail tests, tickets and announcement drafts explain invalid input
   when saving, sending or opening the preview.
 - Request recovery instructions again after 60 seconds within a support ticket;

@@ -949,11 +949,10 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-recipient-popover::part(overlay) {
-    width: max-content;
-    max-width: min(480px, calc(100vw - 2 * var(--cosmos-space-l)));
+    width: min(380px, calc(100vw - 2 * var(--cosmos-space-l)));
     overflow: hidden;
     background: var(--cosmos-dialog-background);
-    border: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
+    border: var(--cosmos-border-width) solid var(--cosmos-control-border-color);
     border-radius: var(--cosmos-control-radius);
     color: var(--cosmos-text-color);
 }
@@ -965,16 +964,53 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-recipient-layout {
+    width: 100%;
     max-width: 100%;
     max-height: calc(100dvh - 2 * var(--cosmos-space-l));
 }
 
 .cosmos-recipient-content {
+    --cosmos-recipient-row-height: calc(2 * var(--cosmos-line-height-s) + 2 * var(--cosmos-space-m));
     box-sizing: border-box;
     min-height: 0;
     padding: var(--cosmos-space-l);
     gap: var(--cosmos-space-m);
+    background: var(--cosmos-page-background);
+}
+
+/* Suchfeld wie im Benutzerfilter: gleiche Feldfläche, Schrift und kompakte Lupe. */
+.cosmos-recipient-content > vaadin-text-field {
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    --vaadin-input-field-height: 40px;
+    --vaadin-input-field-value-font-size: var(--cosmos-font-size-m);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
+}
+
+.cosmos-recipient-content > vaadin-text-field::part(input-field) {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+    border: var(--cosmos-border-width) solid var(--cosmos-border-color);
+    border-radius: var(--cosmos-control-radius);
+    padding: 0 var(--cosmos-space-m);
     background: var(--cosmos-base-color);
+}
+
+.cosmos-recipient-content > vaadin-text-field > input[slot="input"] {
+    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+}
+
+.cosmos-recipient-content > vaadin-text-field::part(prefix) {
+    margin-inline-end: var(--cosmos-space-s);
+}
+
+.cosmos-recipient-content > vaadin-text-field > vaadin-icon[slot="prefix"] {
+    width: var(--cosmos-icon-size-xs);
+    height: var(--cosmos-icon-size-xs);
+    margin-inline-end: var(--cosmos-space-s);
+    flex-shrink: 0;
 }
 
 .cosmos-recipient-heading {
@@ -982,15 +1018,17 @@ vaadin-app-layout.cosmos-reference-admin
     box-sizing: border-box;
     gap: var(--cosmos-space-m);
     padding: var(--cosmos-space-l);
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-dialog-border-color);
-    background: var(--cosmos-dialog-header-background);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-border-color);
+    background: var(--cosmos-raised-background);
     font-weight: var(--cosmos-font-weight-semibold);
 }
 
-.cosmos-recipient-grid {
-    --cosmos-recipient-row-height: calc(2 * var(--cosmos-line-height-s) + 2 * var(--cosmos-space-m));
-    --vaadin-grid-row-background-color: var(--cosmos-table-row-background);
-    --vaadin-grid-cell-padding: var(--cosmos-space-m) var(--cosmos-space-l);
+.cosmos-recipient-list,
+.cosmos-recipient-empty {
+    /* Dieselbe dunkle Tabellenvariante wie .admin-users-grid, nicht die allgemeine Palette. */
+    --cosmos-table-row-background: var(--cosmos-color-space);
+    --cosmos-table-alternate-row-background: color-mix(in srgb, var(--cosmos-color-input) 50%, transparent);
+    box-sizing: border-box;
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
@@ -1000,17 +1038,53 @@ vaadin-app-layout.cosmos-reference-admin
     background: var(--cosmos-table-row-background);
 }
 
-.cosmos-recipient-grid::part(body-cell) {
-    height: var(--cosmos-recipient-row-height);
+.cosmos-recipient-list {
+    /* Die Streifen folgen festen Zeilenpositionen, auch wenn VirtualList ihre
+     * Renderknoten beim Scrollen wiederverwendet. Der Scrollbereich liegt am Host. */
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0 var(--cosmos-recipient-row-height),
+            var(--cosmos-table-alternate-row-background) var(--cosmos-recipient-row-height)
+                calc(2 * var(--cosmos-recipient-row-height))
+        ),
+        var(--cosmos-table-row-background);
+    background-attachment: local;
 }
 
-.cosmos-recipient-grid::part(odd-row-cell) {
-    --vaadin-grid-cell-background-color: var(--cosmos-table-alternate-row-background);
+.cosmos-recipient-empty {
+    display: flex;
+    align-items: center;
+    height: calc(var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width));
+    padding: var(--cosmos-space-m) var(--cosmos-space-l);
+    color: var(--cosmos-text-secondary-color);
+    font-size: var(--cosmos-font-size-s);
+}
+
+.cosmos-recipient-empty[hidden] {
+    display: none;
+}
+
+@media (any-hover: hover) {
+    .cosmos-recipient-row:hover {
+        background: var(--cosmos-hover-background);
+    }
 }
 
 .cosmos-recipient-row {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--cosmos-recipient-row-height);
+    padding: var(--cosmos-space-m) var(--cosmos-space-l);
     gap: var(--cosmos-space-s);
+    /* Trenner oben statt unten, damit die letzte Zeile den Außenrahmen nicht verdoppelt. */
+    box-shadow: inset 0 var(--cosmos-border-width) var(--cosmos-border-color);
     font-size: var(--cosmos-font-size-s);
+}
+
+/* Die native Positionsangabe bleibt auch bei wiederverwendeten Listenknoten korrekt. */
+.cosmos-recipient-list [aria-posinset="1"] .cosmos-recipient-row {
+    box-shadow: none;
 }
 
 .cosmos-recipient-identity {

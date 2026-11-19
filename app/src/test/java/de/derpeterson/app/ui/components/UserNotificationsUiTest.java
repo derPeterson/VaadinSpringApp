@@ -40,7 +40,6 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -55,6 +54,8 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap;
@@ -3472,7 +3473,8 @@ class UserNotificationsUiTest {
             .orElseThrow();
     AvatarGroup recipientAvatarGroup = (AvatarGroup) recipientPopover.getTarget();
     TextField searchTextField = readComponentField(recipientPopover, "searchTextField");
-    Grid<Target> recipientGrid = readComponentField(recipientPopover, "recipientGrid");
+    VirtualList<Target> recipientVirtualList =
+        readComponentField(recipientPopover, "recipientVirtualList");
 
     assertFalse(recipientPopover.isOpened());
     assertEquals("button", recipientAvatarGroup.getElement().getAttribute("role"));
@@ -3483,12 +3485,20 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsRecipientSearch(),
         searchTextField.getAriaLabel().orElseThrow());
-    assertEquals(Grid.SelectionMode.NONE, recipientGrid.getSelectionMode());
-    assertEquals(fixture.recipientTargets(), recipientGrid.getListDataView().getItems().toList());
+    assertEquals("vaadin-virtual-list", recipientVirtualList.getElement().getTag());
+    Span emptyResultSpan = readComponentField(recipientPopover, "emptyResultSpan");
+    assertFalse(emptyResultSpan.isVisible());
+    Target firstRecipientTarget = fixture.recipientTargets().getFirst();
+    assertEquals(
+        firstRecipientTarget.name() + ", " + firstRecipientTarget.email(),
+        recipientVirtualList.getItemAccessibleNameGenerator().apply(firstRecipientTarget));
+    assertEquals(
+        fixture.recipientTargets(),
+        recipientVirtualList.getDataProvider().fetch(new Query<>()).toList());
     assertTrue(searchTextField.getPrefixComponent() instanceof SvgIcon);
     assertEquals(
         "calc(4 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
-        recipientGrid.getHeight());
+        recipientVirtualList.getHeight());
     assertTrue(
         streamComponentTree(fixture.adminNotificationsSection())
             .noneMatch(component ->
@@ -3507,27 +3517,32 @@ class UserNotificationsUiTest {
     searchTextField.setValue(" SECOND ");
     assertEquals(
         List.of(fixture.recipientTargets().get(1)),
-        recipientGrid.getListDataView().getItems().toList());
+        recipientVirtualList.getDataProvider().fetch(new Query<>()).toList());
     assertEquals(
         "calc(1 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
-        recipientGrid.getHeight());
+        recipientVirtualList.getHeight());
     searchTextField.setValue("THIRD@EXAMPLE.TEST");
     assertEquals(
         List.of(fixture.recipientTargets().get(2)),
-        recipientGrid.getListDataView().getItems().toList());
+        recipientVirtualList.getDataProvider().fetch(new Query<>()).toList());
     searchTextField.setValue("no-match");
-    assertEquals(0, recipientGrid.getListDataView().getItemCount());
+    assertEquals(0, recipientVirtualList.getDataProvider().size(new Query<>()));
+    assertFalse(recipientVirtualList.isVisible());
+    assertTrue(emptyResultSpan.isVisible());
     assertEquals(
         "calc(1 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
-        recipientGrid.getHeight());
+        recipientVirtualList.getHeight());
     assertEquals(
-        messageProperties.getNotificationsRecipientSearchEmpty(),
-        recipientGrid.getEmptyStateText());
+        messageProperties.getNotificationsRecipientSearchEmpty(), emptyResultSpan.getText());
     searchTextField.clear();
-    assertEquals(fixture.recipientTargets().size(), recipientGrid.getListDataView().getItemCount());
+    assertTrue(recipientVirtualList.isVisible());
+    assertFalse(emptyResultSpan.isVisible());
+    assertEquals(
+        fixture.recipientTargets().size(),
+        recipientVirtualList.getDataProvider().size(new Query<>()));
     assertEquals(
         "calc(4 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
-        recipientGrid.getHeight());
+        recipientVirtualList.getHeight());
     recipientPopover.close();
     assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
@@ -3608,14 +3623,16 @@ class UserNotificationsUiTest {
             .map(NotificationRecipientPopover.class::cast)
             .findFirst()
             .orElseThrow();
-    Grid<Target> recipientGrid = readComponentField(recipientPopover, "recipientGrid");
-    assertEquals(recipientTargets, recipientGrid.getListDataView().getItems().toList());
-    assertFalse(recipientGrid.isAllRowsVisible());
+    VirtualList<Target> recipientVirtualList =
+        readComponentField(recipientPopover, "recipientVirtualList");
+    assertEquals(
+        recipientTargets, recipientVirtualList.getDataProvider().fetch(new Query<>()).toList());
+    assertEquals("vaadin-virtual-list", recipientVirtualList.getElement().getTag());
     assertEquals(
         "calc("
             + expectedVisibleRows
             + " * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
-        recipientGrid.getHeight());
+        recipientVirtualList.getHeight());
     assertEquals(6, recipientAvatarGroup.getMaxItemsVisible());
     assertEquals(
         recipientTargets.stream().map(Target::name).toList(),

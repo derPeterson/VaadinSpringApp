@@ -3889,6 +3889,10 @@ public class MessageTexts {
     return getTranslation("notifications.recipientOpen");
   }
 
+  public String getNotificationsRecipientDescription() {
+    return getTranslation("notifications.recipientDescription");
+  }
+
   public String getNotificationsRecipientSearch() {
     return getTranslation("notifications.recipientSearch");
   }

@@ -87,9 +87,19 @@
   Namen-Tooltips erhalten, Suche nach Name/E-Mail inklusive Leeren/keine Treffer,
   E-Mail sekundär unter Namen, Scrollen bis zum letzten Treffer. Kopf im gemeinsamen
   Dialogstil mit Personen-Icon und Trennlinie, abgesetzte Content-Fläche und Suchlupe.
+  Header-, Außenrahmen- und Content-Farben mit der Benachrichtigungsvorschau vergleichen.
+  Abwechselnde Zeilenflächen direkt gegen die dunkle Tabelle der Benutzerverwaltung
+  vergleichen; auch nach Filtern und längerem Scrollen müssen die festen 60-px-Zeilen
+  korrekt abwechseln. Die native VirtualList ersetzt das Grid; gemeinsamer schmaler
+  Scrollbar-Stil ohne Pfeile in Chrome/Edge, browserabhängiger Standard-Fallback in Firefox.
+  Zwischen den Zeilen einfache Trennlinien, am oberen und unteren Listenabschluss
+  ausschließlich der Außenrahmen ohne doppelt gezeichnete Linie.
   Maximal fünf Zeilen sichtbar; bei weniger Treffern schrumpft die Liste, kein leerer
-  Restbereich. Ohne Treffer lesbarer Leerzustand. Breite inhaltsbezogen mit Maximalbreite;
-  lange Namen/E-Mails dürfen die Zeilenhöhe nicht vergrößern. Overlayhöhe
+  Restbereich. Ohne Treffer lesbarer Leerzustand. Suchfeld wie Benutzerfilter mit
+  40-px-Höhe, 13-px-Eingabeschrift, 14-px-Lupe und gleichen Innenabständen.
+  Wunschbreite 380 px, auf kleinen Fenstern mit seitlichem L-Abstand begrenzt;
+  innere Hülle füllt die Breite aus. Lange Namen/E-Mails dürfen die Zeilenhöhe
+  nicht vergrößern. Overlayhöhe
   bleibt im Fenster, kein horizontaler Überlauf. Escape, Außenklick, Schließen,
   Rückfokus und erneute Vorschau ohne doppelte Listener prüfen. Keine Details-Liste
   mehr. JUnit zu Suche, 1–200 Empfängern und Höhenbegrenzung erfolgreich;

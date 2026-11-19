@@ -1,18 +1,15 @@
 # Offene Nachbearbeitungen
 
-**Stand: Punkt 9 ist nicht vom Benutzer abgenommen; Nachbesserungen stehen aus.**
+**Offen: Größen- und Typografievorschläge aus Punkten 1 und 2 gemeinsam abstimmen.**
 
-Die neue Nachbearbeitung ist zur Bearbeitung freigegeben. Punkte 1 und 2 liefern
-zunächst Bestandsaufnahme und Vorschläge; Gestaltungsänderungen daraus benötigen
-die gemeinsame Abstimmung. Die Korrekturen aus Punkten 3–5 sind beauftragt.
-Je Punkt Review und aussagekräftigen Commit durchführen. Keine Browserläufe;
-notwendigen Browsernachtest im zentralen Testbedarf erhalten.
+Die Bestandsaufnahmen sind erstellt; Gestaltungsänderungen daraus benötigen die
+Benutzerfreigabe. Abgenommene Nachbearbeitungen sind aus diesem Plan entfernt;
+ihre gültigen Bausteine stehen in der [Theme-Anleitung](../theme.md), menschliche
+Abnahmen im [manuellen Katalog](../manual-tests/README.md). Automatisierte
+Browsernachtests bleiben unabhängig davon im [Testbedarf](../testbedarf.md) offen.
 
-Die übrigen bisherigen Nachbearbeitungen sind abgeschlossen und abgenommen.
-Dieser Plan enthält den offenen Restpunkt und neu aufgenommene Aufgaben des
-[Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md).
-Die Gesamtumsetzung bleibt offen; aktueller Branch ist
-`codex/vaadin-komponenten-folgearbeiten-5`.
+Die Gesamtumsetzung des [Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md)
+bleibt offen; aktueller Branch ist `codex/vaadin-komponenten-folgearbeiten-5`.
 
 ## Neue Nachbearbeitung – Punkt 1: Badge-Größen analysieren und vereinheitlichen
 
@@ -184,143 +181,3 @@ Startseitengestaltung wurde nicht als Abweichung bewertet.
    keinen globalen Schriftwechsel aus dieser Bestandsaufnahme ableiten.
 
 - [ ] Vorschläge aus Punkt 2 gemeinsam abstimmen und konkrete Umstellungen freigeben.
-
-## Neue Nachbearbeitung – Punkt 3: Positionssprung zwischen Zahlenwert und Placeholder
-
-**Analyse einschließlich Screenshot-Messung und Korrektur freigegeben.**
-
-- [x] Den gemeldeten Rechtsversatz beim Löschen eines Zahlenwertes untersuchen:
-      Sowohl im Cosmos-Dauerfeld mit Einheitenauswahl als auch im normalen Zahlenfeld
-      springt die Darstellung beim Wechsel zum Placeholder nach rechts.
-- [x] Bei der Bearbeitung die beiden bereitgestellten Screenshots ausmessen
-      und die Positionen von Wert und Placeholder vergleichen. Die Aufnahmen haben
-      unterschiedliche Bildbreiten; die Lage im jeweiligen Feld berücksichtigen.
-- [x] Ursache anhand der verwendeten Vaadin-Komponenten und unserer CSS-Regeln klären;
-      insbesondere den Einfluss des beim Leeren verschwindenden Löschen-Buttons prüfen.
-      Schriftgröße oder eine Vaadin-Eigenheit nicht ungeprüft als Ursache annehmen.
-- [x] Den Positionssprung nach geklärter Ursache für beide Feldtypen beheben,
-      ohne Wert-, Placeholder- oder Bedienverhalten unbeabsichtigt zu ändern.
-
-Technisch umgesetzt, visuelle Abnahme offen: Vaadins `button-base-styles.js`
-setzt den Clear-Part bei fehlendem Wert auf `display:none`; NumberField zentriert
-den Wert bei sichtbaren Schrittbuttons in der dadurch veränderten Restfläche.
-`cosmos-duration-field.css` erhält bei leeren bearbeitbaren Zahlenfeldern mit
-aktivierter Löschfunktion dessen Platz über den öffentlichen Part, mit
-`visibility:hidden` und ohne Zeigerereignisse. Ohne Löschfunktion sowie bei
-Disabled/Read-only greift die Ergänzung nicht.
-
-In den Screenshots liegen die Mittelpunkte der sichtbaren Ziffern bei x=142,5
-gegenüber 157,5 (Dauer) und 198,5 gegenüber 211,5 (Zahlenfeld), jeweils in Bildpixeln.
-Die Bilder haben unterschiedliche Breiten; diese Pixelwerte sind keine Messung
-von CSS-Pixeln im Browser. Der gemeldete Rechtsversatz ist sichtbar, die Korrektur
-wurde noch nicht im Browser geprüft. Prettier-Formatierung, Formatprüfung und
-Stylelint erfolgreich; der sichtbare Nachtest steht zentral im Testbedarf.
-
-Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
-
-- Gefüllt: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-aea08c88-53e0-4a46-b859-1c5351f870b1.png`
-- Placeholder: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-6a8e74e0-d580-443e-80cf-28af9f8c5fc7.png`
-
-## Neue Nachbearbeitung – Punkt 4: Fokusrahmen bei TextAreas korrigieren
-
-**Ursachenanalyse und Korrektur freigegeben.**
-
-- [x] Den fehlerhaften Fokusrahmen der TextArea untersuchen und mit dem korrekt
-      dargestellten Fokusrahmen des TextField vergleichen.
-- [x] Die Ursache klären und die TextArea-Fokusdarstellung an den bestehenden
-      TextField-Standard angleichen. Relevante TextArea-Einsatzstellen berücksichtigen.
-- [x] Den TextField-Standard als Referenz erhalten; keine neue Fokusgestaltung einführen.
-
-Technisch umgesetzt, Sichtung offen: Mail-Test, Mitteilungsentwurf und Tickettext
-hatten `resize:vertical` zusammen mit `overflow:hidden` am TextArea-Host. Das
-beschneidet den außerhalb der inneren Fläche gezeichneten Fokusrahmen. Der Griff
-liegt nun am öffentlichen `input-field`-Part, dessen native Scrollfunktion erhalten
-bleibt; die Host-Beschneidung entfällt. Mindesthöhen, Farben und gemeinsame
-Fokusregeln bleiben erhalten. Prettier und Stylelint erfolgreich. Größenänderung
-und sichtbarer Rahmen sind im zentralen Browser-Testbedarf nachzuprüfen.
-
-Screenshot-Referenzen für die spätere Bearbeitung (lokale temporäre Dateien):
-
-- TextArea mit Fehler: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-84763deb-e0ed-413b-8989-93da7d25cf51.png`
-- TextField als Soll: `C:/Users/chris/AppData/Local/Temp/codex-clipboard-8834ddfe-7630-41a2-865d-b4a49cda3fdb.png`
-
-## Neue Nachbearbeitung – Punkt 5: Empfänger-Overlay kompakter im gemeinsamen Stil gestalten
-
-**Umsetzung freigegeben; konkretisiert den bisherigen offenen Punkt 9. Abnahme bleibt offen.**
-
-- [x] Das an der Avatargruppe verankerte Overlay beibehalten. Die zuletzt gewünschte
-      Variante ist kein mittiger Dialog mit abgedunkeltem Seitenhintergrund.
-- [x] Den vorhandenen Dialogstil für die Gestaltung aufgreifen: Header mit dem
-      bestehenden Accounts-/Personengruppen-Icon (zwei Personen), Titel „Empfänger“
-      und gemeinsamem Schließen-Button; darunter eine Trennlinie.
-- [x] Den Content-Bereich mit der dafür bestehenden, vom Header abgesetzten
-      Hintergrundfläche gestalten. Vorhandene Cosmos-Farben und Abstände verwenden.
-- [x] Die Suche nach Name und E-Mail mit sichtbarer Lupe wie in den vorhandenen
-      Filtern gestalten. Reihenfolge: Header, Suche, Empfängerliste.
-- [x] Die Größe am Inhalt ausrichten und eine Maximalbreite statt unnötig großer
-      fester Breite verwenden; auf kleinen Bildschirmen den verfügbaren Platz einhalten.
-- [x] Höchstens fünf Empfängerzeilen gleichzeitig anzeigen, weitere Einträge innerhalb
-      der Liste scrollbar machen. Bei beispielsweise zwei Empfängern soll die Höhe
-      entsprechend schrumpfen; keinen leeren Listenbereich reservieren.
-- [x] Die native Liste mit Avatar, Name und sekundärer E-Mail beibehalten und ihre
-      Zeilen an den bestehenden Tabellenfarben der Benutzerverwaltung ausrichten,
-      einschließlich abwechselnder Zeilenflächen. Details innerhalb dieses Rahmens
-      bei der späteren Bearbeitung sinnvoll abstimmen.
-- [ ] Nach Umsetzung gemeinsam sichten; die AvatarGroup bleibt bis zur ausdrücklichen
-      Abnahme offen.
-
-Technisch umgesetzt und reviewed. Suche über die native `GridListDataView`,
-Höhenbegrenzung auf fünf Zeilen bei weiter aktiver Virtualisierung; die Höhe passt
-sich auch nach Filtern und Leeren an. Pro Zeile zwei 18-px-Textzeilen plus M-Padding
-oben/unten (60 px), maximal 480 px Overlaybreite. Bestehender Avatar-Ereignislistener
-und Versand-/Empfängerregeln unverändert. 180 JUnit-Prüfungen in `UserNotificationsUiTest`
-erfolgreich, einschließlich DE/EN und 1/2/3/5/6/7/9/200 Empfängern. Java-Formatierung,
-Spotless-/Checkstyle-Prüfung sowie Prettier und Stylelint erfolgreich. Kein Browserlauf;
-sichtbare Breite, fünf Zeilen, Scrollverhalten und Fokus im zentralen Testbedarf offen.
-
-Screenshot-Referenz für die spätere Bearbeitung (lokale temporäre Datei):
-
-`C:/Users/chris/AppData/Local/Temp/codex-clipboard-95e51db4-922e-4250-88ff-6a81ff700104.png`
-
-## Restpunkt aus der bisherigen Nachbearbeitung
-
-## 9. AvatarGroup: vollständige Empfängerliste über die Avatarreihe
-
-### Gewünschte Bedienung
-
-- Bestehende Avataroptik, Überlaufanzahl und Tooltips erhalten.
-- Die **gesamte Avatarreihe** wird zum Einstieg: Handzeiger und Öffnen des gleichen
-  Overlays durch Klick auf jeden Avatar, „+N“ oder einen Zwischenraum der Reihe.
-- Der Einstieg funktioniert auch bei wenigen Empfängern ohne „+N“ und ist mit
-  Tastatur, Enter beziehungsweise Leertaste bedienbar.
-- Das Overlay zeigt **alle Empfänger**, nicht nur die vom nativen Überlauf
-  ausgeblendeten Personen.
-- Je Person Avatar und Name anzeigen; darunter mit Zeilenumbruch die E-Mail-Adresse
-  in sekundärer Schrift.
-- Oben eine Suche nach **Name und E-Mail-Adresse** anbieten.
-- Die Liste bei mehr als fünf Einträgen scrollen lassen und bei weniger Einträgen
-  schrumpfen lassen. Der neue Punkt 5 konkretisiert die Gestaltung und ersetzt
-  den früheren groben Höhenrichtwert von 600–700 px.
-
-### Bestehende technische Grundlage
-
-Die native AvatarGroup dient als Vorschau. Für die vollständige Liste sind
-Popover, Suchfeld und Grid sowie der kleine gekapselte Ereignis-Listener
-bereits ausdrücklich genehmigt und umgesetzt; private Vaadin-APIs werden
-nicht verwendet. Die bisherige Details-Liste und das native Überlaufmenü sind
-durch diesen gemeinsamen Einstieg ersetzt.
-
-### Noch offen
-
-- [x] Die unter neuem Punkt 5 festgehaltenen Nachbesserungen bearbeiten.
-- [x] Vereinbarte Änderungen umsetzen, passende JUnit-Regressionen prüfen und reviewen.
-- [ ] Ausdrückliche Benutzerfreigabe der Avatar-/Empfängergruppe erhalten.
-- [ ] Erst nach dieser Freigabe das offene AvatarGroup-Paket im Komponentenplan schließen
-      und diesen dann erledigten Restplan entfernen.
-
-Die bestehende Umsetzung ist ein Zwischenstand, keine fachliche Abnahme.
-Berechtigungen, Empfängerauswahl und Versandregeln bleiben erhalten.
-Texte und dynamische Meldungen auf Deutsch und Englisch pflegen.
-Keine Browserläufe starten; offene automatisierte Prüfungen bleiben zentral im
-[Testbedarf](../testbedarf.md). Die menschliche Abnahme steht im
-[manuellen Katalog](../manual-tests/README.md#hum-01).
