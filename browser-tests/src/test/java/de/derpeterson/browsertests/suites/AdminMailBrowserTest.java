@@ -105,11 +105,11 @@ public class AdminMailBrowserTest extends BrowserFixture {
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 900);
       assertMailFieldHelpButtonsAreCentered();
+      UiActions.resizeTextArea(
+          browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"));
+      assertMailFieldHelpButtonsAreCentered();
     }
     browserPage.setViewportSize(1280, 900);
-    UiActions.resizeTextArea(
-        browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"));
-    assertMailFieldHelpButtonsAreCentered();
     String email = "info-" + UUID.randomUUID() + "@example.test",
         subject = "Unsent subject",
         body = "Unsent message ÄÖÜ";

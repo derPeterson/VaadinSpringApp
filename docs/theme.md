@@ -223,9 +223,10 @@ auch bei leerem Wert. Die Aktion bleibt dabei unsichtbar und nicht bedienbar;
 der Placeholder springt dadurch nicht in eine breitere Eingabefläche. Die Regel
 liegt gemeinsam in `cosmos-duration-field.css` und verwendet `::part(clear-button)`.
 
-Vergrößerbare TextAreas setzen `resize:vertical` auf `::part(input-field)`.
-Den Host nicht mit `overflow:hidden` beschneiden: Der außerhalb der Fläche
-liegende gemeinsame Fokusrahmen muss wie bei einzeiligen Textfeldern sichtbar bleiben.
+Im Mail-Test und Mitteilungsentwurf sitzt der native Ziehgriff auf `vaadin-text-area`.
+Vaadin berechnet die Höhe von `::part(input-field)` selbst und setzt die vom Browser
+dort gespeicherte Ziehhöhe zurück. Der blaue Fokusrahmen liegt bei diesen beiden
+Feldern innerhalb der Eingabefläche, damit ihn der Host nicht abschneidet.
 
 Bearbeitbare `TextField`-, `EmailField`-, `PasswordField`- und `TextArea`-Eingaben
 aktivieren das native Löschkreuz mit `setClearButtonVisible(true)`. Das gilt auch

@@ -108,12 +108,16 @@ public final class UiActions {
     // Für den Ziehweg mehr Höhe bereitstellen; die tatsächlich geprüfte Breite bleibt gleich.
     browserPage.setViewportSize(viewport.width, 1800);
     try {
+      Locator textInputLocator = field.locator("textarea");
       Locator inputSurfaceLocator = field.locator("[part~='input-field']");
-      inputSurfaceLocator.scrollIntoViewIfNeeded();
-      assertThat(inputSurfaceLocator).hasCSS("resize", "vertical");
+      field.scrollIntoViewIfNeeded();
+      assertThat(field).hasCSS("resize", "vertical");
+      textInputLocator.focus();
+      assertThat(inputSurfaceLocator).hasCSS("outline-style", "solid");
+      assertThat(inputSurfaceLocator).hasCSS("outline-offset", "-2px");
 
       BoundingBox original = field.boundingBox();
-      dragCorner(browserPage, inputSurfaceLocator.boundingBox(), 260);
+      dragCorner(browserPage, original, 260);
       browserPage.waitForCondition(() -> field.boundingBox().height > original.height + 220);
       org.junit.jupiter.api.Assertions.assertEquals(original.width, field.boundingBox().width, 1);
       BoundingBox input = inputSurfaceLocator.boundingBox();
@@ -123,11 +127,11 @@ public final class UiActions {
           3,
           "Der Griff muss am unteren Eingaberand bleiben.");
       double grown = field.boundingBox().height;
-      field.locator("textarea").fill("Resize regression");
+      textInputLocator.fill("Resize regression");
       org.junit.jupiter.api.Assertions.assertEquals(grown, field.boundingBox().height, 1);
-      dragCorner(browserPage, inputSurfaceLocator.boundingBox(), -200);
+      dragCorner(browserPage, field.boundingBox(), -200);
       browserPage.waitForCondition(() -> field.boundingBox().height < grown - 160);
-      field.locator("textarea").clear();
+      textInputLocator.clear();
     } finally {
       browserPage.setViewportSize(viewport.width, viewport.height);
     }

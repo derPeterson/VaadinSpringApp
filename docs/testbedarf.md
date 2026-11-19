@@ -59,14 +59,13 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Trennlinien des Admin-Grids mit denen der Karten vergleichen.
 
 - **TextArea-Fokusrahmen und Größenänderung — offen.**
-  MAIL-02 und MAIL-03 im Mail-Test sowie NOTIFY-01 bei 1280 und 390 px brachen
-  im isolierten Chromium ab, weil der sichtbare Griff die gemessene Höhe nicht
-  änderte. Ursache ermitteln und die abgebrochenen Schritte erneut prüfen.
-  In Mail-Test, Mitteilungsentwurf und Ticketnachricht den äußeren Fokusrahmen
-  mit TextField vergleichen. Längeren Text, Scrollen, Löschen und Fehlerzustand
-  prüfen. Die Mindesthöhen der Eingabefläche betragen 144 px im Mail-Test
-  und 122 px in Entwurf und Ticket.
-  Die Desktop-Größenänderung auch in der Ticketnachricht prüfen.
+  MAIL-02, MAIL-03 und NOTIFY-01 in DE und EN erneut ausführen. Im Mail-Test
+  und Mitteilungsentwurf müssen Ziehen, Tippen und erneutes Ziehen bei 1280 und
+  390 px die gewählte Höhe respektieren. Der blaue Fokusrahmen muss sichtbar
+  bleiben. In beiden Feldern und der Ticketnachricht längeren Text, Scrollen,
+  Löschen und Fehlerzustände prüfen. Die Mindesthöhen der Eingabefläche betragen
+  144 px im Mail-Test und 122 px in Entwurf und Ticket. Die Desktop-Größenänderung
+  und den äußeren Fokusrahmen in der Ticketnachricht gesondert prüfen.
 
 - **Einheitliche Schließen-Icons — offen.**
   Kreis-X mit 18 × 18 px im 36-px-Button, Zentrierung, Fokus und Tooltip in
