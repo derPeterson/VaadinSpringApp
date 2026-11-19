@@ -118,26 +118,36 @@ class SupportTicketServiceTest {
   }
 
   @Test
-  void databasePagingFiltersAndDirectJumpIncludeOlderTickets() {
+  void inboxPagingAndJumpUseCreationOrderEvenAfterLaterTicketUpdates() {
     Ticket older = supportTicketService.createRecovery(owner, "Older request");
+    Instant olderCreationTime = clock.instant();
     Long administratorId = supportTicketService.administratorId(administrator);
     SupportTicketFilter filter =
         new SupportTicketFilter(Set.of(Status.CLOSED), Assignment.MINE, Reading.ALL, null);
+    int newerTicketCount = 99;
+    int sameCreationTimeTicketCount = 2;
     List<Long> fixtureIds = new ArrayList<>();
     transactionTemplate.executeWithoutResult(status -> {
-      entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
       UserEntity assignee = entityManager.find(UserEntity.class, administratorId);
-      entityManager.find(SupportTicketEntity.class, older.id()).setAssignee(assignee);
+      SupportTicketEntity olderTicketEntity =
+          entityManager.find(SupportTicketEntity.class, older.id());
+      olderTicketEntity.setStatus(Status.CLOSED);
+      olderTicketEntity.setAssignee(assignee);
+      olderTicketEntity.setCreatedAt(olderCreationTime);
+      olderTicketEntity.setUpdatedAt(olderCreationTime.plusSeconds(200));
+      olderTicketEntity.setPublicUpdatedAt(olderTicketEntity.getUpdatedAt());
       UserEntity requesterUserEntity = entityManager.find(UserEntity.class, testUserEntity.getId());
-      for (int index = 0; index < 101; index++) {
+      for (int index = 0; index < newerTicketCount + sameCreationTimeTicketCount; index++) {
         SupportTicketEntity ticket = new SupportTicketEntity();
         ticket.setOwner(requesterUserEntity);
         ticket.setAssignee(assignee);
         ticket.setStatus(Status.CLOSED);
         ticket.setSubject("Synthetic archived request");
-        ticket.setCreatedAt(older.createdAt().plusSeconds(index + 1));
-        ticket.setUpdatedAt(older.updatedAt().plusSeconds(index + 1));
-        ticket.setPublicUpdatedAt(older.updatedAt().plusSeconds(index + 1));
+        Instant createdAt =
+            index < newerTicketCount ? olderCreationTime.plusSeconds(index + 1) : olderCreationTime;
+        ticket.setCreatedAt(createdAt);
+        ticket.setUpdatedAt(createdAt);
+        ticket.setPublicUpdatedAt(createdAt);
         entityManager.persist(ticket);
         fixtureIds.add(ticket.getId());
       }
@@ -153,6 +163,13 @@ class SupportTicketServiceTest {
       assertEquals(102, first.totalTickets());
       assertEquals(10, first.visibleTickets().size());
       assertEquals(
+          olderCreationTime.plusSeconds(newerTicketCount),
+          first.visibleTickets().getFirst().createdAt());
+      assertEquals(
+          9,
+          supportTicketService.findTicketPageIndex(
+              administrator, fixtureIds.getLast(), filter, 10));
+      assertEquals(
           10, supportTicketService.findTicketPageIndex(administrator, older.id(), filter, 10));
       for (int size : List.of(10, 20, 50)) {
         int lastPage = 101 / size;
@@ -161,9 +178,10 @@ class SupportTicketServiceTest {
                 administrator, older.id(), new InboxQuery(filter, Integer.MAX_VALUE, size));
 
         assertEquals(lastPage, last.page());
-        assertEquals(102 % size, last.visibleTickets().size());
         assertEquals(older.id(), last.selected().id());
-        assertEquals(older.id(), last.visibleTickets().getLast().id());
+        assertEquals(
+            List.of(fixtureIds.get(newerTicketCount), older.id()),
+            last.visibleTickets().stream().map(Ticket::id).toList());
       }
       SupportTicketService.LiveView detail =
           supportTicketService.loadTicketInbox(

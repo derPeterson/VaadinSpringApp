@@ -46,7 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class SupportTicketService {
-  private static final String UPDATED_AT = "updatedAt";
+  private static final String CREATED_AT = "createdAt";
   private static final String TICKET_UNAVAILABLE = "Ticket unavailable";
   public static final int MESSAGE_LIMIT = 2000;
   private static final long TICKET_NUMBER_OFFSET = 10_000L;
@@ -306,7 +306,7 @@ public class SupportTicketService {
   private LiveView inboxView(Owner owner, Long selectedId, InboxQuery query) {
     Specification<SupportTicketEntity> filter =
         buildViewerTicketSpecification(owner, query.filter());
-    Sort order = Sort.by(Sort.Direction.DESC, UPDATED_AT, "id");
+    Sort order = Sort.by(Sort.Direction.DESC, CREATED_AT, "id");
     long total = supportTicketRepository.count(filter);
     int page = (int) Math.clamp(query.page(), 0, Math.max(0, (total - 1) / query.size()));
     Page<SupportTicketEntity> result =
@@ -345,12 +345,13 @@ public class SupportTicketService {
         supportTicketRepository
             .findById(id)
             .orElseThrow(() -> new AccessDeniedException(TICKET_UNAVAILABLE));
+    Instant selectedCreatedAt = selected.getCreatedAt();
     Specification<SupportTicketEntity> preceding =
         (ticket, query, cb) ->
             cb.or(
-                cb.greaterThan(ticket.get(UPDATED_AT), selected.getUpdatedAt()),
+                cb.greaterThan(ticket.get(CREATED_AT), selectedCreatedAt),
                 cb.and(
-                    cb.equal(ticket.get(UPDATED_AT), selected.getUpdatedAt()),
+                    cb.equal(ticket.get(CREATED_AT), selectedCreatedAt),
                     cb.greaterThan(ticket.get("id"), id)));
     return Math.toIntExact(
         supportTicketRepository.count(buildViewerTicketSpecification(owner, filter).and(preceding))

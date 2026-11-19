@@ -229,9 +229,11 @@ einen geschlossenen oder wieder geöffneten Dialog nicht verändern.
 
 ## Benachrichtigungen
 
-Die Kopfzeile bietet eine Vorschau; `/notifications` öffnet den vollständigen
-Posteingang. Beide haben die Auswahl Alle/Ungelesen/Gelesen mit tatsächlichen Zählern. Die Inbox ergänzt Suche,
-Seitenwahl, Gesamt-/Ungelesen-Zähler, Aktualisieren und eine Sammel-Leseaktion.
+Die Kopfzeile bietet eine Vorschau. Unter `/notifications` öffnet sich der vollständige
+Posteingang. Beide zeigen die neuesten Mitteilungen nach Erstellungsdatum zuerst
+und bieten die Auswahl Alle/Ungelesen/Gelesen mit tatsächlichen Zählern.
+Der Posteingang ergänzt eine Suche mit derselben Sortierung, Seitenwahl,
+Gesamt-/Ungelesen-Zähler, Aktualisieren und eine Sammel-Leseaktion.
 
 Öffnen ändert den Lesestatus nicht. Jede Karte bietet Öffnen und Als gelesen markieren
 als Iconbuttons sowie einen Papierkorb zum persönlichen Löschen. Metadaten und Aktionen

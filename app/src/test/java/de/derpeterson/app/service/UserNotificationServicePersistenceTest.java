@@ -918,17 +918,43 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
-  void persistedNotificationsAreVisibleInNewSessionAndPagedNewestFirst() {
-    broadcast();
-    Sent newer = broadcast();
-    MockHttpSession fresh = session(ordinary);
-    Page<Item> page = userNotificationService.inbox(fresh, ReadFilter.ALL, 0, 1);
+  void inboxAndSearchPageNotificationsByCreationTimeInNewSession() {
+    Preview recipients = everyone();
+    Sent firstSent =
+        userNotificationService.send(
+            adminSession, UUID.randomUUID(), "Update one", "Plain text", recipients);
+    Sent secondSent =
+        userNotificationService.send(
+            adminSession, UUID.randomUUID(), "Update two", "Plain text", recipients);
+    Sent lastSent =
+        userNotificationService.send(
+            adminSession, UUID.randomUUID(), "Update three", "Plain text", recipients);
+    Instant newestCreationTime = firstSent.createdAt();
+    createdAt(secondSent.id(), newestCreationTime);
+    createdAt(lastSent.id(), newestCreationTime.minusSeconds(60));
 
-    assertEquals(2, page.getTotalElements());
-    assertTrue(page.hasNext());
-    assertEquals(newer.createdAt(), page.getContent().getFirst().createdAt());
+    MockHttpSession freshSession = session(ordinary);
+    Page<Item> firstPage = userNotificationService.inbox(freshSession, ReadFilter.ALL, 0, 1);
+
+    assertEquals(3, firstPage.getTotalElements());
+    assertTrue(firstPage.hasNext());
+    assertEquals(secondSent.title(), firstPage.getContent().getFirst().title());
+    Page<Item> lastPage = userNotificationService.inbox(freshSession, ReadFilter.ALL, 2, 1);
+    assertEquals(List.of(lastSent.title()), lastPage.stream().map(Item::title).toList());
+
+    List<String> expectedTitles = List.of(secondSent.title(), firstSent.title(), lastSent.title());
     assertEquals(
-        1, userNotificationService.inbox(fresh, ReadFilter.ALL, 1, 1).getNumberOfElements());
+        expectedTitles,
+        userNotificationService.inbox(freshSession, ReadFilter.ALL, 0, 5).stream()
+            .map(Item::title)
+            .toList());
+    assertEquals(
+        expectedTitles,
+        userNotificationService
+            .searchInbox(freshSession, ReadFilter.ALL, "update", Set.of(), 0, 10)
+            .stream()
+            .map(Item::title)
+            .toList());
   }
 
   @ParameterizedTest

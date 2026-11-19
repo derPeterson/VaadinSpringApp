@@ -68,7 +68,7 @@ public interface UserNotificationRecipientRepository
 
   // Skalare Projektionen sehen Bulk-Leseupdates auch bei bereits verwalteten Empfangseinträgen.
   @Query(
-      "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) order by r.id desc")
+      "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) order by m.createdAt desc, r.id desc")
   Page<InboxRow> inbox(
       @Param("owner") Long ownerUserId,
       @Param("read") Boolean read,
@@ -87,7 +87,7 @@ public interface UserNotificationRecipientRepository
   Optional<InboxRow> visibleItem(Long owner, Long id, Instant cutoff);
 
   @Query(
-      "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) and (lower(coalesce(m.title, '')) like :pattern escape '!' or lower(coalesce(m.body, '')) like :pattern escape '!' or lower(coalesce(m.supportTicketNumber, '')) like :pattern escape '!' or m.type in :matchingTypes) order by r.id desc")
+      "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) and (lower(coalesce(m.title, '')) like :pattern escape '!' or lower(coalesce(m.body, '')) like :pattern escape '!' or lower(coalesce(m.supportTicketNumber, '')) like :pattern escape '!' or m.type in :matchingTypes) order by m.createdAt desc, r.id desc")
   Page<InboxRow> searchInbox(
       @Param("owner") Long ownerUserId,
       @Param("read") Boolean read,

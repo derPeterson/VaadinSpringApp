@@ -249,7 +249,9 @@ relevanten ungelesenen Nachrichten.
 
 #### Liste und Ticketsprung
 
-Die Adminliste zeigt standardmäßig 10 Vorgänge pro Seite. Im Footer lassen sich
+Die Adminliste „Vorgänge“ sortiert nach dem Erstellungsdatum, neueste Tickets
+zuerst. Bei gleichem Erstellungszeitpunkt steht die höhere Ticketnummer oben.
+Die Liste zeigt standardmäßig 10 Vorgänge pro Seite. Im Footer lassen sich
 20 oder 50 Einträge wählen. Die Pfeile wechseln jeweils zur vorherigen oder
 nächsten Seite. Kategorie, Status, Zuständigkeit und „Alle / Ungelesen“ filtern
 den berechtigten Bestand in der Datenbank. Der Footer zeigt den Bereich und die
