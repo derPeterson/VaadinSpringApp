@@ -1236,6 +1236,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     min-width: 0;
     min-height: var(--cosmos-control-height);
     height: auto;
+    margin: 0;
     --vaadin-button-label-wrap: normal;
 }
 .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions > vaadin-button::part(label) {
