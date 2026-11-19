@@ -6,12 +6,10 @@ Die vereinbarten Badge- und Formulargrößen aus den Punkten 1 und 2 stehen in d
 [manuellen Katalog](../manual-tests/README.md) dokumentiert.
 
 Die Gesamtumsetzung des [Vaadin-Komponenten-Abgleichs](vaadin-komponenten-abgleich.md)
-bleibt offen; aktueller Branch ist `codex/vaadin-komponenten-folgearbeiten-5`.
+bleibt offen. Folgebranch 5 wurde lokal in `main` übernommen.
 
 ## Offene Schritte in vereinbarter Reihenfolge
 
-3. Den aktuellen Folgebranch lokal nach `main` integrieren. Die Vaadin-Gesamtumsetzung
-   bleibt offen.
 4. Auf dem integrierten `main` einen frischen Sonar-Scan durchführen, dessen
    Serverabschluss abwarten und alle Findings des Gesamtcodes fachlich analysieren.
    Daraus zusammenhängende Arbeitspakete bilden und sämtliche Pakete beheben;

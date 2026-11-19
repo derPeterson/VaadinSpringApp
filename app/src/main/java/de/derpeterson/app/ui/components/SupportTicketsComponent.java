@@ -1172,40 +1172,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void applyTickets(List<Ticket> ticketsToDisplay, Ticket ticketToSelect) {
-    if (!administration && userTicketSelectionCleared) {
-      ticketToSelect = null;
-    }
-    if (!administration) {
-      userRequestCount.setText(messageProperties.getSupportRequestCount(ticketsToDisplay.size()));
-      emptyState.setVisible(ticketsToDisplay.isEmpty());
-      reloadTicketsButton.setVisible(!ticketsToDisplay.isEmpty());
-    } else {
-      int activeTicketFilterCount = ticketFilterPanel.activeCount();
-      activeFilterCount.setText(Integer.toString(activeTicketFilterCount));
-      activeFilterCount.setVisible(activeTicketFilterCount > 0);
-      filterButton.setAriaLabel(
-          activeTicketFilterCount == 0
-              ? messageProperties.getAdminUsersAddFilter()
-              : messageProperties.getAdminUsersAddFilter()
-                  + ", "
-                  + messageProperties.getAdminUsersActiveFilterCount(activeTicketFilterCount));
-      queueEmptyHintSpan.setText(
-          activeTicketFilterCount > 0
-              ? messageProperties.getSupportFilterEmpty()
-              : messageProperties.getSupportQueueEmptyHint());
-      queueEmptyState.setVisible(ticketsToDisplay.isEmpty());
-    }
     if (administration) {
-      ticketGrid.setVisible(!ticketsToDisplay.isEmpty());
-      adminTicketScroll.setVisible(!ticketsToDisplay.isEmpty());
+      refreshAdminTicketListDisplay(ticketsToDisplay.isEmpty());
     } else {
-      userTicketVirtualList.setVisible(!ticketsToDisplay.isEmpty());
-      int visibleUserTicketRows =
-          Math.max(1, Math.min(ticketsToDisplay.size(), MAX_VISIBLE_USER_TICKETS));
-      userTicketVirtualList.setHeight(
-          "calc("
-              + visibleUserTicketRows
-              + " * var(--support-user-ticket-row-height) + 2 * var(--cosmos-border-width))");
+      if (userTicketSelectionCleared) {
+        ticketToSelect = null;
+      }
+      refreshUserTicketListDisplay(ticketsToDisplay.size());
     }
     hasOpenRequest =
         ticketsToDisplay.stream().anyMatch(ticket -> ticket.status().acceptsMessages());
@@ -1235,6 +1208,38 @@ public final class SupportTicketsComponent extends VerticalLayout {
       userTicketDataProvider.refreshAll();
     }
     publishNavigation();
+  }
+
+  private void refreshAdminTicketListDisplay(boolean ticketListEmpty) {
+    int activeTicketFilterCount = ticketFilterPanel.activeCount();
+    activeFilterCount.setText(Integer.toString(activeTicketFilterCount));
+    activeFilterCount.setVisible(activeTicketFilterCount > 0);
+    filterButton.setAriaLabel(
+        activeTicketFilterCount == 0
+            ? messageProperties.getAdminUsersAddFilter()
+            : messageProperties.getAdminUsersAddFilter()
+                + ", "
+                + messageProperties.getAdminUsersActiveFilterCount(activeTicketFilterCount));
+    queueEmptyHintSpan.setText(
+        activeTicketFilterCount > 0
+            ? messageProperties.getSupportFilterEmpty()
+            : messageProperties.getSupportQueueEmptyHint());
+    queueEmptyState.setVisible(ticketListEmpty);
+    ticketGrid.setVisible(!ticketListEmpty);
+    adminTicketScroll.setVisible(!ticketListEmpty);
+  }
+
+  private void refreshUserTicketListDisplay(int userTicketCount) {
+    userRequestCount.setText(messageProperties.getSupportRequestCount(userTicketCount));
+    emptyState.setVisible(userTicketCount == 0);
+    reloadTicketsButton.setVisible(userTicketCount > 0);
+    userTicketVirtualList.setVisible(userTicketCount > 0);
+
+    int visibleUserTicketRows = Math.clamp(userTicketCount, 1, MAX_VISIBLE_USER_TICKETS);
+    userTicketVirtualList.setHeight(
+        "calc("
+            + visibleUserTicketRows
+            + " * var(--support-user-ticket-row-height) + 2 * var(--cosmos-border-width))");
   }
 
   public void addBackAction(Button backNavigationButton) {

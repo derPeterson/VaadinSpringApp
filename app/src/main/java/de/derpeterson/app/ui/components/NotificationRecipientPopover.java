@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
@@ -83,7 +84,7 @@ public class NotificationRecipientPopover extends Popover {
     HorizontalLayout headingLayout =
         new HorizontalLayout(headingIconSpan, headingCopyLayout, closeButton);
     headingLayout.setWidthFull();
-    headingLayout.setAlignItems(HorizontalLayout.Alignment.CENTER);
+    headingLayout.setAlignItems(Alignment.CENTER);
     headingLayout.expand(headingCopyLayout);
     headingLayout.addClassName("cosmos-recipient-heading");
 
@@ -118,7 +119,7 @@ public class NotificationRecipientPopover extends Popover {
     emptyResultLayout.add(AppIcon.USER_QUESTION.create(), emptyTitleSpan, emptyHintSpan);
     emptyResultLayout.setPadding(false);
     emptyResultLayout.setSpacing(false);
-    emptyResultLayout.setAlignItems(VerticalLayout.Alignment.CENTER);
+    emptyResultLayout.setAlignItems(Alignment.CENTER);
     emptyResultLayout.addClassName("cosmos-recipient-empty");
     emptyResultLayout.getElement().setAttribute("role", "status");
 
@@ -139,7 +140,7 @@ public class NotificationRecipientPopover extends Popover {
     recipientVirtualList.setVisible(recipientCount > 0);
     emptyResultLayout.setVisible(recipientCount == 0);
     // Ab fünf Zeilen bleibt die Höhe fest; weitere Empfänger werden virtualisiert.
-    int visibleRecipientRows = Math.max(1, Math.min(recipientCount, MAX_VISIBLE_RECIPIENTS));
+    int visibleRecipientRows = Math.clamp(recipientCount, 1, MAX_VISIBLE_RECIPIENTS);
     recipientVirtualList.setHeight(
         "calc("
             + visibleRecipientRows
@@ -208,7 +209,7 @@ public class NotificationRecipientPopover extends Popover {
     identityLayout.setSpacing(false);
     identityLayout.addClassName("cosmos-recipient-identity");
     HorizontalLayout recipientRowLayout = new HorizontalLayout(recipientAvatar, identityLayout);
-    recipientRowLayout.setAlignItems(HorizontalLayout.Alignment.CENTER);
+    recipientRowLayout.setAlignItems(Alignment.CENTER);
     recipientRowLayout.addClassName("cosmos-recipient-row");
     return recipientRowLayout;
   }

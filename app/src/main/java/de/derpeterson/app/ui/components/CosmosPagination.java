@@ -185,6 +185,10 @@ public final class CosmosPagination extends HorizontalLayout {
     nextPageButton.setEnabled(available && currentPage < totalPages - 1);
     lastPageButton.setEnabled(available && currentPage < totalPages - 1);
 
+    refreshPageNumberButtons();
+  }
+
+  private void refreshPageNumberButtons() {
     pageNumberButtonsLayout.removeAll();
 
     if (!available || mode == Mode.PREVIOUS_NEXT) {

@@ -1050,11 +1050,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     String firstInvalidSubmittedValue = null;
 
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
-      if (!validateInput(configEntry)) {
-        if (firstInvalidConfigEntry == null) {
-          firstInvalidConfigEntry = configEntry;
-          firstInvalidSubmittedValue = extractInputValue(configEntry);
-        }
+      // Alle Felder markieren, die Meldung jedoch nur aus dem ersten Fehler bilden.
+      if (!validateInput(configEntry) && firstInvalidConfigEntry == null) {
+        firstInvalidConfigEntry = configEntry;
+        firstInvalidSubmittedValue = extractInputValue(configEntry);
       }
     }
 

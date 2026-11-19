@@ -26,6 +26,8 @@ import org.springframework.boot.convert.DurationStyle;
  * Validierung bleibt beim Aufrufer.
  */
 public class CosmosDurationField extends Div implements HasAriaLabel {
+  private static final String INVALID_STORED_VALUE = "invalid";
+
   public enum Storage {
     SECONDS,
     DURATION,
@@ -266,7 +268,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
                   .apply(null, new ValueContext(durationAmountIntegerField))
                   .isError();
       if (invalidNumberInput) {
-        return "invalid";
+        return INVALID_STORED_VALUE;
       }
       return "";
     }
@@ -286,7 +288,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
               durationParts[0].longValueExact(), durationParts[1].longValueExact())
           .toString();
     } catch (ArithmeticException _) {
-      return "invalid";
+      return INVALID_STORED_VALUE;
     }
   }
 
@@ -405,7 +407,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   }
 
   public String getDisplayValue() {
-    if (getStoredValue().equals("invalid")) {
+    if (getStoredValue().equals(INVALID_STORED_VALUE)) {
       return messageProperties.getAdminConfigDurationInvalid();
     }
     BigDecimal currentDurationAmount = readDurationAmount();
@@ -423,7 +425,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   }
 
   public String getEquivalentValue() {
-    if (getStoredValue().equals("invalid")) {
+    if (getStoredValue().equals(INVALID_STORED_VALUE)) {
       return messageProperties.getAdminConfigDurationInvalid();
     }
     if (readDurationAmount() == null && durationStorage == Storage.DAYS) {
@@ -447,7 +449,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
     }
 
     if (durationStorage == Storage.DURATION) {
-      return !getStoredValue().equals("invalid");
+      return !getStoredValue().equals(INVALID_STORED_VALUE);
     }
     BigDecimal boundedDurationAmount =
         durationStorage == Storage.DAYS ? currentDurationAmount : new BigDecimal(getSecondsValue());
