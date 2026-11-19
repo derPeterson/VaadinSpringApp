@@ -8,6 +8,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
+import com.microsoft.playwright.options.ViewportSize;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import java.io.ByteArrayInputStream;
@@ -15,6 +16,75 @@ import java.io.ByteArrayInputStream;
 /** Sichert echte Formularaufnahmen und Feldmaße für den FormLayout-Abgleich. */
 public final class AccountFormAppearanceChecks {
   private AccountFormAppearanceChecks() {}
+
+  public static void assertEqualDialogActions(
+      Page browserPage, Locator dialogLocator, String cancelText, String confirmText) {
+    ViewportSize viewport = browserPage.viewportSize();
+    assertDialogActionsAtWidth(dialogLocator, cancelText, confirmText, viewport.width);
+
+    if (viewport.width == 390) {
+      browserPage.setViewportSize(320, viewport.height);
+      try {
+        assertDialogActionsAtWidth(dialogLocator, cancelText, confirmText, 320);
+      } finally {
+        browserPage.setViewportSize(viewport.width, viewport.height);
+      }
+    }
+  }
+
+  private static void assertDialogActionsAtWidth(
+      Locator dialogLocator, String cancelText, String confirmText, int viewportWidth) {
+    Locator actionsLocator = dialogLocator.locator(".cosmos-dialog-actions");
+    Locator actionButtonLocators = actionsLocator.locator(":scope > vaadin-button");
+    Locator cancelButtonLocator = actionButtonLocators.first();
+    Locator confirmButtonLocator = actionButtonLocators.last();
+
+    assertThat(actionsLocator).hasCSS("display", "grid");
+    assertThat(actionButtonLocators).hasCount(2);
+    assertThat(cancelButtonLocator).hasText(cancelText);
+    assertThat(confirmButtonLocator).hasText(confirmText);
+
+    BoundingBox actionsBounds = actionsLocator.boundingBox();
+    BoundingBox cancelBounds = cancelButtonLocator.boundingBox();
+    BoundingBox confirmBounds = confirmButtonLocator.boundingBox();
+
+    assertEquals(cancelBounds.width, confirmBounds.width, 1);
+    if (viewportWidth <= 479) {
+      double footerContentWidth =
+          ((Number)
+                  dialogLocator
+                      .locator("[part~='footer']")
+                      .evaluate(
+                          """
+                          footer => {
+                            const style = getComputedStyle(footer);
+                            return footer.clientWidth - parseFloat(style.paddingLeft)
+                              - parseFloat(style.paddingRight);
+                          }
+                          """))
+              .doubleValue();
+      assertEquals(footerContentWidth, actionsBounds.width, 1);
+      assertEquals(actionsBounds.width, cancelBounds.width, 1);
+      assertEquals(cancelBounds.x, confirmBounds.x, 1);
+      assertTrue(cancelBounds.y + cancelBounds.height <= confirmBounds.y);
+    } else {
+      assertEquals(cancelBounds.y, confirmBounds.y, 1);
+      assertTrue(cancelBounds.x + cancelBounds.width <= confirmBounds.x);
+    }
+
+    for (Locator buttonLocator : actionButtonLocators.all()) {
+      Locator labelLocator = buttonLocator.locator("[part~='label']");
+      assertThat(labelLocator).isVisible();
+
+      assertTrue(
+          (Boolean)
+              labelLocator.evaluate(
+                  """
+                  label => label.scrollWidth <= label.clientWidth + 1
+                    && label.scrollHeight <= label.clientHeight + 1
+                  """));
+    }
+  }
 
   public static void captureRegistration(Page browserPage) {
     Locator registrationPanelLocator = browserPage.locator(".public-panel").first();

@@ -110,7 +110,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     flex-direction: column;
 }
 
-#account-email-change-dialog .cosmos-dialog-actions {
+.cosmos-reference-overlay .cosmos-dialog-actions.cosmos-equal-width-dialog-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: max-content;
@@ -118,18 +118,18 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     margin-inline-start: auto;
 }
 
-#account-email-change-dialog .cosmos-dialog-actions > vaadin-button {
+.cosmos-reference-overlay .cosmos-dialog-actions.cosmos-equal-width-dialog-actions > vaadin-button {
     min-height: var(--cosmos-control-height);
     height: auto;
     --vaadin-button-label-wrap: normal;
 }
 
-#account-email-change-dialog .cosmos-dialog-actions > vaadin-button::part(label) {
+.cosmos-reference-overlay .cosmos-dialog-actions.cosmos-equal-width-dialog-actions > vaadin-button::part(label) {
     overflow-wrap: anywhere;
 }
 
 @media (max-width: 479px) {
-    #account-email-change-dialog .cosmos-dialog-actions {
+    .cosmos-reference-overlay .cosmos-dialog-actions.cosmos-equal-width-dialog-actions {
         grid-template-columns: minmax(0, 1fr);
         width: 100%;
     }
@@ -472,10 +472,6 @@ vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avata
     flex-wrap: wrap;
     width: 100%;
     gap: var(--cosmos-space-s);
-}
-
-.account-avatar-dialog .account-avatar-footer > .cosmos-dialog-actions {
-    margin-inline-start: auto;
 }
 
 .account-avatar-dialog .account-avatar-upload-control {

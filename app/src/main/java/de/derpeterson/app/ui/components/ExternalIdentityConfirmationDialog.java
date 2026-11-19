@@ -24,7 +24,6 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -149,8 +148,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     confirmIdentityButton.addClickListener(event -> confirmExternalIdentityAction());
 
     Div dialogActionsDiv = new Div(cancelButton, confirmIdentityButton);
-    dialogActionsDiv.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    dialogActionsDiv.addClassNames(
+        "cosmos-dialog-actions", CosmosCssClasses.EQUAL_WIDTH_DIALOG_ACTIONS);
     getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {

@@ -8,6 +8,7 @@ import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
@@ -52,11 +53,12 @@ public class AccountActionCardsBrowserTest extends BrowserFixture {
       Locator actionCardLocator =
           browserPage.locator(".account-lifecycle-action[data-action=" + accountAction + "]");
       Locator actionButtonLocator = actionCardLocator.locator("vaadin-button");
-      assertThat(actionButtonLocator)
-          .hasText(
-              accountAction.equals("DELETE")
-                  ? uiTexts.getAccountDeleteAction()
-                  : uiTexts.getAccountDeactivateAction());
+      String accountActionText =
+          accountAction.equals("DELETE")
+              ? uiTexts.getAccountDeleteAction()
+              : uiTexts.getAccountDeactivateAction();
+
+      assertThat(actionButtonLocator).hasText(accountActionText);
       actionCardLocator.scrollIntoViewIfNeeded();
       browserPage.mouse().move(0, 0);
       Allure.attachment(
@@ -88,6 +90,8 @@ public class AccountActionCardsBrowserTest extends BrowserFixture {
       actionButtonLocator.click();
       Locator identityDialogLocator = browserPage.locator("#account-lifecycle-proof[opened]");
       assertThat(identityDialogLocator.locator("#account-lifecycle-password")).isVisible();
+      AccountFormAppearanceChecks.assertEqualDialogActions(
+          browserPage, identityDialogLocator, uiTexts.getAdminUsersCancel(), accountActionText);
       identityDialogLocator
           .getByRole(
               AriaRole.BUTTON,

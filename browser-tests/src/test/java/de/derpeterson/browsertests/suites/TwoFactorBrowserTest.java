@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.BrowserTestRunner;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
@@ -520,6 +521,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       checkEnrollmentOtp(actor.browserPage, email, false);
 
       actor.browserPage.locator("#account-two-factor-replace").click();
+      AccountFormAppearanceChecks.assertEqualDialogActions(
+          actor.browserPage,
+          actor.browserPage.locator("#two-factor-action-dialog[opened]"),
+          uiTexts.getAdminUsersCancel(),
+          uiTexts.getTwoFactorConfirm());
       TwoFactorPage.enterActionCode(
           actor.browserPage, TwoFactorPage.nextCode(actor.browserPage, email));
       actor.browserPage.locator("#two-factor-action-confirm").click();

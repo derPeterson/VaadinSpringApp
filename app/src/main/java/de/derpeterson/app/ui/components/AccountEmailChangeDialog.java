@@ -126,7 +126,8 @@ public class AccountEmailChangeDialog extends Dialog {
     requestEmailChangeButton.addClickListener(event -> submitEmailChangeRequest());
 
     Div dialogActionsDiv = new Div(cancelEmailChangeButton, requestEmailChangeButton);
-    dialogActionsDiv.addClassName("cosmos-dialog-actions");
+    dialogActionsDiv.addClassNames(
+        "cosmos-dialog-actions", CosmosCssClasses.EQUAL_WIDTH_DIALOG_ACTIONS);
     getFooter().add(dialogActionsDiv);
 
     addOpenedChangeListener(event -> {

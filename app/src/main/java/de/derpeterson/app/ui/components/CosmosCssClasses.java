@@ -26,6 +26,9 @@ public final class CosmosCssClasses {
   /** Reiter teilen sich die verfügbare Breite gleichmäßig. */
   public static final String EQUAL_WIDTH_TABS = "cosmos-equal-width-tabs";
 
+  /** Dialogfuß mit zwei Textaktionen gleicher Breite. */
+  public static final String EQUAL_WIDTH_DIALOG_ACTIONS = "cosmos-equal-width-dialog-actions";
+
   // Semantische Textfarben; die Werte stehen als Tokens im Theme.
   public static final String TEXT_PRIMARY = "cosmos-text-primary";
   public static final String TEXT_SECONDARY = "cosmos-text-secondary";

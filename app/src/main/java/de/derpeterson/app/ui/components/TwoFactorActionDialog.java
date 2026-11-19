@@ -8,7 +8,6 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.function.SerializableRunnable;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
@@ -76,8 +75,8 @@ public final class TwoFactorActionDialog extends Dialog {
     confirmIdentityButton.addClickListener(event -> confirmProtectedAction());
 
     Div dialogActionsDiv = new Div(cancelButton, confirmIdentityButton);
-    dialogActionsDiv.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    dialogActionsDiv.addClassNames(
+        "cosmos-dialog-actions", CosmosCssClasses.EQUAL_WIDTH_DIALOG_ACTIONS);
     getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {

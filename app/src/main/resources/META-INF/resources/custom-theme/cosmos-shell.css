@@ -1043,10 +1043,6 @@ vaadin-dialog.account-avatar-dialog[theme~="cosmos-reference"]::part(overlay) {
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer {
     gap: 12px;
 }
-.account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
-    width: auto;
-    max-width: 100%;
-}
 vaadin-dialog.portal-confirmation-dialog[theme~="cosmos-reference"]::part(overlay) {
     width: min(540px, calc(100vw - 32px));
 }
@@ -1326,15 +1322,6 @@ vaadin-select[theme~="cosmos-reference"] vaadin-select-item[selected] {
 @media (max-width: 479px) {
     .account-change-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
         grid-template-columns: minmax(0, 1fr);
-    }
-    .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer {
-        flex-wrap: wrap;
-    }
-    .account-avatar-dialog.cosmos-reference-overlay .account-avatar-footer .cosmos-dialog-actions {
-        width: 100%;
-    }
-    .account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 

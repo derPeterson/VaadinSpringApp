@@ -5,11 +5,13 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
-- **Gleich breite Aktionen im E-Mail-Änderungsdialog — offen.**
-  `FormLayoutsBrowserTest` in DE/EN ausführen. Bei 1280 px stehen Abbrechen
-  und Bestätigen gleich breit nebeneinander. Bei 390 und 320 px stehen beide
+- **Gleich breite Aktionen in Konto- und Identitätsdialogen — offen.**
+  `FormLayoutsBrowserTest` (E-Mail, Passwort, Google verbinden), AVATAR-01
+  (Profilbild), ACCOUNT-CARDS-01 (Konto deaktivieren oder löschen) und MFA-21
+  (Zwei-Faktor-Bestätigung) in DE/EN ausführen. Bei 1280 px stehen die beiden
+  Textaktionen gleich breit nebeneinander. Bei 390 und 320 px stehen beide
   in voller Breite untereinander. Beschriftungen bleiben vollständig lesbar,
-  und der Footer verwendet sein CSS Grid.
+  und der Footer verwendet CSS Grid. „Bild löschen“ bleibt separat erreichbar.
 
 - **Admin-Vorgangsliste mit MasterDetailLayout — offen.**
   MFA-19, MFA-22 und MFA-23 in DE/EN prüfen. Auf breiten Ansichten Liste und

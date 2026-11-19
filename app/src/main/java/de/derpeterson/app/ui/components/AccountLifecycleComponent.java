@@ -22,7 +22,6 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.function.SerializableSupplier;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper.NotificationType;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -289,8 +288,8 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     confirmAccountActionButton.addClassName(
         accountAction == AccountAction.DELETE ? DELETE_BUTTON : "cosmos-warning-button");
     Div proofActionsDiv = new Div(cancelProofButton, confirmAccountActionButton);
-    proofActionsDiv.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(proofActionsDiv);
+    proofActionsDiv.addClassNames(
+        "cosmos-dialog-actions", CosmosCssClasses.EQUAL_WIDTH_DIALOG_ACTIONS);
     proofDialog.getFooter().add(proofActionsDiv);
   }
 

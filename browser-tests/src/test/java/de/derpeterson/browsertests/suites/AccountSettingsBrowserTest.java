@@ -19,6 +19,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
@@ -726,6 +727,11 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.open();
     captureAccountAvatars("Initialen");
     openAvatar();
+    AccountFormAppearanceChecks.assertEqualDialogActions(
+        browserPage,
+        browserPage.locator("#account-avatar-dialog[opened]"),
+        uiTexts.getAdminUsersCancel(),
+        uiTexts.getAdminUsersSave());
     chooseMode(uiTexts.getAccountAvatarCustom());
     chooseMode(uiTexts.getAccountAvatarInitials());
 
