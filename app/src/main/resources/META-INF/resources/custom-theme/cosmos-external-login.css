@@ -54,7 +54,11 @@
     grid-template-columns: subgrid;
     column-gap: normal;
 }
-.cosmos-reference-portal #account-panel-security .external-connection-row > vaadin-button {
+.cosmos-reference-portal
+    #account-panel-security
+    .external-connections-overview
+    .external-connection-row
+    > vaadin-button {
     width: auto;
     min-width: 0;
     min-height: var(--cosmos-control-height);

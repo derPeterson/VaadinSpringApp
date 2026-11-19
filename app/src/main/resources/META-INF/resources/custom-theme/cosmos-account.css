@@ -155,6 +155,12 @@ vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avata
     )::part(header-content) {
     background-color: var(--cosmos-page-background);
 }
+/* Reiter und Inhalt teilen den Hintergrund des Overlays auch bei gebrochenen Pixelpositionen. */
+vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
+        > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
+    )::part(content) {
+    background: transparent;
+}
 vaadin-dialog.account-change-dialog:is(.external-identity-dialog, .account-avatar-dialog):has(
         > [slot="header-content"] > .cosmos-panel-tabs:not([hidden])
     )::part(header) {

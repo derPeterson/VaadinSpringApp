@@ -184,7 +184,8 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
     Locator codeTabs = dialog.locator("[slot=header-content] > vaadin-tabs.two-factor-code-tabs");
 
-    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(dialog.locator("vaadin-dialog-overlay > [part~=overlay]"))
+        .hasCSS("background-color", "rgb(5, 8, 17)");
     assertThat(dialog.locator("div.account-change-dialog-form")).isVisible();
     assertThat(codeTabs).isVisible();
     assertThat(codeTabs).hasCSS("background-color", "rgba(0, 0, 0, 0)");
