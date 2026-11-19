@@ -2,390 +2,258 @@
 
 ## Browser-Tests
 
-Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
-bleiben bis zur erfolgreichen Prüfung offen.
+Oberflächenprüfungen in DE und EN auf Desktop und schmaler Ansicht ausführen,
+sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter.
 
-- **Admin-Vorgangsliste mit MasterDetailLayout — offen.**
-  MFA-19, MFA-22 und MFA-23 decken in DE/EN die breite Ansicht und das
-  mobile Detail bei 390 px ab, einschließlich Rückkehr, Filter und Entwurf.
-  Bei 320 px bleiben Direktlink, Auswahl und Scrollen im Detail-Overlay offen.
-  Rückkehr per Button und Escape soll den Fokus an den aktiven Kategorienreiter
-  zurückgeben und nur die Ticketnummer aus der URL entfernen. Beim Wiederöffnen
-  Listenseite, Filter, Entwurf und erreichbare Aktionen prüfen.
+- **Admin-Vorgangsliste bei 320 px — offen.**
+  Direktlink und Auswahl öffnen das scrollbare Detail-Overlay. Button und Escape
+  geben den Fokus an den Kategorienreiter zurück und entfernen nur die Ticketnummer
+  aus der URL. Beim Wiederöffnen bleiben Listenseite, Filter und Entwurf
+  erhalten. Die Aktionen bleiben erreichbar.
 
-- **Rechte Feldhilfe nach Tooltip-Bereinigung — offen.**
-  Die bestehenden Fälle CONFIG-05D, COMPONENT-04, MAIL-02, MFA-03 und OIDC-08
-  in der großen Testrunde ausführen. Die Info-Buttons öffnen per Klick und
-  Tastatur die rechte Feldhilfe mit den passenden Texten. Feldhilfeknöpfe zeigen
-  weder bei Hover noch bei Fokus einen Tooltip.
+- **Rechte Feldhilfe im Mail-Test — offen.**
+  In MAIL-02 Empfänger-, Betreff- und Texthilfe nach der TextArea-Prüfung per
+  Tastatur öffnen, Betreff- und Texthilfe auch per Klick. Texte und Entwurf
+  beim Sprachwechsel prüfen. Bei Feldhilfeknöpfen zusätzlich prüfen, dass
+  Hover und Fokus keinen Tooltip öffnen.
 
-- **OTP-Styling, Methodenauswahl und Eingabe — offen.**
-  `TwoFactorBrowserTest` (MFA-21) in DE/EN auf Desktop/Smartphone prüfen. Das
-  fokussierte leere Kästchen hat einen blauen Rahmen und keinen sichtbaren
-  blinkenden Cursor. Einfügen und die automatische Bestätigung funktionieren
-  weiterhin. Das native Eingabefeld bietet `autocomplete="one-time-code"` an.
-  In Anmelde-/Adminbestätigung und Aktionsdialogen die Panel-Reiter mit blauer
-  Oberkante prüfen. Methodenwechsel per Klick und Tastatur, ARIA-Zuordnung des
-  aktiven Feldbereichs und Darstellung in schmalen Dialogen prüfen. Ein
-  unvollständiger App-Code ist nach Hin- und Zurückwechseln im Dialog gelöscht.
-  Auf der Bestätigungsseite und in den Dialogen schließen die Reiter den
-  jeweiligen Kopf ab und übernehmen dessen Hintergrundfarbe. Bei Passwortnachweis,
-  bereits bestätigter Identität oder im Wiederherstellungsschritt bleibt der Kopf
-  ohne diese Reiter.
-  Bei „Google verbinden“ und beim Ändern des Portalpassworts den Übergang
-  unter der Reiterleiste nach dem Öffnen und nach dem Wechsel in beide
-  Richtungen prüfen. Bildpixel an der gemeinsamen Kante, am Anschluss der
-  Linie rechts und links neben dem inaktiven Reiter sowie an den oberen
-  Rundungen beider Reiter prüfen.
+- **OTP-Methodenreiter — offen.**
+  Tastaturwechsel und ARIA-Zuordnung der aktiven Eingabe in Anmelde- und
+  Adminbestätigung sowie in Aktionsdialogen prüfen. In der Adminbestätigung
+  zusätzlich die blaue Oberkante und den Anschluss an den Kopf prüfen.
+  Beim Portalpasswortdialog die Pixelkante unter beiden Reitern, die seitlichen
+  Linienanschlüsse und oberen Rundungen beim Öffnen und nach beiden
+  Wechselrichtungen prüfen. Beim Zurückwechseln ist der angefangene App-Code
+  leer. Bei Passwortnachweis, bereits bestätigter Identität und beim
+  Wiederherstellungsschritt gezielt prüfen, dass der Kopf ohne Reiter bleibt.
 
-- **Badge- und Formulargrößen — offen.**
-  In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und
-  Zähler prüfen. Quellen, Lesestatus und Ticketrelevanz im Glocken-Overlay sind
-  22 px hoch. In der Sitzungsübersicht gelten 30 px für die aktive Anzahl,
-  24 px für das Limit und 22 px für Gerätestatus. Lange Beschriftungen,
-  Umbruch und Einbettung in Tabellen und Aktionen prüfen. Ticketstatus in Liste,
-  Kopf und Verlauf auf lesbare Beschriftung innerhalb der 22 px prüfen. Einzeilige
-  Formularfelder und zugeordnete Feldhilfe sind 40 px hoch, normale
-  Eingabeschrift 13 px und normale Buttonschrift 12 px. Dauerwerte und
-  kompakte Pagination behalten ihre Größenvarianten. Mehrzeilige Felder
-  im bestehenden TextArea-Nachtest prüfen.
+- **Badge- und Formularmaße — offen.**
+  Quellen-, Lesestatus- und Ticketrelevanz-Badges der Glockenvorschau,
+  Ticketstatus in Liste, Kopf und Verlauf sowie Gerätestatus mit 22 px
+  prüfen, Sitzungszähler mit 30 px und Sitzungslimit mit 24 px.
+  Lange Beschriftungen auf Umbruch und Lesbarkeit prüfen. Bei einzeiligen
+  Feldern und Feldhilfeknöpfen 40 px Höhe, Eingabetext mit 13 px und normale
+  Buttonschrift mit 12 px stichprobenartig prüfen. Kompakte Seitengrößenauswahl
+  und Dauerfelder mit den jeweiligen Größenvarianten vergleichen.
 
-- **Wiederherstellungsanfrage: eigene Tickets als VirtualList — offen.**
-  In DE/EN auf Desktop/Smartphone 0/1/2/5/6/20 eigene Tickets prüfen: vorhandener
-  Leerzustand bei 0, schrumpfende Liste bis 5, danach inneres Scrollen mit der
-  gemeinsamen Scrollleiste bis zum letzten Ticket. Lange Titel und Statusbadges
-  innerhalb der festen Zeilenhöhen, Auswahlfarbe und linke Markierung prüfen;
-  Auswahlfläche muss die ganze Zeile ohne freie Streifen rechts oder unten füllen.
-  Ganze Zeile per Maus, Enter und Leertaste auswählen und den richtigen Verlauf öffnen.
-  Strg+Klick hebt die Auswahl auf, erneutes Öffnen stellt den Antwortentwurf wieder her.
-  Bewusst leere Auswahl bleibt nach manuellem Nachladen und Live-Aktualisierung leer.
-  Antwortentwürfe und Rückkehr bleiben erhalten. Live-Änderungen, Sprachwechsel
-  sowie Auswahl bei erneutem Laden prüfen. Admin-Grid und Pagination bleiben erhalten;
-  dessen dezente einfache Zeilentrenner zusätzlich mit den Kartentrennlinien vergleichen.
-  Bestehende `TwoFactorBrowserTest`-Szenarien verwenden weiterhin dieselbe Listen-ID;
-  zusätzliche Größen-/Scrollprüfungen ergänzen. JUnit deckt Daten und Bedienablauf ab;
-  manuell abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
+- **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
+  Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis
+  zum letzten Eintrag prüfen. Lange Titel, Badges, linke Markierung und lückenlose
+  Auswahlfläche innerhalb der Zeile prüfen. Die ganze Zeile per Maus, Enter und
+  Leertaste aktivieren. Strg+Klick hebt die Auswahl auf. Nach Wiederöffnen erscheint
+  der Antwortentwurf, nach Nachladen oder Live-Update bleibt eine bewusst leere
+  Auswahl erhalten. Sprachwechsel mit ausgewähltem Ticket prüfen. Die einfachen
+  Trennlinien des Admin-Grids mit denen der Karten vergleichen.
 
 - **TextArea-Fokusrahmen und Größenänderung — offen.**
-  In DE/EN auf Desktop/Smartphone Mail-Test, Mitteilungsentwurf und Ticketnachricht
-  mit TextField vergleichen: Fokusrahmen vollständig außen sichtbar, ohne abgeschnittene
-  Seiten oder Ecken. Vertikale Größenänderung auf Desktop, längere Texte, Scrollen,
-  Löschen-Button, Fehlerzustand und die Mindesthöhen von 122 px
-  (Mitteilungsentwurf und Ticketnachricht) sowie 144 px (Mail-Test) prüfen. Der Griff liegt
-  jetzt auf der nativen Eingabefläche statt auf einem abschneidenden Host.
-  Manuell abgenommen. In der großen Testrunde blieb die gemessene Höhe beim
-  Ziehen am sichtbaren Griff in MAIL-02, MAIL-03 und NOTIFY-01 (1280 und 390 px)
-  in beiden Sprachen unverändert. Ursache im isolierten Chromium ermitteln und
-  die abgebrochenen Prüfabläufe erneut ausführen.
+  MAIL-02 und MAIL-03 im Mail-Test sowie NOTIFY-01 bei 1280 und 390 px brachen
+  im isolierten Chromium ab, weil der sichtbare Griff die gemessene Höhe nicht
+  änderte. Ursache ermitteln und die abgebrochenen Schritte erneut prüfen.
+  In Mail-Test, Mitteilungsentwurf und Ticketnachricht den äußeren Fokusrahmen
+  mit TextField vergleichen. Längeren Text, Scrollen, Löschen und Fehlerzustand
+  prüfen. Die Mindesthöhen der Eingabefläche betragen 144 px im Mail-Test
+  und 122 px in Entwurf und Ticket.
+  Die Desktop-Größenänderung auch in der Ticketnachricht prüfen.
 
 - **Einheitliche Schließen-Icons — offen.**
-  In DE/EN auf Desktop/Smartphone Glockenvorschau, Nachrichtendialog,
-  Sammel-Lesebestätigung, Passwort/E-Mail/Profilbild, Kontolöschung/-deaktivierung,
-  2FA-/Anbieterbestätigungen, Benutzerverwaltung, Feldhilfen und gemeinsame
-  Bestätigungsdialoge prüfen: Kreis-X überall 18 × 18 px im 36-px-Button,
-  unabhängig von geerbter Schriftgröße. Empfänger-Popover und eingeblendete
-  Notifications verwenden denselben Schließen-Stil. Zentrierung, Fokus,
-  Maus-/Tastaturschließen und Tooltip erhalten. Vom Benutzer abgenommen;
-  automatisierter Browsernachtest für die große Testrunde offen.
+  Kreis-X mit 18 × 18 px im 36-px-Button, Zentrierung, Fokus und Tooltip in
+  Glockenvorschau, Nachrichtendialog, Empfänger-Popover, Meldungen, Feldhilfen,
+  Benutzerverwaltung und Konto-, 2FA-, Anbieter- und Bestätigungsdialogen prüfen.
+  Fehlende Maus- und Tastaturpfade abdecken, insbesondere den Schließen-Button
+  im Empfänger-Popover und die Tastaturbedienung der Meldungen.
 
-- **Benutzermenü: Innenabstand der Footer-Aktionen — offen.**
-  In DE/EN Desktop/Smartphone Startseite und Abmelden mit Icon prüfen: beidseitiger
-  M-Innenabstand ohne zusätzliche Hoverfläche; Auras Präfixregel darf links nicht auf 0 kürzen.
-  Text, Icon, Klick- und Tastaturfunktion erhalten. Die Browserprüfung belegt bereits
-  die rechte Ausrichtung von „Abmelden“ am Footer-Rand.
+- **Benutzermenü – Innenabstand der Footer-Aktionen — offen.**
+  Bei „Startseite“ und „Abmelden“ beidseitig M-Innenabstand trotz Icon-Präfix
+  prüfen. Hover darf die Klickfläche optisch nicht erweitern. „Startseite“
+  per Klick und beide Aktionen per Tastatur auslösen.
 
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
-  In DE/EN Desktop/Smartphone alle vier Zeitfelder der Link-/Tokenlaufzeiten leeren:
-  Zahl bleibt leer, sichtbarer Standard ist ein gedämpfter Platzhalter und kein
-  eingetragener Wert. Integer- und präzise Dauerfelder berücksichtigen; nach Eingabe
-  normale Wertfarbe, deaktiviert weiterhin gedämpft. Zusätzlich normale Zahlenfelder
-  und Dauerfelder mit Löschen-Button vergleichen: Beim Wechsel zum Placeholder
-  bleibt die horizontale Mitte der Eingabefläche unverändert. Im leeren Zustand
-  bleibt nur der Platz des Löschen-Buttons erhalten, ohne sichtbare oder bedienbare
-  Aktion. Disabled/Read-only und Felder ohne Löschen-Button unverändert.
-  Kein Browserlauf freigegeben.
+  Bei den vier Link-/Tokenlaufzeiten und vergleichbaren ganzen oder präzisen
+  Dauerwerten nach dem Leeren einen gedämpften Platzhalter bei leerem Wert
+  prüfen. Nach Eingabe gilt die normale Wertfarbe, deaktiviert bleibt sie
+  gedämpft. Platzhalter und Wert bleiben horizontal zentriert, auch bei
+  reserviertem Platz für die dann ausgeblendete Löschaktion. Zahlenfelder,
+  Readonly und Felder ohne Löschaktion einbeziehen.
 
-- **Zentrales Switch-Grundstyling — offen.**
-  In DE/EN Desktop/Smartphone Login speichern, Benutzeranlage/-bearbeitung,
-  Konfiguration einschließlich Anbieter/2FA, gespeicherte Ersatzcodes,
-  Ticketbeobachtung und „Alle Benutzer“ prüfen. Einheitliche Bahn, runder
-  Griff, Ein-/Aus-Farben und Fokusrahmen; Disabled-/Read-only-Farben bleiben nativ
-  gedämpft. Anordnung links/rechts, Klickfläche, Beschriftung, Untertext, Umbruch
-  und äußere Abstände unverändert. Vom Benutzer abgenommen; automatisierter
-  Browsernachtest für die große Testrunde offen. CSS-Prüfungen ersetzen ihn nicht.
+- **Switch-Grundstyling — offen.**
+  „Login speichern“, Benutzerformular, Anbieter/2FA, Ersatzcodes,
+  Ticketbeobachtung und „Alle Benutzer“ mit den geprüften Sicherheits- und
+  SMTP-Switches vergleichen. Bahn, runden Griff, Ein-/Aus- und
+  Disabled-/Readonly-Farben, Fokus, Klickfläche, Beschriftung, Untertext,
+  Umbruch und Abstände prüfen. Bei Benutzerformularen zusätzlich volle
+  Zeilenbreite und oben/unten S bei Schaltern prüfen.
 
-- **Mitteilungskarten: einheitliche Dichte — offen.**
-  In DE/EN Desktop/Smartphone Gesamtübersicht und geöffneten Dialog mit L-Padding,
-  kompaktes Overlay mit M prüfen. Titel und Nachricht stehen links, Werkzeuge rechts
-  über beide Zeilen; ihre Höhe darf den Titel-/Nachrichtenabstand nicht vergrößern. Titel ohne
-  zusätzliche Block-/Leerzeile. Kurze/lange Titel, Nachrichten und Statuswechsel
-  prüfen: linke Statuslinie darf die Inhaltsausrichtung nicht verschieben.
-  Titel bleiben native Buttons zum Öffnen der Nachricht; ohne Icon darf kein
-  Zwischenraum vor dem Titel bleiben. Titel, Nachricht und Metadaten links bündig
-  sowohl in der Glockenvorschau als auch in der Übersicht prüfen.
-  In Glockenvorschau, Gesamtübersicht und Detaildialog gilt die Lesereihenfolge
-  Titel, Nachricht, Metadaten. Werkzeuge bleiben rechts oben, auch auf Smartphone;
-  lange Titel umbrechen innerhalb des verfügbaren Platzes.
-  Übersicht und Dialog: Titel zur Nachricht S, Nachricht zu Metadaten M.
-  Kompakte Vorschau: XS und S; keine addierten Nachrichtenränder oder Layoutgaps.
-  Vom Benutzer abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
+- **Mitteilungskarten – Dichte und Lesestatuslinie — offen.**
+  Übersicht und Detail mit L-Innenabstand, Vorschau mit M prüfen. Abstände
+  Titel–Nachricht und Nachricht–Metadaten in Übersicht und Detail S/M, in der
+  Vorschau XS/S. Zusätzliche Leerzeilen und Abstände nach den Detailmetadaten
+  ausschließen. Hohe Werkzeuge rechts oben dürfen den Textabstand nicht
+  beeinflussen. Bei langen Titeln Umbruch, bei Titeln ohne Icon den bündigen
+  Beginn prüfen. Im Detail bleiben Aktion und lange Texte im Kartenrand.
+  In der Vorschau linke Linie für ungelesen (blau) und gelesen (grau) prüfen.
+  Statuswechsel und der getrennte Ticketrelevanz-Badge dürfen die Ausrichtung
+  nicht verschieben.
 
-- **Nachrichtendialog: Abstände der Mitteilung — offen.**
-  In DE/EN auf Desktop/Smartphone mit kurzen und langen Inhalten prüfen: Kartenpadding
-  L, Nachricht unter dem Titel mit S-Abstand, danach Metadaten mit M-Abstand;
-  kein zusätzlicher Abstand nach den Metadaten. Button innerhalb des Kartenrands. Keine Addierung
-  zusätzlicher Layoutgaps oder horizontales Überlaufen. Reine Tokenanpassung;
-  keine Browserfreigabe.
+- **Nachrichtendialog – Gestaltung der Leseaktion — offen.**
+  „Als gelesen markieren“ auf blaue Fläche, Standardschrift, Standardhöhe
+  und Abstand zum Kartenrand prüfen. Nach der Bestätigung und nach erneutem
+  Öffnen soll die Aktion ausgeblendet sein.
 
-- **Nachrichtendialog: Primary-Leseaktion — offen.**
-  In DE/EN auf Desktop/Smartphone „Als gelesen markieren“ blau mit Standardschrift,
-  Standardhöhe und ausreichend Kartenrand prüfen. Aktion, Bestätigung und Verhalten
-  nach erneutem Öffnen erhalten; nach Lesen verschwindet der Button. JUnit deckt
-  Varianten und Ablauf ab, keine Browserfreigabe.
+- **Empfängervorschau – vollständige Popover-Liste — offen.**
+  Bei 1/2/5/6/7/200 Empfängern Öffnen per Klick auf den ersten Avatar oder
+  den Zwischenraum sowie per Leertaste prüfen. Namen-Tooltips, Suche nach Namen, Leeren
+  und Leerzustand prüfen. Schließen per Außenklick und Schließen-Button sowie
+  erneute Vorschau ohne doppelte Listener abdecken.
+  Maximal fünf sichtbare Zeilen, Schrumpfen bei weniger Ergebnissen und
+  virtuelles Scrollen bis zum letzten Eintrag prüfen. Maus, Enter und
+  Leertaste wählen genau eine Zeile, Strg+Klick hebt sie auf oder wechselt
+  sie. Suche und Scrollen erhalten die Auswahl auch bei gleichen Namen und
+  verschiedenen E-Mails. Die Versandempfänger bleiben unverändert.
+  Dialogkopf, abgesetzte Content-Fläche, 380-px-Wunschbreite mit seitlichem
+  L-Abstand und Suchfeld (40/13/14 px für Höhe/Schrift/Lupe) vermessen.
+  Overlayhöhe bei 200 Empfängern im Fenster halten. Zentrierten Leerzustand
+  mit dem der Vorgangsliste vergleichen. Sekundäre E-Mail, lange Texte,
+  vollflächige Auswahl samt Akzentlinie, Hover/Fokus,
+  einfache Zeilentrenner und Scrollleisten in Chromium und Firefox prüfen.
+  Eine zusätzliche Touch-Geste zum Abwählen wartet auf die Entscheidung im TODO.
 
-- **Glockenvorschau: Titelausrichtung und Lesestatuslinie — offen.**
-  In DE/EN auf Desktop/Smartphone Titel bündig mit Nachricht und Metadaten prüfen.
-  Ungelesen blaue, gelesen graue linke Linie; Ticketrelevanz wie „Bereits übernommen“
-  bleibt eigener Badge und ändert nicht die Farbe des tatsächlichen Lesestatus.
-  Vorhandene JUnit-Prüfungen decken die Zustandszuordnung ab, keine Browserfreigabe.
+- **Benachrichtigungsentwurf – Vorschauvalidierung — offen.**
+  NOTIFY-01 nach der TextArea-Prüfung mit dem aktuellen Empfänger-Popover
+  fortführen. Beim Leeren und Verlassen von Empfängern, Titel und Nachricht
+  bleiben die Felder unmarkiert. „Vorschau“ markiert sie und meldet den
+  ersten konkreten Fehler ohne Inline-Text. Änderungen nehmen nur die
+  jeweilige Markierung und die alte Sendefreigabe zurück. Fehlende von
+  nachträglich geänderten Empfängern unterscheiden. Beim Switch „Alle Benutzer“
+  Wortlaut, Anzahl, Untertext, Deaktivierung und Rückkehr der manuellen
+  Auswahl sowie Ausschluss gesperrter, deaktivierter und unbestätigter Konten
+  prüfen.
 
-- **Empfängervorschau: vollständige Popover-Liste — offen.**
-  In DE/EN auf Desktop und Smartphone mit 1/2/5/6/7/200 synthetischen Empfängern:
-  Klick auf ersten Avatar, Zwischenraum und „+N“ sowie Enter/Leertaste öffnet
-  jeweils dieselbe vollständige Liste; kein zweites natives Überlaufmenü.
-  Namen-Tooltips erhalten, Suche nach Name/E-Mail inklusive Leeren/keine Treffer,
-  E-Mail sekundär unter Namen, Scrollen bis zum letzten Treffer. Kopf im gemeinsamen
-  Dialogstil mit Personen-Icon und Trennlinie, abgesetzte Content-Fläche und Suchlupe.
-  Header-, Außenrahmen- und Content-Farben mit der Benachrichtigungsvorschau vergleichen.
-  Einheitliche Zeilenfläche wie die Ticketlisten (`--cosmos-base-color`), Handzeiger,
-  Hover und Tastaturfokus im gemeinsamen Button-Stil prüfen. Klick, Enter oder
-  Leertaste markieren genau eine Zeile; Strg+Klick auf den ausgewählten Eintrag
-  hebt die Auswahl auf, auf einen anderen Eintrag wechselt die Auswahl.
-  Auswahlfläche und linke Akzentlinie füllen die gesamte Zeile ohne Randstreifen.
-  Suche und virtualisiertes Scrollen erhalten die Auswahl auch bei gleichen Namen
-  und unterschiedlichen E-Mails. Die Auswahl löst keine weitere Aktion aus und
-  verändert die Versandempfänger nicht. Eine zusätzliche Touch-Bedienung zum
-  Abwählen wartet auf die Entscheidung im TODO.
-  Die native VirtualList ersetzt das Grid; gemeinsamer schmaler
-  Scrollbar-Stil ohne Pfeile in Chrome/Edge, browserabhängiger Standard-Fallback in Firefox.
-  Zwischen den Zeilen einfache Trennlinien, am oberen und unteren Listenabschluss
-  ausschließlich der Außenrahmen ohne doppelt gezeichnete Linie.
-  Maximal fünf Zeilen sichtbar; bei weniger Treffern schrumpft die Liste, kein leerer
-  Restbereich. Ohne Treffer Benutzer-Fragezeichen, Titel und Suchhinweis zentriert
-  auf Content-Hintergrund prüfen, einschließlich Umbruch auf schmalen Smartphones;
-  Schrift- und Icongrößen entsprechen dem Leerzustand links in der Admin-Ticketliste.
-  Suchfeld wie Benutzerfilter mit
-  40-px-Höhe, 13-px-Eingabeschrift, 14-px-Lupe und gleichen Innenabständen.
-  Wunschbreite 380 px, auf kleinen Fenstern mit seitlichem L-Abstand begrenzt;
-  innere Hülle füllt die Breite aus. Lange Namen/E-Mails dürfen die Zeilenhöhe
-  nicht vergrößern. Overlayhöhe
-  bleibt im Fenster, kein horizontaler Überlauf. Escape, Außenklick, Schließen,
-  Rückfokus und erneute Vorschau ohne doppelte Listener prüfen. Keine Details-Liste
-  mehr. Der Browsernachtest in DE/EN deckt Enter und Escape mit Rückfokus,
-  „+N“, E-Mail-Suche und Vorschau ohne Versand mit 3/5/6/9 Empfängern ab.
-  JUnit deckt Suche, 1–200 Empfänger und Höhenbegrenzung ab.
+- **Ticketsystem – Validierung und erneuter Anleitungsversand — offen.**
+  Neue Anfrage, öffentliche Antwort und internen Vermerk leer oder zu lang
+  absenden. Ohne Absenden keine Markierung, danach konkrete Meldung ohne
+  Inline-Text oder Feldnamenzeile. Änderungen löschen die alte Markierung.
+  Rechte-, Status- und Versionskonflikte beim Absenden sowie den Zeilenumbruch
+  im Hinweis für interne Vermerke prüfen.
+  Bei regulären und Entwicklerkonten den unterschiedlichen Untertitel,
+  die erneute Freigabe nach 60 Sekunden ohne F5 und das Ende des Nachladens
+  beim Verlassen prüfen. Bei regulären Konten blockiert zusätzlich ein
+  Mailauftrag in PENDING oder IN_PROGRESS. Sperrtooltip per Maus und Tastatur
+  mit fettem „Gesperrt:“ und normalen Markdown-Abständen prüfen. Der offene
+  Mailauftrag hat Vorrang vor der Wartezeit. Bei Entwicklerkonten erscheint
+  nur die Wartezeit.
+  Bei Entwicklerkonten steht der gelbe Hinweis zu Beginn der Vorschau.
+  Jeder bestätigte Wiederholungsversand erscheint im Ticket und erzeugt nur
+  für reguläre Konten einen Mailauftrag. Sprachwechsel im offenen Dialog prüfen.
 
+- **Mail-Test – Validierung beim Absenden — offen.**
+  Empfänger, Betreff und Nachricht leeren und verlassen. Vor dem Absenden
+  bleiben sie unmarkiert, beim Absenden werden alle ungültigen Felder
+  gemeinsam markiert, ohne Inline-Texte. Korrektur entfernt nur die
+  Markierung am geänderten Feld. Beim Sprachwechsel bewusst geleerte
+  Entwürfe erhalten. Verhalten bei eingeschränkter Versandverfügbarkeit prüfen.
 
-- **Benachrichtigungsentwurf: konkrete Vorschauvalidierung — offen.**
-  In DE/EN Empfänger, Titel und Nachricht leeren/ändern/verlassen: vor „Vorschau“
-  ohne Rotmarkierung. Vorschau markiert die fehlerhaften Felder ohne Inline-Texte
-  und zeigt direkt den konkreten Fehler unter „Fehlgeschlagen“. Beim Bearbeiten
-  nur die Markierung des geänderten Feldes zurücknehmen. Keine Empfänger und
-  zwischenzeitlich geänderte Empfänger unterscheiden. Senden bleibt ohne aktuelle
-  gültige Vorschau gesperrt. JUnit deckt den Ablauf ab; kein Browserlauf freigegeben.
-  Beschriftung „Alle Benutzer“, Untertext zu registrierten empfangsberechtigten
-  Benutzerkonten und Anzeige „Alle Benutzer (Zahl)“ prüfen; gesperrte, selbst
-  deaktivierte und unbestätigte Konten bleiben ausgeschlossen.
-  „Alle Benutzer“ ist ein nativer Switch. Umschalten muss die manuelle
-  Empfängerauswahl entsprechend deaktivieren/reaktivieren und die Vorschau verwerfen.
+- **Konfiguration – Validierung und Sprachwechsel — offen.**
+  Vor dem Speichern bleiben die Felder unmarkiert, nach dem Speichern
+  werden ungültige Felder markiert. Die Meldung erklärt den ersten Fehler
+  ohne zusätzliche Feldnamenzeile. Die offene Meldung soll beim Sprachwechsel mit
+  unveränderten Werten übersetzt werden. Nur das bearbeitete Feld verliert
+  seine alte Markierung, der Fokus springt beim Fehler nicht.
+  Über die bereits geprüften Text-, Ganzzahl- und Dauerbeispiele hinaus
+  E-Mail-Werte, Anbieter und Mailqueue-Assistenten sowie weitere Felder
+  einbeziehen. Unlesbare Zahlen bei leerem Modellwert dürfen weder
+  Standardwerte noch unbegrenzte Aufbewahrung speichern. Echte Leerwerte
+  behalten ihren Vertrag. 2FA-Inaktivitätsfehler vor der Identitätsbestätigung
+  prüfen, gültiges Speichern bleibt geschützt.
 
-- **Ticketsystem: konkrete Eingabefehler beim Absenden — offen.**
-  In DE/EN neue Anfrage, öffentliche Antwort und internen Vermerk prüfen:
-  Leeren/Blur ohne Rotmarkierung, erst Absenden markiert leeren oder zu langen Text
-  und erklärt konkret die nötige Korrektur. Keine Inline-Fehler oder Feldnamen-Zeile.
-  Bearbeitung entfernt die alte Markierung; Rechte, Ticketstatus und Versionskonflikte
-  bleiben wirksam. Beim internen Vermerk trennt ein Zeilenumbruch die Warnung vor
-  sensiblen Daten von der Erklärung der Leserechte. JUnit prüft die Komponenten;
-  kein Browserlauf freigegeben.
-  Bei einem eigenen Ticket „In Bearbeitung“ zusätzlich „Anleitung senden“ prüfen:
-  Untertitel im Dialogkopf nennt bei regulären Konten E-Mail und Ticketablage,
-  bei Entwicklerkonten nur die Ticketablage; Titel und Button bleiben „Anleitung senden“.
-  Beide Kontotypen dürfen die Anleitung nach jeweils 60 Sekunden erneut mit Vorschau
-  und Bestätigung beauftragen. Reguläre Konten bleiben zusätzlich gesperrt, solange
-  ihr letzter eigener Mailauftrag PENDING/IN_PROGRESS ist. Tooltip am Layout um den
-  deaktivierten Button per Maus und Tastatur prüfen: „Gesperrt:“ fett, offener
-  Mailauftrag vor Wartezeit; bei Entwicklerkonten ausschließlich Wartezeit.
-  Der Markdown-Tooltip verwendet den normalen Innenabstand ohne zusätzliche
-  Absatzränder oder Leerzeile unter dem Text.
-  Automatische Freigabe ohne F5 und Beenden des Nachladens beim Verlassen prüfen.
-  Bei Entwicklerkonten zeigt die Vorschau ganz oben vor Überschrift/Einleitung den
-  gelben Hinweis; jeder bestätigte Lauf erscheint nur im Ticket ohne Mailauftrag.
-  Bei regulären Konten entstehen Ticketnachricht und eigener Mailauftrag.
-  DE/EN einschließlich Sprachwechsel im geöffneten Dialog prüfen. Die übrigen
-  Fachsperren bleiben erhalten; keine Browserfreigabe.
+- **Benutzerformular – weitere Grenzfälle beim Speichern — offen.**
+  Pflichtrollen und ungültige Geburtsdaten prüfen, insbesondere unlesbare
+  Eingabe ohne Modellwert und Änderungsschutz. Die für Pflichtfelder,
+  E-Mail und Passwort vorhandenen Prüfungen auf schmaler Ansicht absichern.
+  Beim Korrigieren nur die betroffene Markierung entfernen. Zeilenumbruch
+  der Passwortregeln und Sprachwechsel bei offener Meldung prüfen.
+  Rollen auf Desktop nur links, auf schmaler Ansicht alle Zeilen einspaltig.
+  Tastaturfokus der Schalter und Änderungen nur am Entwurf prüfen.
+  Gemeinsam genutzte Schaltermaße stehen beim Switch-Nachtest.
 
-- **Mail-Test: Prüfung erst beim Senden — offen.**
-  In DE/EN Empfänger, Betreff und Text leeren, ändern und verlassen: vor dem
-  Senden keine Rotmarkierung. Erst „Test-E-Mail senden“ markiert alle ungültigen
-  Felder gemeinsam. Eine konkrete übersetzte Notification erklärt den ersten Fehler
-  in der Reihenfolge Empfänger, Betreff, Text, ohne Inline-Fehler.
-  Änderungen entfernen nur die Markierung des geänderten Feldes. Ein Sprachwechsel erhält auch bewusst
-  geleerte Betreff-/Textentwürfe. Versandverfügbarkeit bleibt maßgeblich.
-  JUnit prüft den Ablauf mit gemocktem Versand; kein Browserlauf freigegeben.
+- **Native Löschkreuze — offen.**
+  In Benutzereditor, externem Registrierungsabschluss, Kontodialogen,
+  Anmeldeanbietern, Mail-Test, Benachrichtigungen, Tickets und Ersatzcodefeld
+  stichprobenartig Sichtbarkeit und Leeren per X/Escape prüfen. Leeren muss
+  die Änderungs-/Dirty-Erkennung auslösen, auch für den gesamten TextArea-Wert.
+  Bei leerem, deaktiviertem oder schreibgeschütztem Feld bleibt das X
+  verborgen. OTP-Ziffern und E-Mail-Code mit dem Ersatzcodefeld vergleichen,
+  einschließlich Methodenwechsel. Anzeige- und Kopierfelder bleiben
+  schreibgeschützt. Escape zuerst am gefüllten Feld prüfen, über den bereits
+  geprüften E-Mail-Dialog hinaus.
 
-- **Konfiguration: konkrete Notifications statt Inline-Fehler — offen.**
-  In DE/EN auf Desktop und Smartphone alle Konfigurationsgruppen einschließlich
-  Mailqueue-Assistenten, Anmeldeanbietern und 2FA prüfen. Ungültige Text-, E-Mail-,
-  Zahlen- und Dauerwerte bleiben vor dem Speichern unmarkiert; danach passende
-  rote Markierungen und konkrete Notifications ohne Fehlertext unter dem Feld.
-  Die Meldung enthält direkt die konkrete Regel des ersten betroffenen Feldes,
-  ohne zusätzliche Feldnamen-Zeile. Änderungen entfernen jeweils die alte Markierung;
-  Sprachwechsel erhält Werte und übersetzt die offene Notification.
-  Unlesbare Zahlen bei leerem Modellwert dürfen weder Standardwerte noch
-  unbegrenzte Aufbewahrung speichern. Wirklich leere Felder behalten ihren bisherigen
-  Standard-/Leerwertvertrag. Fehlerhafte 2FA-Inaktivitätswerte vor der
-  Identitätsbestätigung melden; gültiges Speichern bleibt entsprechend geschützt.
-  JUnit prüft Komponenten und Regeln; kein Browserlauf freigegeben.
-  Bei Fehlern kein automatischer Fokuswechsel zum ersten ungültigen Feld;
-  rote Markierungen und Notification bleiben erhalten.
+- **Persönliche Daten – Blur, Löschkreuze und Verlassensschutz — offen.**
+  Vor- und Nachnamen über das X leeren und vor dem Speichern ohne
+  Markierung lassen. Änderungen nehmen nur alte Feldmarkierungen zurück.
+  Pflichtsprache prüfen. Bei ursprünglich leerem Geburtsdatum muss
+  unlesbarer Text trotz fehlender Rotmarkierung den Änderungsschutz und
+  den Browser-Verlassensschutz auslösen. Leeren beseitigt die Änderung,
+  sofern sonst nichts verändert wurde.
 
+- **Pflichtfeldindikatoren — offen.**
+  Rotes natives Sternchen direkt hinter der Beschriftung in Registrierung,
+  Login, Benutzereditor, Konfiguration, Benachrichtigungen und 2FA/Tickets
+  prüfen. Optionale Felder bleiben ohne Indikator. Interne Vermerke
+  verwenden keine separate violette Markierung. Disabled, Readonly und
+  Fehlermarkierung bleiben optisch unterscheidbar.
 
-- **Benutzer anlegen/bearbeiten: Prüfung beim Speichern — offen.**
-  In DE/EN auf Desktop und Smartphone Pflichtfelder leeren, E-Mail-Format,
-  schwaches/nicht bestätigtes Passwort, Rollen und ungültiges Geburtsdatum prüfen:
-  Eingabe und Blur zunächst ohne rote Markierung; Speichern bleibt anklickbar.
-  Beim Speichern konkrete Notification und passende Feldmarkierungen ohne
-  zusätzliche Fehlertexte unter den Feldern. Änderungen entfernen jeweils die alte
-  Markierung; ein leeres neues Passwort beim Bearbeiten bleibt erlaubt. Unlesbares
-  Datum ohne Modellwert muss Speichern verhindern und den Änderungsschutz auslösen.
-  Die Passwortnotification trennt Fehlerbeschreibung und Regeln durch einen
-  Zeilenumbruch; Sprachwechsel erhält Werte und übersetzt die Meldung.
-  Rollen stehen auf Desktop nur links; die rechte Feldspalte bleibt leer. Darunter
-  stehen native Switches für Zugang gesperrt sowie bei berechtigter Anlage
-  Verifikation und Entwicklerkonto, jeweils über die gesamte Breite. Auf Smartphone
-  bleiben alle Zeilen einspaltig. Bahn und runder Griff müssen dem vorhandenen
-  Login-Schalter „Login speichern“ entsprechen (gemeinsames Grundstyling):
-  Zentrierung, Labelabstand und Fokus
-  ohne 1-px-Korrektur; Beschriftung und Untertext unverändert. Jeder Switch erhält
-  oben und unten S. Ein/Aus, Tastaturfokus und deaktivierte Verifikation beim
-  Entwicklerkonto prüfen. Aktivierung verändert nur den Entwurf; vorhandene
-  Rechte und das Zusammenspiel zwischen Verifikation und Entwicklerkonto bleiben erhalten.
-  JUnit prüft den Server-/Komponentenablauf; der Benutzer übernimmt die Sichtprüfung,
-  kein Browserlauf für diesen Auftrag freigegeben.
+- **Login – Markierungen und Validierungszeitpunkt — offen.**
+  E-Mail und Passwort eingeben, leeren und verlassen. Auch ungültiges
+  E-Mail-Format bleibt bis zum Absenden unmarkiert. Klick und Enter
+  markieren die betroffenen Felder und zeigen die konkrete Meldung.
+  Falsche Zugangsdaten markieren beide Felder. Korrektur entfernt nur die
+  alte Markierung des geänderten Felds. Wartung, Drosselung, technische
+  Fehler und Rückmeldungen nach Weiterleitungen bleiben ohne Eingabemarkierung.
 
-- **Native Löschkreuze in bearbeitbaren Texteingaben und TextAreas — offen.**
-  In DE/EN auf Desktop und Smartphone Benutzeranlage/-bearbeitung, externen
-  Registrierungsabschluss, Konto-/Passwortdialoge, Anmeldeanbieter, Mail-Test,
-  Benachrichtigungen, Tickets und Ersatzcodeeingabe stichprobenartig prüfen.
-  Bei gefüllten bearbeitbaren Feldern X sichtbar; X/Esc leeren den Wert bzw.
-  gesamten TextArea-Entwurf und lösen vorhandene Änderungs-/Dirty-Erkennung aus.
-  Bei Leerwert, Disabled und Readonly kein X. Einzelne OTP-Ziffern und E-Mail-Code
-  ohne X, Ersatzcode mit X; Methodenwechsel erhält diese Unterscheidung. Anzeige-/
-  Kopierfelder schreibgeschützt. Zahlen-/Dauerfelder behalten ihre Löschaktionen.
-  Vorhandene Dialogfälle auf Esc prüfen: Ein gefülltes fokussiertes Feld wird
-  zunächst geleert, statt gleichzeitig den Dialog zu schließen. Kein Browserlauf freigegeben.
+- **Registrierung – Markierungen vor und nach dem Absenden — offen.**
+  Pflichtfelder und unvollständige E-Mail-Adresse nach Blur und vor
+  Absenden ohne Markierung oder Meldung prüfen. Beim Tippen nur die alte
+  Markierung des bearbeiteten Felds entfernen und beim nächsten Absenden
+  neu prüfen. Unlesbares Datum ohne Modellwert ablehnen. Die vorhandenen
+  Registrierungsfälle für diese Abläufe auch auf schmaler Ansicht absichern.
 
-- **Persönliche Daten: Prüfung erst beim Speichern und native Löschkreuze — offen.**
-  In DE/EN auf Desktop und Smartphone Vor-/Nachnamen eingeben und über das native X
-  leeren: zunächst keine Fehlermarkierung; beim Speichern Notification und passende
-  Markierungen. Änderungen entfernen alte Feldfehler, Verwerfen stellt gespeicherte
-  Werte wieder her. Pflichtsprache und ungültige Geburtsdaten weiterhin prüfen.
-  Bei ursprünglich leerem Geburtsdatum unlesbaren Text eingeben: Unsaved-Changes-
-  und Browser-Verlassensschutz müssen trotz fehlender Rotmarkierung greifen.
-  Leeren beseitigt die Änderung, solange sonst nichts verändert wurde. Die E-Mail
-  bleibt schreibgeschützt. JUnit prüft den Serverablauf; kein Browserlauf freigegeben.
+- **ComboBox-Overlays – Außen- und Eintragsabstände — offen.**
+  Außen 8 px Scrollerabstand und zwischen Auswahlflächen 2 px prüfen,
+  insbesondere unter der letzten ausgewählten Zeile. Geschlecht/Sprache,
+  Benutzer- und Konfigurationsfelder, Rollen- und Empfänger-Mehrfachauswahl
+  sowie Seitengrößenauswahl in Benutzerverwaltung, Inbox und Versandhistorie
+  einbeziehen. Filterung, Scrollen, Tastaturauswahl und Auswahlhaken prüfen,
+  soweit die Varianten diese Funktionen anbieten.
 
-- **Pflichtfeldindikatoren: natives rotes Sternchen — offen.**
-  In DE/EN auf Desktop und Smartphone Pflicht- und optionale Felder in Registrierung,
-  Login, Benutzerbearbeitung, Konfiguration, Benachrichtigungen und 2FA/Tickets prüfen.
-  Pflichtfelder zeigen ein rotes Sternchen hinter der Beschriftung; kein blauer Punkt
-  und keine violette Pflichtmarkierung bei internen Vermerken. Optionale Felder
-  erhalten keinen Indikator. Disabled, Readonly und Feldfehler bleiben unterscheidbar.
-  Vom Benutzer abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
+- **Checkboxen – weiße Auswahlmarkierung — offen.**
+  Weiße Haken und Teilauswahlstriche in Einzelcheckboxen, Gruppen und
+  Tabellen-Gesamtauswahl prüfen. Auswahlfläche, Fokus und Hover sowie
+  native Unterscheidbarkeit bei Disabled und Readonly prüfen.
 
-- **Login: Fehler erst beim Absenden — offen.**
-  In DE/EN auf Desktop und Smartphone E-Mail/Passwort eingeben, leeren und verlassen;
-  ein falsches E-Mail-Format bleibt vor dem Absenden ebenfalls unmarkiert. Beim
-  Klick oder Enter passende Notification und Markierung anzeigen; Änderungen löschen
-  nur die alte Markierung am bearbeiteten Feld. Falsche Zugangsdaten markieren beide
-  Felder mit allgemeiner Meldung. Wartung/Drosselung/technische Fehler nicht als
-  Eingabefehler markieren; Fehlerrückmeldungen nach Weiterleitungen ebenfalls ohne
-  Eingabemarkierung anzeigen. Gültige Anmeldung samt 2FA, ausstehender Verifikation,
-  Reaktivierung und Sitzungslimit weiterführen. JUnit prüft den Serverablauf;
-  der Client-/Blur-Nachtest ist noch nicht freigegeben.
+- **DatePicker-Overlay – Aktionen und Jahresspalte — offen.**
+  „Heute“ und „Abbrechen“ auf fehlenden Rahmen, Akzenttext, Fokus und
+  Hover prüfen. Für die Jahresspalte dunklere Fläche, feine Trennlinie
+  und seitliche Auswahlmarkierung prüfen. Auf dem Smartphone die native
+  Jahresauswahl öffnen und Jahres- und Datumswechsel ohne Überlauf prüfen.
 
-- **Registrierung: Fehler erst beim Absenden — offen.**
-  In DE/EN auf Desktop und Smartphone Pflichtfelder eingeben, leeren und verlassen;
-  ebenso unvollständige E-Mail-Adressen eingeben: vor dem Absenden keine rote
-  Markierung oder Notification. Beim Registrieren erscheinen übersetzte Meldungen
-  und passende Feldmarkierungen. Beim Tippen alte Markierung am bearbeiteten Feld
-  zurücknehmen, andere Markierungen erhalten und beim nächsten Absenden neu prüfen.
-  Unlesbares/zukünftiges Geburtsdatum ablehnen; ein optionales leeres Datum zulassen.
-  Bestehenden Registrierungsfall nutzen. JUnit prüft Serverablauf und Komponenten;
-  der tatsächliche Client-/Blurablauf benötigt den noch nicht freigegebenen Browsernachtest.
+- **Globale Notifications – Position beim Größenwechsel — offen.**
+  Bei geöffnetem Toast die Fensterbreite über die 768-px-Grenze in beide
+  Richtungen ändern. Inhalt, Dauer und Schließen bleiben erhalten. Rechts 24 px
+  Abstand mit und ohne Scrollleiste prüfen, auf schmaler Ansicht unten
+  mittig ohne oberen Leerraum. Lange Meldung bei geringer Höhe,
+  nativen Innenabstand, gelbes Warndreieck, rotes Kreis-X, gemeinsame
+  Titel ohne Ausrufezeichen und lesbare Links abdecken.
 
-- **ComboBox-Overlays: gemeinsame Außen- und Eintragsabstände — offen.**
-  In DE/EN auf Desktop und Smartphone Geschlecht/Sprache in Registrierung und
-  Profil, Auswahlfelder in Benutzerbearbeitung und Konfiguration, Rollen- und
-  Empfänger-Mehrfachauswahl sowie Pagination in Benutzerverwaltung, Inbox und
-  Versandhistorie prüfen. Außen überall 8 px nativer Scrollerabstand, zwischen
-  Auswahlflächen 2 px; insbesondere letzte ausgewählte Zeile berührt keinen
-  Overlayrahmen. Filterung, Scrollen, Tastaturauswahl, Haken und kompakte
-  Pagination bleiben bedienbar. Kein Browserlauf für diesen Auftrag freigegeben.
+- **Link-Statusseiten und Sicherheitshinweise – weitere Iconvarianten — offen.**
+  Abgelaufene und ungültige Links sowie technische Fehler für
+  Verifikation und E-Mail-Änderungsbestätigung prüfen. Beim Passwort-Reset
+  ist zusätzlich das Icon für technische Fehler offen. Das Warndreieck
+  und seine Farbe in Hinweisen bei Kontoaktionen, Reaktivierung,
+  Benutzereditor, Neustarthilfe, Wiederherstellung und Tickets prüfen.
 
-- **Posteingang, Vorschau und Versandarchiv — offen.**
-  Den vorhandenen Fall NOTIFY-04 in DE/EN auf Desktop und Smartphone ausführen.
-  Das Versandarchiv und der Posteingang zeigen die richtigen Seiten. Suche und
-  Lesefilter erhalten ihre Treffer und Leerzustände. Die Glockenvorschau zeigt
-  fünf Einträge, und das Sammellesen bleibt nach dem Neuladen für alle elf
-  Mitteilungen erhalten.
-
-- **Checkboxen: weiße Auswahlmarkierung — offen.**
-  In DE/EN auf Desktop und Smartphone Einzelcheckboxen, Checkbox-Gruppen und die
-  Tabellen-Gesamtauswahl prüfen: aktive Haken und Teilauswahlstriche weiß, bisherige
-  Auswahlflächen und Fokus-/Hoverdarstellung erhalten. Disabled und Readonly
-  behalten ihre native Unterscheidbarkeit. Kein Browserlauf für diesen Auftrag freigegeben.
-
-- **DatePicker-Overlay: Textaktionen und Jahresspalte — offen.**
-  Vorhandene Datumsauswahl in DE/EN auf Desktop und Smartphone prüfen: „Heute“ und
-  „Abbrechen“ als rahmenlose Aktionen in Cosmos-Akzenttextfarbe, Jahresspalte mit
-  dunklerer Fläche, feiner Trennlinie und nativer seitlicher Markierung. Auf dem
-  Smartphone die native Jahresauswahl öffnen. Fokus, Hover, Jahreswechsel und
-  Datumsauswahl bleiben bedienbar; kein Überlauf. Vom Benutzer gesichtet und
-  abgenommen; der automatisierte Browsernachtest bleibt ohne Freigabe offen.
-
-- **Globale Notifications: responsive Position, Aura-Abstand und Statussymbole — offen.**
-  Bestehende Profil-/Notification-Varianten in DE/EN bei Desktop- und Smartphonebreite
-  nachprüfen: ab 768 px oben rechts unter dem Header, darunter unten mittig ohne
-  oberen Leerraum. Bei offenem Toast über den Grenzwert verkleinern/vergrößern;
-  Inhalt, Dauer und Schließen bleiben erhalten. Header und System-/Bedienleisten
-  berücksichtigen, auch bei langen Meldungen und kleiner Fensterhöhe. Der
-  rechte Desktopabstand ist auf 24 px erweitert: mit und ohne Seiten-/AppLayout-
-  Scrollleiste ausreichend Abstand zur sichtbaren Leiste prüfen; oberer Abstand
-  und Smartphoneposition bleiben gleich. Nur der
-  native Aura-Innenabstand bleibt; Warnung zeigt ein gelbes Dreieck, Fehler ein
-  rotes Kreuz im Kreis. Gemeinsame DE-/EN-Titel ohne Ausrufezeichen anzeigen;
-  Nachrichtentexte und Links wie „Passwort vergessen?“ bleiben unverändert.
-  JUnit prüft Position, Umschaltung, Icons und Fensterisolation;
-  der sichtbare Browsernachtest ist für diesen Auftrag nicht freigegeben.
-
-- **Link-Statusseiten und Sicherheitshinweise: vereinheitlichte Icons — offen.**
-  In DE/EN Verifikation, Passwort-Reset und E-Mail-Änderungsbestätigung mit
-  abgelaufenem Link (gelbes Dreieck), ungültigem Link und technischem Fehler
-  (rotes Kreuz im Kreis) prüfen. Vorhandene Token-/Fehlerfälle und angepasste
-  Reset-Page-Assertions nutzen. Sicherheitshinweise bei Kontoaktionen, ausstehender
-  Verifikation/Reaktivierung, Benutzerbearbeitung, Neustarthilfe, Wiederherstellung
-  und Tickets behalten ihr Dreieck und ihre bisherige Farbgebung. JUnit sichert
-  die betroffenen Zustände; der Browserlauf wurde noch nicht freigegeben.
-
-- **Benachrichtigungsvorschau: Löschsymbol nach Aura-Umstellung — offen.**
-  In DE/EN auf Desktop und Smartphone eine Nachricht im Glocken-Overlay anzeigen.
-  Das rote Löschsymbol muss vollständig und mittig im unverändert großen Button
-  sichtbar sein; Hover/Fokus und die abbrechbare Löschbestätigung bleiben erhalten.
-  Die bestehenden Benachrichtigungsfälle verwenden und die sichtbare Iconfläche
-  berücksichtigen. Der Benutzer hat das wieder sichtbare Löschsymbol in der
-  laufenden Anwendung bestätigt. Der automatisierte DE-/EN-Nachtest bleibt offen;
-  für diesen Auftrag wurde noch kein Browserlauf freigegeben.
+- **Glockenvorschau – Löschsymbol — offen.**
+  Das rote Symbol muss vollständig und mittig im Button sichtbar bleiben.
+  Hover, Tastaturfokus und Abbrechen der Löschbestätigung in der
+  Glockenvorschau prüfen.
 
 ## JUnit-Tests
 
