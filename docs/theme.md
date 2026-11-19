@@ -648,6 +648,27 @@ Vorgangsliste, Details und Verlauf nutzen die vorhandenen Cards und nativen Scro
 Bei schmalem Inhalt stehen Liste und Details untereinander. Maximieren blendet nur die
 Liste aus; Filter, Auswahl und Antwortentwurf bleiben erhalten.
 
+Die eigene Ticketliste in der öffentlichen Wiederherstellungsanfrage verwendet
+`VirtualList` mit höchstens fünf sichtbaren Einträgen. Bei weniger Tickets schrumpft
+sie; ohne Tickets erscheint der vorhandene Leerzustand. Die Dienstgrenze von
+höchstens 20 eigenen Tickets bleibt erhalten. Native Buttons öffnen den jeweiligen
+Verlauf per Klick oder Tastatur und kennzeichnen die aktuelle Auswahl über
+`aria-pressed`. Strg+Klick auf das ausgewählte Ticket hebt die Auswahl auf;
+der Antwortentwurf bleibt beim erneuten Öffnen erhalten. Nachladen und
+Live-Aktualisierungen lassen eine bewusst aufgehobene Auswahl leer.
+Stabile Ticket-IDs und ein aktualisierbarer Renderer erhalten die
+Buttonidentität bei Datenänderungen. Die Liste verwendet die gemeinsamen
+Scrollleistenregeln und die bisherigen Ticketfarben.
+
+Geometrie: `support-user-ticket-list` / `support-user-ticket-button` in
+`cosmos-mfa-confirmation.css`. Pro Zeile 64 px, unter 640 px Fensterbreite 112 px
+für umgebrochene Inhalte; beide Höhen sind aus vorhandenen Zeilenhöhen und
+Abständen abgeleitet. Die Adminliste bleibt ein Grid mit ihrer Pagination.
+Der Button-Vorspann füllt die gesamte Ticketzeile ohne den sonst üblichen
+Iconabstand aus, damit Auswahlfläche und Trennlinien bis an die Ränder reichen.
+Die Adminliste verwendet für die einfachen Zeilentrenner `--cosmos-border-color`,
+wie die Trennlinien innerhalb der Ticketkarten.
+
 - Öffentliche Antworten und interne Vermerke nutzen native Tabs; Vermerke tragen die Systempalette.
 - Filter werden erst mit Anwenden übernommen. Direkte Ticketsprünge heben entgegenstehende
   Filter auf; erfolglose Sprünge behalten die Auswahl.
@@ -730,11 +751,19 @@ und `--cosmos-page-background`; die Trennlinie nutzt `--cosmos-border-color`.
 Das Suchfeld übernimmt die Benutzerfilter-Geometrie: 40-px-Feld,
 13-px-Eingabeschrift, 14-px-Lupe und M-Innenabstand. Die Breite beträgt 380 px und wird bei
 kleineren Fenstern auf die verfügbare Breite mit seitlichem L-Abstand begrenzt.
-Die innere Hülle füllt diese Breite aus. Die Liste verwendet die dunkle Tabellenvariante
-der Benutzerverwaltung mit abwechselnden Zeilenflächen. Die Streifen folgen den
-festen Zeilenpositionen als mitscrollender Hintergrund, damit auch wiederverwendete
-Renderknoten korrekt abwechseln. Sie zeigt höchstens fünf 60-px-Zeilen; bei weniger
-Treffern schrumpft sie, ohne Treffer bleibt eine Zeile für den Leerzustand. Die Zeilenhöhe wird aus
+Die innere Hülle füllt diese Breite aus. Die Liste verwendet wie die Ticketlisten
+eine einheitliche Fläche aus `--cosmos-base-color`, ohne wechselnde Zeilenfarben.
+Native Buttons zeigen Handzeiger sowie die gemeinsamen Hover- und Fokuszustände.
+Klick, Enter oder Leertaste wählen genau einen Empfänger visuell aus:
+Tabellen-Hervorhebungsfarbe, linke Akzentlinie und `aria-pressed` kennzeichnen ihn.
+Strg+Klick auf den ausgewählten Eintrag hebt die Auswahl auf. Suche und Scrollen
+erhalten die Auswahl; die Versandempfänger bleiben unverändert. Es gibt noch
+keine weitere Aktion für die ausgewählte Person. Eine Touch-Bedienung zum
+Abwählen ist im TODO offen. Die Liste zeigt höchstens fünf 60-px-Zeilen; bei weniger
+Treffern schrumpft sie. Ohne Treffer erscheint ein zentrierter Leerzustand auf
+Content-Hintergrund: blaues Tabler-Icon `user-question`, Ergebnistitel und sekundärer
+Hinweis zum Anpassen der Suche. Schrift- und Icongrößen entsprechen dem kompakten
+Leerzustand links in der Admin-Ticketliste. Die Zeilenhöhe wird aus
 Zeilenhöhen-/Abstandstokens abgeleitet. Weitere Zeilen scrollt und virtualisiert
 die VirtualList; bei kleinen Fenstern darf die sichtbare Liste weiter schrumpfen.
 Ihr Scrollbereich liegt am öffentlich gestaltbaren Host; die bestehenden Regeln

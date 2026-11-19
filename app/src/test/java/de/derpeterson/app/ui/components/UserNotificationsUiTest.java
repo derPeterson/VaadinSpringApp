@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.any;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.HasText;
@@ -56,6 +58,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap;
@@ -3486,8 +3489,8 @@ class UserNotificationsUiTest {
         messageProperties.getNotificationsRecipientSearch(),
         searchTextField.getAriaLabel().orElseThrow());
     assertEquals("vaadin-virtual-list", recipientVirtualList.getElement().getTag());
-    Span emptyResultSpan = readComponentField(recipientPopover, "emptyResultSpan");
-    assertFalse(emptyResultSpan.isVisible());
+    VerticalLayout emptyResultLayout = readComponentField(recipientPopover, "emptyResultLayout");
+    assertFalse(emptyResultLayout.isVisible());
     Target firstRecipientTarget = fixture.recipientTargets().getFirst();
     assertEquals(
         firstRecipientTarget.name() + ", " + firstRecipientTarget.email(),
@@ -3528,15 +3531,23 @@ class UserNotificationsUiTest {
     searchTextField.setValue("no-match");
     assertEquals(0, recipientVirtualList.getDataProvider().size(new Query<>()));
     assertFalse(recipientVirtualList.isVisible());
-    assertTrue(emptyResultSpan.isVisible());
+    assertTrue(emptyResultLayout.isVisible());
     assertEquals(
         "calc(1 * var(--cosmos-recipient-row-height) + 2 * var(--cosmos-border-width))",
         recipientVirtualList.getHeight());
     assertEquals(
-        messageProperties.getNotificationsRecipientSearchEmpty(), emptyResultSpan.getText());
+        messageProperties.getNotificationsRecipientSearchEmpty(),
+        ((Span) emptyResultLayout.getComponentAt(1)).getText());
+    assertEquals(
+        messageProperties.getNotificationsRecipientSearchHint(),
+        ((Span) emptyResultLayout.getComponentAt(2)).getText());
+    SvgIcon emptyResultIcon = assertInstanceOf(SvgIcon.class, emptyResultLayout.getComponentAt(0));
+    assertEquals("user-question", emptyResultIcon.getElement().getAttribute("data-tabler"));
+    assertEquals("true", emptyResultIcon.getElement().getAttribute("aria-hidden"));
+    assertEquals("status", emptyResultLayout.getElement().getAttribute("role"));
     searchTextField.clear();
     assertTrue(recipientVirtualList.isVisible());
-    assertFalse(emptyResultSpan.isVisible());
+    assertFalse(emptyResultLayout.isVisible());
     assertEquals(
         fixture.recipientTargets().size(),
         recipientVirtualList.getDataProvider().size(new Query<>()));
@@ -3545,6 +3556,60 @@ class UserNotificationsUiTest {
         recipientVirtualList.getHeight());
     recipientPopover.close();
     assertEquals("false", avatarGroupElement.getAttribute("aria-expanded"));
+    verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void recipientSelectionCanSwitchAndClearWithoutChangingDelivery(String languageTag) {
+    AdminDraftFixture fixture = createAdminDraftFixture(languageTag);
+    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
+    NotificationRecipientPopover recipientPopover =
+        streamComponentTree(fixture.adminNotificationsSection())
+            .filter(NotificationRecipientPopover.class::isInstance)
+            .map(NotificationRecipientPopover.class::cast)
+            .findFirst()
+            .orElseThrow();
+    ComponentRenderer<Button, Target> recipientRenderer =
+        readComponentField(recipientPopover, "recipientRenderer");
+    Target firstRecipient = fixture.recipientTargets().getFirst();
+    Target secondRecipient = fixture.recipientTargets().get(1);
+    Button firstRecipientButton = recipientRenderer.createComponent(firstRecipient);
+    Button secondRecipientButton = recipientRenderer.createComponent(secondRecipient);
+    assertEquals("false", firstRecipientButton.getElement().getAttribute("aria-pressed"));
+
+    firstRecipientButton.click();
+    firstRecipientButton.click();
+    assertSame(
+        firstRecipientButton,
+        recipientRenderer.updateComponent(firstRecipientButton, firstRecipient));
+    assertEquals("true", firstRecipientButton.getElement().getAttribute("aria-pressed"));
+
+    ComponentUtil.fireEvent(
+        secondRecipientButton,
+        new ClickEvent<>(secondRecipientButton, true, 0, 0, 0, 0, 1, 0, true, false, false, false));
+    recipientRenderer.updateComponent(firstRecipientButton, firstRecipient);
+    recipientRenderer.updateComponent(secondRecipientButton, secondRecipient);
+    assertEquals("false", firstRecipientButton.getElement().getAttribute("aria-pressed"));
+    assertEquals("true", secondRecipientButton.getElement().getAttribute("aria-pressed"));
+    TextField searchTextField = readComponentField(recipientPopover, "searchTextField");
+    searchTextField.setValue("no-recipient-matches-this-query");
+    searchTextField.clear();
+    recipientRenderer.updateComponent(secondRecipientButton, secondRecipient);
+    assertEquals("true", secondRecipientButton.getElement().getAttribute("aria-pressed"));
+
+    ComponentUtil.fireEvent(
+        secondRecipientButton,
+        new ClickEvent<>(secondRecipientButton, true, 0, 0, 0, 0, 1, 0, true, false, false, false));
+    recipientRenderer.updateComponent(secondRecipientButton, secondRecipient);
+    assertEquals("false", secondRecipientButton.getElement().getAttribute("aria-pressed"));
+    VirtualList<Target> recipientVirtualList =
+        readComponentField(recipientPopover, "recipientVirtualList");
+    assertEquals(
+        fixture.recipientTargets(),
+        recipientVirtualList.getDataProvider().fetch(new Query<>()).toList());
+    assertNotNull(
+        readComponentField(fixture.adminNotificationsSection(), "reviewedRecipientPreview"));
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
 

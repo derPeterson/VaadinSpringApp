@@ -80,6 +80,7 @@ public enum AppIcon {
   USER("user-round"),
   USERS("users-round"),
   USER_PLUS("user-round-plus"),
+  USER_QUESTION(Library.TABLER, "user-question"),
   USER_COG(Library.TABLER, "user-cog"),
   USER_PAUSE(Library.TABLER, "user-pause"),
   USER_X(Library.TABLER, "user-x"),

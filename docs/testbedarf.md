@@ -2,6 +2,22 @@
 
 ## Browser-Tests
 
+- **Wiederherstellungsanfrage: eigene Tickets als VirtualList — offen.**
+  In DE/EN auf Desktop/Smartphone 0/1/2/5/6/20 eigene Tickets prüfen: vorhandener
+  Leerzustand bei 0, schrumpfende Liste bis 5, danach inneres Scrollen mit der
+  gemeinsamen Scrollleiste bis zum letzten Ticket. Lange Titel und Statusbadges
+  innerhalb der festen Zeilenhöhen, Auswahlfarbe und linke Markierung prüfen;
+  Auswahlfläche muss die ganze Zeile ohne freie Streifen rechts oder unten füllen.
+  Ganze Zeile per Maus, Enter und Leertaste auswählen und den richtigen Verlauf öffnen.
+  Strg+Klick hebt die Auswahl auf, erneutes Öffnen stellt den Antwortentwurf wieder her.
+  Bewusst leere Auswahl bleibt nach manuellem Nachladen und Live-Aktualisierung leer.
+  Antwortentwürfe und Rückkehr bleiben erhalten. Live-Änderungen, Sprachwechsel
+  sowie Auswahl bei erneutem Laden prüfen. Admin-Grid und Pagination bleiben erhalten;
+  dessen dezente einfache Zeilentrenner zusätzlich mit den Kartentrennlinien vergleichen.
+  Bestehende `TwoFactorBrowserTest`-Szenarien verwenden weiterhin dieselbe Listen-ID;
+  zusätzliche Größen-/Scrollprüfungen ergänzen. JUnit deckt Daten und Bedienablauf ab;
+  kein Browserlauf freigegeben, manuelle Sichtung steht aus.
+
 - **TextArea-Fokusrahmen und Größenänderung — offen.**
   In DE/EN auf Desktop/Smartphone Mail-Test, Mitteilungsentwurf und Ticketnachricht
   mit TextField vergleichen: Fokusrahmen vollständig außen sichtbar, ohne abgeschnittene
@@ -88,14 +104,24 @@
   E-Mail sekundär unter Namen, Scrollen bis zum letzten Treffer. Kopf im gemeinsamen
   Dialogstil mit Personen-Icon und Trennlinie, abgesetzte Content-Fläche und Suchlupe.
   Header-, Außenrahmen- und Content-Farben mit der Benachrichtigungsvorschau vergleichen.
-  Abwechselnde Zeilenflächen direkt gegen die dunkle Tabelle der Benutzerverwaltung
-  vergleichen; auch nach Filtern und längerem Scrollen müssen die festen 60-px-Zeilen
-  korrekt abwechseln. Die native VirtualList ersetzt das Grid; gemeinsamer schmaler
+  Einheitliche Zeilenfläche wie die Ticketlisten (`--cosmos-base-color`), Handzeiger,
+  Hover und Tastaturfokus im gemeinsamen Button-Stil prüfen. Klick, Enter oder
+  Leertaste markieren genau eine Zeile; Strg+Klick auf den ausgewählten Eintrag
+  hebt die Auswahl auf, auf einen anderen Eintrag wechselt die Auswahl.
+  Auswahlfläche und linke Akzentlinie füllen die gesamte Zeile ohne Randstreifen.
+  Suche und virtualisiertes Scrollen erhalten die Auswahl auch bei gleichen Namen
+  und unterschiedlichen E-Mails. Die Auswahl löst keine weitere Aktion aus und
+  verändert die Versandempfänger nicht. Eine zusätzliche Touch-Bedienung zum
+  Abwählen wartet auf die Entscheidung im TODO.
+  Die native VirtualList ersetzt das Grid; gemeinsamer schmaler
   Scrollbar-Stil ohne Pfeile in Chrome/Edge, browserabhängiger Standard-Fallback in Firefox.
   Zwischen den Zeilen einfache Trennlinien, am oberen und unteren Listenabschluss
   ausschließlich der Außenrahmen ohne doppelt gezeichnete Linie.
   Maximal fünf Zeilen sichtbar; bei weniger Treffern schrumpft die Liste, kein leerer
-  Restbereich. Ohne Treffer lesbarer Leerzustand. Suchfeld wie Benutzerfilter mit
+  Restbereich. Ohne Treffer Benutzer-Fragezeichen, Titel und Suchhinweis zentriert
+  auf Content-Hintergrund prüfen, einschließlich Umbruch auf schmalen Smartphones;
+  Schrift- und Icongrößen entsprechen dem Leerzustand links in der Admin-Ticketliste.
+  Suchfeld wie Benutzerfilter mit
   40-px-Höhe, 13-px-Eingabeschrift, 14-px-Lupe und gleichen Innenabständen.
   Wunschbreite 380 px, auf kleinen Fenstern mit seitlichem L-Abstand begrenzt;
   innere Hülle füllt die Breite aus. Lange Namen/E-Mails dürfen die Zeilenhöhe

@@ -26,6 +26,9 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.component.virtuallist.VirtualList;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.server.WrappedHttpSession;
@@ -52,6 +55,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +80,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private static final String SECTION_COUNT_CLASS = "support-section-count";
   private static final String SECTION_HEADER_CLASS = "support-section-header";
   private static final String ARIA_LABEL = "aria-label";
+  private static final int MAX_VISIBLE_USER_TICKETS = 5;
 
   public enum Category {
     ALL,
@@ -97,6 +102,21 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   // Vorgangsliste und Admin-Detailbereich
   private final Grid<Ticket> ticketGrid = new Grid<>();
+  private final VirtualList<Ticket> userTicketVirtualList = new VirtualList<>();
+  private final ComponentRenderer<Button, Ticket> userTicketRenderer =
+      new ComponentRenderer<>(
+          this::createUserTicketButton,
+          (component, ticket) -> {
+            updateUserTicketButton((Button) component, ticket);
+            return component;
+          });
+  private final ListDataProvider<Ticket> userTicketDataProvider =
+      new ListDataProvider<>(new ArrayList<>()) {
+        @Override
+        public Object getId(Ticket ticket) {
+          return ticket.id();
+        }
+      };
   private final Scroller adminTicketScroll = new Scroller();
   private final Span allTicketsLabelSpan = new Span();
   private final Span recoveryTicketsLabelSpan = new Span();
@@ -187,6 +207,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   // Auswahl, Entwürfe und URL-Zustand
   private Ticket selectedTicket;
+  private boolean userTicketSelectionCleared;
   private List<Ticket> visibleTickets = List.of();
   private final Map<DraftTarget, Draft> drafts = new HashMap<>();
   private final Set<Long> expandedInstructions = new HashSet<>();
@@ -230,7 +251,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketConversationLayout.setSpacing(false);
     ticketConversationLayout.setAlignItems(Alignment.STRETCH);
 
-    configureGrid();
+    if (administration) {
+      configureGrid();
+    } else {
+      configureUserTicketList();
+    }
     configureEditor();
     configureActions();
 
@@ -298,7 +323,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketConversationLayout.add(userConversationHeader, userMessageScroll);
 
     VerticalLayout userRequestsLayout =
-        new VerticalLayout(userRequestsHeader, emptyState, ticketGrid);
+        new VerticalLayout(userRequestsHeader, emptyState, userTicketVirtualList);
     userRequestsLayout.setPadding(false);
     userRequestsLayout.setSpacing(false);
     userRequestsLayout.addClassName("support-user-requests");
@@ -366,6 +391,61 @@ public final class SupportTicketsComponent extends VerticalLayout {
             publishNavigation();
           }
         });
+  }
+
+  private void configureUserTicketList() {
+    // Gleiche öffentliche Kennung für die Vorgangsliste in beiden Ansichten.
+    userTicketVirtualList.setId("support-ticket-grid");
+    userTicketVirtualList.addClassName("support-user-ticket-list");
+    userTicketVirtualList.setWidthFull();
+    userTicketVirtualList.setDataProvider(userTicketDataProvider);
+    userTicketVirtualList.setItemAccessibleNameGenerator(ticket ->
+        ticketNumber(ticket) + ", " + ticketSubject(ticket) + ", " + status(ticket.status()));
+    userTicketVirtualList.setRenderer(userTicketRenderer);
+  }
+
+  private Button createUserTicketButton(Ticket ticket) {
+    Button ticketButton = new Button();
+    ticketButton.addThemeVariants(ButtonVariant.TERTIARY);
+    ticketButton.addClassNames(CosmosCssClasses.INLINE_BUTTON, "support-user-ticket-button");
+    ticketButton.setWidthFull();
+    ticketButton.addClickListener(event -> selectUserTicket(ticket.id(), event.isCtrlKey()));
+    updateUserTicketButton(ticketButton, ticket);
+    return ticketButton;
+  }
+
+  private void updateUserTicketButton(Button ticketButton, Ticket ticket) {
+    ticketButton.setPrefixComponent(ticketRow(ticket));
+    ticketButton.setAriaLabel(
+        ticketNumber(ticket) + ", " + ticketSubject(ticket) + ", " + status(ticket.status()));
+    ticketButton
+        .getElement()
+        .setAttribute(
+            "aria-pressed",
+            Boolean.toString(selectedTicket != null && selectedTicket.id().equals(ticket.id())));
+  }
+
+  private void selectUserTicket(Long ticketId, boolean toggleSelection) {
+    // Der Renderer hält nur die stabile ID fest; Aktionen verwenden den aktuellen
+    // Datensatz nach Live-Aktualisierungen einschließlich Status und Revision.
+    Ticket ticketToSelect =
+        visibleTickets.stream()
+            .filter(ticket -> ticket.id().equals(ticketId))
+            .findFirst()
+            .orElse(null);
+    if (ticketToSelect == null) {
+      return;
+    }
+    userTicketSelectionCleared =
+        toggleSelection && selectedTicket != null && selectedTicket.id().equals(ticketId);
+    selectedTicket = userTicketSelectionCleared ? null : ticketToSelect;
+    userTicketDataProvider.refreshAll();
+    try {
+      refreshConversation();
+    } catch (RuntimeException _) {
+      failed(messageProperties::getSupportRefreshFailed);
+    }
+    publishNavigation();
   }
 
   private void configureEditor() {
@@ -820,7 +900,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       ticketGrid.getElement().setAttribute(ARIA_LABEL, messageProperties.getSupportCases());
     } else {
       userRequestsHeading.setText(messageProperties.getSupportExistingRequests());
-      ticketGrid
+      userTicketVirtualList
           .getElement()
           .setAttribute(ARIA_LABEL, messageProperties.getSupportExistingRequests());
     }
@@ -858,7 +938,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     }
     instructionDialog.refreshTexts();
     refreshTicketWorkspace();
-    ticketGrid.getDataProvider().refreshAll();
+    if (administration) {
+      ticketGrid.getDataProvider().refreshAll();
+    }
   }
 
   private boolean isInternalNote() {
@@ -936,6 +1018,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       }
       return matchingTicket != null;
     }
+    userTicketSelectionCleared = false;
     applyTickets(ticketsToDisplay, matchingTicket);
     refreshConversation();
     if (matchingTicket == null) {
@@ -1052,7 +1135,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
         return;
       }
       applyTickets(liveTicketView.visibleTickets(), liveTicketView.selected());
-      showConversation(liveTicketView.messages(), liveTicketView.requester());
+      showConversation(
+          selectedTicket == null ? List.of() : liveTicketView.messages(),
+          liveTicketView.requester());
     } catch (AccessDeniedException _) {
       // Die Sitzungs-/Rollenprüfung hat Vorrang vor dem Nachladen per Push.
       stopInstructionPolling();
@@ -1087,6 +1172,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void applyTickets(List<Ticket> ticketsToDisplay, Ticket ticketToSelect) {
+    if (!administration && userTicketSelectionCleared) {
+      ticketToSelect = null;
+    }
     if (!administration) {
       userRequestCount.setText(messageProperties.getSupportRequestCount(ticketsToDisplay.size()));
       emptyState.setVisible(ticketsToDisplay.isEmpty());
@@ -1107,26 +1195,45 @@ public final class SupportTicketsComponent extends VerticalLayout {
               : messageProperties.getSupportQueueEmptyHint());
       queueEmptyState.setVisible(ticketsToDisplay.isEmpty());
     }
-    ticketGrid.setVisible(!ticketsToDisplay.isEmpty());
-    adminTicketScroll.setVisible(!ticketsToDisplay.isEmpty());
+    if (administration) {
+      ticketGrid.setVisible(!ticketsToDisplay.isEmpty());
+      adminTicketScroll.setVisible(!ticketsToDisplay.isEmpty());
+    } else {
+      userTicketVirtualList.setVisible(!ticketsToDisplay.isEmpty());
+      int visibleUserTicketRows =
+          Math.max(1, Math.min(ticketsToDisplay.size(), MAX_VISIBLE_USER_TICKETS));
+      userTicketVirtualList.setHeight(
+          "calc("
+              + visibleUserTicketRows
+              + " * var(--support-user-ticket-row-height) + 2 * var(--cosmos-border-width))");
+    }
     hasOpenRequest =
         ticketsToDisplay.stream().anyMatch(ticket -> ticket.status().acceptsMessages());
     // Gleiche Daten beim Kategorienwechsel sollen Fokus und Scrollposition im Grid behalten.
     if (!visibleTickets.equals(ticketsToDisplay)) {
       visibleTickets = List.copyOf(ticketsToDisplay);
-      ticketGrid.setItems(visibleTickets).setIdentifierProvider(Ticket::id);
+      if (administration) {
+        ticketGrid.setItems(visibleTickets).setIdentifierProvider(Ticket::id);
+      } else {
+        userTicketDataProvider.getItems().clear();
+        userTicketDataProvider.getItems().addAll(visibleTickets);
+      }
     }
 
-    Ticket detailTicketSelection = ticketToSelect;
-    Ticket gridTicketSelection =
-        ticketsToDisplay.stream()
-            .filter(ticket ->
-                detailTicketSelection != null && ticket.id().equals(detailTicketSelection.id()))
-            .findFirst()
-            .orElse(null);
-
-    ticketGrid.asSingleSelect().setValue(gridTicketSelection);
+    if (administration) {
+      Ticket detailTicketSelection = ticketToSelect;
+      Ticket gridTicketSelection =
+          ticketsToDisplay.stream()
+              .filter(ticket ->
+                  detailTicketSelection != null && ticket.id().equals(detailTicketSelection.id()))
+              .findFirst()
+              .orElse(null);
+      ticketGrid.asSingleSelect().setValue(gridTicketSelection);
+    }
     selectedTicket = ticketToSelect;
+    if (!administration) {
+      userTicketDataProvider.refreshAll();
+    }
     publishNavigation();
   }
 
@@ -1870,6 +1977,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       boolean clearDraft) {
     try {
       selectedTicket = ticketActionSupplier.get();
+      userTicketSelectionCleared = false;
 
       if (clearDraft) {
         ticketMessageInput.clear();

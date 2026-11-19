@@ -15,6 +15,10 @@ Die bisherigen Nachbearbeitungen einschließlich AvatarGroup und Empfängerliste
 sind vom Benutzer abgenommen. Im [Nachbearbeitungsplan](vaadin-nachbearbeitung.md)
 bleibt die Abstimmung der Größen-/Gestaltungsvorschläge zu Badges, Eingaben,
 Buttons und Formularschrift aus Punkten 1–2 offen.
+Die eigene Ticketliste der Wiederherstellungsanfrage ist zusätzlich auf VirtualList
+mit höchstens fünf sichtbaren Zeilen umgestellt; die manuelle Sichtung steht aus.
+Die Adminliste bleibt bei Grid und Pagination. Gültige Gestaltung und offener
+Nachtest stehen in Theme-Anleitung und zentralem Testbedarf.
 Der Anwesenheitsstatus behält seine bisherige Darstellung.
 Gemeinsames Switch-Grundstyling, Schließen-Icons und die übrigen freigegebenen
 Gestaltungsregeln stehen in der Theme-Anleitung. Automatisierte Browsernachtests

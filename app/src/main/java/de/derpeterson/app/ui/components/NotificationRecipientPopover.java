@@ -19,6 +19,7 @@ import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /** Vollständige, durchsuchbare Empfängerliste für die freigegebene Avatar-Vorschau. */
 @JsModule("./notification-recipient-popover.js")
@@ -26,7 +27,15 @@ public class NotificationRecipientPopover extends Popover {
   private static final int MAX_VISIBLE_RECIPIENTS = 5;
   private final TextField searchTextField = new TextField();
   private final VirtualList<Target> recipientVirtualList = new VirtualList<>();
-  private final Span emptyResultSpan = new Span();
+  private final ComponentRenderer<Button, Target> recipientRenderer =
+      new ComponentRenderer<>(
+          this::createRecipientButton,
+          (component, recipientTarget) -> {
+            updateRecipientButton((Button) component, recipientTarget);
+            return component;
+          });
+  private final VerticalLayout emptyResultLayout = new VerticalLayout();
+  private Long selectedRecipientId;
 
   public NotificationRecipientPopover(
       AvatarGroup recipientAvatarGroup,
@@ -79,7 +88,7 @@ public class NotificationRecipientPopover extends Popover {
     headingLayout.addClassName("cosmos-recipient-heading");
 
     VerticalLayout contentLayout =
-        new VerticalLayout(searchTextField, recipientVirtualList, emptyResultSpan);
+        new VerticalLayout(searchTextField, recipientVirtualList, emptyResultLayout);
     contentLayout.setPadding(false);
     contentLayout.setSpacing(false);
     contentLayout.addClassName("cosmos-recipient-content");
@@ -101,10 +110,17 @@ public class NotificationRecipientPopover extends Popover {
         .setAttribute("aria-label", messageProperties.getNotificationsRecipients());
     recipientVirtualList.setItemAccessibleNameGenerator(
         recipientTarget -> recipientTarget.name() + ", " + recipientTarget.email());
-    recipientVirtualList.setRenderer(new ComponentRenderer<>(this::createRecipientRow));
-    emptyResultSpan.setText(messageProperties.getNotificationsRecipientSearchEmpty());
-    emptyResultSpan.addClassName("cosmos-recipient-empty");
-    emptyResultSpan.getElement().setAttribute("role", "status");
+    recipientVirtualList.setRenderer(recipientRenderer);
+    Span emptyTitleSpan = new Span(messageProperties.getNotificationsRecipientSearchEmpty());
+    emptyTitleSpan.addClassName("cosmos-notification-empty-title");
+    Span emptyHintSpan = new Span(messageProperties.getNotificationsRecipientSearchHint());
+    emptyHintSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
+    emptyResultLayout.add(AppIcon.USER_QUESTION.create(), emptyTitleSpan, emptyHintSpan);
+    emptyResultLayout.setPadding(false);
+    emptyResultLayout.setSpacing(false);
+    emptyResultLayout.setAlignItems(VerticalLayout.Alignment.CENTER);
+    emptyResultLayout.addClassName("cosmos-recipient-empty");
+    emptyResultLayout.getElement().setAttribute("role", "status");
 
     ListDataProvider<Target> recipientDataProvider =
         new ListDataProvider<>(reviewedRecipientTargets);
@@ -121,7 +137,7 @@ public class NotificationRecipientPopover extends Popover {
 
   private void refreshRecipientResults(int recipientCount) {
     recipientVirtualList.setVisible(recipientCount > 0);
-    emptyResultSpan.setVisible(recipientCount == 0);
+    emptyResultLayout.setVisible(recipientCount == 0);
     // Ab fünf Zeilen bleibt die Höhe fest; weitere Empfänger werden virtualisiert.
     int visibleRecipientRows = Math.max(1, Math.min(recipientCount, MAX_VISIBLE_RECIPIENTS));
     recipientVirtualList.setHeight(
@@ -152,6 +168,32 @@ public class NotificationRecipientPopover extends Popover {
         recipientAvatarGroup
             .getElement()
             .executeJs("window.CosmosRecipientPopover.disconnect(this)"));
+  }
+
+  private Button createRecipientButton(Target recipientTarget) {
+    Button recipientButton = new Button();
+    recipientButton.addThemeVariants(ButtonVariant.TERTIARY);
+    recipientButton.addClassNames(CosmosCssClasses.INLINE_BUTTON, "cosmos-recipient-button");
+    recipientButton.setWidthFull();
+    recipientButton.addClickListener(event -> {
+      selectedRecipientId =
+          event.isCtrlKey() && Objects.equals(selectedRecipientId, recipientTarget.id())
+              ? null
+              : recipientTarget.id();
+      recipientVirtualList.getDataProvider().refreshAll();
+    });
+    updateRecipientButton(recipientButton, recipientTarget);
+    return recipientButton;
+  }
+
+  private void updateRecipientButton(Button recipientButton, Target recipientTarget) {
+    recipientButton.setPrefixComponent(createRecipientRow(recipientTarget));
+    recipientButton.setAriaLabel(recipientTarget.name() + ", " + recipientTarget.email());
+    recipientButton
+        .getElement()
+        .setAttribute(
+            "aria-pressed",
+            Boolean.toString(Objects.equals(selectedRecipientId, recipientTarget.id())));
   }
 
   private HorizontalLayout createRecipientRow(Target recipientTarget) {

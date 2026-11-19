@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import com.flowingcode.vaadin.addons.otpfield.OtpCompleteEvent;
 import com.flowingcode.vaadin.addons.otpfield.OtpField;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.PollEvent;
@@ -39,6 +41,8 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -730,15 +734,20 @@ class TwoFactorFlowViewTest {
             twoFactorAuthorization,
             mockHttpRequest);
 
-    Grid<?> grid = (Grid<?>) find(help, "support-ticket-grid");
+    VirtualList<?> ticketList =
+        assertInstanceOf(VirtualList.class, find(help, "support-ticket-grid"));
 
     assertEquals(
         messageProperties.getSupportRequestCount(2),
         find(help, "support-request-count").getElement().getText());
-    assertEquals(List.of(active), List.copyOf(grid.getSelectedItems()));
     @SuppressWarnings("unchecked")
-    ComponentRenderer<Component, Ticket> renderer =
-        (ComponentRenderer<Component, Ticket>) grid.getColumns().getFirst().getRenderer();
+    ComponentRenderer<Button, Ticket> renderer =
+        (ComponentRenderer<Button, Ticket>)
+            ReflectionTestUtils.getField(find(help, "account-support"), "userTicketRenderer");
+    assertEquals(
+        "true", renderer.createComponent(active).getElement().getAttribute("aria-pressed"));
+    assertEquals(
+        "false", renderer.createComponent(closed).getElement().getAttribute("aria-pressed"));
 
     assertTrue(
         renderer
@@ -753,6 +762,135 @@ class TwoFactorFlowViewTest {
     assertFalse(find(help, "support-create").isVisible());
     verify(mockSupportTicketService, never())
         .loadTicketConversation(mockHttpRequest, closed.id(), false);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "de,0,1", "en,0,1", "de,1,1", "en,1,1", "de,2,2", "en,2,2", "de,5,5", "en,5,5", "de,6,5",
+    "en,6,5", "de,20,5", "en,20,5"
+  })
+  void recoveryRequestListShowsAtMostFiveRowsWithoutDroppingTickets(
+      String language, int ticketCount, int expectedVisibleRows) {
+    openTwoFactorPage(language, false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    List<Ticket> ownTickets = new ArrayList<>();
+    for (int ticketIndex = 0; ticketIndex < ticketCount; ticketIndex++) {
+      ownTickets.add(filterTicket(1L + ticketIndex, Status.OPEN, null));
+    }
+    when(ticketService.listTicketsForViewer(mockHttpRequest, false)).thenReturn(ownTickets);
+    SupportTicketsComponent ticketComponent =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, false);
+    VirtualList<?> ticketList =
+        assertInstanceOf(VirtualList.class, find(ticketComponent, "support-ticket-grid"));
+
+    assertEquals(ownTickets, ticketList.getDataProvider().fetch(new Query<>()).toList());
+    assertEquals(ticketCount > 0, ticketList.isVisible());
+    assertEquals(
+        "calc("
+            + expectedVisibleRows
+            + " * var(--support-user-ticket-row-height) + 2 * var(--cosmos-border-width))",
+        ticketList.getHeight());
+    assertEquals(
+        messageProperties.getSupportExistingRequests(),
+        ticketList.getElement().getAttribute("aria-label"));
+    verify(ticketService, never()).loadTicketInbox(any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void recoveryTicketButtonOpensTheSelectedConversationAndKeepsItsIdentity(String language) {
+    openTwoFactorPage(language, false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    Ticket activeTicket = filterTicket(1L, Status.OPEN, null);
+    Ticket closedTicket = filterTicket(2L, Status.CLOSED_BY_REQUESTER, null);
+    when(ticketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of(activeTicket, closedTicket));
+    SupportTicketsComponent ticketComponent =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, false);
+    assertInstanceOf(VirtualList.class, find(ticketComponent, "support-ticket-grid"));
+    @SuppressWarnings("unchecked")
+    ComponentRenderer<Button, Ticket> ticketRenderer =
+        (ComponentRenderer<Button, Ticket>)
+            ReflectionTestUtils.getField(ticketComponent, "userTicketRenderer");
+    Button closedTicketButton = ticketRenderer.createComponent(closedTicket);
+    closedTicketButton.click();
+
+    verify(ticketService).loadTicketConversation(mockHttpRequest, closedTicket.id(), false);
+    assertFalse(find(ticketComponent, "support-add-reply").isVisible());
+    assertSame(
+        closedTicketButton, ticketRenderer.updateComponent(closedTicketButton, closedTicket));
+    assertEquals("true", closedTicketButton.getElement().getAttribute("aria-pressed"));
+
+    ticketRenderer.createComponent(activeTicket).click();
+
+    verify(ticketService, atLeastOnce())
+        .loadTicketConversation(mockHttpRequest, activeTicket.id(), false);
+    assertTrue(find(ticketComponent, "support-add-reply").isVisible());
+    ticketRenderer.updateComponent(closedTicketButton, closedTicket);
+    assertEquals("false", closedTicketButton.getElement().getAttribute("aria-pressed"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void clearingRecoveryTicketSelectionKeepsTheReplyDraftAndSurvivesRefresh(String language) {
+    openTwoFactorPage(language, false);
+    SupportTicketService ticketService = mock(SupportTicketService.class);
+    Ticket activeTicket = filterTicket(1L, Status.OPEN, null);
+    when(ticketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of(activeTicket));
+    SupportTicketsComponent ticketComponent =
+        new SupportTicketsComponent(messageProperties, ticketService, mockHttpRequest, false);
+    @SuppressWarnings("unchecked")
+    ComponentRenderer<Button, Ticket> ticketRenderer =
+        (ComponentRenderer<Button, Ticket>)
+            ReflectionTestUtils.getField(ticketComponent, "userTicketRenderer");
+    Button ticketButton = ticketRenderer.createComponent(activeTicket);
+    TextArea replyDraft = (TextArea) find(ticketComponent, "support-reply");
+    replyDraft.setValue("Meine noch nicht gesendete Antwort.");
+
+    ticketButton.click();
+    assertEquals("Meine noch nicht gesendete Antwort.", replyDraft.getValue());
+    ComponentUtil.fireEvent(
+        ticketButton,
+        new ClickEvent<>(ticketButton, true, 0, 0, 0, 0, 1, 0, true, false, false, false));
+    ticketRenderer.updateComponent(ticketButton, activeTicket);
+
+    assertEquals("false", ticketButton.getElement().getAttribute("aria-pressed"));
+    assertFalse(find(ticketComponent, "support-add-reply").isVisible());
+    assertFalse(find(ticketComponent, "support-create").isVisible());
+    assertTrue(replyDraft.isEmpty());
+
+    ticketComponent.refreshTicketWorkspace();
+    ticketComponent.refreshTexts();
+    Reply existingReply =
+        new Reply(
+            41L,
+            "Bereits vorhandene Antwort",
+            false,
+            Instant.EPOCH,
+            ReplyAuthor.SUPPORT,
+            SupportReplyEntity.Kind.MESSAGE,
+            null,
+            null,
+            null);
+    when(ticketService.liveView(any(), eq(false), any(), any()))
+        .thenReturn(
+            new SupportTicketService.LiveView(
+                9L, List.of(activeTicket), activeTicket, List.of(existingReply), null, 1, 0, 20));
+    ReflectionTestUtils.invokeMethod(
+        ticketComponent, "refreshLive", new org.springframework.mock.web.MockHttpSession());
+    ticketRenderer.updateComponent(ticketButton, activeTicket);
+    assertEquals("false", ticketButton.getElement().getAttribute("aria-pressed"));
+    assertFalse(find(ticketComponent, "support-add-reply").isVisible());
+    assertFalse(
+        ((Component) ReflectionTestUtils.getField(ticketComponent, "ticketConversationLayout"))
+            .isVisible());
+
+    ticketButton.click();
+    ticketRenderer.updateComponent(ticketButton, activeTicket);
+    assertEquals("true", ticketButton.getElement().getAttribute("aria-pressed"));
+    assertTrue(find(ticketComponent, "support-add-reply").isVisible());
+    assertEquals("Meine noch nicht gesendete Antwort.", replyDraft.getValue());
   }
 
   @Test

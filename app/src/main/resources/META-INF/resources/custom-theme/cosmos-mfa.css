@@ -440,7 +440,7 @@
     justify-content: flex-end;
     width: 100%;
 }
-.support-tickets vaadin-grid vaadin-badge {
+.support-tickets :is(vaadin-grid, vaadin-virtual-list) vaadin-badge {
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     border-radius: 4px;
 }

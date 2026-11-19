@@ -3901,6 +3901,10 @@ public class MessageTexts {
     return getTranslation("notifications.recipientSearchEmpty");
   }
 
+  public String getNotificationsRecipientSearchHint() {
+    return getTranslation("notifications.recipientSearchHint");
+  }
+
   public String getNotificationsRecipientDetails() {
     return getTranslation("notifications.recipientDetails");
   }

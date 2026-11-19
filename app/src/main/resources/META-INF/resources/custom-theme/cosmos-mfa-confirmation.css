@@ -358,20 +358,74 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
 :is(.support-conversation-actions, .support-admin-actions) #support-close > vaadin-icon {
     color: var(--cosmos-success-color);
 }
-.support-user-form vaadin-grid {
+.support-user-ticket-list {
+    --support-user-ticket-row-height: calc(2 * var(--cosmos-line-height-m) + 2 * var(--cosmos-space-m));
+    box-sizing: border-box;
     min-width: 0;
+    max-height: calc(5 * var(--support-user-ticket-row-height) + 2 * var(--cosmos-border-width));
+    border: var(--cosmos-border-width) solid var(--cosmos-table-border-color);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-base-color);
     font: 400 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
-.support-user-requests vaadin-grid {
-    --cosmos-table-row-background: var(--cosmos-base-color);
-    --cosmos-table-alternate-row-background: var(--cosmos-base-color);
+
+/* Die Aktion bleibt ein nativer Button im gemeinsamen Inline-Stil. Nur die
+ * Geometrie folgt hier einer vollständigen Ticketzeile statt einem Formularfooter. */
+.support-user-requests vaadin-button.support-user-ticket-button {
+    height: var(--support-user-ticket-row-height);
+    min-height: var(--support-user-ticket-row-height);
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    text-align: start;
+    --vaadin-button-gap: 0;
 }
-.support-user-requests vaadin-grid::part(body-cell) {
+
+/* Der Vorspann enthält die ganze Zeile, kein einzelnes Icon mit Textabstand. */
+.support-user-requests vaadin-button.support-user-ticket-button::part(prefix) {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.support-user-ticket-button .support-ticket-row {
+    box-sizing: border-box;
+    height: 100%;
+    padding: var(--cosmos-space-m) var(--cosmos-space-l);
     border-inline-start: 2px solid transparent;
+    box-shadow: inset 0 var(--cosmos-border-width) var(--cosmos-border-color);
+    flex-wrap: nowrap;
 }
-.support-user-requests vaadin-grid::part(selected-row-cell) {
+
+.support-user-ticket-list [aria-posinset="1"] .support-ticket-row {
+    box-shadow: none;
+}
+
+.support-user-ticket-button[aria-pressed="true"] .support-ticket-row {
     --support-ticket-number-color: var(--cosmos-primary-background);
     border-inline-start-color: var(--cosmos-primary-text-color);
+    background: var(--cosmos-table-highlight-background);
+}
+
+.support-user-ticket-button .support-ticket-title {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+@media (max-width: 639px) {
+    .support-user-ticket-list {
+        --support-user-ticket-row-height: calc(4 * var(--cosmos-line-height-m) + 2 * var(--cosmos-space-l));
+    }
+
+    .support-user-ticket-button .support-ticket-row {
+        flex-wrap: wrap;
+        align-content: center;
+    }
 }
 .support-ticket-row {
     gap: 6px 12px;
@@ -590,11 +644,13 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
 .support-admin-ticket-list {
     --cosmos-table-row-background: var(--cosmos-base-color);
     --cosmos-table-alternate-row-background: var(--cosmos-base-color);
+    --vaadin-grid-border-color: var(--cosmos-border-color);
 }
-.support-admin-ticket-list::part(body-cell) {
+.support-admin-list-panel .support-admin-ticket-list::part(body-cell) {
+    border-top-color: var(--cosmos-border-color);
     border-inline-start: 2px solid transparent;
 }
-.support-admin-ticket-list::part(selected-row-cell) {
+.support-admin-list-panel .support-admin-ticket-list::part(selected-row-cell) {
     --support-ticket-number-color: var(--cosmos-primary-background);
     border-inline-start-color: var(--cosmos-primary-text-color);
 }

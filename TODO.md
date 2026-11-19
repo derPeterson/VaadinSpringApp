@@ -31,6 +31,12 @@
 
 ## Künftige Anwendungsfunktionen
 
+- [ ] Eine Touch-Bedienung zum Aufheben der Auswahl in Ticket- und Empfängerlisten
+  gemeinsam festlegen. Desktop unterstützt dort Strg+Klick auf den ausgewählten
+  Eintrag. Im Admin-Ticketsystem ist das Abwählen bereits über das native Grid
+  möglich; zuerst prüfen, ob dessen vorhandene Smartphone-Bedienung als Vorlage
+  geeignet ist. Noch keine zusätzliche mobile Aktion einbauen.
+
 - [ ] Einheitlichen Umgang mit Tooltips auf Smartphones analysieren und gemeinsam
   festlegen. Native Vaadin-Tooltips werden per Hover und Tastaturfokus geöffnet,
   unterstützen aber kein langes Tippen, siehe
