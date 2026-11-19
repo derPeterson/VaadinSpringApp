@@ -53,7 +53,6 @@ import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -1218,9 +1217,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       HorizontalLayout editorActionsLayout = new HorizontalLayout();
       editorActionsLayout.addClassName("cosmos-dialog-actions");
-      EqualButtonWidths.configureEqualButtonWidths(editorActionsLayout);
-      editorActionsLayout.setWidthFull();
-      editorActionsLayout.setAlignItems(Alignment.CENTER);
+      editorActionsLayout.setSpacing(false);
 
       if (editMode) {
         Button deleteButton =
@@ -1233,6 +1230,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         deleteButton.setEnabled(!isCurrentUser(editedUserEntity));
         editorActionsLayout.add(deleteButton);
       }
+
       cancelUserEditButton.addClassName("cosmos-dialog-cancel");
       editorActionsLayout.add(cancelUserEditButton, saveUserButton);
 

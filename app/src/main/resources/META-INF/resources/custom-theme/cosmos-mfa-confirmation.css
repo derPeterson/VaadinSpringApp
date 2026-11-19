@@ -161,12 +161,26 @@ vaadin-dialog.account-change-dialog:has(> [slot="header-content"] > .two-factor-
     display: none;
 }
 .two-factor-footer > .cosmos-dialog-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    width: auto;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: stretch;
+    min-width: 0;
+    width: max-content;
     max-width: 100%;
     margin-inline-start: auto;
-    gap: 8px;
+    gap: var(--cosmos-space-s);
+}
+
+.two-factor-footer > .cosmos-dialog-actions > vaadin-button {
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    --vaadin-button-label-wrap: normal;
+}
+
+.two-factor-footer > .cosmos-dialog-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
 }
 :is(.two-factor-restore-notice, .support-help-notice, .mfa-role-scope) {
     box-sizing: border-box;
@@ -1000,7 +1014,9 @@ vaadin-badge.support-instruction-number {
         width: 100%;
     }
     .two-factor-footer > .cosmos-dialog-actions {
-        margin-inline-start: auto;
+        grid-auto-flow: row;
+        grid-template-columns: minmax(0, 1fr);
+        width: 100%;
     }
 }
 @media (max-width: 400px) {

@@ -7,7 +7,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.TwoFactorFlow;
@@ -87,7 +86,6 @@ public final class TwoFactorAccountComponent extends Div {
   private Div createTwoFactorActionsDiv(boolean authenticatorEnrolled) {
     Div twoFactorActionsDiv = new Div();
     twoFactorActionsDiv.addClassName("two-factor-account-actions");
-    EqualButtonWidths.configureEqualButtonWidths(twoFactorActionsDiv);
 
     if (!authenticatorEnrolled) {
       Button setupAuthenticatorButton =

@@ -34,7 +34,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -250,7 +249,6 @@ public final class TwoFactorView extends VerticalLayout
     stepActionsLayout.setPadding(false);
     stepActionsLayout.setSpacing(false);
     stepActionsLayout.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(stepActionsLayout);
 
     stepNavigationLayout.setPadding(false);
     stepNavigationLayout.setSpacing(false);

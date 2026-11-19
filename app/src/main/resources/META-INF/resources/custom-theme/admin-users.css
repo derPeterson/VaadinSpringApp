@@ -1221,19 +1221,25 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     height: 16px;
 }
 .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: stretch;
     box-sizing: border-box;
+    width: max-content;
+    max-width: 100%;
+    margin-inline-start: auto;
     padding: 16px 24px;
+    gap: var(--cosmos-space-s);
 }
-.admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 8px;
+.admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions > vaadin-button {
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    --vaadin-button-label-wrap: normal;
 }
-.admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
-    width: auto;
-    min-width: 110px;
-    flex: none;
+.admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
 }
 @media (max-width: 767px) {
     vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"]::part(overlay) {
@@ -1256,17 +1262,20 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
         padding: 16px 20px;
     }
-    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions {
-        flex-wrap: wrap;
+    .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
         row-gap: 12px;
     }
-    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > vaadin-button {
-        flex: 1;
-        min-width: 0;
+    .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions > .cosmos-delete-button {
+        grid-column: 1 / -1;
+        order: 1;
     }
-    .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions > .cosmos-delete-button {
-        flex-basis: 100%;
-        order: 2;
+}
+@media (max-width: 479px) {
+    .admin-user-dialog .admin-user-editor-footer > .cosmos-dialog-actions {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 /* Benutzerbestätigung: dieselben Maße und Textabstände wie im festen HTML-Dialog. */

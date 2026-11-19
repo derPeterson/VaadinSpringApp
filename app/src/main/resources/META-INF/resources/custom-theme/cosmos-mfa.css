@@ -389,10 +389,22 @@
 .two-factor-account-actions {
     grid-column: 2 / -1;
     min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: flex-end;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    justify-self: end;
+    width: max-content;
+    max-width: 100%;
+    gap: var(--cosmos-space-s);
+}
+.cosmos-reference-portal #account-panel-security .two-factor-account-actions > vaadin-button {
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    --vaadin-button-label-wrap: normal;
+}
+.two-factor-account-actions > vaadin-button::part(label) {
+    overflow-wrap: anywhere;
 }
 @media (min-width: 651px) {
     .cosmos-reference-portal
@@ -427,6 +439,13 @@
 @media (max-width: 650px) {
     .two-factor-account-actions {
         grid-column: 1 / -1;
+    }
+}
+@media (max-width: 600px) {
+    .two-factor-account-actions {
+        grid-auto-flow: row;
+        grid-template-columns: minmax(0, 1fr);
+        width: 100%;
     }
 }
 .support-tickets .account-panel-body {
