@@ -15,6 +15,8 @@
   erhalten die Anleitung ausschließlich im Ticketverlauf.
 - In der Zwei-Faktor-Bestätigung stehen App-Code und Ersatzcode im Kopf der
   Seite oder des Dialogs. Beim Methodenwechsel werden angefangene Eingaben geleert.
+- Im Admin-Ticketsystem öffnet das Vorgangsdetail bei wenig Platz über der
+  Liste. Beim Zurückkehren zur Liste bleiben ungesendete Antwortentwürfe erhalten.
 
 ### EN
 
@@ -29,6 +31,8 @@
   receive the instructions only in the ticket conversation.
 - Two-factor verification shows the app code and recovery code tabs in the page
   or dialog header. Switching methods clears partial entries.
+- In the admin ticket system, ticket details open over the list on narrow screens.
+  Returning to the list preserves unsent reply drafts.
 
 ## [0.1.0] - 2026-11-18
 

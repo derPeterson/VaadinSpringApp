@@ -680,8 +680,14 @@ Die berechtigte Adminansicht darf tatsächliche Autoren, Zuständigkeit und inte
 zeigen. Diese Grenze gilt auch für Tooltips.
 
 Vorgangsliste, Details und Verlauf nutzen die vorhandenen Cards und nativen Scroller.
-Bei schmalem Inhalt stehen Liste und Details untereinander. Maximieren blendet nur die
-Liste aus; Filter, Auswahl und Antwortentwurf bleiben erhalten.
+Im Adminbereich ordnet `MasterDetailLayout` Liste und Detail nebeneinander an.
+Bei schmalem Inhalt öffnet das Detail als scrollbares Overlay über der Liste.
+„Zur Vorgangsliste“ oder Escape schließen das Detail, leeren die Ticketauswahl in
+der URL und geben den Fokus an den aktiven Kategorienreiter zurück. Filter,
+Listenseite und Antwortentwurf bleiben erhalten. In der geteilten Ansicht blendet
+Maximieren nur die Liste aus. Der Auswahlhinweis erscheint neben der Liste,
+sobald der verfügbare Platz ausreicht. Die lokale Gestaltung steht in
+`cosmos-mfa-confirmation.css` unter `support-admin-master-detail`.
 
 Die eigene Ticketliste in der öffentlichen Wiederherstellungsanfrage verwendet
 `VirtualList` mit höchstens fünf sichtbaren Einträgen. Bei weniger Tickets schrumpft

@@ -2,11 +2,12 @@ package de.derpeterson.app;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.masterdetaillayout.MasterDetailLayout;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-/** Testbaum einschließlich der Card-Slots; Card.getChildren() liefert nur den normalen Inhalt. */
+/** Testbaum mit Card-Slots und dem Detailbereich des MasterDetailLayout. */
 public final class ComponentTestTree {
   private ComponentTestTree() {}
 
@@ -17,6 +18,12 @@ public final class ComponentTestTree {
   }
 
   public static Stream<Component> streamChildComponents(Component parentComponent) {
+    if (parentComponent instanceof MasterDetailLayout masterDetailLayout) {
+      return Stream.concat(
+              masterDetailLayout.getChildren(), Stream.ofNullable(masterDetailLayout.getDetail()))
+          .distinct();
+    }
+
     if (!(parentComponent instanceof Card cardComponent)) {
       return parentComponent.getChildren();
     }

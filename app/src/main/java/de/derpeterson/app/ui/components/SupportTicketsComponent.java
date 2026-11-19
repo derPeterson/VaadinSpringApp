@@ -19,6 +19,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.masterdetaillayout.MasterDetailLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -81,6 +82,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private static final String SECTION_HEADER_CLASS = "support-section-header";
   private static final String ARIA_LABEL = "aria-label";
   private static final int MAX_VISIBLE_USER_TICKETS = 5;
+  private static final String ADMIN_TICKET_LIST_SIZE = "min(100%, max(330px, 37%))";
 
   public enum Category {
     ALL,
@@ -131,8 +133,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span selectTicketHintSpan = new Span();
   private final VerticalLayout ticketSelectionPlaceholder = new VerticalLayout();
   private final CosmosCardComponent adminDetail = new CosmosCardComponent();
-  private final Div adminWorkspaceDiv = new Div();
+  private final MasterDetailLayout adminTicketLayout = new MasterDetailLayout();
   private final VerticalLayout adminQueueLayout = new VerticalLayout();
+  private final Button returnToTicketListButton = new Button(AppIcon.ANGLE_LEFT.create());
   private final Button toggleTicketFocusButton = new Button();
   private final HorizontalLayout adminTicketTools = new HorizontalLayout();
   private final HorizontalLayout adminActionFooter = new HorizontalLayout();
@@ -593,10 +596,21 @@ public final class SupportTicketsComponent extends VerticalLayout {
       refreshTicketWorkspace();
     });
     buildAdminTicketQueue();
-    VerticalLayout ticketHeader = buildAdminTicketHeader();
-    buildAdminTicketDetail(ticketHeader, sensitiveNotice);
-    VerticalLayout ticketDetailColumn = buildAdminDetailColumn();
-    adminWorkspaceDiv.add(adminQueueLayout, ticketDetailColumn);
+    VerticalLayout ticketHeaderLayout = buildAdminTicketHeader();
+    buildAdminTicketDetail(ticketHeaderLayout, sensitiveNotice);
+    configureTicketSelectionPlaceholder();
+
+    adminTicketLayout.setId("support-master-detail");
+    adminTicketLayout.addClassName("support-admin-master-detail");
+    adminTicketLayout.setWidthFull();
+    adminTicketLayout.setMasterSize(ADMIN_TICKET_LIST_SIZE);
+    adminTicketLayout.setDetailSize("450px", true, "100%");
+    adminTicketLayout.setAnimationEnabled(false);
+    adminTicketLayout.setMaster(adminQueueLayout);
+    adminTicketLayout.setDetailPlaceholder(ticketSelectionPlaceholder);
+    adminTicketLayout.addDetailEscapePressListener(event -> returnToTicketList());
+
+    Div adminWorkspaceDiv = new Div(adminTicketLayout);
     adminWorkspaceDiv.addClassName("support-admin-columns");
     ticketWorkspacePanel.getBody().add(ticketCategories, adminWorkspaceDiv);
   }
@@ -720,6 +734,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketIconLayout.setPadding(false);
     ticketIconLayout.setSpacing(false);
     ticketIconLayout.addClassName(CosmosCssClasses.PANEL_ICON);
+
+    returnToTicketListButton.setId("support-return-to-list");
+    returnToTicketListButton.addClassName(CosmosCssClasses.ICON_BUTTON);
+    returnToTicketListButton.addClickListener(event -> returnToTicketList());
+
     toggleTicketFocusButton.setId("support-focus-toggle");
     toggleTicketFocusButton.addClassName(CosmosCssClasses.ICON_BUTTON);
     toggleTicketFocusButton
@@ -728,7 +747,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     toggleTicketFocusButton.addClickListener(event -> setTicketFocused(!ticketFocused));
     HorizontalLayout ticketOrientationLayout =
         new HorizontalLayout(
-            ticketIconLayout, ticketMetadataLayout, adminUpdated, toggleTicketFocusButton);
+            ticketIconLayout,
+            ticketMetadataLayout,
+            adminUpdated,
+            returnToTicketListButton,
+            toggleTicketFocusButton);
     ticketOrientationLayout.setPadding(false);
     ticketOrientationLayout.setSpacing(false);
     ticketOrientationLayout.setWidthFull();
@@ -823,7 +846,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminDetail.add(ticketHeader, adminTicketTools, ticketDetailContentLayout, adminActionFooter);
   }
 
-  private VerticalLayout buildAdminDetailColumn() {
+  private void configureTicketSelectionPlaceholder() {
     noSelectionTitle.addClassName("cosmos-notification-empty-title");
     selectTicketHintSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     ticketSelectionPlaceholder.add(
@@ -837,19 +860,23 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketSelectionPlaceholder.addClassNames(
         "support-admin-no-selection", "cosmos-notification-empty");
     selectTicketHintSpan.getElement().setAttribute("role", "status");
-    VerticalLayout ticketDetailColumnLayout =
-        new VerticalLayout(ticketSelectionPlaceholder, adminDetail);
-    ticketDetailColumnLayout.setPadding(false);
-    ticketDetailColumnLayout.setSpacing(false);
-    ticketDetailColumnLayout.setFlexGrow(1, ticketSelectionPlaceholder);
-    ticketDetailColumnLayout.addClassName("support-admin-detail-column");
-    return ticketDetailColumnLayout;
+  }
+
+  private void returnToTicketList() {
+    selectedTicket = null;
+    ticketGrid.deselectAll();
+    showConversation(List.of(), null);
+    publishNavigation();
+
+    // Der Kategorienreiter liegt auch während des Schließens außerhalb des Overlays.
+    ticketCategories.getSelectedTab().getElement().callJsFunction("focus");
   }
 
   private void setTicketFocused(boolean focused) {
     ticketFocused = focused && selectedTicket != null;
     adminQueueLayout.setVisible(!ticketFocused);
-    adminWorkspaceDiv.setClassName("support-focused", ticketFocused);
+    adminTicketLayout.setMasterSize(ticketFocused ? "0px" : ADMIN_TICKET_LIST_SIZE);
+    adminTicketLayout.setClassName("support-focused", ticketFocused);
     updateFocusControl();
   }
 
@@ -898,6 +925,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
       noSelectionTitle.setText(messageProperties.getSupportNoTicketSelected());
       selectTicketHintSpan.setText(messageProperties.getSupportSelectTicket());
       ticketGrid.getElement().setAttribute(ARIA_LABEL, messageProperties.getSupportCases());
+
+      String returnToTicketListText = messageProperties.getSupportReturnToTicketList();
+      returnToTicketListButton.setAriaLabel(returnToTicketListText);
+      returnToTicketListButton.setTooltipText(returnToTicketListText);
     } else {
       userRequestsHeading.setText(messageProperties.getSupportExistingRequests());
       userTicketVirtualList
@@ -1511,14 +1542,18 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void refreshAdminConversation(List<Reply> ticketReplies) {
-    adminDetail.setVisible(selectedTicket != null);
-    ticketSelectionPlaceholder.setVisible(selectedTicket == null);
     if (selectedTicket == null) {
+      if (adminTicketLayout.getDetail() != null) {
+        adminTicketLayout.setDetail(null);
+      }
       setTicketFocused(false);
       userMessageThread.removeAll();
       return;
     }
 
+    if (adminTicketLayout.getDetail() == null) {
+      adminTicketLayout.setDetail(adminDetail);
+    }
     adminTicketNumber.setText(
         messageProperties.getSupportTicketNumber(ticketNumber(selectedTicket)));
     adminSubject.setText(ticketSubject(selectedTicket));

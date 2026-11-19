@@ -231,14 +231,14 @@ vaadin-dialog.account-change-dialog:has(> [slot="header-content"] > .two-factor-
     margin-inline-start: auto;
 }
 .support-section-header #support-reload,
-#support-focus-toggle {
+:is(#support-focus-toggle, #support-return-to-list) {
     width: var(--cosmos-control-height);
     min-width: var(--cosmos-control-height);
     height: var(--cosmos-control-height);
     padding: 0;
 }
 .support-section-header #support-reload::part(prefix),
-#support-focus-toggle::part(prefix) {
+:is(#support-focus-toggle, #support-return-to-list)::part(prefix) {
     margin: 0;
 }
 .support-conversation-heading {
@@ -536,17 +536,34 @@ vaadin-dialog.account-change-dialog:has(> [slot="header-content"] > .two-factor-
 }
 .support-admin-columns {
     box-sizing: border-box;
-    display: grid;
-    grid-template-columns: minmax(330px, 1fr) minmax(0, 1.7fr);
-    align-items: stretch;
-    gap: 16px;
     padding: 20px;
 }
-.support-admin-columns.support-focused {
-    grid-template-columns: minmax(0, 1fr);
+.support-admin-master-detail {
+    height: auto;
+    --vaadin-master-detail-layout-border-width: 0;
+    --vaadin-master-detail-layout-detail-background: var(--cosmos-page-background);
 }
-.support-admin-queue,
-.support-admin-detail-column {
+.support-admin-master-detail:not([overlay], .support-focused)::part(detail),
+.support-admin-master-detail::part(detail-placeholder) {
+    padding-inline-start: var(--cosmos-space-l);
+}
+.support-admin-master-detail::part(detail-placeholder) {
+    display: flex;
+}
+.support-admin-master-detail:is([overlay], [has-detail])::part(detail-placeholder) {
+    display: none;
+}
+.support-admin-master-detail[overlay][has-detail] {
+    min-height: min(36rem, 70dvh);
+}
+.support-admin-master-detail[overlay]::part(detail) {
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+.support-admin-master-detail[overlay] #support-focus-toggle {
+    display: none;
+}
+.support-admin-queue {
     box-sizing: border-box;
     min-width: 0;
     padding: 0;
@@ -945,9 +962,6 @@ vaadin-badge.support-instruction-number {
     padding: 8px 0 0;
 }
 @container (max-width:819px) {
-    .support-admin-columns {
-        grid-template-columns: minmax(0, 1fr);
-    }
     .support-admin-ticket-scroll {
         max-height: min(32vh, 300px);
     }

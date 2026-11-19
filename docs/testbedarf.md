@@ -5,6 +5,15 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **Admin-Vorgangsliste mit MasterDetailLayout — offen.**
+  MFA-19, MFA-22 und MFA-23 in DE/EN prüfen. Auf breiten Ansichten Liste und
+  Detail nebeneinander, Auswahlhinweis und Fokusmodus vergleichen. Bei 390 und
+  320 px müssen direkter Ticketlink und Auswahl das scrollbare Detail-Overlay
+  öffnen. Rückkehr per Button und Escape gibt den Fokus an den aktiven
+  Kategorienreiter zurück und entfernt nur die Ticketnummer aus der URL.
+  Listenseite, Filter und Entwurf bleiben beim Wiederöffnen erhalten. Filter-
+  und Live-Aktualisierungen, Größenwechsel und erreichbare Aktionen prüfen.
+
 - **Rechte Feldhilfe nach Tooltip-Bereinigung — offen.**
   Die bestehenden Fälle CONFIG-05D, COMPONENT-04, MAIL-02, MFA-03 und OIDC-08
   in der großen Testrunde ausführen. Die Info-Buttons öffnen per Klick und

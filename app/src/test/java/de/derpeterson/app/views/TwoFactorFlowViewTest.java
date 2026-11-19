@@ -3,6 +3,7 @@ package de.derpeterson.app.views;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,6 +34,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.masterdetaillayout.MasterDetailLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
@@ -979,7 +981,11 @@ class TwoFactorFlowViewTest {
             messageProperties, mockSupportTicketService, mockHttpRequest, true);
     VerticalLayout hint =
         assertInstanceOf(VerticalLayout.class, find(component, "support-select-ticket"));
+    MasterDetailLayout ticketLayout =
+        assertInstanceOf(MasterDetailLayout.class, find(component, "support-master-detail"));
 
+    assertSame(hint, ticketLayout.getDetailPlaceholder());
+    assertNull(ticketLayout.getDetail());
     assertTrue(hint.hasClassName("cosmos-notification-empty"));
     assertTrue(hint.isVisible());
     assertEquals(
@@ -1113,6 +1119,11 @@ class TwoFactorFlowViewTest {
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     grid.asSingleSelect().setValue(mine);
     component.refreshTicketWorkspace();
+    MasterDetailLayout ticketLayout =
+        assertInstanceOf(MasterDetailLayout.class, find(component, "support-master-detail"));
+    Component ticketPanel = find(component, "support-ticket-panel");
+    assertSame(ticketPanel, ticketLayout.getDetail());
+
     TextArea draft = (TextArea) find(component, "support-reply");
     draft.setValue("Diese Antwort ist noch ein Entwurf.");
     Button focus = (Button) find(component, "support-focus-toggle");
@@ -1145,6 +1156,32 @@ class TwoFactorFlowViewTest {
     component.openTicket("10001");
 
     assertEquals("Diese Antwort ist noch ein Entwurf.", draft.getValue());
+
+    List<NavigationState> navigationChanges = new ArrayList<>();
+    component.setNavigationListener(navigationChanges::add);
+    Tabs replyTabs = (Tabs) find(component, "support-reply-mode");
+    replyTabs.setSelectedIndex(1);
+    Button returnToListButton = (Button) find(component, "support-return-to-list");
+    assertEquals(
+        messageProperties.getSupportReturnToTicketList(),
+        returnToListButton.getAriaLabel().orElseThrow());
+
+    focus.click();
+    returnToListButton.click();
+
+    assertNull(ticketLayout.getDetail());
+    assertNull(grid.asSingleSelect().getValue());
+    assertTrue(queue.isVisible());
+    assertEquals(List.of(new NavigationState(Category.ALL, null)), navigationChanges);
+
+    component.refreshTicketWorkspace();
+    assertNull(ticketLayout.getDetail());
+    component.openTicket("10001");
+
+    assertSame(ticketPanel, ticketLayout.getDetail());
+    assertEquals("Diese Antwort ist noch ein Entwurf.", draft.getValue());
+    assertEquals(1, replyTabs.getSelectedIndex());
+    assertEquals("false", focus.getElement().getAttribute("aria-pressed"));
   }
 
   private Ticket filterTicket(Long id, Status status, Long assignee) {

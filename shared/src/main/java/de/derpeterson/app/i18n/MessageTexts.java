@@ -328,6 +328,10 @@ public class MessageTexts {
     return getTranslation("support.restoreSplitView");
   }
 
+  public String getSupportReturnToTicketList() {
+    return getTranslation("support.returnToTicketList");
+  }
+
   public String getSupportSecurityPolicy() {
     return getTranslation("support.securityPolicy");
   }

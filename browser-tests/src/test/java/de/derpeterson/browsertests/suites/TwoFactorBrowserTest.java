@@ -61,7 +61,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("ticket-browser-detail")
   @DisplayName("MFA-23: Vorgangsseiten erhalten Details und Entwurf bei 10, 20 und 50 Einträgen")
   @Description(
-      "Auf Desktop und Smartphone bleiben Details und Entwurf beim Blättern und beim Wechsel der Seitengröße erhalten. Live-Übernahmen leeren die letzte gefilterte Seite und beide Ansichten wechseln auf die vorige Seite.")
+      "Am Desktop bleibt das Detail beim Blättern offen. Auf dem Smartphone ist die Pagination nach der Rückkehr aus dem Detail erreichbar und der Entwurf erscheint beim Wiederöffnen. Live-Übernahmen leeren die letzte gefilterte Seite und beide Ansichten wechseln auf die vorige Seite.")
   void ticketPagesPreserveDetailsAndDrafts() {
     LoginPage login = new LoginPage(browserPage);
     login.open();
@@ -95,14 +95,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 .substring(1));
       }
     }
+    String newestTicket = numbers.getLast();
     for (int width : new int[] {1280, 390}) {
+      boolean mobile = width == 390;
       browserPage.setViewportSize(width, 1000);
-      browserPage.navigate("/admin?section=support&ticket=" + numbers.getFirst());
+      browserPage.navigate("/admin?section=support&ticket=" + newestTicket);
 
       assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
       if (browserPage.locator("#support-claim").isVisible()) {
         UiActions.complete(browserPage, () -> browserPage.locator("#support-claim").click());
-        jumpToTicket(numbers.getFirst());
       }
       Locator paging = browserPage.locator("#support-pagination");
       Locator next = paging.locator(".cosmos-pagination-next");
@@ -114,24 +115,34 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       Locator scroll = browserPage.locator(".support-admin-ticket-scroll");
 
       assertTrue((Boolean) scroll.evaluate("area => area.scrollHeight > area.clientHeight"));
+      if (mobile) {
+        assertThat(browserPage.locator("#support-master-detail")).hasAttribute("overlay", "");
+      }
+      String replyDraft = "This unsent reply survives changing ticket pages.";
+      input.fill(replyDraft);
+      if (mobile) {
+        returnToTicketList(browserPage);
+        assertTicketLocation("all", null);
+      }
       rows.last().scrollIntoViewIfNeeded();
 
       assertTrue((Boolean) scroll.evaluate("area => area.scrollTop > 0"));
       assertThat(previous).isDisabled();
       assertThat(next).isEnabled();
       assertThat(paging.locator(".admin-user-pagination-arrow:visible")).hasCount(2);
-      input.fill("This unsent reply survives changing ticket pages.");
       UiActions.complete(browserPage, next::click);
 
       assertThat(previous).isEnabled();
-      assertThat(browserPage.locator("#support-ticket-panel .support-ticket-number"))
-          .hasText(uiTexts.getSupportTicketNumber("#" + numbers.getFirst()));
-      assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
+      if (!mobile) {
+        assertThat(browserPage.locator("#support-ticket-panel .support-ticket-number"))
+            .hasText(uiTexts.getSupportTicketNumber("#" + newestTicket));
+        assertThat(input).hasValue(replyDraft);
+      }
       UiActions.complete(browserPage, previous::click);
 
       assertThat(previous).isDisabled();
       for (int size : new int[] {20, 50, 10}) {
-        if (width == 390) {
+        if (mobile) {
           browserPage.emulateMedia(
               new Page.EmulateMediaOptions().setForcedColors(ForcedColors.ACTIVE));
         }
@@ -144,7 +155,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                         AriaRole.OPTION,
                         new Page.GetByRoleOptions().setName(Integer.toString(size)).setExact(true))
                     .click());
-        if (width == 390) {
+        if (mobile) {
           browserPage.emulateMedia(
               new Page.EmulateMediaOptions().setForcedColors(ForcedColors.NONE));
         }
@@ -154,12 +165,19 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         int total = Integer.parseInt(range.substring(range.lastIndexOf(' ') + 1));
 
         assertThat(rows).hasCount(Math.min(size, total));
-        assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
+        if (!mobile) {
+          assertThat(input).hasValue(replyDraft);
+        }
       }
       AllurePlaywright.attachScreenshot("Vorgänge mit gekürzter Pagination " + width, browserPage);
+      if (mobile) {
+        UiActions.complete(browserPage, () -> ticketCard(browserPage, "#" + newestTicket).click());
+        assertTicketLocation("all", newestTicket);
+        assertThat(input).hasValue(replyDraft);
+      }
       input.clear();
     }
-    verifyLivePaginationAndFilteredDraft(numbers.getFirst());
+    verifyLivePaginationAndFilteredDraft(newestTicket);
   }
 
   private void verifyLivePaginationAndFilteredDraft(String assigned) {
@@ -174,6 +192,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
         assertThat(view.locator("#support-ticket-panel")).isVisible();
         view.locator("#support-reply textarea").fill("Draft retained outside the filtered list.");
+        if (view == mobile) {
+          returnToTicketList(view);
+        }
         view.locator("#support-filter").click();
         Locator filter = view.locator("#support-filter-panel");
         filter
@@ -186,8 +207,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 view.locator(rowSelector)
                     .filter(new Locator.FilterOptions().setHasText("#" + assigned)))
             .hasCount(0);
-        assertThat(view.locator("#support-reply textarea"))
-            .hasValue("Draft retained outside the filtered list.");
+        if (view != mobile) {
+          assertThat(view.locator("#support-reply textarea"))
+              .hasValue("Draft retained outside the filtered list.");
+        }
         Locator next = view.locator("#support-pagination .cosmos-pagination-next");
         Locator range = view.locator("#support-pagination .admin-user-pagination-total");
         String firstRange = range.innerText();
@@ -228,10 +251,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           assertThat(view.locator(rowSelector)).hasCount(remaining == 0 ? 10 : remaining);
           assertThat(view.locator("#support-pagination .cosmos-pagination-next")).isDisabled();
           assertThat(view.locator("#support-active-filter-count")).hasText("1");
-          assertThat(view.locator("#support-reply textarea"))
-              .hasValue("Draft retained outside the filtered list.");
+          if (view != mobile) {
+            assertThat(view.locator("#support-reply textarea"))
+                .hasValue("Draft retained outside the filtered list.");
+          }
         }
       }
+      jumpToTicket(mobile, assigned);
+      assertThat(mobile.locator("#support-reply textarea"))
+          .hasValue("Draft retained outside the filtered list.");
     }
   }
 
@@ -251,11 +279,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 """));
   }
 
-  private void jumpToTicket(String number) {
-    browserPage.locator("#support-filter").click();
-    Locator filter = browserPage.locator("#support-filter-panel");
+  private void returnToTicketList(Page view) {
+    UiActions.complete(view, () -> view.locator("#support-return-to-list").click());
+
+    assertThat(view.locator("#support-ticket-panel")).hasCount(0);
+    assertThat(view.locator("#support-ticket-categories vaadin-tab[selected]")).isFocused();
+  }
+
+  private void jumpToTicket(Page view, String number) {
+    view.locator("#support-filter").click();
+    Locator filter = view.locator("#support-filter-panel");
     filter.locator("#support-jump-number input").fill(number);
-    UiActions.complete(browserPage, () -> filter.locator("#support-jump").click());
+    UiActions.complete(view, () -> filter.locator("#support-jump").click());
 
     assertThat(filter).not().hasAttribute("opened", "");
   }
@@ -301,7 +336,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         assertSupportNavigationActivity(width);
         browserPage.navigate("/admin?section=support");
 
-        assertThat(browserPage.locator("#support-select-ticket")).isVisible();
+        assertThat(browserPage.locator("#support-queue-panel")).isVisible();
         browserPage.locator("#support-filter").click();
         Locator panel = browserPage.locator("#support-filter-panel");
 
@@ -393,6 +428,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
     assertThat(ticketCard(browserPage, number)).not().isVisible();
     assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
+    if (width == 390) {
+      returnToTicketList(browserPage);
+    }
     browserPage.locator("#support-filter").click();
     Locator numberInput = panel.locator("#support-jump-number input");
     numberInput.fill("0");
@@ -409,6 +447,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage)
         .hasURL(Pattern.compile(".*[?&]ticket=" + number.substring(1) + "(?:&.*)?$"));
     assertThat(browserPage.locator("#support-active-filter-count")).not().isVisible();
+    if (width == 390) {
+      returnToTicketList(browserPage);
+    }
     browserPage.locator("#support-filter").click();
     numberInput.click();
 
@@ -1313,6 +1354,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.locator("#support-back").click();
 
     assertThat(browserPage.locator("#account-panel-security")).isVisible();
+    browserPage.setViewportSize(1280, 1000);
     browserPage.navigate("/admin?section=support");
     Locator categories = browserPage.locator("#support-ticket-categories");
     Locator hint = browserPage.locator("#support-select-ticket");
@@ -1348,6 +1390,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     String openNumber = verifyTicketSelectionAfterReload(categories, ticketPanel);
     verifyOpenTicketAndFocusMode(ticketPanel, tools, footer, openNumber);
     String openStatusBackground = verifyAssignedTicketLayout(ticketPanel, tools, footer);
+    verifyMobileTicketDetailReturn(ticketPanel, openNumber);
     verifyTicketHistoryAndInternalEditor(ticketPanel, openStatusBackground);
     browserPage.navigate("/recovery-help");
 
@@ -1390,26 +1433,53 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                     const body = document.querySelector('#support-panel > .account-panel-body').getBoundingClientRect();
                     const tabs = document.querySelector('#support-ticket-categories').getBoundingClientRect();
                     const queue = document.querySelector('.support-admin-queue').getBoundingClientRect();
-                    const detail = document.querySelector('.support-admin-detail-column').getBoundingClientRect();
-                    const hint = document.querySelector('#support-select-ticket').getBoundingClientRect();
+                    const layout = document.querySelector('#support-master-detail');
+                    const bounds = layout.getBoundingClientRect();
+                    const hint = document.querySelector('#support-select-ticket');
+                    const hintBounds = hint.getBoundingClientRect();
                     const tabItems = [...document.querySelectorAll('#support-ticket-categories vaadin-tab')];
                     const tabsFit = tabs.left >= body.left - 1 && tabs.right <= body.right + 1
                         && tabs.height >= 48 && tabItems.every(item => {
                           const rect = item.getBoundingClientRect();
                           return rect.top >= tabs.top - 1 && rect.bottom <= tabs.bottom + 1;
                         });
-                    const columnsFit = body.width >= 820
-                        ? queue.width >= 330 && detail.left >= queue.right + 15
-                        : detail.top >= queue.bottom - 1 && Math.abs(detail.width - queue.width) < 2;
-                    const centered = Math.abs(hint.left + hint.width / 2 - detail.left - detail.width / 2) < 2
-                        && Math.abs(hint.top + hint.height / 2 - detail.top - detail.height / 2) < 2;
-                    return tabsFit && columnsFit && centered
+                    const placeholderVisible = getComputedStyle(hint).visibility === 'visible';
+                    const columnsFit = bounds.width >= 780
+                        ? placeholderVisible && queue.width >= 330 && hintBounds.left >= queue.right + 15
+                            && Math.abs(hintBounds.right - bounds.right) < 2
+                        : !placeholderVisible && Math.abs(queue.width - bounds.width) < 2;
+                    return tabsFit && columnsFit
                         && document.documentElement.scrollWidth <= window.innerWidth;
                   }
                   """));
       AllurePlaywright.attachScreenshot(
           "Ticketübersicht und Auswahlhinweis bei " + width + "px", browserPage);
     }
+  }
+
+  private void verifyMobileTicketDetailReturn(Locator ticketPanel, String ticketNumber) {
+    browserPage.setViewportSize(390, 900);
+    Locator ticketLayout = browserPage.locator("#support-master-detail");
+    Locator replyInput = ticketPanel.locator("#support-reply textarea");
+    Locator returnButton = ticketPanel.locator("#support-return-to-list");
+    String draft = "Unsaved mobile reply";
+
+    assertThat(ticketLayout).hasAttribute("overlay", "");
+    assertThat(returnButton).hasAttribute("aria-label", uiTexts.getSupportReturnToTicketList());
+    assertThat(ticketPanel.locator("#support-focus-toggle")).not().isVisible();
+    replyInput.fill(draft);
+    UiActions.complete(browserPage, () -> replyInput.press("Escape"));
+    assertTicketLocation("all", null);
+
+    assertThat(ticketPanel).hasCount(0);
+    assertThat(browserPage.locator("#support-ticket-categories vaadin-tab[selected]")).isFocused();
+    assertThat(browserPage.locator("#support-select-ticket")).not().isVisible();
+    UiActions.complete(browserPage, () -> ticketCard(browserPage, "#" + ticketNumber).click());
+    assertTicketLocation("all", ticketNumber);
+
+    assertThat(replyInput).hasValue(draft);
+    AllurePlaywright.attachScreenshot("Vorgangsdetail als Overlay bei 390 px", browserPage);
+    replyInput.clear();
   }
 
   private Object selectedTabStyle(Locator tab) {
@@ -1565,7 +1635,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                       const rect = section.getBoundingClientRect();
                       return rect.width > 0 && rect.left >= bounds.left && rect.right <= bounds.right
                           && [...section.querySelectorAll('vaadin-button')].every(button => {
-                            if (button.hidden) return true;
+                            if (button.getClientRects().length === 0) return true;
                             const action = button.getBoundingClientRect();
                             return action.left >= rect.left && action.right <= rect.right;
                           });
@@ -1618,7 +1688,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(ticketPanel.locator(".support-admin-policy-label"))
         .hasText(uiTexts.getSupportSecurityPolicy());
     assertThat(tools.locator("vaadin-switch.cosmos-config-switch")).isVisible();
-    for (int width : new int[] {1280, 390}) {
+    for (int width : new int[] {1280, 1600}) {
       browserPage.setViewportSize(width, 500);
       Locator queueScroll = browserPage.locator(".support-admin-ticket-scroll");
       queueScroll.evaluate("scroller => scroller.scrollTop = scroller.scrollHeight");
