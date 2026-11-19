@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.ViewportSize;
+import java.util.List;
 
-/** Prüft sichtbare Textaktionen im responsiven Raster. */
+/** Prüft Maße und Beschriftungen responsiver Aktionen. */
 public final class ActionGridChecks {
   private ActionGridChecks() {}
 
@@ -51,6 +54,47 @@ public final class ActionGridChecks {
       }
 
       previousButtonBounds = buttonBounds;
+    }
+  }
+
+  public static void assertAtMobileWidths(Page page, Runnable layoutChecks) {
+    ViewportSize originalViewport = page.viewportSize();
+    layoutChecks.run();
+    if (originalViewport.width > 320) {
+      page.setViewportSize(320, originalViewport.height);
+      try {
+        layoutChecks.run();
+      } finally {
+        page.setViewportSize(originalViewport.width, originalViewport.height);
+      }
+    }
+  }
+
+  public static void assertButtonsFillColumn(Locator columnLocator, Locator buttonsLocator) {
+    assertThat(columnLocator).isVisible();
+    assertThat(buttonsLocator.first()).isVisible();
+
+    List<?> columnEdges =
+        (List<?>)
+            columnLocator.evaluate(
+                """
+                column => {
+                  const bounds = column.getBoundingClientRect();
+                  const style = getComputedStyle(column);
+                  return [
+                    bounds.left + parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
+                    bounds.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth)
+                  ];
+                }
+                """);
+    double columnLeft = ((Number) columnEdges.getFirst()).doubleValue();
+    double columnRight = ((Number) columnEdges.getLast()).doubleValue();
+
+    for (Locator buttonLocator : buttonsLocator.all()) {
+      BoundingBox buttonBounds = buttonLocator.boundingBox();
+      assertEquals(columnLeft, buttonBounds.x, 1, "Linker Rand der Aktion");
+      assertEquals(columnRight, buttonBounds.x + buttonBounds.width, 1, "Rechter Rand der Aktion");
+      assertLabelFits(buttonLocator);
     }
   }
 

@@ -1336,6 +1336,20 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipient-
     text-align: left;
 }
 @media (max-width: 600px) {
+    vaadin-app-layout.cosmos-reference-admin
+        .cosmos-admin-section--notifications
+        :is(#admin-notifications-preview, #admin-notifications-send) {
+        width: 100%;
+        min-width: 0;
+        min-height: var(--cosmos-control-height);
+        height: auto;
+        --vaadin-button-label-wrap: normal;
+    }
+    vaadin-app-layout.cosmos-reference-admin
+        .cosmos-admin-section--notifications
+        :is(#admin-notifications-preview, #admin-notifications-send)::part(label) {
+        overflow-wrap: anywhere;
+    }
     vaadin-app-layout.cosmos-reference-admin .cosmos-admin-section--notifications .cosmos-panel-header {
         display: grid;
         grid-template-columns: 40px minmax(0, 1fr);

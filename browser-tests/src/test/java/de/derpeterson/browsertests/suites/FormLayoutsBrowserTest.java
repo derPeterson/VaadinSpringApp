@@ -30,6 +30,7 @@ import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -127,6 +128,17 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     NotificationComposePage notificationComposePage = new NotificationComposePage(browserPage);
     notificationComposePage.open();
     captureFormEvidence("notification-compose", notificationComposePage.root());
+    if (viewportWidth <= 600) {
+      ActionGridChecks.assertAtMobileWidths(
+          browserPage,
+          () -> {
+            for (Locator buttonLocator :
+                List.of(notificationComposePage.review(), notificationComposePage.send())) {
+              ActionGridChecks.assertButtonsFillColumn(
+                  buttonLocator.locator("xpath=.."), buttonLocator);
+            }
+          });
+    }
 
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     adminUsersPage.open();

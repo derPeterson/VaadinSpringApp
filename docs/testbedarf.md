@@ -5,6 +5,19 @@
 Oberflächenprüfungen in DE und EN auf Desktop und schmaler Ansicht ausführen,
 sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter.
 
+- **Anbieterkarten – Abstand zwischen Logo und Text — offen.**
+  OIDC-12 für Google und Microsoft bei 1280 und 390 px ausführen. Erwartet
+  werden 16 bzw. 12 px Abstand und gleich breite Anbieterbuttons.
+
+- **Kontosicherheit – mobile Kartenaktionen an der Textspalte — offen.**
+  OIDC-12, ACCOUNT-CARDS-01 und MFA-21 bei 390 und 320 px prüfen.
+  Passwort und E-Mail ändern, 2FA-Aktionen sowie Konto deaktivieren und
+  löschen beginnen an der Textspalte und zeigen die vollständige Beschriftung.
+
+- **Admin-Benachrichtigungen – mobile Footeraktionen — offen.**
+  In `FormLayoutsBrowserTest` bei 390 und 320 px prüfen, dass „Vorschau prüfen“
+  und „Benachrichtigung senden“ die Innenbreite ihrer Footer füllen und lesbar bleiben.
+
 - **Admin-Vorgangsliste bei 320 px — offen.**
   Direktlink und Auswahl öffnen das scrollbare Detail-Overlay. Button und Escape
   geben den Fokus an den Kategorienreiter zurück und entfernen nur die Ticketnummer

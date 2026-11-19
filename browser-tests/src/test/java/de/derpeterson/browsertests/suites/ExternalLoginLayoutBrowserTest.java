@@ -127,6 +127,19 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
           await loaded;
         }
         """);
+    if (width <= 600) {
+      ActionGridChecks.assertAtMobileWidths(
+          browserPage,
+          () -> {
+            for (String actionButtonId :
+                List.of("account-password-edit-security", "account-email-edit-security")) {
+              Locator actionButtonLocator = browserPage.locator("#" + actionButtonId);
+              Locator cardTextLocator =
+                  actionButtonLocator.locator("xpath=..").locator(".account-entry-copy");
+              ActionGridChecks.assertButtonsFillColumn(cardTextLocator, actionButtonLocator);
+            }
+          });
+    }
     attachPanels("Kontosicherheit: Portalzugang bei " + width + " px");
     portalTab.focus();
     portalTab.press("End");
@@ -252,6 +265,17 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         microsoft.boundingBox().width > 110,
         "Anbieteraktionen erhalten ihre eigene natürliche Breite statt der Änderungsbreite");
     for (Locator button : List.of(google, microsoft)) {
+      Locator providerRowLocator = button.locator("xpath=..");
+      BoundingBox providerLogoBounds =
+          providerRowLocator.locator(".cosmos-panel-icon").boundingBox();
+      BoundingBox providerTextBounds =
+          providerRowLocator.locator(".external-connection-copy").boundingBox();
+
+      assertEquals(
+          width <= 600 ? 12 : 16,
+          providerTextBounds.x - (providerLogoBounds.x + providerLogoBounds.width),
+          1,
+          "Abstand zwischen Anbieterlogo und Text bei " + button.getAttribute("id"));
       ActionGridChecks.assertLabelFits(button);
     }
 

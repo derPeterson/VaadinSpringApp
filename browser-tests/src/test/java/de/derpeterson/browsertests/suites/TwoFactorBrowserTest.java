@@ -509,8 +509,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.browserPage).selectTestLanguage();
       actor.browserPage.navigate("/account?section=security&tab=portal");
-      ActionGridChecks.assertActions(
-          actor.browserPage.locator(".two-factor-account-actions"), 1, width <= 600);
+      assertTwoFactorAccountActions(actor.browserPage, 1);
       actor.browserPage.locator("#account-two-factor-setup").click();
       actor
           .browserPage
@@ -519,8 +518,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.browserPage.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.browserPage, email, false);
 
-      ActionGridChecks.assertActions(
-          actor.browserPage.locator(".two-factor-account-actions"), 3, width <= 600);
+      assertTwoFactorAccountActions(actor.browserPage, 3);
       actor.browserPage.locator("#account-two-factor-replace").click();
       AccountFormAppearanceChecks.assertEqualDialogActions(
           actor.browserPage,
@@ -580,6 +578,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       checkOtpInputAndConfirm(actor.browserPage, adminEmail, "two-factor-code", true);
       actor.browserPage.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
       signOutToLogin(actor.browserPage);
+    }
+  }
+
+  private void assertTwoFactorAccountActions(Page actor, int actionCount) {
+    Locator actionsLocator = actor.locator(".two-factor-account-actions");
+    boolean mobile = actor.viewportSize().width <= 600;
+    ActionGridChecks.assertActions(actionsLocator, actionCount, mobile);
+    if (mobile) {
+      Locator cardTextLocator = actor.locator(".two-factor-account-entry > .account-entry-copy");
+      Locator buttonsLocator = actionsLocator.locator(":scope > vaadin-button");
+      ActionGridChecks.assertAtMobileWidths(
+          actor, () -> ActionGridChecks.assertButtonsFillColumn(cardTextLocator, buttonsLocator));
     }
   }
 

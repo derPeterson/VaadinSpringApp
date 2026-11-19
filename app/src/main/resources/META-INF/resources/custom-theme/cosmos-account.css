@@ -1224,15 +1224,28 @@ vaadin-form-layout.account-profile-form {
     max-width: 100%;
 }
 @media (max-width: 600px) {
-    .account-lifecycle-action {
-        flex-wrap: wrap;
-        justify-content: flex-end;
+    .cosmos-reference-portal
+        #account-panel-security
+        :is(#account-security-portal, .account-lifecycle-overview)
+        .account-entry
+        > vaadin-button {
+        grid-column: 2;
+        width: 100%;
+        min-width: 0;
+        min-height: var(--cosmos-control-height);
+        height: auto;
+        --vaadin-button-label-wrap: normal;
     }
-    .account-lifecycle-action > .account-lifecycle-copy {
-        flex-basis: calc(100% - var(--cosmos-panel-icon-size-small) - var(--cosmos-space-m));
+    .cosmos-reference-portal
+        #account-panel-security
+        :is(#account-security-portal, .account-lifecycle-overview)
+        .account-entry
+        > vaadin-button::part(label) {
+        overflow-wrap: anywhere;
     }
-    .account-lifecycle-action > vaadin-button {
-        margin-inline-start: auto;
+    .cosmos-reference-portal #account-panel-security .account-entry.account-lifecycle-action {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
     }
 }
 .account-lifecycle-deactivate .account-change-dialog-header > .cosmos-panel-icon {

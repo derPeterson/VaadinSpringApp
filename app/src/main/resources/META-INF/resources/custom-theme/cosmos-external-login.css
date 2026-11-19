@@ -45,7 +45,8 @@
 }
 .external-connections-overview {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) fit-content(40%);
+    /* Die Logospalte nimmt auch den Innenabstand und Rahmen der Karten auf. */
+    grid-template-columns: max-content minmax(0, 1fr) fit-content(40%);
     gap: 16px;
     padding: 24px;
 }
@@ -148,7 +149,7 @@
 }
 @media (max-width: 600px) {
     .external-connections-overview {
-        grid-template-columns: 32px minmax(0, 1fr);
+        grid-template-columns: max-content minmax(0, 1fr);
         column-gap: 12px;
         padding: 20px;
     }

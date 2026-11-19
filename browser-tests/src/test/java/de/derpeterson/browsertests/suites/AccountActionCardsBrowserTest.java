@@ -10,6 +10,7 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -70,21 +71,27 @@ public class AccountActionCardsBrowserTest extends BrowserFixture {
           AttachmentOptions.empty());
 
       if (viewportWidth <= 600) {
-        assertTrue(
-            (boolean)
-                actionCardLocator.evaluate(
-                    """
-                    card => {
-                      const cardBounds = card.getBoundingClientRect();
-                      const buttonBounds = card.querySelector('vaadin-button').getBoundingClientRect();
-                      const style = getComputedStyle(card);
-                      const rightEdge = cardBounds.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
-                      const bottomEdge = cardBounds.bottom - parseFloat(style.paddingBottom) - parseFloat(style.borderBottomWidth);
-                      return Math.abs(buttonBounds.right - rightEdge) < 1
-                          && Math.abs(buttonBounds.bottom - bottomEdge) < 1;
-                    }
-                    """),
-            "Die mobile Kontoaktion muss innerhalb der Kartenabstände rechts stehen.");
+        ActionGridChecks.assertAtMobileWidths(
+            browserPage,
+            () -> {
+              ActionGridChecks.assertButtonsFillColumn(
+                  actionCardLocator.locator(".account-lifecycle-copy"), actionButtonLocator);
+              assertTrue(
+                  (boolean)
+                      actionCardLocator.evaluate(
+                          """
+                          card => {
+                            const cardBounds = card.getBoundingClientRect();
+                            const buttonBounds = card.querySelector('vaadin-button').getBoundingClientRect();
+                            const style = getComputedStyle(card);
+                            const rightEdge = cardBounds.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
+                            const bottomEdge = cardBounds.bottom - parseFloat(style.paddingBottom) - parseFloat(style.borderBottomWidth);
+                            return Math.abs(buttonBounds.right - rightEdge) < 1
+                              && Math.abs(buttonBounds.bottom - bottomEdge) < 1;
+                          }
+                          """),
+                  "Die mobile Kontoaktion endet am rechten und unteren Innenrand der Karte.");
+            });
       }
 
       actionButtonLocator.click();
