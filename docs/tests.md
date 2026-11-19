@@ -47,11 +47,16 @@ erwartetes Verhalten sowie Zustand offen oder wartend mit Grund. Geeignete vorha
 Tests berücksichtigen, ähnliche Aufgaben zusammenführen und bestehende Einträge erhalten.
 Eine Testaufgabe darf auch älter als der letzte Git-Vergleichsstand sein.
 
-Der Agent liest die Liste bei der großen Testrunde, prüft vorhandene Abdeckung,
-ergänzt oder korrigiert geeignete Tests und lässt sie ausführen. Playwright führt die
-Browserfälle aus; es wertet diese Aufgabenliste nicht selbst aus. Erst nach passender
-Implementierung und erfolgreichen Nachweisen den Eintrag entfernen. Bei Browserfällen
-gehören DE und EN dazu. Schon passende vorhandene Tests nachweisen, keine Duplikate anlegen.
+Bei der großen Testrunde ist diese Liste die Arbeitsliste. Vor dem Gesamtlauf
+jeden Eintrag mit den vorhandenen Tests und Ergebnissen abgleichen. Bekannte
+Fehlschläge gezielt reproduzieren, die Ursache in Anwendung oder Test beheben
+und nachprüfen. Geeignete vorhandene Tests wiederverwenden und fehlende
+Abdeckung in den passenden Suiten ergänzen.
+
+Beim Abschlussreview jeden Eintrag erneut mit den tatsächlichen Ergebnissen
+abgleichen. Vollständig belegte Punkte streichen, teilweise belegte auf die
+fehlenden Prüfschritte kürzen und bei blockierten Fällen Befund und nötigen
+Nachtest festhalten. Für Browserfälle gehören DE und EN zum Nachweis.
 
 Erfordert eine Aufgabe zuvor eine neue Fachentscheidung oder einen grundlegenden
 Umbau, gezielt fragen. Ohne Antwort bleibt sie mit Grund wartend; unabhängige Arbeiten
