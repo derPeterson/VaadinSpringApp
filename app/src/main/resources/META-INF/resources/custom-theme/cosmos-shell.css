@@ -1655,7 +1655,7 @@ vaadin-select[theme~="cosmos-reference"][theme~="cosmos-status"] vaadin-select-l
     display: block;
 }
 
-.cosmos-reference-overlay .portal-menu-footer > .portal-menu-logout {
+.cosmos-reference-overlay .portal-menu-footer > vaadin-button.portal-menu-action.portal-menu-logout {
     color: var(--cosmos-error-color);
     margin-inline-start: auto;
 }
