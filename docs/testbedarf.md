@@ -2,8 +2,8 @@
 
 ## Browser-Tests
 
-Die bisherigen manuellen Abnahmen gelten weiter. Die offenen automatisierten
-Nachtests sind für die große Testrunde gesammelt.
+Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
+bleiben bis zur erfolgreichen Prüfung offen.
 
 - **Badge- und Formulargrößen — offen.**
   In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und

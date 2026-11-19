@@ -12,18 +12,8 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 ## Offene Komponentenpakete
 
 Die bisherigen Nachbearbeitungen einschließlich AvatarGroup und Empfängerliste
-sind vom Benutzer abgenommen. Im [Nachbearbeitungsplan](vaadin-nachbearbeitung.md)
-stehen die abgestimmten Größen-/Gestaltungsvorgaben zu Badges, Eingaben,
-Buttons und Formularschrift aus Punkten 1–2. Die Abarbeitungsliste wird noch
-gesammelt; deren Umsetzung erst nach ausdrücklicher Startfreigabe beginnen.
-Der anschließende Ablauf steht ebenfalls dort: Merge nach `main`, Sonar-Analyse
-und vollständige Bereinigung mit bestätigenden Nachscans, danach neuer Folgebranch
-`codex/vaadin-komponenten-folgearbeiten-6`. Als abschließende Umsetzungsprüfung folgt dort die große
-Testrunde einschließlich aller offenen automatisierten Testbedarfsfälle.
-Danach ausschließlich die vereinbarten Analysen zu Teststrategie, verbleibenden
-Vaadin-Kandidaten und CSS-Wiederverwendung einschließlich isolierter Machbarkeitsversuche
-durchführen; keine daraus abgeleitete dauerhafte Umsetzung vorwegnehmen.
-Dies schließt die Gesamtumsetzung nicht automatisch ab.
+sind vom Benutzer abgenommen. Die geltenden Größen und Schriftwerte für Badges,
+Eingaben und Buttons stehen in der [Theme-Anleitung](../theme.md).
 Die eigene Ticketliste der Wiederherstellungsanfrage ist zusätzlich auf VirtualList
 mit höchstens fünf sichtbaren Zeilen umgestellt und vom Benutzer abgenommen.
 Die jüngsten Auswahl-, Zeilenflächen- und Leerzustandsänderungen an Ticket- und
@@ -37,8 +27,8 @@ bleiben unabhängig von der menschlichen Abnahme im Testbedarf offen.
 
 Die Gesamtumsetzung bleibt ausdrücklich offen. Der bisherige Komponentenstand
 liegt auf `main`; die Integration war kein Featureabschluss.
-Aktueller Folgebranch: `codex/vaadin-komponenten-folgearbeiten-5`, angelegt von
-main bei `b4502e6fb73c72a389677702fefa9f5e7ee24b6b`.
+Der aktuelle Folgebranch `codex/vaadin-komponenten-folgearbeiten-6` wurde vom
+lokalen `main` bei `aa9c70fa` angelegt.
 Globale Notifications mit responsiver nativer Position, Aura-Innenabstand und
 einheitlichen Warn-/Fehlersymbolen einschließlich der übrigen Einsatzstellen sind
 umgesetzt und vom Benutzer abgenommen. Die automatisierten Browsernachtests bleiben
@@ -55,8 +45,8 @@ Die bisherigen Formularnachbearbeitungen sind abgenommen. Eventuelle weitere
 Kandidaten wie externer Registrierungsabschluss und Konto-/Passwortdialoge nur
 bei einem konkreten neuen Auftrag untersuchen. Mail-Test, Benachrichtigungs- und
 Ticketformulare sind bereits im abgenommenen Nachbearbeitungspaket enthalten;
-sie sind keine erneut offenen Umsetzungspunkte. Automatisierte Nachtests bleiben
-für die große Testrunde im zentralen Testbedarf erhalten.
+sie sind keine erneut offenen Umsetzungspunkte. Die offenen automatisierten
+Nachtests stehen im zentralen Testbedarf.
 
 Die vereinheitlichten nativen Löschkreuze und Pflichtfeldindikatoren sind vom
 Benutzer abgenommen; der gemeinsame Vertrag steht in der Theme-Anleitung,

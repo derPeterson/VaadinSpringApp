@@ -7,26 +7,8 @@
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Die Gesamtumsetzung bleibt ausdrücklich offen und wird auf
-  `codex/vaadin-komponenten-folgearbeiten-5` fortgesetzt.
-  [Neue Nachbearbeitung und Folgeablauf](docs/planung/vaadin-nachbearbeitung.md):
-  Die Größen-/Gestaltungsvorgaben aus Punkten 1 und 2 sind abgestimmt;
-  Umsetzung erst nach Startfreigabe der gesammelten Abarbeitungsliste beginnen.
-  Danach lokaler Merge nach `main`, vollständige Sonar-Bereinigung bis null offene
-  Findings und grünem Quality Gate, anschließend Folgebranch
-  `codex/vaadin-komponenten-folgearbeiten-6` vom aktuellen `main`.
-  Auf dem neuen Folgebranch abschließend die große Testrunde einschließlich
-  sämtlicher offener automatisierter Testbedarfsfälle durchführen.
-  Erst danach den bestehenden Testumfang auf funktionalen Nutzen und zu kleinteilige
-  Gestaltungsprüfungen analysieren; Empfehlungen vorlegen, noch keine Tests umbauen.
-  Anschließend verbleibende Vaadin-Kandidaten nach konkretem Nutzen, Gesamtaufwand
-  und Risiko bewerten und eine klare Abschlussgrenze für den Komponenten-/
-  Gestaltungsumbau vorschlagen; keine weiteren Umbauten automatisch beginnen.
-  Danach die CSS-Wiederverwendung gründlich analysieren und ein schrittweises
-  Vorgehen für gemeinsame Grundregeln, Varianten und lokale Anordnung vorschlagen.
-  Eine spätere Strukturbereinigung muss Darstellung und Verhalten nachweisbar
-  erhalten. Isolierte temporäre Machbarkeitsversuche samt gezielten DE-/EN-Vorher-/
-  Nachher-Browserprüfungen sind dafür freigegeben; noch keine dauerhafte CSS-Umstellung.
+  Die Gesamtumsetzung bleibt offen. Der aktuelle Stand liegt auf
+  `codex/vaadin-komponenten-folgearbeiten-6`.
   Nächste Ansichten und ihren Umfang anhand des Komponentenplans gemeinsam festlegen.
   Als nächste Kandidaten vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
   gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
@@ -60,9 +42,8 @@
   ergänzend und welche für die Bedienung nötig sind und wie diese auf
   Touch-Geräten zugänglich sein sollen. Vorhandene native Feldhilfen und andere
   passende Vaadin-Möglichkeiten berücksichtigen; keine pauschalen zusätzlichen
-  Info-Buttons einführen. Eigenständige spätere Aufgabe, keine Umsetzung im
-  aktuellen Nachbearbeitungspaket. Bei langen Benutzerangaben bleiben vorerst
-  Kürzung und normale Tooltips wie abgestimmt.
+  Info-Buttons einführen. Eigenständige spätere Aufgabe. Bei langen Benutzerangaben
+  bleiben vorerst Kürzung und normale Tooltips wie abgestimmt.
 
 - [ ] Eine sichtbare Verlaufsliste für Bereinigungsläufe der E-Mail-Queue gemeinsam
   entwerfen. Darstellung, Umfang und Bedienung vor der Umsetzung abstimmen.
