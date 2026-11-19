@@ -15,7 +15,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.List;
 import java.util.Objects;
@@ -107,7 +106,6 @@ public final class NotificationReadAllConfirmationDialog extends ConfirmDialog {
     setConfirmButton(confirmReadAllButton);
     addConfirmListener(confirmEvent -> runPendingReadAllAction());
     addCancelListener(cancelEvent -> close());
-    EqualButtonWidths.configureEqualButtonWidths(this);
   }
 
   private void configureDialogDismissal() {

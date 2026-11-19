@@ -47,31 +47,35 @@
 }
 
 .cosmos-native-confirmation::part(footer) {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 200px));
+    justify-content: end;
+    gap: var(--cosmos-space-s);
+    box-sizing: border-box;
+    width: 100%;
+    margin-inline-start: 0;
     padding: 16px 24px;
     border-top: 1px solid var(--cosmos-border-color);
     background: var(--cosmos-raised-background);
 }
 
-.cosmos-native-confirmation::part(cancel-button),
-.cosmos-native-confirmation::part(confirm-button) {
-    flex: none;
-    max-width: 100%;
+.cosmos-native-confirmation > vaadin-button:is([slot="cancel-button"], [slot="confirm-button"]) {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--cosmos-control-height);
+    height: auto;
+    margin: 0;
+    --vaadin-button-label-wrap: normal;
+}
+
+.cosmos-native-confirmation > vaadin-button:is([slot="cancel-button"], [slot="confirm-button"])::part(label) {
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 639px) {
     .cosmos-native-confirmation::part(footer) {
         padding: 14px 16px;
     }
-}
-
-.cosmos-native-confirmation .cosmos-confirmation-action {
-    flex: none;
-    min-width: 0;
-    margin: 0;
 }
 
 .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer) {
@@ -84,7 +88,6 @@
 
 .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(cancel-button) {
     order: 1;
-    margin-inline-start: auto;
 }
 
 @media (max-width: 639px) {
@@ -114,18 +117,13 @@
 }
 
 @media (max-width: 600px) {
-    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation,
-    .portal-other-sessions-confirmation.cosmos-native-confirmation {
-        --cosmos-equal-button-width: 100%;
+    .cosmos-native-confirmation:is(.cosmos-unsaved-changes-dialog, .portal-other-sessions-confirmation)::part(footer) {
+        grid-template-columns: minmax(0, 1fr);
     }
+}
 
-    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer),
-    .portal-other-sessions-confirmation.cosmos-native-confirmation::part(footer) {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(cancel-button) {
-        margin-inline-start: 0;
+@media (max-width: 479px) {
+    .cosmos-native-confirmation::part(footer) {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

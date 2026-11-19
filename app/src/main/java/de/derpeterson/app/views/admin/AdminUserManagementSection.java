@@ -740,7 +740,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     confirmUserDeletionButton.addClassName("cosmos-confirmation-action");
     deleteUserDialog.setCancelButton(cancelUserDeletionButton);
     deleteUserDialog.setConfirmButton(confirmUserDeletionButton);
-    EqualButtonWidths.configureEqualButtonWidths(deleteUserDialog);
+
     deleteUserDialog.addCancelListener(event -> {
       deletionPending.set(false);
       deleteUserDialog.close();

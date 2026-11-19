@@ -1952,12 +1952,16 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(footer
     justify-content: flex-end;
 }
 
-.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button,
-.portal-notification-confirmation.cosmos-native-confirmation > vaadin-button.cosmos-confirmation-action {
+.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button {
     width: auto;
     min-width: 112px;
-    padding-inline: 12px;
     white-space: nowrap;
+}
+
+.portal-notification-confirmation .cosmos-dialog-actions > vaadin-button,
+.portal-notification-confirmation.cosmos-native-confirmation
+    > vaadin-button:is(.cosmos-confirmation-action, .notification-read-all-action) {
+    padding-inline: 12px;
 }
 
 .portal-notification-confirmation .cosmos-dialog-actions > vaadin-button > vaadin-icon,
@@ -1988,13 +1992,6 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(footer
 
 .portal-notification-confirmation:not(.portal-confirm-destructive) .cosmos-dialog-actions > vaadin-button {
     width: auto;
-}
-
-.notification-read-all-confirmation .notification-read-all-action {
-    min-width: 112px;
-    margin: 0;
-    padding-inline: 12px;
-    white-space: nowrap;
 }
 
 .notification-read-all-confirmation .notification-read-all-action > vaadin-icon {

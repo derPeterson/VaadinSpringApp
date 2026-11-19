@@ -5,6 +5,14 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **Gleich breite Aktionen in nativen Bestätigungsdialogen — offen.**
+  Suite `native-confirmations` in DE/EN ausführen. Der Footer zeigt bei
+  1280 px zwei gleich breite Aktionen nebeneinander. Bei 390 und 320 px
+  stehen beide in voller Breite untereinander, mit lesbaren Beschriftungen.
+  Formularschutz und „Alle anderen abmelden“ wechseln bereits bis 600 px
+  zur Anordnung untereinander. Beim Formularschutz bleiben Reihenfolge und
+  Anfangsfokus erhalten. Abbruch und Bestätigung weiterhin fachlich prüfen.
+
 - **Gleich breite Aktionen in Konto- und Identitätsdialogen — offen.**
   `FormLayoutsBrowserTest` (E-Mail, Passwort, Google verbinden), AVATAR-01
   (Profilbild), ACCOUNT-CARDS-01 (Konto deaktivieren oder löschen) und MFA-21

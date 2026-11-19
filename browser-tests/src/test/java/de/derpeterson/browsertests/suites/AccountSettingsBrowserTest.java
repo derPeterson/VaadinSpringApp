@@ -420,8 +420,6 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .isFocused();
     AllurePlaywright.attachScreenshot(
         "Formularschutz im Konto bei " + viewportWidth + " px", browserPage);
-    ConfirmationAppearanceChecks.assertMobileFullWidthActions(
-        browserPage, unsavedChangesPrompt.root());
     discardButtonLocator.hover();
     assertThat(discardButtonLocator).hasCSS("border-color", "rgb(251, 191, 36)");
     keepEditingButtonLocator.hover();

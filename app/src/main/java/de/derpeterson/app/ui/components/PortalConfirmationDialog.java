@@ -18,7 +18,6 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -178,8 +177,6 @@ public class PortalConfirmationDialog extends ConfirmDialog {
       confirmButton.setPrefixComponent(AppIcon.ANGLE_RIGHT.create());
       confirmButton.getElement().setAttribute("autofocus", true);
     }
-
-    EqualButtonWidths.configureEqualButtonWidths(this);
   }
 
   /** Schließen und Escape behalten den Entwurf; ausschließlich die linke Aktion verwirft ihn. */

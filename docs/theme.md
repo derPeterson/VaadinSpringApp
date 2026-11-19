@@ -411,11 +411,17 @@ und Zwei-Faktor-Bestätigung. Bis 479 px stehen die Aktionen in voller
 Breite untereinander. Die Beschriftungen können umbrechen. Im
 Profilbilddialog bleibt „Bild löschen“ eine eigene Aktion außerhalb des Grids.
 
+Native Bestätigungsdialoge ordnen die beiden Aktionen in
+`cosmos-confirmation.css` über den öffentlichen Footer-Part als CSS Grid an.
+Auf breiten Ansichten sind beide Spalten gleich breit und höchstens 200 px
+breit. Bis 479 px stehen die Aktionen in voller Breite untereinander.
+Die Beschriftungen können umbrechen.
+
 Beim Formularschutz steht auf Desktop Verwerfen links und Weiterbearbeiten rechts.
-Bis 600 px stehen beide in dieser Reihenfolge untereinander in voller Breite;
-Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls mobile
-Vollbreite. Der Browserhinweis bei F5/Tab-Schließen ist ein separater Schutz:
-[Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
+Formularschutz und „Alle anderen abmelden“ wechseln bereits bis 600 px zur
+Anordnung untereinander. Beim Formularschutz erhält Weiterbearbeiten den
+Anfangsfokus. Der Browserhinweis bei F5 oder beim Schließen eines Tabs schützt
+ebenfalls [ungespeicherte Änderungen](anwendung.md#ungespeicherte-formularänderungen).
 
 Mitteilungskarten verwenden einheitliche Innenabstände: Gesamtübersicht und
 geöffneter Dialog L, kompakte Glockenvorschau M. Der zusätzliche linke Statusrahmen

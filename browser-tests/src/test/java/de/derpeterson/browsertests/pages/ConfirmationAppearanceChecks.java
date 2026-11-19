@@ -8,53 +8,100 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
+import com.microsoft.playwright.options.ViewportSize;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import java.io.ByteArrayInputStream;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /** Sichert dieselben sichtbaren Dialogzonen vor und nach der nativen Übernahme. */
 public final class ConfirmationAppearanceChecks {
   private ConfirmationAppearanceChecks() {}
 
-  /** Prüft die Aktionsbreite innerhalb der vorhandenen nativen Footer-Innenabstände. */
-  public static void assertMobileFullWidthActions(
-      Page browserPage, Locator confirmationDialogLocator) {
-    if (browserPage.viewportSize().width > 600) {
-      return;
-    }
+  private static void assertActionLayout(Locator confirmationDialogLocator, int viewportWidth) {
     Locator footerLocator =
-        confirmationDialogLocator.locator("[part=overlay]").first().locator("[part=footer]");
-    Locator actionButtonsLocator = confirmationDialogLocator.locator(".cosmos-confirmation-action");
-    assertThat(actionButtonsLocator).hasCount(2);
-    double availableWidth =
-        ((Number)
-                footerLocator.evaluate(
-                    "element => element.clientWidth - parseFloat(getComputedStyle(element).paddingLeft) - parseFloat(getComputedStyle(element).paddingRight)"))
-            .doubleValue();
-    double expectedLeft =
-        footerLocator.boundingBox().x
-            + ((Number)
-                    footerLocator.evaluate(
-                        "element => parseFloat(getComputedStyle(element).paddingLeft)"))
-                .doubleValue();
-    double rowGap =
-        ((Number) footerLocator.evaluate("element => parseFloat(getComputedStyle(element).rowGap)"))
-            .doubleValue();
-    BoundingBox firstActionBounds = actionButtonsLocator.nth(0).boundingBox();
-    BoundingBox secondActionBounds = actionButtonsLocator.nth(1).boundingBox();
-    assertEquals(availableWidth, firstActionBounds.width, 1);
-    assertEquals(availableWidth, secondActionBounds.width, 1);
-    assertEquals(expectedLeft, firstActionBounds.x, 1);
-    assertEquals(expectedLeft, secondActionBounds.x, 1);
-    assertEquals(firstActionBounds.height, secondActionBounds.height, 1);
-    assertEquals(
-        rowGap, Math.abs(secondActionBounds.y - firstActionBounds.y) - firstActionBounds.height, 1);
+        confirmationDialogLocator.locator("[part~='overlay'] > [part~='footer']");
+    Locator cancelButtonLocator =
+        confirmationDialogLocator.locator("vaadin-button[slot=cancel-button]");
+    Locator confirmButtonLocator =
+        confirmationDialogLocator.locator("vaadin-button[slot=confirm-button]");
+    boolean discardsFirst =
+        (Boolean)
+            confirmationDialogLocator.evaluate(
+                "dialog => dialog.matches('.cosmos-unsaved-changes-dialog')");
+    boolean stacksAt600 =
+        discardsFirst
+            || (Boolean)
+                confirmationDialogLocator.evaluate(
+                    "dialog => dialog.matches('.portal-other-sessions-confirmation')");
+    Locator firstButtonLocator = discardsFirst ? confirmButtonLocator : cancelButtonLocator;
+    Locator secondButtonLocator = discardsFirst ? cancelButtonLocator : confirmButtonLocator;
+
+    assertThat(footerLocator).hasCSS("display", "grid");
+    for (Locator buttonLocator : List.of(firstButtonLocator, secondButtonLocator)) {
+      assertThat(buttonLocator).isVisible();
+      assertThat(buttonLocator).hasText(Pattern.compile("\\S"));
+
+      Locator labelLocator = buttonLocator.locator("[part~='label']");
+      assertThat(labelLocator).isVisible();
+      assertTrue(
+          (Boolean)
+              labelLocator.evaluate(
+                  """
+                  label => label.scrollWidth <= label.clientWidth + 1
+                    && label.scrollHeight <= label.clientHeight + 1
+                  """));
+    }
+
+    BoundingBox firstButtonBounds = firstButtonLocator.boundingBox();
+    BoundingBox secondButtonBounds = secondButtonLocator.boundingBox();
+    assertEquals(firstButtonBounds.width, secondButtonBounds.width, 1);
+
+    if (viewportWidth <= (stacksAt600 ? 600 : 479)) {
+      double availableWidth =
+          ((Number)
+                  footerLocator.evaluate(
+                      """
+                      footer => {
+                        const style = getComputedStyle(footer);
+                        return footer.clientWidth - parseFloat(style.paddingLeft)
+                          - parseFloat(style.paddingRight);
+                      }
+                      """))
+              .doubleValue();
+      assertEquals(availableWidth, firstButtonBounds.width, 1);
+      assertEquals(firstButtonBounds.x, secondButtonBounds.x, 1);
+      double rowGap =
+          ((Number) footerLocator.evaluate("footer => parseFloat(getComputedStyle(footer).rowGap)"))
+              .doubleValue();
+      assertEquals(
+          rowGap, secondButtonBounds.y - firstButtonBounds.y - firstButtonBounds.height, 1);
+    } else {
+      assertEquals(
+          firstButtonBounds.y + firstButtonBounds.height / 2,
+          secondButtonBounds.y + secondButtonBounds.height / 2,
+          1);
+      assertTrue(firstButtonBounds.x + firstButtonBounds.width <= secondButtonBounds.x);
+    }
   }
 
   public static void capture(Page browserPage, Locator confirmationDialogLocator, String caseName) {
     Locator overlayLocator = confirmationDialogLocator.locator("[part~='overlay']").first();
     assertThat(overlayLocator).isVisible();
     browserPage.evaluate("() => document.fonts.ready");
+
+    ViewportSize viewportSize = browserPage.viewportSize();
+    assertActionLayout(confirmationDialogLocator, viewportSize.width);
+    if (viewportSize.width == 390) {
+      browserPage.setViewportSize(320, viewportSize.height);
+      try {
+        assertActionLayout(confirmationDialogLocator, 320);
+      } finally {
+        browserPage.setViewportSize(viewportSize.width, viewportSize.height);
+      }
+    }
+
     browserPage.mouse().move(0, 0);
     String evidenceName = caseName + " " + browserPage.viewportSize().width;
     Allure.attachment(
