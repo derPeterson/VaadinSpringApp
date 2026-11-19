@@ -5,6 +5,12 @@
 Die bisherigen manuellen Abnahmen gelten weiter. Die automatisierten Nachtests
 bleiben bis zur erfolgreichen Prüfung offen.
 
+- **Gleich breite Aktionen im E-Mail-Änderungsdialog — offen.**
+  `FormLayoutsBrowserTest` in DE/EN ausführen. Bei 1280 px stehen Abbrechen
+  und Bestätigen gleich breit nebeneinander. Bei 390 und 320 px stehen beide
+  in voller Breite untereinander. Beschriftungen bleiben vollständig lesbar,
+  und der Footer verwendet sein CSS Grid.
+
 - **Admin-Vorgangsliste mit MasterDetailLayout — offen.**
   MFA-19, MFA-22 und MFA-23 in DE/EN prüfen. Auf breiten Ansichten Liste und
   Detail nebeneinander, Auswahlhinweis und Fokusmodus vergleichen. Bei 390 und

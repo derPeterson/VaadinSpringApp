@@ -403,6 +403,10 @@ Benutzerlöschung verwenden `ConfirmDialog`. Formular-/Identitätsdialoge bleibe
 Sprachwechsel, Sichtbarkeit und verfügbare Breite werden berücksichtigt; Iconbuttons
 zählen nicht. Mobile Vollbreite wird am zuständigen Container gesetzt.
 
+Im Dialog „E-Mail-Adresse ändern“ ordnet `cosmos-account.css` die beiden
+Footer-Aktionen in gleich breiten CSS-Grid-Spalten an. Bis 479 px stehen sie
+in voller Breite untereinander. Die Beschriftungen können umbrechen.
+
 Beim Formularschutz steht auf Desktop Verwerfen links und Weiterbearbeiten rechts.
 Bis 600 px stehen beide in dieser Reihenfolge untereinander in voller Breite;
 Anfangsfokus ist Weiterbearbeiten. „Alle anderen abmelden“ nutzt ebenfalls mobile

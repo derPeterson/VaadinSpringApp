@@ -21,7 +21,6 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableConsumer;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -128,8 +127,8 @@ public class AccountEmailChangeDialog extends Dialog {
 
     Div dialogActionsDiv = new Div(cancelEmailChangeButton, requestEmailChangeButton);
     dialogActionsDiv.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
     getFooter().add(dialogActionsDiv);
+
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         clearDraft();

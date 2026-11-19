@@ -187,8 +187,14 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     browserPage.locator("#account-password-cancel").click();
 
     accountSecurityPage.openEmail();
+    assertEmailDialogActionLayout(viewportWidth <= 479);
     captureFormEvidence(
         "account-email", browserPage.locator("#account-email-change-dialog .cosmos-dialog-form"));
+    if (viewportWidth == 390) {
+      browserPage.setViewportSize(320, 844);
+      assertEmailDialogActionLayout(true);
+      browserPage.setViewportSize(viewportWidth, 844);
+    }
     browserPage.locator("#account-email-cancel").click();
 
     browserPage.locator("#account-security-tab-providers").click();
@@ -197,6 +203,44 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
         "account-provider-proof",
         browserPage.locator("#external-identity-dialog .cosmos-dialog-form"));
     browserPage.locator("#external-proof-cancel").click();
+  }
+
+  private void assertEmailDialogActionLayout(boolean stacked) {
+    Locator emailDialogLocator = browserPage.locator("#account-email-change-dialog");
+    Locator actionsLocator = emailDialogLocator.locator(".cosmos-dialog-actions");
+    Locator cancelButtonLocator = actionsLocator.locator("#account-email-cancel");
+    Locator requestButtonLocator = actionsLocator.locator("#account-email-request");
+
+    assertThat(actionsLocator).hasCSS("display", "grid");
+    assertThat(cancelButtonLocator).hasText(uiTexts.getAdminUsersCancel());
+    assertThat(requestButtonLocator).hasText(uiTexts.getAccountEmailDialogRequest());
+
+    BoundingBox actionsBounds = actionsLocator.boundingBox();
+    BoundingBox cancelBounds = cancelButtonLocator.boundingBox();
+    BoundingBox requestBounds = requestButtonLocator.boundingBox();
+
+    assertEquals(cancelBounds.width, requestBounds.width, 1);
+    if (stacked) {
+      assertEquals(actionsBounds.width, cancelBounds.width, 1);
+      assertEquals(cancelBounds.x, requestBounds.x, 1);
+      assertTrue(cancelBounds.y + cancelBounds.height <= requestBounds.y);
+    } else {
+      assertEquals(cancelBounds.y, requestBounds.y, 1);
+      assertTrue(cancelBounds.x + cancelBounds.width <= requestBounds.x);
+    }
+
+    for (Locator buttonLocator : new Locator[] {cancelButtonLocator, requestButtonLocator}) {
+      Locator labelLocator = buttonLocator.locator("[part~='label']");
+      assertThat(labelLocator).isVisible();
+
+      assertTrue(
+          (Boolean)
+              labelLocator.evaluate(
+                  """
+                  label => label.scrollWidth <= label.clientWidth + 1
+                    && label.scrollHeight <= label.clientHeight + 1
+                  """));
+    }
   }
 
   @ParameterizedTest
