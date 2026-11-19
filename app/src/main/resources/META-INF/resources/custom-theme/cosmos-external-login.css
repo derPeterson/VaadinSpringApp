@@ -76,8 +76,8 @@
 .external-connection-heading vaadin-badge {
     box-sizing: border-box;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }

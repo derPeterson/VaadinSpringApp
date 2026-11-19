@@ -19,7 +19,6 @@
     justify-content: center;
     box-sizing: border-box;
     min-width: var(--cosmos-space-xl);
-    height: var(--cosmos-space-xl);
     margin: 0;
     padding: 0 var(--cosmos-space-xs);
     border-radius: calc(var(--cosmos-space-xl) / 2);
@@ -983,15 +982,15 @@ vaadin-app-layout.cosmos-reference-admin
     padding: 0;
     margin: 0;
     min-width: 0;
-    --vaadin-input-field-height: 40px;
-    --vaadin-input-field-value-font-size: var(--cosmos-font-size-m);
+    --vaadin-input-field-height: var(--cosmos-input-height);
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
     --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
 }
 
 .cosmos-recipient-content > vaadin-text-field::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
     border: var(--cosmos-border-width) solid var(--cosmos-border-color);
     border-radius: var(--cosmos-control-radius);
     padding: 0 var(--cosmos-space-m);
@@ -999,7 +998,8 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-recipient-content > vaadin-text-field > input[slot="input"] {
-    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 
 .cosmos-recipient-content > vaadin-text-field::part(prefix) {
@@ -1415,7 +1415,7 @@ vaadin-app-layout.cosmos-reference-admin
 }
 
 .cosmos-reference-portal #notifications-inbox-search input[slot="input"] {
-    font-size: var(--cosmos-font-size-s);
+    font-size: var(--cosmos-input-font-size);
 }
 
 .cosmos-reference-portal #notifications-inbox-search > [slot="prefix"] {
@@ -1490,12 +1490,10 @@ vaadin-app-layout.cosmos-reference-admin
     .cosmos-notification-preview-source {
     display: inline-flex;
     box-sizing: border-box;
-    min-height: 20px;
-    height: auto;
     margin: 0;
-    padding: 2px 6px;
+    padding: var(--cosmos-badge-compact-padding);
     border: 1px solid var(--cosmos-border-color);
-    border-radius: 4px;
+    border-radius: var(--cosmos-badge-compact-radius);
     color: var(--cosmos-text-secondary-color);
     background: transparent;
     font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
@@ -1524,22 +1522,12 @@ vaadin-app-layout.cosmos-reference-admin
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    box-sizing: content-box;
-    min-height: 13px;
     margin: 0;
-    padding: 2px 6px;
+    padding: var(--cosmos-badge-compact-padding);
     border-radius: 5px;
     color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     white-space: nowrap;
-}
-
-:is(.cosmos-reference-portal, .cosmos-reference-overlay)
-    .cosmos-notification-message-meta
-    .cosmos-notification-preview-state[data-read] {
-    box-sizing: border-box;
-    height: 19px;
-    min-height: 19px;
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay)
@@ -1590,10 +1578,10 @@ vaadin-app-layout.cosmos-reference-admin
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
+    width: var(--cosmos-table-action-size);
+    min-width: var(--cosmos-table-action-size);
+    height: var(--cosmos-table-action-size);
+    min-height: var(--cosmos-table-action-size);
     padding: 0;
     margin: 0;
     border: 1px solid var(--cosmos-control-border-color);
@@ -2032,7 +2020,6 @@ vaadin-dialog.cosmos-notification-dialog[theme~="cosmos-reference"]::part(footer
     align-items: center;
     justify-content: center;
     min-width: 21px;
-    height: 18px;
     padding: 0 5px;
     box-sizing: border-box;
     border: 1px solid var(--cosmos-border-color);
@@ -2056,16 +2043,16 @@ vaadin-tab[selected] .portal-filter-count {
 
 /* Die Seitengrößenauswahl bleibt eine native ComboBox mit kompaktem Referenzmenü. */
 .cosmos-reference-portal .portal-page-size {
-    height: 32px;
-    min-height: 32px;
+    height: var(--cosmos-pagination-field-height);
+    min-height: var(--cosmos-pagination-field-height);
     padding: 0;
-    --vaadin-input-field-height: 32px;
+    --vaadin-input-field-height: var(--cosmos-pagination-field-height);
 }
 
 .cosmos-reference-portal .portal-page-size::part(input-field) {
     box-sizing: border-box;
-    height: 32px;
-    min-height: 32px;
+    height: var(--cosmos-pagination-field-height);
+    min-height: var(--cosmos-pagination-field-height);
 }
 
 .cosmos-reference-portal .portal-page-size::part(overlay) {
@@ -2272,10 +2259,10 @@ vaadin-combo-box-item.portal-pagination-option {
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-tools > vaadin-button {
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 32px;
+    width: var(--cosmos-table-action-size);
+    min-width: var(--cosmos-table-action-size);
+    height: var(--cosmos-table-action-size);
+    min-height: var(--cosmos-table-action-size);
     padding: 0;
     border-color: color-mix(in srgb, var(--cosmos-color-white) 11%, transparent);
     border-radius: 8px;

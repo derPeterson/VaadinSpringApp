@@ -699,7 +699,6 @@ vaadin-form-layout.account-profile-form {
 .cosmos-account .account-session-heading .account-session-count {
     box-sizing: border-box;
     justify-self: start;
-    height: auto;
     margin: 0;
     padding: 4px 10px;
     border: 1px solid var(--vaadin-badge-border-color);
@@ -811,8 +810,8 @@ vaadin-form-layout.account-profile-form {
 .account-session-badge {
     box-sizing: border-box;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-label-color);
 }
@@ -826,8 +825,8 @@ vaadin-form-layout.account-profile-form {
 .account-password-status {
     box-sizing: border-box;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-label-color);
     border: 1px solid var(--cosmos-status-badge-border);
@@ -845,8 +844,7 @@ vaadin-form-layout.account-profile-form {
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
 .account-session-badge#account-sessions-limit {
-    height: auto;
-    padding: var(--cosmos-space-xs) 9px;
+    padding: 3px 9px;
     border-radius: var(--cosmos-badge-radius);
     font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     letter-spacing: 0.2px;

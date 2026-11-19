@@ -1,7 +1,4 @@
 /* Besucherbereich: native Flow-Komponenten im freigegebenen Referenzrahmen. */
-.cosmos-reference-portal.cosmos-reference-public {
-    --cosmos-input-font-size: 14px;
-}
 .cosmos-reference-public {
     display: flex;
     flex-direction: column;
@@ -85,7 +82,7 @@
     white-space: nowrap;
 }
 .cosmos-reference-public .public-navigation > vaadin-button {
-    height: 36px;
+    height: var(--cosmos-control-height);
     margin: 0;
     padding: 0 12px;
     border-color: transparent;
@@ -532,7 +529,7 @@
     .cosmos-reference-public .public-header .public-navigation > vaadin-button {
         width: 36px;
         min-width: 36px;
-        min-height: 36px;
+        min-height: var(--cosmos-control-height);
         padding: 0;
     }
     .cosmos-reference-public .public-header .public-navigation > vaadin-button::part(label) {
@@ -581,8 +578,8 @@
     color: var(--cosmos-primary-text-color);
 }
 .cosmos-reference-public vaadin-checkbox::part(checkbox) {
-    width: 16px;
-    height: 16px;
+    width: var(--cosmos-checkbox-size);
+    height: var(--cosmos-checkbox-size);
     box-sizing: border-box;
     border: 1px solid var(--cosmos-control-border-color);
     border-radius: 5px;

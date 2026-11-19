@@ -44,8 +44,8 @@
     --vaadin-input-field-border-color: var(--cosmos-border-color);
     --vaadin-input-field-border-width: 1px;
     --vaadin-input-field-border-radius: 8px;
-    --vaadin-input-field-value-font-size: 14px;
-    --vaadin-input-field-value-font-weight: 400;
+    --vaadin-input-field-value-font-size: var(--cosmos-font-size-l);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
     --vaadin-input-field-value-color: var(--cosmos-text-color);
     --vaadin-input-field-placeholder-color: var(--cosmos-input-placeholder-color);
 }
@@ -53,7 +53,7 @@
 /* Auch das präzise BigDecimalField zeigt den Standard nur als gedämpften Platzhalter. */
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field):not([disabled]) > input::placeholder {
     color: var(--cosmos-input-placeholder-color);
-    font-size: var(--cosmos-font-size-m);
+    font-size: var(--cosmos-input-font-size);
     font-weight: var(--cosmos-font-weight-regular);
     opacity: 1;
 }
@@ -66,8 +66,8 @@
 
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
     column-gap: var(--cosmos-duration-action-gap);
 }
 
@@ -122,7 +122,7 @@
     padding: 0 14px;
 }
 
-.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) input {
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) > input[slot="input"] {
     text-align: center;
     font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
@@ -165,7 +165,7 @@
     border-inline-start: 0;
     --vaadin-input-field-height: 28px;
     --vaadin-input-field-border-width: 0;
-    --vaadin-input-field-value-font-size: 13px;
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
 }
 
 /* Die Einheit ist per ARIA beschriftet. Die globale Labelregel darf hier keine

@@ -250,7 +250,6 @@ vaadin-tooltip::part(content) {
         vaadin-number-field,
         vaadin-time-picker
     )::part(input-field) {
-    min-height: var(--cosmos-control-height);
     border: var(--cosmos-border-width) solid var(--cosmos-input-border);
     border-radius: var(--cosmos-control-radius);
     background: var(--cosmos-input-background);
@@ -303,6 +302,32 @@ vaadin-tooltip::part(content) {
         vaadin-time-picker
     )[focused]::part(input-field) {
     border-color: var(--cosmos-input-focus-border);
+}
+
+.cosmos-theme
+    :is(
+        vaadin-text-field,
+        vaadin-email-field,
+        vaadin-password-field,
+        vaadin-combo-box,
+        vaadin-multi-select-combo-box,
+        vaadin-select,
+        vaadin-date-picker,
+        vaadin-integer-field,
+        vaadin-number-field,
+        vaadin-big-decimal-field,
+        vaadin-time-picker
+    )::part(input-field) {
+    box-sizing: border-box;
+    min-height: var(--cosmos-input-height);
+}
+
+.cosmos-theme :is(vaadin-multi-select-combo-box, vaadin-select, vaadin-big-decimal-field) {
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
+}
+
+.cosmos-theme vaadin-text-area::part(input-field) {
+    min-height: var(--cosmos-control-height);
 }
 
 /* Leere Felder und Platzhalter bleiben normal gewichtet und weich gefärbt.
@@ -403,7 +428,7 @@ vaadin-tooltip::part(content) {
     vaadin-button:where(
         :not([theme~="tertiary"], .cosmos-inline-button, .admin-user-pagination vaadin-button, .admin-user-refresh)
     ) {
-    font-size: var(--cosmos-control-font-size);
+    font-size: var(--cosmos-button-font-size);
 }
 
 /* Lumo bemisst Icons in em; ihre bisherige Größe beim kleineren Text erhalten. */
@@ -493,6 +518,40 @@ vaadin-tooltip::part(content) {
     font-size: var(--cosmos-font-size-s);
     font-weight: var(--cosmos-font-weight-regular);
     border-top-color: var(--cosmos-table-border-color);
+}
+
+/* Native Badges erhalten feste Außenhöhen für Status, Zähler und Kopfangaben. */
+vaadin-badge:where(
+    :not(
+        .admin-nav-support-activity,
+        .admin-user-table-enabled,
+        .admin-user-table-status,
+        .admin-reference-drawer.admin-user-filter-drawer .admin-user-active-filter-count
+    )
+) {
+    box-sizing: border-box;
+    height: var(--cosmos-badge-height-s);
+}
+
+vaadin-badge:where(
+    .cosmos-notification-count,
+    .account-nav-count,
+    .portal-home-unread,
+    .portal-filter-count,
+    .support-section-count,
+    .support-ticket-unread,
+    .support-instruction-number,
+    .admin-user-active-filter-count
+) {
+    height: var(--cosmos-badge-height-xs);
+}
+
+vaadin-badge:where(.cosmos-admin-role-chip, #account-sessions-limit) {
+    height: var(--cosmos-badge-height-m);
+}
+
+vaadin-badge:where(.account-session-count, .cosmos-config-setting-count, .cosmos-panel-meta, .provider-status) {
+    height: var(--cosmos-badge-height-l);
 }
 
 /* Gerahmte Status-Badges und die zugehörige Ticket-Statusauswahl. */
@@ -624,14 +683,14 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
         )
     ) {
     margin: 0;
-    height: 36px;
+    height: var(--cosmos-control-height);
     padding: 0 13px;
     border: 1px solid var(--cosmos-control-border-color);
     border-radius: 9px;
     background: var(--cosmos-base-color);
     color: var(--cosmos-heading-color);
     box-shadow: none;
-    font: 600 var(--cosmos-font-size-s)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
+    font: 600 var(--cosmos-button-font-size)/var(--cosmos-line-height-tight) var(--cosmos-font-family);
     --vaadin-button-label-wrap: nowrap;
 }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.two-factor-details-toggle {
@@ -753,10 +812,10 @@ vaadin-button.cosmos-overlay-close,
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: var(--cosmos-control-height);
+    min-width: var(--cosmos-control-height);
+    height: var(--cosmos-control-height);
+    min-height: var(--cosmos-control-height);
     margin: 0;
     padding: 0;
     border: var(--cosmos-border-width) solid var(--cosmos-control-border-color);
@@ -796,12 +855,12 @@ vaadin-button.cosmos-overlay-close > vaadin-icon {
     ) {
     min-width: 0;
     padding: 0;
-    --vaadin-input-field-value-font-size: 14px;
-    --vaadin-input-field-value-font-weight: 400;
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
     --vaadin-input-field-background: var(--cosmos-base-color);
     --vaadin-input-field-border-color: var(--cosmos-border-color);
     --vaadin-input-field-border-width: 1px;
-    --vaadin-input-field-height: 40px;
+    --vaadin-input-field-height: var(--cosmos-input-height);
     --vaadin-input-field-border-radius: 8px;
     --vaadin-input-field-value-color: var(--cosmos-text-color);
     --vaadin-input-field-placeholder-color: var(--cosmos-text-tertiary-color);
@@ -819,7 +878,7 @@ vaadin-button.cosmos-overlay-close > vaadin-icon {
     background: var(--cosmos-base-color);
     border: 1px solid var(--cosmos-border-color);
     border-radius: 8px;
-    min-height: 40px;
+    min-height: var(--cosmos-input-height);
     padding-inline: 14px;
 }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay)
@@ -860,7 +919,8 @@ vaadin-button.cosmos-overlay-close > vaadin-icon {
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) input[slot="input"] {
     padding: 0;
     color: var(--cosmos-heading-color);
-    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) input::placeholder {
     color: var(--cosmos-text-tertiary-color);
@@ -1016,8 +1076,8 @@ vaadin-combo-box-item.portal-pagination-option {
     padding: 6px 8px;
 }
 .cosmos-reference-portal .portal-page-size::part(input-field) {
-    height: 32px;
-    min-height: 32px;
+    height: var(--cosmos-pagination-field-height);
+    min-height: var(--cosmos-pagination-field-height);
     padding-inline: 12px;
 }
 .cosmos-reference-portal .portal-page-size input[slot="input"] {
@@ -1112,9 +1172,9 @@ vaadin-notification-card[theme~="cosmos-reference"] vaadin-button {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
+    width: var(--cosmos-control-height);
+    min-width: var(--cosmos-control-height);
+    height: var(--cosmos-control-height);
     margin: 0;
     padding: 0;
     border: 1px solid var(--cosmos-border-color);

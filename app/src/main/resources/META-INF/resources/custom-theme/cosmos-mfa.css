@@ -77,7 +77,7 @@
     max-width: 100%;
     min-width: 0;
     height: auto;
-    min-height: 36px;
+    min-height: var(--cosmos-control-height);
     white-space: normal;
 }
 .two-factor-extra-actions vaadin-button::part(label) {
@@ -272,8 +272,8 @@
 }
 .cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
 }
 .cosmos-reference-admin .cosmos-mfa-settings .mfa-settings-header {
     border-bottom: 0;
@@ -415,8 +415,8 @@
 .two-factor-account-entry vaadin-badge {
     box-sizing: border-box;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-primary-text-color);
 }
@@ -455,7 +455,7 @@
 .cosmos-theme vaadin-text-area.support-message-input::part(input-field) {
     resize: vertical;
     box-sizing: border-box;
-    min-height: 122px;
+    min-height: var(--cosmos-textarea-min-height-compact);
     padding: 10px 14px;
 }
 
@@ -477,7 +477,8 @@
 .cosmos-theme vaadin-text-area.support-message-input > textarea {
     margin: 0;
     padding: 0;
-    font: 400 var(--cosmos-input-font-size)/20px var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 .two-factor-help-row > vaadin-button.cosmos-inline-button::before,
 .two-factor-help-row > vaadin-button.cosmos-inline-button::after {
@@ -510,7 +511,7 @@ vaadin-badge.support-ticket-unread {
 }
 .support-filter-drawer .support-filter-jump > vaadin-button {
     flex: none;
-    height: 40px;
+    height: var(--cosmos-input-height);
     margin-bottom: 0;
 }
 .support-filter-drawer #support-filter-assignment vaadin-radio-button > label[slot="label"] {

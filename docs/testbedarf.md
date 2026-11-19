@@ -2,10 +2,20 @@
 
 ## Browser-Tests
 
-Die bisherigen umgesetzten Oberflächenänderungen sind vom Benutzer abgenommen.
-Die folgenden offenen Punkte betreffen automatisierte Nachtests, gesammelt für
-die große Testrunde. Sie verlangen keine erneute manuelle Abnahme und werden
-nicht durch deren Abschluss als automatisiert geprüft gewertet.
+Die bisherigen manuellen Abnahmen gelten weiter. Die offenen automatisierten
+Nachtests sind für die große Testrunde gesammelt.
+
+- **Badge- und Formulargrößen — offen.**
+  In DE/EN auf Desktop/Smartphone repräsentative Statuskennzeichnungen und
+  Zähler prüfen. Quellen, Lesestatus und Ticketrelevanz im Glocken-Overlay sind
+  22 px hoch. In der Sitzungsübersicht gelten 30 px für die aktive Anzahl,
+  24 px für das Limit und 22 px für Gerätestatus. Lange Beschriftungen,
+  Umbruch und Einbettung in Tabellen und Aktionen prüfen. Ticketstatus in Liste,
+  Kopf und Verlauf auf lesbare Beschriftung innerhalb der 22 px prüfen. Einzeilige
+  Formularfelder und zugeordnete Feldhilfe sind 40 px hoch, normale
+  Eingabeschrift 13 px und normale Buttonschrift 12 px. Dauerwerte und
+  kompakte Pagination behalten ihre Größenvarianten. Mehrzeilige Felder
+  im bestehenden TextArea-Nachtest prüfen.
 
 - **Wiederherstellungsanfrage: eigene Tickets als VirtualList — offen.**
   In DE/EN auf Desktop/Smartphone 0/1/2/5/6/20 eigene Tickets prüfen: vorhandener
@@ -27,7 +37,8 @@ nicht durch deren Abschluss als automatisiert geprüft gewertet.
   In DE/EN auf Desktop/Smartphone Mail-Test, Mitteilungsentwurf und Ticketnachricht
   mit TextField vergleichen: Fokusrahmen vollständig außen sichtbar, ohne abgeschnittene
   Seiten oder Ecken. Vertikale Größenänderung auf Desktop, längere Texte, Scrollen,
-  Löschen-Button, Fehlerzustand und unveränderte Mindesthöhen prüfen. Der Griff liegt
+  Löschen-Button, Fehlerzustand und die Mindesthöhen von 122 px
+  (Mitteilungsentwurf und Ticketnachricht) sowie 144 px (Mail-Test) prüfen. Der Griff liegt
   jetzt auf der nativen Eingabefläche statt auf einem abschneidenden Host.
   Manuell abgenommen; automatisierter Browsernachtest für die große Testrunde offen.
 

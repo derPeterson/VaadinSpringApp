@@ -218,9 +218,9 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
     text-transform: uppercase;
 }
 .support-section-header vaadin-badge.support-section-count {
-    padding: 2px 6px;
+    padding: 0 6px;
     border: 1px solid var(--cosmos-control-border-color);
-    border-radius: 4px;
+    border-radius: var(--cosmos-badge-compact-radius);
     background: var(--cosmos-subtle-surface);
     color: var(--cosmos-label-color);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
@@ -477,8 +477,8 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
 }
 :is(.support-ticket-row, .support-admin-ticket-header, .support-history-event) vaadin-badge.support-ticket-status {
     margin-inline-start: auto;
-    padding: 10px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     color: var(--cosmos-status-badge-accent);
     font: 500 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
@@ -680,10 +680,6 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
     margin-inline-start: auto;
     white-space: nowrap;
 }
-.support-admin-ticket-list .support-ticket-status,
-.support-admin-ticket-header .support-ticket-status {
-    padding: 2px 6px;
-}
 .support-ticket-assignment {
     color: var(--cosmos-text-secondary-color);
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
@@ -696,8 +692,8 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
 }
 .support-ticket-assignee vaadin-badge.support-assignee-self {
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
     --vaadin-badge-text-color: var(--cosmos-success-color);
 }
@@ -819,8 +815,8 @@ vaadin-tooltip.support-instructions-tooltip[markdown] > [slot="overlay"] > p {
     color: var(--cosmos-system-text);
     background: var(--cosmos-system-surface);
     border: 1px solid var(--cosmos-system-border);
-    border-radius: 4px;
-    padding: 2px 6px;
+    border-radius: var(--cosmos-badge-compact-radius);
+    padding: var(--cosmos-badge-compact-padding);
 }
 .support-internal-message .support-message-sender,
 .support-internal-message .support-message-metadata > vaadin-icon {
@@ -875,7 +871,6 @@ vaadin-badge.support-instruction-number {
     justify-content: center;
     flex: none;
     width: 20px;
-    height: 20px;
     padding: 0;
     border: 1px solid var(--cosmos-icon-border-color);
     border-radius: 4px;
@@ -996,7 +991,6 @@ vaadin-badge.support-instruction-number {
     height: 16px;
 }
 .support-history-event vaadin-badge.support-ticket-status {
-    padding: 2px 6px;
     margin-inline-start: 0;
 }
 .support-history-metadata {

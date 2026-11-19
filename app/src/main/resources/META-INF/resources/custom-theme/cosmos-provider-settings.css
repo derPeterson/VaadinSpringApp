@@ -24,7 +24,6 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
     gap: 8px;
 }
 .cosmos-provider-settings vaadin-badge.provider-status {
-    height: 30px;
     margin: 0;
     padding: 6px 10px;
     border-radius: 6px;
@@ -158,7 +157,6 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
     --provider-credentials-two-column-min-width: 0px;
 }
 .cosmos-provider-settings .provider-redirect {
-    --vaadin-input-field-height: 40px;
     align-items: end;
     gap: 8px;
 }
@@ -167,12 +165,12 @@ vaadin-tabs.cosmos-panel-tabs::part(tabs) {
 }
 .cosmos-provider-settings .provider-redirect > vaadin-text-field::part(input-field) {
     box-sizing: border-box;
-    height: var(--vaadin-input-field-height);
-    min-height: var(--vaadin-input-field-height);
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
 }
 .cosmos-provider-settings vaadin-button.provider-copy {
-    height: var(--vaadin-input-field-height);
-    min-height: var(--vaadin-input-field-height);
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
 }
 .cosmos-provider-settings .provider-activation {
     display: flex;

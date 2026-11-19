@@ -234,10 +234,10 @@ vaadin-app-layout.cosmos-admin {
 
 .cosmos-theme vaadin-button.cosmos-config-info {
     --vaadin-button-gap: 0;
-    min-width: 44px;
-    min-height: 44px;
-    width: 44px;
-    height: 44px;
+    min-width: var(--cosmos-control-height);
+    min-height: var(--cosmos-control-height);
+    width: var(--cosmos-control-height);
+    height: var(--cosmos-control-height);
     margin: 0;
     padding: 0;
     flex-shrink: 0;
@@ -263,17 +263,17 @@ vaadin-app-layout.cosmos-admin {
     margin: 0;
 }
 
-/* Info-Buttons in Konfiguration und Mail-Test passen zur Eingabehöhe M. */
+/* Feldhilfe und Eingabe stehen in Konfiguration und Mail-Test in einer gemeinsamen Zeile. */
 
 :is(.cosmos-admin-section--config, .cosmos-admin-section--mail) vaadin-button.cosmos-config-info {
     min-width: var(--cosmos-control-height);
-    min-height: var(--cosmos-control-height);
+    min-height: var(--cosmos-input-height);
     width: var(--cosmos-control-height);
-    height: var(--cosmos-control-height);
+    height: var(--cosmos-input-height);
 }
 
 :is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-input-row > vaadin-checkbox {
-    min-height: var(--cosmos-control-height);
+    min-height: var(--cosmos-input-height);
 }
 
 :is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-info > vaadin-icon {
@@ -705,7 +705,6 @@ vaadin-app-layout.cosmos-reference-admin
 }
 vaadin-app-layout.cosmos-reference-admin vaadin-badge:is(.cosmos-config-setting-count, .cosmos-panel-meta),
 .admin-reference-drawer vaadin-badge.admin-user-active-filter-count {
-    height: auto;
     margin: 0;
 }
 vaadin-app-layout.cosmos-reference-admin #admin-notifications-sent vaadin-badge.cosmos-panel-meta {
@@ -811,8 +810,8 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     background: transparent;
     font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-m) var(--cosmos-font-family);
     --vaadin-switch-label-color: var(--cosmos-label-color);
-    --vaadin-switch-label-font-size: 12px;
-    --vaadin-switch-label-font-weight: 500;
+    --vaadin-switch-label-font-size: var(--cosmos-font-size-s);
+    --vaadin-switch-label-font-weight: var(--cosmos-font-weight-label);
     --vaadin-switch-label-line-height: var(--cosmos-line-height-m);
     --vaadin-switch-label-padding: 0;
 }
@@ -842,8 +841,8 @@ vaadin-app-layout.cosmos-reference-admin .admin-config-switch {
     align-self: stretch;
 }
 vaadin-app-layout.cosmos-reference-admin vaadin-checkbox::part(checkbox) {
-    width: 16px;
-    height: 16px;
+    width: var(--cosmos-checkbox-size);
+    height: var(--cosmos-checkbox-size);
     margin: 0;
     border-radius: 5px;
     background: var(--cosmos-base-color);
@@ -1205,9 +1204,10 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-status[dat
 vaadin-app-layout.cosmos-reference-admin .cosmos-notification-compose-recipient-summary {
     inset-inline-start: 39px;
     inset-block-start: 23px;
-    height: 40px;
+    height: var(--cosmos-input-height);
     max-width: calc(100% - 109px);
-    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin
     .cosmos-notification-compose-recipient-field:has(vaadin-multi-select-combo-box[has-value])
@@ -1275,13 +1275,14 @@ vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field {
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field::part(input-field) {
     resize: vertical;
     box-sizing: border-box;
-    min-height: 122px;
+    min-height: var(--cosmos-textarea-min-height-compact);
     padding: 10px 14px;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-notification-body-field > textarea {
     padding: 0;
     margin: 0;
-    font: 400 var(--cosmos-font-size-l)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-section--notifications .cosmos-panel-footer {
     display: block;
@@ -1429,9 +1430,8 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-meta {
     font: 400 var(--cosmos-font-size-xs)/var(--cosmos-line-height-s) var(--cosmos-font-family);
 }
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-notification-compose-status, .cosmos-notification-sent-status) {
-    height: auto;
     margin: 0;
-    padding: 4px 7px;
+    padding: 2px 7px;
     gap: 5px;
     border-radius: 6px;
     font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
@@ -1571,15 +1571,15 @@ vaadin-app-layout.cosmos-reference-admin
     --vaadin-input-field-border-color: var(--cosmos-border-color);
     --vaadin-input-field-border-width: 1px;
     --vaadin-input-field-border-radius: 8px;
-    --vaadin-input-field-height: 40px;
-    --vaadin-input-field-value-font-size: 14px;
-    --vaadin-input-field-value-font-weight: 400;
+    --vaadin-input-field-height: var(--cosmos-input-height);
+    --vaadin-input-field-value-font-size: var(--cosmos-input-font-size);
+    --vaadin-input-field-value-font-weight: var(--cosmos-font-weight-regular);
     --vaadin-input-field-value-color: var(--cosmos-text-color);
     --vaadin-input-field-placeholder-color: var(--cosmos-text-tertiary-color);
 }
 vaadin-app-layout.cosmos-reference-admin
     :is(vaadin-integer-field, vaadin-number-field, vaadin-text-area, vaadin-multi-select-combo-box)::part(input-field) {
-    min-height: 40px;
+    min-height: var(--cosmos-input-height);
     border: 1px solid var(--cosmos-border-color);
     border-radius: 8px;
     background: var(--cosmos-base-color);
@@ -1706,13 +1706,13 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card :is(vaadin-text-field
     margin-bottom: 6px;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-field::part(input-field) {
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
     box-sizing: border-box;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::part(input-field) {
     resize: vertical;
-    min-height: 144px;
+    min-height: var(--cosmos-textarea-min-height-large);
     box-sizing: border-box;
     padding-block: 10px;
 }
@@ -2003,8 +2003,8 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-fie
     .cosmos-config-input-row
     > :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-integer-field)::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
 }
 
 /* Mobile Navigation verwendet denselben Rahmen wie das Portal. */

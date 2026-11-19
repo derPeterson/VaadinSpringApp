@@ -78,6 +78,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-label-color: var(--cosmos-color-label);
     /* Weißer Haken auf aktiven Auswahlflächen; Disabled/Readonly behalten ihre nativen Farben. */
     --vaadin-checkbox-marker-color: var(--cosmos-heading-color);
+    --vaadin-checkbox-size: var(--cosmos-checkbox-size);
     --vaadin-checkbox-background-hover: var(--cosmos-hover-background);
     --vaadin-radio-button-background-hover: var(--cosmos-hover-background);
     --cosmos-heading-color: var(--cosmos-color-white);
@@ -166,9 +167,15 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-border-width: 1px;
     --cosmos-control-radius: 9px;
     --cosmos-badge-radius: 5px;
+    --cosmos-badge-compact-radius: var(--cosmos-space-xs);
+    --cosmos-badge-compact-padding: 2px 6px;
+    --cosmos-badge-height-xs: 20px;
+    --cosmos-badge-height-s: 22px;
+    --cosmos-badge-height-m: 24px;
+    --cosmos-badge-height-l: 30px;
     --cosmos-segment-radius: 999px;
     --cosmos-control-height: var(--cosmos-size-m);
-    --cosmos-control-font-size: var(--cosmos-font-size-m);
+    --cosmos-button-font-size: var(--cosmos-font-size-s);
     --cosmos-info-box-padding: 14px;
     --cosmos-info-box-gap: 10px;
 
@@ -286,6 +293,11 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     /* 5. EINGABEFELDER
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
     --cosmos-input-font-size: var(--cosmos-font-size-m);
+    --cosmos-input-height: 40px;
+    --cosmos-pagination-field-height: 32px;
+    --cosmos-textarea-min-height-compact: 122px;
+    --cosmos-textarea-min-height-large: 144px;
+    --cosmos-checkbox-size: 16px;
     --cosmos-input-placeholder-color: var(--cosmos-text-tertiary-color);
     --cosmos-input-border: var(--cosmos-contrast-20pct);
     --cosmos-input-background: var(--cosmos-contrast-5pct);

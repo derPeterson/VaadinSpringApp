@@ -179,6 +179,22 @@ Bereichs. Die Seitengröße bleibt dabei bedienbar. Seitenzahlen erhalten in
 
 #### Buttons und Eingaben
 
+`cosmos-tokens.css` definiert die Größen. Einzeilige Formularfelder verwenden
+`--cosmos-input-height` (40 px) und `--cosmos-input-font-size` (13 px).
+TextAreas für Mitteilungsentwurf und Ticketnachricht verwenden
+`--cosmos-textarea-min-height-compact` (122 px), der Mail-Test verwendet
+`--cosmos-textarea-min-height-large` (144 px). Die Mindesthöhen beziehen sich
+auf die Eingabefläche. Checkbox-Kästchen verwenden `--cosmos-checkbox-size`
+(16 px). Dauerwerte bleiben bei 14 px, ihre Platzhalter bei 13 px.
+
+Gerahmte Standardaktionen verwenden `--cosmos-control-height` (36 px) und
+`--cosmos-button-font-size` (12 px). Seitenbuttons und kompakte
+Tabellenaktionen verwenden `--cosmos-pagination-size` (28 px) und
+`--cosmos-table-action-size` (32 px). Feldhilfe und Sprungaktion in einer
+gemeinsamen Zeile mit Eingaben folgen deren 40 px. Die kompakte Feldhilfe der
+Anbietereinstellungen behält ihre eigene Größe. Die Seitengrößenauswahl hat
+eine eigene Feldhöhe von 32 px.
+
 | Element | Gemeinsamer Standard |
 | --- | --- |
 | Normale Aktionsbuttons | 36 px Höhe, 9 px Radius; vorhandene Primary-/Secondary-Variante |
@@ -267,6 +283,14 @@ Native `Badge`s zeigen Status und Zähler. Beschriftete Statusbadges bekommen ke
 zusätzlichen Punkt; eigenständige Avatar- und Aktivitätspunkte bleiben.
 Rahmen und Fläche kommen aus `cosmos-theme.css`, die fachliche Farbe aus dem Bereich.
 Systemkennzeichnungen verwenden `--cosmos-system-*` in Violett.
+Die Außenhöhen stehen in `cosmos-tokens.css` unter `--cosmos-badge-height-*`.
+`cosmos-theme.css` verwendet S (22 px) für normale Kennzeichnungen, darunter
+Quellen, Lesezustände und Ticketrelevanz im Benachrichtigungs-Overlay. Zähler und
+Schrittnummern verwenden XS (20 px), Rollen und das Sitzungslimit M (24 px).
+Aktive Sitzungsanzahl, Einstellungsanzahl, Kopfmetadaten und Anbieterstatus
+verwenden L (30 px). Gleich gewichtete Kennzeichnungen innerhalb eines Bereichs
+verwenden dieselbe Stufe. Der Filterzähler in der Werkzeugzeile des Filterdialogs,
+rahmenlose Tabellenanzeigen und der Aktivitätspunkt haben eigene Maße.
 
 Grids teilen Header-, Zeilen-, Wechsel-, Hover- und Auswahlfarben aus den gemeinsamen
 `--cosmos-table-*`-Tokens. Keine zweite Tabellenpalette pro View einführen.

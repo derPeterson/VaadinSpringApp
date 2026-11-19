@@ -229,8 +229,8 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
     box-sizing: border-box;
     margin: 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     font: 500 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
 
@@ -566,10 +566,10 @@ vaadin-app-layout.cosmos-reference-admin .admin-users-actions-header {
 }
 vaadin-app-layout.cosmos-reference-admin .admin-users-grid vaadin-button {
     box-sizing: border-box;
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    min-height: 30px;
+    width: var(--cosmos-table-action-size);
+    min-width: var(--cosmos-table-action-size);
+    height: var(--cosmos-table-action-size);
+    min-height: var(--cosmos-table-action-size);
     padding: 0;
 }
 vaadin-app-layout.cosmos-reference-admin .admin-user-table-actions {
@@ -624,10 +624,9 @@ vaadin-app-layout.cosmos-reference-admin .admin-users-grid [theme~="contrast"] {
 vaadin-app-layout.cosmos-reference-admin .admin-user-self {
     display: flex;
     width: max-content;
-    height: auto;
     margin: 3px 0 0;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: var(--cosmos-badge-compact-padding);
+    border-radius: var(--cosmos-badge-compact-radius);
     color: var(--cosmos-success-color);
     font: 400 var(--cosmos-font-size-2xs)/var(--cosmos-line-height-xs) var(--cosmos-font-family);
 }
@@ -638,7 +637,6 @@ vaadin-app-layout.cosmos-reference-admin .admin-user-table-roles {
     gap: 4px;
 }
 vaadin-app-layout.cosmos-reference-admin .cosmos-admin-role-chip {
-    height: auto;
     margin: 0;
     padding: 3px 6px;
     border: 1px solid color-mix(in srgb, var(--cosmos-color-sky) 19%, transparent);
@@ -696,11 +694,11 @@ vaadin-app-layout.cosmos-reference-admin .admin-user-pagination vaadin-icon {
 /* !important: CosmosPagination setzt 56 px als Inline-Breite. */
 vaadin-app-layout.cosmos-reference-admin .portal-pagination-size {
     width: 64px !important;
-    --vaadin-input-field-height: 32px;
+    --vaadin-input-field-height: var(--cosmos-pagination-field-height);
 }
 vaadin-app-layout.cosmos-reference-admin .portal-pagination-size::part(input-field) {
-    min-height: 32px;
-    height: 32px;
+    min-height: var(--cosmos-pagination-field-height);
+    height: var(--cosmos-pagination-field-height);
     padding: 0 10px;
 }
 vaadin-app-layout.cosmos-reference-admin .portal-pagination-size input {
@@ -793,15 +791,16 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
 .admin-reference-drawer.admin-user-filter-drawer
     :is(vaadin-text-field, vaadin-date-picker, vaadin-time-picker)::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
     border: 1px solid var(--cosmos-border-color);
     border-radius: 9px;
     padding: 0 12px;
     background: var(--cosmos-base-color);
 }
 .admin-reference-drawer.admin-user-filter-drawer input[slot="input"] {
-    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 .admin-reference-drawer.admin-user-filter-drawer vaadin-text-field vaadin-icon {
     width: 14px;
@@ -945,7 +944,7 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    height: 36px;
+    height: var(--cosmos-control-height);
     padding: 0;
     white-space: nowrap;
 }
@@ -1063,7 +1062,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
         vaadin-date-picker
     ) {
     padding: 0;
-    --vaadin-input-field-height: 40px;
+    --vaadin-input-field-height: var(--cosmos-input-height);
 }
 .admin-user-dialog.admin-reference-dialog
     :is(
@@ -1088,11 +1087,12 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
         vaadin-date-picker
     )::part(input-field) {
     box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
+    height: var(--cosmos-input-height);
+    min-height: var(--cosmos-input-height);
 }
 .admin-user-dialog.admin-reference-dialog input[slot="input"] {
-    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-input-font-size)/var(--cosmos-line-height-m)
+        var(--cosmos-font-family);
 }
 .admin-user-dialog.admin-reference-dialog .cosmos-reference-choice::part(overlay) {
     border: 1px solid var(--cosmos-border-color);
@@ -1100,8 +1100,8 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
 }
 .admin-user-dialog.admin-reference-dialog vaadin-checkbox::part(checkbox) {
     box-sizing: border-box;
-    width: 17px;
-    height: 17px;
+    width: var(--cosmos-checkbox-size);
+    height: var(--cosmos-checkbox-size);
 }
 .admin-user-dialog .admin-user-option-label > span:first-child {
     font: 500 var(--cosmos-font-size-s)/var(--cosmos-line-height-s) var(--cosmos-font-family);
@@ -1156,7 +1156,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     position: absolute;
     inset-inline-start: 14px;
     inset-block-start: 24px;
-    height: 40px;
+    height: var(--cosmos-input-height);
     max-width: calc(100% - 55px);
     display: flex;
     align-items: center;
@@ -1165,7 +1165,7 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~="cosmos-reference"
     white-space: nowrap;
     text-overflow: ellipsis;
     color: var(--cosmos-text-tertiary-color);
-    font: 400 var(--cosmos-font-size-m)/var(--cosmos-line-height-m) var(--cosmos-font-family);
+    font: 400 var(--cosmos-input-font-size)/var(--cosmos-line-height-m) var(--cosmos-font-family);
 }
 .admin-user-dialog .admin-user-role-field:has(.admin-user-roles[has-value]) > .admin-user-role-summary {
     color: var(--cosmos-text-color);
@@ -1372,8 +1372,8 @@ vaadin-dialog.admin-reference-dialog::part(overlay) {
     width: min(660px, calc(100vw - 32px));
 }
 .admin-reference-dialog vaadin-checkbox::part(checkbox) {
-    width: 16px;
-    height: 16px;
+    width: var(--cosmos-checkbox-size);
+    height: var(--cosmos-checkbox-size);
     box-sizing: border-box;
     border: 1px solid var(--cosmos-control-border-color);
     border-radius: 5px;
