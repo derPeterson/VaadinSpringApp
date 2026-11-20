@@ -70,12 +70,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   per Klick und beide Aktionen per Tastatur auslösen.
 
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
-  Bei den vier Link-/Tokenlaufzeiten und vergleichbaren ganzen oder präzisen
-  Dauerwerten nach dem Leeren einen gedämpften Platzhalter bei leerem Wert
-  prüfen. Nach Eingabe gilt die normale Wertfarbe, deaktiviert bleibt sie
-  gedämpft. Platzhalter und Wert bleiben horizontal zentriert, auch bei
-  reserviertem Platz für die dann ausgeblendete Löschaktion. Zahlenfelder,
-  Readonly und Felder ohne Löschaktion einbeziehen.
+  Die gedämpfte Farbe und unveränderte Zentrierung nach dem Leeren bei
+  ganzzahligen Dauerwerten und Zahlenfeldern prüfen. Deaktivierte,
+  schreibgeschützte Felder und Felder ohne Löschaktion einbeziehen.
 
 - **Switch-Grundstyling — offen.**
   „Login speichern“, Benutzerformular, Anbieter/2FA, Ersatzcodes,

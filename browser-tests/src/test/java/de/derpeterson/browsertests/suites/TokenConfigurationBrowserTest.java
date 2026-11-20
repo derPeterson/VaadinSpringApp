@@ -5,6 +5,8 @@ import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.app.config.TokenDurationPolicy;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -101,6 +103,7 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
     settings.open();
     String original = settings.value(label);
     settings.explain(label, minimum.toMinutes(), explanation);
+    assertClearingKeepsPlaceholderCentered(settings.field(label));
     for (String invalid :
         new String[] {"PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
       settings.enter(label, invalid);
@@ -120,5 +123,34 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       settings.enter(label, original);
       settings.save();
     }
+  }
+
+  private void assertClearingKeepsPlaceholderCentered(Locator durationField) {
+    Locator amountInput = durationField.locator("input");
+    Locator clearButton = durationField.locator("[part~=clear-button]");
+    String initialAmount = amountInput.inputValue();
+    BoundingBox amountBeforeClear = amountInput.boundingBox();
+    assertThat(amountInput).hasCSS("text-align", "center");
+    assertThat(amountInput).hasCSS("color", "rgb(255, 255, 255)");
+    clearButton.click();
+
+    assertThat(amountInput).hasValue("");
+    assertThat(clearButton).not().isVisible();
+    assertThat(amountInput).hasCSS("text-align", "center");
+    assertThat(amountInput).hasCSS("font-size", "14px");
+    assertEquals(
+        "rgb(124, 138, 160)",
+        amountInput.evaluate("input => getComputedStyle(input, '::placeholder').color"));
+    assertEquals(
+        "13px", amountInput.evaluate("input => getComputedStyle(input, '::placeholder').fontSize"));
+    BoundingBox amountAfterClear = amountInput.boundingBox();
+    assertEquals(
+        amountBeforeClear.x + amountBeforeClear.width / 2,
+        amountAfterClear.x + amountAfterClear.width / 2,
+        1);
+    amountInput.fill(initialAmount);
+    amountInput.press("Tab");
+    assertThat(amountInput).hasValue(initialAmount);
+    assertThat(amountInput).hasCSS("color", "rgb(255, 255, 255)");
   }
 }
