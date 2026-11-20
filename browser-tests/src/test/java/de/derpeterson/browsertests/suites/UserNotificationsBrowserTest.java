@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -20,6 +21,7 @@ import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -47,9 +49,9 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Als Superadmin das Verfassenpanel bei Desktop- bzw. schmaler Breite öffnen.
-      2. Leere Eingaben verlassen: keine Fehler; Prüfen markiert alle fehlenden Felder und zeigt den allgemeinen Hinweis.
-      3. Alle aktiven Konten wählen: Empfängerfeld gesperrt und lokalisierte Anzahl sichtbar.
-      4. Vorschau prüfen, Empfängerdetails öffnen/schließen, Entwurf ändern: Versand wieder gesperrt.
+      2. Leere Eingaben verlassen: keine Fehler; Prüfen markiert alle fehlenden Felder und meldet zuerst die fehlenden Empfänger.
+      3. Alle aktiven Konten wählen: Empfängerfeld gesperrt und lokalisierte Anzahl sichtbar; zurück zur erhaltenen manuellen Auswahl.
+      4. Vorschau prüfen, Empfänger-Popover öffnen und schließen, Entwurf ändern: Versand wieder gesperrt.
       5. Erneut prüfen: aktualisierter Text und Freigabe; Rahmen, Textgröße, Textabstand, gleiche Buttonhöhe, bündige Panelköpfe und kein Überlauf.
       Erwartet: Native Bedienelemente und sichere Prüf-Freigabe; keine Historien-/Header-Overlay-Prüfung.
       """)
@@ -59,36 +61,11 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     browserPage.setViewportSize(width, 1000);
     NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
-    de.derpeterson.browsertests.pages.UiActions.resizeTextArea(
-        browserPage, browserPage.locator("#admin-notifications-body"));
-    compose.assertEmptyReview();
-    compose.select(BrowserTestAccounts.ADMIN_EMAIL);
-    compose.everyone().setChecked(true);
-    Locator all = browserPage.locator("#admin-notifications-everyone-recipients");
-
-    assertThat(all).hasAttribute("disabled", "");
-    assertThat(all.locator("input")).isDisabled();
-    String summary = (String) all.evaluate("el => el.value");
-    int left = summary.lastIndexOf('('), right = summary.lastIndexOf(')');
-
-    assertTrue(left >= 0 && right > left);
-    int count = Integer.parseInt(summary.substring(left + 1, right));
-
-    assertTrue(count >= 2);
-    assertEquals(uiTexts.getNotificationsEveryonePlaceholder(count), summary);
+    UiActions.resizeTextArea(browserPage, browserPage.locator("#admin-notifications-body"), 122);
+    verifyPreviewReportsFirstInvalidField(compose);
+    verifyEveryoneModeKeepsManualSelection(compose);
     compose.draft("Preview " + UUID.randomUUID(), "Original draft");
-    CosmosFollowUpChecks.assertDetailsWithoutHover(
-        browserPage.locator("#admin-notifications-preview-details"));
-    browserPage.locator("#admin-notifications-preview-details").click();
-
-    assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
-        .hasAttribute("opened", "");
-    assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
-        .containsText(BrowserTestAccounts.SUPERADMIN_EMAIL);
-    browserPage.locator("#admin-notifications-preview-details").click();
-
-    assertThat(browserPage.locator("#admin-notifications-preview-details"))
-        .hasAttribute("aria-expanded", "false");
+    verifyPreviewRecipientList(compose);
     compose.body().fill("Changed draft");
 
     assertThat(compose.send()).isDisabled();
@@ -96,6 +73,97 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     compose.review().click();
 
     assertThat(compose.send()).isEnabled();
+    assertReviewedPreviewLayout(compose, width);
+    compose.review().focus();
+    compose.review().press("Tab");
+    Locator recipientAvatars = browserPage.locator("#admin-notifications-recipient-avatars");
+    assertThat(recipientAvatars).isFocused();
+    recipientAvatars.press("Tab");
+
+    assertThat(compose.send()).isFocused();
+    assertThat(compose.send()).hasCSS("outline-style", "solid");
+    AllurePlaywright.attachScreenshot("Geprüftes Verfassenpanel", browserPage);
+  }
+
+  private void verifyPreviewReportsFirstInvalidField(NotificationComposePage compose) {
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(compose.recipients());
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(
+        compose.root().locator("#admin-notifications-title"));
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(
+        compose.root().locator("#admin-notifications-body"));
+    compose.assertEmptyReview();
+    compose.select(BrowserTestAccounts.ADMIN_EMAIL);
+    assertThat(compose.recipients()).not().hasAttribute("invalid", "");
+    assertThat(compose.root().locator("#admin-notifications-title[invalid]")).hasCount(1);
+    assertThat(compose.root().locator("#admin-notifications-body[invalid]")).hasCount(1);
+
+    compose.review().click();
+    compose.notice(uiTexts.getBaseFailedTitle(), uiTexts.getNotificationsInvalidSubject());
+    compose.title().fill("Subject");
+    assertThat(compose.root().locator("#admin-notifications-title[invalid]")).hasCount(0);
+    assertThat(compose.root().locator("#admin-notifications-body[invalid]")).hasCount(1);
+    compose.review().click();
+    compose.notice(uiTexts.getBaseFailedTitle(), uiTexts.getNotificationsInvalidBody());
+    assertThat(compose.send()).isDisabled();
+  }
+
+  private void verifyEveryoneModeKeepsManualSelection(NotificationComposePage compose) {
+    assertThat(compose.root().locator(".cosmos-notification-compose-everyone-hint"))
+        .hasText(uiTexts.getNotificationsEveryoneHint());
+    assertThat(
+            compose
+                .root()
+                .getByRole(
+                    AriaRole.SWITCH,
+                    new Locator.GetByRoleOptions().setName(uiTexts.getNotificationsEveryone())))
+        .hasCount(1);
+    compose.everyone().setChecked(true);
+    Locator everyoneRecipientsField =
+        browserPage.locator("#admin-notifications-everyone-recipients");
+
+    assertThat(compose.recipients()).isHidden();
+    assertThat(everyoneRecipientsField).hasAttribute("disabled", "");
+    assertThat(everyoneRecipientsField.locator("input")).isDisabled();
+    String recipientSummary = (String) everyoneRecipientsField.evaluate("element => element.value");
+    int countStart = recipientSummary.lastIndexOf('(');
+    int countEnd = recipientSummary.lastIndexOf(')');
+    assertTrue(countStart >= 0 && countEnd > countStart);
+    int recipientCount = Integer.parseInt(recipientSummary.substring(countStart + 1, countEnd));
+    assertTrue(recipientCount >= 2);
+    assertEquals(uiTexts.getNotificationsEveryonePlaceholder(recipientCount), recipientSummary);
+
+    compose.everyone().setChecked(false);
+    assertThat(compose.recipients()).isVisible();
+    assertThat(compose.root().locator(".cosmos-notification-compose-recipient-summary"))
+        .hasText(uiTexts.getNotificationsSelectedUsers(1));
+    compose.everyone().setChecked(true);
+  }
+
+  private void verifyPreviewRecipientList(NotificationComposePage compose) {
+    Locator recipientAvatars = browserPage.locator("#admin-notifications-recipient-avatars");
+    Locator recipientPopover = browserPage.locator("#admin-notifications-preview-recipients");
+    compose.review().focus();
+    compose.review().press("Tab");
+    assertThat(recipientAvatars).isFocused();
+    recipientAvatars.press("Space");
+    assertThat(recipientPopover).hasAttribute("opened", "");
+    recipientPopover
+        .locator("#admin-notifications-recipient-search input")
+        .fill(BrowserTestAccounts.SUPERADMIN_EMAIL);
+    assertThat(recipientPopover.locator(".cosmos-recipient-button:visible")).hasCount(1);
+    assertThat(recipientPopover.locator(".cosmos-recipient-button:visible"))
+        .containsText(BrowserTestAccounts.SUPERADMIN_EMAIL);
+    recipientPopover
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getNotificationsClose()).setExact(true))
+        .click();
+    assertThat(recipientPopover).not().hasAttribute("opened", "");
+    assertThat(recipientAvatars).isFocused();
+    assertThat(compose.send()).isEnabled();
+  }
+
+  private void assertReviewedPreviewLayout(NotificationComposePage compose, int width) {
     Locator content =
         browserPage.locator(
             ".admin-notification-preview-card .cosmos-notification-compose-preview-content");
@@ -112,22 +180,6 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     }
     assertTrue(compose.root().boundingBox().x >= 0);
     assertTrue(compose.root().boundingBox().x + compose.root().boundingBox().width <= width + 1);
-    compose.review().focus();
-    compose.review().press("Tab");
-    for (Locator recipientAvatar :
-        browserPage
-            .locator("#admin-notifications-recipient-avatars > vaadin-avatar:visible")
-            .all()) {
-      assertThat(recipientAvatar).isFocused();
-      recipientAvatar.press("Tab");
-    }
-
-    assertThat(browserPage.locator("#admin-notifications-preview-details")).isFocused();
-    browserPage.locator("#admin-notifications-preview-details").press("Tab");
-
-    assertThat(compose.send()).isFocused();
-    assertThat(compose.send()).hasCSS("outline-style", "solid");
-    AllurePlaywright.attachScreenshot("Geprüftes Verfassenpanel", browserPage);
   }
 
   @ParameterizedTest(

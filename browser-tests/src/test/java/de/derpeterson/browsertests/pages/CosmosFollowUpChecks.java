@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
@@ -10,6 +11,16 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 /** Gemeinsame sichtbare Verträge der gezielt nachgeprüften Konto- und Detailsdarstellung. */
 public final class CosmosFollowUpChecks {
   private CosmosFollowUpChecks() {}
+
+  public static void assertNativeRequiredIndicator(Locator field) {
+    assertThat(field).hasAttribute("required", "");
+    Locator indicator = field.locator("[part=required-indicator]");
+    assertThat(indicator).isVisible();
+    assertThat(indicator).hasCSS("position", "static");
+    assertThat(indicator).hasCSS("color", "rgb(248, 113, 113)");
+    assertEquals(
+        "\"*\"", indicator.evaluate("indicator => getComputedStyle(indicator, '::after').content"));
+  }
 
   /** Prüft einen anfangs eingeklappten Schalter und hinterlässt ihn wieder eingeklappt. */
   public static void assertDetailsWithoutHover(Locator detailsToggleLocator) {

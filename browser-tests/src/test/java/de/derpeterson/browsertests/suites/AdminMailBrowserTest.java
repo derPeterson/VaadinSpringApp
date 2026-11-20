@@ -21,6 +21,7 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -51,12 +52,31 @@ public class AdminMailBrowserTest extends BrowserFixture {
     AdminMailPage mail = new AdminMailPage(browserPage);
     mail.open();
     String email = "mail-" + UUID.randomUUID() + "@example.test";
+    Locator mailForm = browserPage.locator(".cosmos-mail-card");
+    Locator recipientInput = mail.input(uiTexts.getAdminMailRecipient());
+    Locator subjectInput = mail.input(uiTexts.getAdminMailSubject());
+    Locator bodyInput = mail.input(uiTexts.getAdminMailBody());
+    for (Locator input : List.of(recipientInput, subjectInput, bodyInput)) {
+      input.clear();
+      input.press("Tab");
+    }
+    assertThat(mailForm.locator("[invalid]")).hasCount(0);
+    mail.send();
+    mail.notice(uiTexts.getAdminMailValidationRecipient());
+    assertThat(mailForm.locator("vaadin-email-field[invalid]")).hasCount(1);
+    assertThat(mailForm.locator("vaadin-text-field[invalid]")).hasCount(1);
+    assertThat(mailForm.locator("vaadin-text-area[invalid]")).hasCount(1);
+    assertThat(mailForm.locator("[part=error-message]:visible")).hasCount(0);
+
     mail.input(uiTexts.getAdminMailRecipient()).fill("invalid");
     mail.send();
     mail.notice(uiTexts.getAdminMailValidationRecipient());
 
     assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     mail.input(uiTexts.getAdminMailRecipient()).fill(email);
+    assertThat(mailForm.locator("vaadin-email-field[invalid]")).hasCount(0);
+    assertThat(mailForm.locator("vaadin-text-field[invalid]")).hasCount(1);
+    assertThat(mailForm.locator("vaadin-text-area[invalid]")).hasCount(1);
     mail.input(uiTexts.getAdminMailSubject()).fill("");
     mail.send();
     mail.notice(uiTexts.getAdminMailValidationSubject());
@@ -106,7 +126,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
       browserPage.setViewportSize(width, 900);
       assertMailFieldHelpButtonsAreCentered();
       UiActions.resizeTextArea(
-          browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"));
+          browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"), 144);
       assertMailFieldHelpButtonsAreCentered();
     }
     browserPage.setViewportSize(1280, 900);
@@ -138,14 +158,11 @@ public class AdminMailBrowserTest extends BrowserFixture {
       browserPage.setViewportSize(width, 900);
       for (String[] info : infos) {
         Locator help = openFieldHelp(info[0]);
-
-        assertThat(help.locator(".admin-help-description")).hasText(info[1]);
-        assertThat(help.locator(".admin-help-rules h4"))
-            .hasText(uiTexts.getAdminConfigInputRules());
-        assertThat(help.locator(".admin-help-rules li")).hasText(info[2]);
-        help.locator("[slot=footer] vaadin-button").click();
-
-        assertThat(help).hasCount(0);
+        assertHelpContentAndClose(help, info[1], info[2]);
+      }
+      for (String[] info : List.of(infos[1], infos[2])) {
+        fieldHelpButton(info[0]).click();
+        assertHelpContentAndClose(assertOpenFieldHelp(info[0]), info[1], info[2]);
       }
     }
     UiTexts other =
@@ -165,24 +182,48 @@ public class AdminMailBrowserTest extends BrowserFixture {
       browserPage.keyboard().press("Escape");
 
       assertThat(help).hasCount(0);
+      mail.input(other.getAdminMailSubject()).clear();
+      mail.input(other.getAdminMailBody()).clear();
+      mail.input(other.getAdminMailBody()).press("Tab");
     } finally {
       new UserMenu(browserPage).selectTestLanguage();
     }
-    assertThat(mail.input(uiTexts.getAdminMailBody())).hasValue(body);
+    assertThat(mail.input(uiTexts.getAdminMailRecipient())).hasValue(email);
+    assertThat(mail.input(uiTexts.getAdminMailSubject())).hasValue("");
+    assertThat(mail.input(uiTexts.getAdminMailBody())).hasValue("");
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])")).hasCount(0);
   }
 
-  private Locator openFieldHelp(String field) {
-    Locator button =
-        browserPage.getByRole(
-            AriaRole.BUTTON, new Page.GetByRoleOptions().setName(field).setExact(true));
+  private Locator fieldHelpButton(String fieldLabel) {
+    return browserPage.getByRole(
+        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(fieldLabel).setExact(true));
+  }
+
+  private Locator openFieldHelp(String fieldLabel) {
+    Locator button = fieldHelpButton(fieldLabel);
+    button.hover();
+    assertThat(button.locator("vaadin-tooltip")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-tooltip-overlay[opened]")).hasCount(0);
     button.focus();
+    assertThat(browserPage.locator("vaadin-tooltip-overlay[opened]")).hasCount(0);
     UiActions.complete(browserPage, () -> browserPage.keyboard().press("Enter"));
+    return assertOpenFieldHelp(fieldLabel);
+  }
+
+  private Locator assertOpenFieldHelp(String fieldLabel) {
     Locator help = browserPage.locator("#admin-mail-field-help[opened]");
 
     assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
-    assertThat(help.locator(".admin-help-field-title")).hasText(field);
+    assertThat(help.locator(".admin-help-field-title")).hasText(fieldLabel);
     return help;
+  }
+
+  private void assertHelpContentAndClose(Locator help, String hint, String rule) {
+    assertThat(help.locator(".admin-help-description")).hasText(hint);
+    assertThat(help.locator(".admin-help-rules h4")).hasText(uiTexts.getAdminConfigInputRules());
+    assertThat(help.locator(".admin-help-rules li")).hasText(rule);
+    help.locator("[slot=footer] vaadin-button").click();
+    assertThat(help).hasCount(0);
   }
 
   private void assertMailFieldHelpButtonsAreCentered() {
@@ -223,7 +264,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
     mail.input(uiTexts.getAdminMailSubject()).fill(subject);
     Locator body = mail.input(uiTexts.getAdminMailBody());
     UiActions.resizeTextArea(
-        browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"));
+        browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"), 144);
     UiActions.completeValueChange(
         browserPage,
         () -> {

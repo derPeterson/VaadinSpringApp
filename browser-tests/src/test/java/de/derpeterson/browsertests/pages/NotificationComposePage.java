@@ -77,7 +77,7 @@ public final class NotificationComposePage {
         .hasText(uiTexts.getNotificationsSelectedUsers(1));
   }
 
-  @Step("Allgemeinen Vorschaufehler mit konkreten Hinweisen an allen leeren Feldern prüfen")
+  @Step("Leere Felder erst bei der Vorschau markieren und den ersten Fehler melden")
   public void assertEmptyReview() {
     assertThat(send()).isDisabled();
     title().fill("Temporary");
@@ -87,19 +87,14 @@ public final class NotificationComposePage {
     title().press("Tab");
 
     assertThat(root().locator("[invalid]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])")).hasCount(0);
     review().click();
 
-    assertThat(browserPage.locator("#admin-notifications-title"))
-        .hasJSProperty("errorMessage", uiTexts.getNotificationsInvalidSubject());
     assertThat(browserPage.locator("#admin-notifications-title[invalid]")).hasCount(1);
     assertThat(browserPage.locator("#admin-notifications-body[invalid]")).hasCount(1);
-    assertThat(browserPage.locator("#admin-notifications-body"))
-        .hasJSProperty("errorMessage", uiTexts.getNotificationsInvalidBody());
     assertThat(browserPage.locator("#admin-notifications-recipients[invalid]")).hasCount(1);
-    assertThat(recipients()).hasJSProperty("errorMessage", uiTexts.getNotificationsNoRecipients());
-    notice(
-        uiTexts.getNotificationsPreviewFailedTitle(),
-        uiTexts.getNotificationsPreviewFailedMessage());
+    assertThat(root().locator("[part=error-message]:visible")).hasCount(0);
+    notice(uiTexts.getBaseFailedTitle(), uiTexts.getNotificationsNoRecipients());
   }
 
   @Step("Eigenen Entwurf in der tatsächlich gerenderten Vorschau freigeben")

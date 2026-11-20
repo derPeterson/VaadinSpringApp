@@ -103,7 +103,7 @@ public final class UiActions {
   }
 
   /** Prüft den echten CSS-Ziehgriff, ohne Höhen oder Feldwerte per JavaScript zu setzen. */
-  public static void resizeTextArea(Page browserPage, Locator field) {
+  public static void resizeTextArea(Page browserPage, Locator field, int inputMinHeight) {
     com.microsoft.playwright.options.ViewportSize viewport = browserPage.viewportSize();
     // Für den Ziehweg mehr Höhe bereitstellen; die tatsächlich geprüfte Breite bleibt gleich.
     browserPage.setViewportSize(viewport.width, 1800);
@@ -112,6 +112,7 @@ public final class UiActions {
       Locator inputSurfaceLocator = field.locator("[part~='input-field']");
       field.scrollIntoViewIfNeeded();
       assertThat(field).hasCSS("resize", "vertical");
+      assertThat(inputSurfaceLocator).hasCSS("min-height", inputMinHeight + "px");
       textInputLocator.focus();
       assertThat(inputSurfaceLocator).hasCSS("outline-style", "solid");
       assertThat(inputSurfaceLocator).hasCSS("outline-offset", "-2px");
@@ -131,7 +132,19 @@ public final class UiActions {
       org.junit.jupiter.api.Assertions.assertEquals(grown, field.boundingBox().height, 1);
       dragCorner(browserPage, field.boundingBox(), -200);
       browserPage.waitForCondition(() -> field.boundingBox().height < grown - 160);
+      double chosenHeight = field.boundingBox().height;
+      String longMessage = "TextArea scroll test\n".repeat(42);
+      textInputLocator.fill(longMessage);
+      assertThat(textInputLocator).hasValue(longMessage);
+      org.junit.jupiter.api.Assertions.assertEquals(chosenHeight, field.boundingBox().height, 1);
+      textInputLocator.press("Control+Home");
+      inputSurfaceLocator.hover();
+      // Die native TextArea scrollt die Eingabefläche um das innere Textelement.
+      browserPage.mouse().wheel(0, 250);
+      browserPage.waitForCondition(
+          () -> (boolean) inputSurfaceLocator.evaluate("surface => surface.scrollTop > 0"));
       textInputLocator.clear();
+      assertThat(textInputLocator).hasValue("");
     } finally {
       browserPage.setViewportSize(viewport.width, viewport.height);
     }
