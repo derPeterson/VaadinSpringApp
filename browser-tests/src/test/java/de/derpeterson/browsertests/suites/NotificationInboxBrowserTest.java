@@ -211,8 +211,10 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     deleteButton.focus();
     assertThat(deleteButton).isFocused();
     deleteButton.press("Enter");
-    Locator confirmation = recipientPage.locator(".portal-confirmation-dialog[opened]");
-    assertThat(confirmation.locator("[part~=overlay]").first()).isVisible();
+    Locator confirmation = recipientPage.locator("#notifications-preview-confirmation[opened]");
+    Locator openedOverlay = confirmation.locator("vaadin-confirm-dialog-overlay[opened]");
+    assertThat(openedOverlay.locator("[part~=overlay]")).isVisible();
+    assertThat(openedOverlay).not().hasAttribute("opening", "");
     recipientPage.keyboard().press("Escape");
     assertThat(confirmation).hasCount(0);
     assertThat(inbox.row(inbox.preview(), subject)).isVisible();

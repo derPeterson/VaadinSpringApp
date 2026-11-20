@@ -19,6 +19,11 @@ public final class AccountFormAppearanceChecks {
 
   public static void assertEqualDialogActions(
       Page browserPage, Locator dialogLocator, String cancelText, String confirmText) {
+    Locator openedOverlay = dialogLocator.locator("vaadin-dialog-overlay[opened]");
+    assertThat(openedOverlay.locator("[part~='overlay']")).isVisible();
+    assertThat(openedOverlay).not().hasAttribute("opening", "");
+    browserPage.evaluate("() => document.fonts.ready");
+
     ViewportSize viewport = browserPage.viewportSize();
     assertDialogActionsAtWidth(dialogLocator, cancelText, confirmText, viewport.width);
 
