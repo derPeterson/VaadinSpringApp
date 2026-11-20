@@ -112,6 +112,7 @@ public final class LoginPage {
   @Step("Sitzungsgrenze bei gültigen Zugangsdaten prüfen")
   public void assertSessionLimit() {
     assertFormVisible();
+    assertLoginInputsUnmarked();
 
     assertThat(
             browserPage.getByText(
@@ -154,11 +155,19 @@ public final class LoginPage {
   @Step("Vorübergehende Anmeldesperre ohne Kontoauskunft prüfen")
   public void assertThrottled() {
     assertFormVisible();
+    assertLoginInputsUnmarked();
 
     assertThat(
             browserPage.getByText(
                 uiTexts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
+  }
+
+  private void assertLoginInputsUnmarked() {
+    assertThat(
+            browserPage.locator(
+                ".public-panel :is(vaadin-email-field, vaadin-password-field)[invalid]"))
+        .hasCount(0);
   }
 
   @Step("Vorhandenen Fehlerhinweis vor dem nächsten Anmeldeversuch schließen")

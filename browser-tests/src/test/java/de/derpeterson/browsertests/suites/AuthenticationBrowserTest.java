@@ -8,11 +8,13 @@ import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
@@ -59,10 +61,53 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   void wrongPasswordIsRejected() {
     LoginPage login = new LoginPage(browserPage);
     login.open();
+    assertLoginMarksOnlyFailedSubmissions();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
+    Locator loginPanel = browserPage.locator(".public-panel");
+    assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(1);
+    assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(1);
+    loginPanel.locator("vaadin-email-field input").fill("another@example.test");
+    assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(0);
+    assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(1);
     browserPage.navigate(path(ADMIN_ROUTE));
     login.assertFormVisible();
+  }
+
+  private void assertLoginMarksOnlyFailedSubmissions() {
+    Locator loginPanel = browserPage.locator(".public-panel");
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(loginPanel.locator("vaadin-email-field"));
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(loginPanel.locator("vaadin-password-field"));
+    Locator emailInput = loginPanel.locator("vaadin-email-field input");
+    Locator passwordInput = loginPanel.locator("vaadin-password-field input");
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+    emailInput.fill("not-an-email");
+    emailInput.press("Tab");
+    passwordInput.fill("temporary");
+    passwordInput.clear();
+    passwordInput.press("Tab");
+    assertThat(loginPanel.locator("[invalid]")).hasCount(0);
+    assertThat(notice).hasCount(0);
+
+    emailInput.clear();
+    loginPanel
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getBaseLoginButton()).setExact(true))
+        .click();
+    assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(1);
+    assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(1);
+    assertThat(notice).containsText(uiTexts.getBaseValidationRequiredMessage());
+    notice.getByRole(AriaRole.BUTTON).click();
+
+    emailInput.fill("not-an-email");
+    assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(0);
+    assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(1);
+    passwordInput.fill("temporary");
+    passwordInput.press("Enter");
+    assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(1);
+    assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(0);
+    assertThat(notice).containsText(uiTexts.getBaseValidationEmailInvalidMessage());
   }
 
   @Tag("fast")

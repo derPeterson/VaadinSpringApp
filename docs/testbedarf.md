@@ -186,13 +186,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   verwenden keine separate violette Markierung. Disabled, Readonly und
   Fehlermarkierung bleiben optisch unterscheidbar.
 
-- **Login – Markierungen und Validierungszeitpunkt — offen.**
-  E-Mail und Passwort eingeben, leeren und verlassen. Auch ungültiges
-  E-Mail-Format bleibt bis zum Absenden unmarkiert. Klick und Enter
-  markieren die betroffenen Felder und zeigen die konkrete Meldung.
-  Falsche Zugangsdaten markieren beide Felder. Korrektur entfernt nur die
-  alte Markierung des geänderten Felds. Wartung, Drosselung, technische
-  Fehler und Rückmeldungen nach Weiterleitungen bleiben ohne Eingabemarkierung.
+- **Login – Markierungen bei Rückmeldungen zur Anmeldung — offen.**
+  Wartung, Drosselung, Sitzungslimit, technische Fehler und Rückmeldungen nach
+  Weiterleitungen prüfen. Die Eingabefelder bleiben dabei unmarkiert.
 
 - **Registrierung – Markierungen vor und nach dem Absenden — offen.**
   Pflichtfelder und unvollständige E-Mail-Adresse nach Blur und vor
