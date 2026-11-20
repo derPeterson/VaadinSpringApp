@@ -163,13 +163,10 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   schreibgeschützt. Escape zuerst am gefüllten Feld prüfen, über den bereits
   geprüften E-Mail-Dialog hinaus.
 
-- **Persönliche Daten – Blur, Löschkreuze und Verlassensschutz — offen.**
-  Vor- und Nachnamen über das X leeren und vor dem Speichern ohne
-  Markierung lassen. Änderungen nehmen nur alte Feldmarkierungen zurück.
-  Pflichtsprache prüfen. Bei ursprünglich leerem Geburtsdatum muss
-  unlesbarer Text trotz fehlender Rotmarkierung den Änderungsschutz und
-  den Browser-Verlassensschutz auslösen. Leeren beseitigt die Änderung,
-  sofern sonst nichts verändert wurde.
+- **Persönliche Daten – Pflichtsprache — offen.**
+  Bei fehlender Sprache bleibt das Feld bis zum Speichern unmarkiert.
+  Speichern meldet das Pflichtfeld. Eine gültige Auswahl hebt die
+  Markierung auf.
 
 - **Pflichtfeldindikatoren — offen.**
   Rotes natives Sternchen direkt hinter der Beschriftung in Benutzereditor,

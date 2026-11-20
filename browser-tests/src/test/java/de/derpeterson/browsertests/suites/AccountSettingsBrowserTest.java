@@ -47,6 +47,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -341,6 +342,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     Locator firstNameInputLocator = accountPage.input("account-first-name");
     String savedFirstName = firstNameInputLocator.inputValue();
+    verifyUnreadableBirthDateIsAnUnsavedChange(accountPage, unsavedChangesPrompt);
     firstNameInputLocator.fill("Temporary draft");
     unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
     unsavedChangesPrompt.assertBrowserTabCloseCanBeCancelled();
@@ -386,6 +388,31 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     firstNameInputLocator.fill("Discarded by reload");
     unsavedChangesPrompt.assertBrowserReloadCanDiscardChanges();
     assertThat(firstNameInputLocator).hasValue("Saved profile");
+  }
+
+  private void verifyUnreadableBirthDateIsAnUnsavedChange(
+      AccountPage accountPage, UnsavedChangesPrompt unsavedChangesPrompt) {
+    Locator birthDatePicker = accountPage.host("account-birth-date");
+    Locator birthDateInput = accountPage.input("account-birth-date");
+    birthDatePicker.locator("[part~=clear-button]").click();
+    accountPage.save();
+    accountPage.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+    accountPage.closeNotification();
+    assertThat(birthDatePicker).hasJSProperty("value", "");
+
+    birthDateInput.fill("kein-datum");
+    birthDateInput.press("Tab");
+    assertThat(birthDatePicker).not().hasAttribute("invalid", "");
+    assertThat(birthDatePicker).hasJSProperty("value", "");
+    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.keepEditing();
+    assertThat(birthDateInput).hasValue("kein-datum");
+
+    birthDateInput.clear();
+    birthDateInput.press("Tab");
+    unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
+    assertThat(birthDateInput).hasValue("");
   }
 
   private void assertUnsavedChangesDialogAppearance(
@@ -557,12 +584,22 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     AccountPage form = new AccountPage(browserPage);
     form.open();
     String original = form.input("account-first-name").inputValue();
+    for (String fieldId : List.of("account-first-name", "account-last-name")) {
+      Locator clearButton = form.host(fieldId).locator("[part~=clear-button]");
+      clearButton.click();
+      form.input(fieldId).press("Tab");
+      assertThat(form.input(fieldId)).hasValue("");
+      assertThat(form.host(fieldId)).not().hasAttribute("invalid", "");
+      assertThat(clearButton).not().isVisible();
+    }
     form.input("account-first-name").fill(" ");
-    form.input("account-last-name").fill("");
     form.save();
     form.assertMessage(uiTexts.getBaseValidationRequiredMessage());
 
     assertThat(form.host("account-first-name")).hasAttribute("invalid", "");
+    assertThat(form.host("account-last-name")).hasAttribute("invalid", "");
+    form.input("account-first-name").fill(original);
+    assertThat(form.host("account-first-name")).not().hasAttribute("invalid", "");
     assertThat(form.host("account-last-name")).hasAttribute("invalid", "");
     form.closeNotification();
     for (LocalDate date :
