@@ -2,11 +2,14 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.KeyboardModifier;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -44,7 +47,7 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
     int sentRowCountBeforePreview = browserPage.locator(".cosmos-notification-sent-row").count();
 
     int selectedRecipientCount = 0;
-    for (int recipientCount : new int[] {3, 5, 6, 9}) {
+    for (int recipientCount : new int[] {1, 2, 3, 5, 6, 7, 9}) {
       while (selectedRecipientCount < recipientCount) {
         String email = recipientEmails.get(selectedRecipientCount++);
         composePage.recipients().locator("input").fill(email);
@@ -65,25 +68,35 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
           recipientAvatarGroupLocator.locator("vaadin-avatar[slot='overflow']");
       assertThat(individualAvatarLocators).hasCount(recipientCount <= 6 ? recipientCount : 5);
       assertAvatarFrameMatchesHeader(individualAvatarLocators.first());
-      assertThat(recipientAvatarGroupLocator)
-          .hasAttribute(
-              "aria-label",
-              uiTexts
+      String recipientCountLabel =
+          recipientCount == 1
+              ? uiTexts.getNotificationsAvatarGroupOneRecipient()
+              : uiTexts
                   .getNotificationsAvatarGroupManyRecipients()
-                  .replace("{count}", Integer.toString(recipientCount)));
+                  .replace("{count}", Integer.toString(recipientCount));
+      assertThat(recipientAvatarGroupLocator).hasAttribute("aria-label", recipientCountLabel);
+      assertThat(recipientAvatarGroupLocator).hasAttribute("role", "button");
+      assertThat(recipientAvatarGroupLocator).hasAttribute("aria-haspopup", "dialog");
       if (recipientCount <= 6) {
         assertThat(overflowAvatarLocator).not().isVisible();
       } else {
-        assertThat(overflowAvatarLocator).hasJSProperty("abbr", "+4");
+        assertThat(overflowAvatarLocator).hasJSProperty("abbr", "+" + (recipientCount - 5));
       }
       capture("Empfaenger " + recipientCount);
       composePage.review().focus();
       composePage.review().press("Tab");
       assertThat(recipientAvatarGroupLocator).isFocused();
       recipientAvatarGroupLocator.press("Enter");
+      assertRecipientListFitsVisibleRows(recipientCount);
       verifyRecipientPopover(recipientEmails.get(recipientCount - 1), width);
       closeRecipientPopoverAndAssertSendEnabled(composePage, recipientAvatarGroupLocator);
 
+      if (recipientCount == 2) {
+        individualAvatarLocators.first().click();
+        verifySelectionPersistsAcrossSearches(recipientEmails.get(0), recipientEmails.get(1));
+        browserPage.mouse().click(1, 1);
+        assertRecipientPopoverClosed(composePage, recipientAvatarGroupLocator);
+      }
       if (recipientCount == 9) {
         overflowAvatarLocator.click();
         verifyRecipientPopover(recipientEmails.getFirst(), width);
@@ -92,6 +105,43 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
     }
     assertThat(browserPage.locator(".cosmos-notification-sent-row"))
         .hasCount(sentRowCountBeforePreview);
+  }
+
+  private void assertRecipientListFitsVisibleRows(int recipientCount) {
+    Locator recipientList = browserPage.locator("#admin-notifications-recipient-list");
+    Locator firstRecipient = recipientList.locator(".cosmos-recipient-button:visible").first();
+    assertThat(firstRecipient).isVisible();
+    BoundingBox rowBounds = firstRecipient.boundingBox();
+    assertNotNull(rowBounds);
+    double listContentHeight =
+        ((Number) recipientList.evaluate("list => list.clientHeight")).doubleValue();
+    assertEquals(Math.min(recipientCount, 5) * rowBounds.height, listContentHeight, 1);
+  }
+
+  private void verifySelectionPersistsAcrossSearches(String firstEmail, String secondEmail) {
+    Locator recipientPopover = browserPage.locator("#admin-notifications-preview-recipients");
+    Locator searchInput = recipientPopover.locator("#admin-notifications-recipient-search input");
+    Locator recipientRows = recipientPopover.locator(".cosmos-recipient-button:visible");
+    Locator firstRow = recipientRows.filter(new Locator.FilterOptions().setHasText(firstEmail));
+    Locator secondRow = recipientRows.filter(new Locator.FilterOptions().setHasText(secondEmail));
+
+    searchInput.fill("Ada Berg");
+    assertThat(recipientRows).hasCount(2);
+    firstRow.press("Enter");
+    assertThat(firstRow).hasAttribute("aria-pressed", "true");
+    assertThat(secondRow).hasAttribute("aria-pressed", "false");
+
+    searchInput.fill("no-matching-recipient");
+    assertThat(recipientPopover.locator(".cosmos-recipient-empty"))
+        .containsText(uiTexts.getNotificationsRecipientSearchEmpty());
+    assertThat(recipientRows).hasCount(0);
+    searchInput.clear();
+    assertThat(firstRow).hasAttribute("aria-pressed", "true");
+    secondRow.press("Space");
+    assertThat(firstRow).hasAttribute("aria-pressed", "false");
+    assertThat(secondRow).hasAttribute("aria-pressed", "true");
+    secondRow.click(new Locator.ClickOptions().setModifiers(List.of(KeyboardModifier.CONTROL)));
+    assertThat(secondRow).hasAttribute("aria-pressed", "false");
   }
 
   private void assertAvatarFrameMatchesHeader(Locator recipientAvatarLocator) {
@@ -131,6 +181,11 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
   private void closeRecipientPopoverAndAssertSendEnabled(
       NotificationComposePage composePage, Locator recipientAvatarGroupLocator) {
     browserPage.keyboard().press("Escape");
+    assertRecipientPopoverClosed(composePage, recipientAvatarGroupLocator);
+  }
+
+  private void assertRecipientPopoverClosed(
+      NotificationComposePage composePage, Locator recipientAvatarGroupLocator) {
     assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
         .not()
         .hasAttribute("opened", "");
@@ -140,7 +195,7 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
 
   private List<String> createRecipients() {
     String[][] recipientNames = {
-      {"Ada", "Berg"}, {"Ben", "Klein"}, {"Cem", "Lang"},
+      {"Ada", "Berg"}, {"Ada", "Berg"}, {"Cem", "Lang"},
       {"Dana", "Roth"}, {"Emil", "Wolf"}, {"Fara", "Jung"},
       {"Gina", "Koch"}, {"Hugo", "Brandt"}, {"Iris", "Voss"}
     };

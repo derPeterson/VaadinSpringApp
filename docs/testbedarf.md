@@ -97,15 +97,10 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   nicht verschieben.
 
 - **Empfängervorschau – vollständige Popover-Liste — offen.**
-  Bei 1/2/5/6/7/200 Empfängern Öffnen per Klick auf den ersten Avatar oder
-  den Zwischenraum sowie per Leertaste prüfen. Namen-Tooltips, Suche nach Namen, Leeren
-  und Leerzustand prüfen. Schließen per Außenklick und Schließen-Button sowie
-  erneute Vorschau ohne doppelte Listener abdecken.
-  Maximal fünf sichtbare Zeilen, Schrumpfen bei weniger Ergebnissen und
-  virtuelles Scrollen bis zum letzten Eintrag prüfen. Maus, Enter und
-  Leertaste wählen genau eine Zeile, Strg+Klick hebt sie auf oder wechselt
-  sie. Suche und Scrollen erhalten die Auswahl auch bei gleichen Namen und
-  verschiedenen E-Mails. Die Versandempfänger bleiben unverändert.
+  Öffnen per Klick in den Zwischenraum zwischen Avataren und die
+  Namen-Tooltips prüfen. Bei 200 Empfängern bis zum letzten Eintrag scrollen.
+  Mauswahl, Strg+Klick auf eine andere Zeile und Erhalt der Auswahl beim
+  Scrollen prüfen. Die Versandempfänger bleiben unverändert.
   Dialogkopf, abgesetzte Content-Fläche, 380-px-Wunschbreite mit seitlichem
   L-Abstand und Suchfeld (40/13/14 px für Höhe/Schrift/Lupe) vermessen.
   Overlayhöhe bei 200 Empfängern im Fenster halten. Zentrierten Leerzustand
