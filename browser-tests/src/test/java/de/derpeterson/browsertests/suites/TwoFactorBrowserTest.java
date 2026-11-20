@@ -1493,19 +1493,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
     UiActions.complete(browserPage, () -> categories.locator("vaadin-tab").nth(1).click());
     assertTicketLocation("recovery", null);
+    verifyTicketCategorySurvivesLanguageChange(categories, heading);
 
-    assertThat(heading).containsText(uiTexts.getSupportPageDescription());
-    UiTexts otherLanguage = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
-    new UserMenu(browserPage).selectLanguage(otherLanguage.language());
-
-    assertThat(heading).containsText(otherLanguage.getSupportPageDescription());
-    assertThat(categories.locator("vaadin-tab[selected]"))
-        .hasText(otherLanguage.getSupportRecoveryCategory());
-    new UserMenu(browserPage).selectTestLanguage();
-    browserPage.reload();
-
-    assertThat(categories.locator("vaadin-tab[selected]"))
-        .hasText(uiTexts.getSupportRecoveryCategory());
     assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
     assertThat(ticketCard(browserPage, ownClosedNumber)).hasCount(1);
     assertThat(ticketCard(browserPage, ownOpenNumber)).hasCount(1);
@@ -1531,6 +1520,20 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator(".portal-notification-source-system").first()).isVisible();
     AllurePlaywright.attachScreenshot(
         "Gemeinsame Systemfarbe im Benachrichtigungsbadge", browserPage);
+  }
+
+  private void verifyTicketCategorySurvivesLanguageChange(Locator categories, Locator heading) {
+    Locator selectedCategory = categories.locator("vaadin-tab[selected]");
+    assertThat(heading).containsText(uiTexts.getSupportPageDescription());
+    UiTexts otherLanguage = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
+    new UserMenu(browserPage).selectLanguage(otherLanguage.language());
+
+    assertThat(heading).containsText(otherLanguage.getSupportPageDescription());
+    assertThat(selectedCategory).hasText(otherLanguage.getSupportRecoveryCategory());
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.reload();
+
+    assertThat(selectedCategory).hasText(uiTexts.getSupportRecoveryCategory());
   }
 
   private void verifyUnselectedTicketLayout(
