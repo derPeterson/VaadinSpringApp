@@ -20,12 +20,15 @@ Häufige Aufgaben im Portal und in der Verwaltung sind jetzt leichter zu erledig
 
 ##### Highlights
 
-- Eigene Wiederherstellungsanfragen in einer scrollbaren Liste mit höchstens fünf
-  sichtbaren Einträgen durchsuchen; Strg+Klick hebt die Ticketauswahl auf und erhält Antwortentwürfe.
-- Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
+- **Wiederherstellungsanfragen**
+  Eigene Anfragen in einer scrollbaren Liste mit höchstens fünf sichtbaren
+  Einträgen durchsuchen. Strg+Klick hebt die Ticketauswahl auf und erhält Antwortentwürfe.
+- **Empfänger schneller finden**
+  Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
   Suche nach Name und E-Mail-Adresse, auch ohne „+N“-Überlauf.
-- Im Admin-Ticketsystem öffnet das Vorgangsdetail bei wenig Platz über der
-  Liste. Beim Zurückkehren zur Liste bleiben ungesendete Antwortentwürfe erhalten.
+- **Tickets auf kleinen Bildschirmen**
+  Im Admin-Ticketsystem öffnet das Vorgangsdetail bei wenig Platz über der Liste.
+  Beim Zurückkehren zur Liste bleiben ungesendete Antwortentwürfe erhalten.
 
 ##### Weitere Verbesserungen
 
@@ -47,11 +50,14 @@ Common tasks in the portal and admin area are now easier to complete.
 
 ##### Highlights
 
-- Browse personal recovery requests in a scrollable list with up to five visible
-  entries; Ctrl-click clears the selected ticket while preserving reply drafts.
-- The avatar preview of an announcement opens the complete recipient list with
+- **Recovery requests**
+  Browse personal recovery requests in a scrollable list with up to five visible
+  entries. Ctrl-click clears the selected ticket while preserving reply drafts.
+- **Find recipients faster**
+  The avatar preview of an announcement opens the complete recipient list with
   search by name and email address, even without a “+N” overflow.
-- In the admin ticket system, ticket details open over the list on narrow screens.
+- **Tickets on narrow screens**
+  In the admin ticket system, ticket details open over the list on narrow screens.
   Returning to the list preserves unsent reply drafts.
 
 ##### Further improvements
@@ -77,8 +83,10 @@ Benachrichtigungen an einem Ort verwalten.
 
 ##### Highlights
 
-- Benutzerkonten registrieren, E-Mail-Adressen bestätigen und Passwörter zurücksetzen.
-- Persönliche Daten, Profilbild, Anmeldeanbieter und Zwei-Faktor-Authentifizierung verwalten.
+- **Zugang und Sicherheit**
+  Benutzerkonten registrieren, E-Mail-Adressen bestätigen und Passwörter zurücksetzen.
+- **Profil und Zwei-Faktor-Schutz**
+  Persönliche Daten, Profilbild, Anmeldeanbieter und Zwei-Faktor-Authentifizierung verwalten.
 
 ##### Weitere Verbesserungen
 
@@ -95,8 +103,10 @@ together in one place.
 
 ##### Highlights
 
-- Register accounts, verify email addresses and reset passwords.
-- Manage personal details, profile pictures, sign-in providers and two-factor authentication.
+- **Access and security**
+  Register accounts, verify email addresses and reset passwords.
+- **Profile and two-factor protection**
+  Manage personal details, profile pictures, sign-in providers and two-factor authentication.
 
 ##### Further improvements
 

@@ -35,7 +35,11 @@ Bei fachlicher Featureabnahme ergänzen, beim Review prüfen. Leere unveröffent
 Sprachabschnitte sind erlaubt, leere Releases oder einseitige Übersetzungen nicht.
 Für „Was ist neu?“ übernimmt der Build die Datei in den Classpath. Innerhalb
 der Sprachabschnitte beginnen redaktionelle Titel mit `#### `. Unterabschnitte
-wie Highlights und Weitere Verbesserungen verwenden `##### `. Ein optionaler
+wie `Highlights` und `Weitere Verbesserungen` beziehungsweise
+`Further improvements` verwenden `##### `. Bei einer Ausgabe mit beiden Abschnitten
+ergibt jeder mit `- ` begonnene Aufzählungspunkt unter Highlights eine Karte.
+Für einen Kartentitel den Punkt mit einem fett formatierten Titel auf einer eigenen
+Zeile beginnen. Fortsetzungszeilen um zwei Leerzeichen einrücken. Ein optionaler
 Screenshot mit Beispieldaten liegt unter `app/src/main/resources/META-INF/resources/images/release-notes/`.
 Die beiden Sprachabschnitte können dieselbe Bilddatei mit passendem Alternativtext
 über `/images/release-notes/` referenzieren.

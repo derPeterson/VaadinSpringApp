@@ -3,6 +3,8 @@ package de.derpeterson.app.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
+import de.derpeterson.app.service.PortalReleaseNotes.FeaturedRelease;
+import de.derpeterson.app.service.PortalReleaseNotes.Highlight;
 import de.derpeterson.app.service.PortalReleaseNotes.Release;
 import java.io.IOException;
 import java.util.List;
@@ -39,8 +41,13 @@ class PortalReleaseNotesTest {
 
       ##### Highlights
 
-      - Übersichtliche Empfängerliste
-      ![Empfängersuche](/images/release-notes/0.2.0/recipients.png)
+      - **Empfänger finden**
+        Übersichtliche [Empfängerliste](/notifications)
+        ![Empfängersuche](/images/release-notes/0.2.0/recipients.png)
+
+          - Suche nach Name
+          - Suche nach E-Mail
+      - Überblick behalten
 
       ##### Weitere Verbesserungen
 
@@ -88,8 +95,29 @@ class PortalReleaseNotesTest {
         .contains("A short introduction.", "##### Further improvements")
         .doesNotContain("Der kurze Einstieg.");
 
+    FeaturedRelease germanRelease = latestRelease.textFor(Locale.GERMAN).featured().orElseThrow();
+    assertThat(germanRelease.introduction()).isEqualTo("Der kurze Einstieg.");
+    assertThat(germanRelease.highlights())
+        .extracting(Highlight::title)
+        .containsExactly("Empfänger finden", "");
+    assertThat(germanRelease.highlights().getFirst().markdown())
+        .isEqualTo(
+            """
+            Übersichtliche [Empfängerliste](/notifications)
+            ![Empfängersuche](/images/release-notes/0.2.0/recipients.png)
+
+              - Suche nach Name
+              - Suche nach E-Mail
+            """
+                .stripTrailing());
+    assertThat(germanRelease.improvementsMarkdown()).isEqualTo("- Neue Sortierung");
+    FeaturedRelease englishRelease = latestRelease.textFor(Locale.ENGLISH).featured().orElseThrow();
+    assertThat(englishRelease.improvementsHeading()).isEqualTo("Further improvements");
+    assertThat(englishRelease.improvementsMarkdown()).isEqualTo("- New sorting order");
+
     assertThat(releases.getLast().textFor(Locale.GERMAN).title()).isEmpty();
     assertThat(releases.getLast().textFor(Locale.GERMAN).markdown()).isEqualTo("- Erstes Portal");
+    assertThat(releases.getLast().textFor(Locale.GERMAN).featured()).isEmpty();
   }
 
   @Test

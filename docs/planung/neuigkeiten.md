@@ -11,8 +11,10 @@ und auf Englisch **What's New?**. Auch Administratoren öffnen die Seite im Port
 
 Die Cosmos-Seite zeigt den jüngsten veröffentlichten Release zuerst. Jede
 Ausgabe hat einen eigenen redaktionellen Titel, Version und Datum sowie einen
-kurzen Einstieg. Unter **Highlights** stehen die wichtigsten Neuerungen.
-**Weitere Verbesserungen** fasst kleinere Änderungen knapp zusammen.
+kurzen Einstieg. Variante B stellt die Highlights der neuesten Ausgabe in
+eigenen Karten dar. Darunter folgt die Liste **Weitere Verbesserungen**.
+Ältere Ausgaben erscheinen mit Titel, Version und Datum als einzelne
+aufklappbare Zeilen. Das Archiv wird ab der zweiten sichtbaren Ausgabe angezeigt.
 
 Für die erste Fassung kann ein Release einen Screenshot mit Beispieldaten
 enthalten, wenn er ein Highlight verständlicher macht. Der Screenshot wird

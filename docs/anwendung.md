@@ -230,9 +230,9 @@ einen geschlossenen oder wieder geöffneten Dialog nicht verändern.
 ## Was ist neu?
 
 Angemeldete Benutzer finden die Release-Notizen zwischen **Startseite** und
-**Benachrichtigungen**. Der neueste veröffentlichte Stand steht oben. Frühere
-Ausgaben lassen sich einzeln aufklappen. Die Notizen folgen der gewählten
-Portalsprache.
+**Benachrichtigungen**. Der neueste veröffentlichte Stand steht oben, mit Karten
+für Highlights und einer Liste weiterer Verbesserungen. Frühere Ausgaben lassen
+sich einzeln aufklappen. Die Notizen folgen der gewählten Portalsprache.
 
 ## Benachrichtigungen
 

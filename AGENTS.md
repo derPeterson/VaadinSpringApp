@@ -2,6 +2,8 @@
 
 ## 1. Orientierung und Arbeitsweise
 
+- Für dieses Projekt den bestehenden lokalen Hauptcheckout verwenden. Zusätzliche
+  Codex-Worktrees nur auf ausdrücklichen Benutzerauftrag anlegen.
 - Zuerst `README.md` lesen, danach gezielt die für die Aufgabe relevanten Dateien,
   Aufrufer und Abhängigkeiten untersuchen. Eine umfassende Projektanalyse nur
   durchführen, wenn die Aufgabe und das Verständnis ihrer Zusammenhänge sie erfordern.

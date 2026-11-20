@@ -10,9 +10,10 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Startseite und Benachrichtigungen und erscheint mobil im Menü. Ohne Anmeldung
   führt der Direktaufruf zur Anmeldung. Nach dem Sprachwechsel bleiben Version,
   Metadaten und die sichtbaren Release-Notizen konsistent. Neuesten sichtbaren
-  Release, ältere aufklappbare Ausgaben und die Darstellung eines optionalen
-  Bildes mit Beispieldaten prüfen. Unreleased und der aktuelle Kandidat bleiben
-  ausgeblendet.
+  Release mit Highlight-Karten und Liste darunter prüfen. Ab zwei sichtbaren
+  Ausgaben erscheinen frühere Versionen zunächst eingeklappt, mit Titel, Datum
+  und Version. Optionales Bild mit Beispieldaten prüfen. Im normalen Build
+  bleiben Unreleased und der aktuelle Kandidat ausgeblendet.
 
 - **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
   Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis

@@ -31,6 +31,15 @@ public class PortalReleaseNotes {
   // Innerhalb eines Releases trennen nur Deutsch und Englisch die Sprachabschnitte.
   private static final Pattern LANGUAGE_HEADING = Pattern.compile("(?m)^### (DE|EN)\\h*$");
   private static final String TITLE_PREFIX = "#### ";
+  // Die beiden Überschriften bilden die redaktionelle Struktur einer hervorgehobenen Ausgabe.
+  private static final Pattern HIGHLIGHTS_HEADING = Pattern.compile("(?m)^##### (Highlights)\\h*$");
+  private static final Pattern IMPROVEMENTS_HEADING =
+      Pattern.compile("(?m)^##### (Weitere Verbesserungen|Further improvements)\\h*$");
+  // Nur ein Bindestrich mit folgendem Leerraum am Zeilenanfang beginnt eine Karte.
+  private static final Pattern HIGHLIGHT_ITEM = Pattern.compile("(?m)^-\\h+");
+  // Ein fett gesetzter Titel auf einer eigenen Zeile wird zur Kartenüberschrift.
+  private static final Pattern HIGHLIGHT_TITLE =
+      Pattern.compile("^\\*\\*([^\\r\\n]+?)\\*\\*\\h*\\R");
 
   private final Optional<List<Release>> releases;
 
@@ -121,7 +130,7 @@ public class PortalReleaseNotes {
       throw new IllegalArgumentException("Empty release notes");
     }
     if (!releaseText.startsWith(TITLE_PREFIX)) {
-      return new ReleaseText("", releaseText);
+      return new ReleaseText("", releaseText, parseFeaturedRelease(releaseText));
     }
 
     int titleEnd = releaseText.indexOf('\n');
@@ -129,7 +138,56 @@ public class PortalReleaseNotes {
       throw new IllegalArgumentException("Missing text below release title");
     }
     String editorialTitle = releaseText.substring(TITLE_PREFIX.length(), titleEnd).strip();
-    return new ReleaseText(editorialTitle, releaseText.substring(titleEnd).strip());
+    String markdown = releaseText.substring(titleEnd).strip();
+    return new ReleaseText(editorialTitle, markdown, parseFeaturedRelease(markdown));
+  }
+
+  private static Optional<FeaturedRelease> parseFeaturedRelease(String markdown) {
+    Matcher highlightsHeadingMatcher = HIGHLIGHTS_HEADING.matcher(markdown);
+    Matcher improvementsHeadingMatcher = IMPROVEMENTS_HEADING.matcher(markdown);
+    if (!highlightsHeadingMatcher.find()
+        || !improvementsHeadingMatcher.find(highlightsHeadingMatcher.end())) {
+      return Optional.empty();
+    }
+
+    String introduction = markdown.substring(0, highlightsHeadingMatcher.start()).strip();
+    String highlightsMarkdown =
+        markdown
+            .substring(highlightsHeadingMatcher.end(), improvementsHeadingMatcher.start())
+            .strip();
+    String improvementsMarkdown = markdown.substring(improvementsHeadingMatcher.end()).strip();
+    String[] highlightItems = HIGHLIGHT_ITEM.split(highlightsMarkdown, -1);
+    if (highlightItems.length < 2
+        || !highlightItems[0].isEmpty()
+        || improvementsMarkdown.isEmpty()) {
+      return Optional.empty();
+    }
+
+    List<Highlight> highlights = new ArrayList<>();
+    for (int itemIndex = 1; itemIndex < highlightItems.length; itemIndex++) {
+      // Ohne Listenmarker entfällt auch der dazugehörige Einzug der Fortsetzungszeilen.
+      String itemMarkdown = highlightItems[itemIndex].indent(-2).strip();
+      if (itemMarkdown.isEmpty()) {
+        return Optional.empty();
+      }
+
+      Matcher titleMatcher = HIGHLIGHT_TITLE.matcher(itemMarkdown);
+      if (titleMatcher.lookingAt()) {
+        highlights.add(
+            new Highlight(
+                titleMatcher.group(1).strip(), itemMarkdown.substring(titleMatcher.end()).strip()));
+      } else {
+        highlights.add(new Highlight("", itemMarkdown));
+      }
+    }
+
+    return Optional.of(
+        new FeaturedRelease(
+            introduction,
+            highlightsHeadingMatcher.group(1),
+            List.copyOf(highlights),
+            improvementsHeadingMatcher.group(1),
+            improvementsMarkdown));
   }
 
   public record Release(
@@ -139,7 +197,16 @@ public class PortalReleaseNotes {
     }
   }
 
-  public record ReleaseText(String title, String markdown) {}
+  public record ReleaseText(String title, String markdown, Optional<FeaturedRelease> featured) {}
+
+  public record FeaturedRelease(
+      String introduction,
+      String highlightsHeading,
+      List<Highlight> highlights,
+      String improvementsHeading,
+      String improvementsMarkdown) {}
+
+  public record Highlight(String title, String markdown) {}
 
   private record Version(int major, int minor, int patch) implements Comparable<Version> {
     private static final Comparator<Version> ORDER =
