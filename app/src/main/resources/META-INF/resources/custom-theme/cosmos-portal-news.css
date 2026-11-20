@@ -1,0 +1,33 @@
+.cosmos-news-view .cosmos-news-releases {
+    min-width: 0;
+    gap: var(--cosmos-space-l);
+}
+
+.cosmos-news-view .cosmos-news-release {
+    padding: var(--cosmos-space-xl);
+    border-block-start-color: var(--cosmos-primary-color-50pct);
+}
+
+.cosmos-news-view .cosmos-news-release-title,
+.cosmos-news-view .cosmos-news-archive-title {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.cosmos-news-view .cosmos-news-archive-title {
+    font-size: var(--cosmos-font-size-xl);
+}
+
+.cosmos-news-view .cosmos-news-release-metadata {
+    margin-block: var(--cosmos-space-xs) var(--cosmos-space-l);
+    color: var(--cosmos-text-secondary-color);
+}
+
+.cosmos-news-view vaadin-markdown {
+    overflow-wrap: anywhere;
+}
+
+.cosmos-news-view vaadin-markdown h5 {
+    font-size: var(--cosmos-font-size-xl);
+    color: var(--cosmos-heading-color);
+}

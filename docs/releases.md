@@ -33,7 +33,17 @@ sind keine Voraussetzung und werden durch einen lokalen Release nicht eingericht
 oder wichtigen Fehlerkorrekturen; keine Buttonverschiebungen oder Commitchronik.
 Bei fachlicher Featureabnahme ergänzen, beim Review prüfen. Leere unveröffentlichte
 Sprachabschnitte sind erlaubt, leere Releases oder einseitige Übersetzungen nicht.
-Die sichtbare Neuigkeiten-Seite ist ein eigener späterer Auftrag.
+Für „Was ist neu?“ übernimmt der Build die Datei in den Classpath. Innerhalb
+der Sprachabschnitte beginnen redaktionelle Titel mit `#### `. Unterabschnitte
+wie Highlights und Weitere Verbesserungen verwenden `##### `. Ein optionaler
+Screenshot mit Beispieldaten liegt unter `app/src/main/resources/META-INF/resources/images/release-notes/`.
+Die beiden Sprachabschnitte können dieselbe Bilddatei mit passendem Alternativtext
+über `/images/release-notes/` referenzieren.
+
+Das Portal zeigt datierte Ausgaben mit einer kleineren Projektversion als die
+des Builds. Im regulären Ablauf hebt `next` diese Grenze erst nach dem Release-Tag
+an. Die Notizen zum gerade getaggten Release erscheinen damit ab dem Build des
+Folge-Snapshots. Das geprüfte Release-Artefakt bleibt unverändert.
 
 Das ausführbare JAR liegt versionsunabhängig unter `app/target/app.jar`.
 `META-INF/build-info.properties` im gepackten Spring-Boot-JAR enthält Projektversion,

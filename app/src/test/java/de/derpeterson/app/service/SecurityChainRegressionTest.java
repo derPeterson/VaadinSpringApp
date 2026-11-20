@@ -177,6 +177,7 @@ class SecurityChainRegressionTest {
         java.util.List.of(
             AppRoute.ACCOUNT.getSecurityRoute(),
             AppRoute.NOTIFICATIONS.getSecurityRoute(),
+            AppRoute.NEWS.getSecurityRoute(),
             AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE,
             "/recovery-help")) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
@@ -199,7 +200,9 @@ class SecurityChainRegressionTest {
     MockHttpSession mockHttpSession = (MockHttpSession) login.request().getSession(false);
     for (String path :
         java.util.List.of(
-            AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
+            AppRoute.ACCOUNT.getSecurityRoute(),
+            AppRoute.NOTIFICATIONS.getSecurityRoute(),
+            AppRoute.NEWS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
       MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", path);
       mockHttpRequest.setServletPath(path);

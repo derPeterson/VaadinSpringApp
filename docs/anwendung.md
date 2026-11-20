@@ -6,7 +6,7 @@ unter [Sicherheit](sicherheit.md), die Rechteverteilung unter [Rollen](rollen.md
 **Direkt zu:** [Benutzerkonto](#benutzerkonto) · [Mein Konto](#mein-konto) ·
 [Formularschutz](#ungespeicherte-formularänderungen) ·
 [Profilbild](#profilbild-und-verfügbarkeit) · [Benachrichtigungen](#benachrichtigungen) ·
-[Administration](#administration)
+[Was ist neu?](#was-ist-neu) · [Administration](#administration)
 
 ## Benutzerkonto
 
@@ -226,6 +226,13 @@ verhindert unvollständige Bildmetadaten. Größe und Format des gespeicherten E
 sind weiterhin 512×512/PNG, seine Bytegröße ergibt sich aus `image_data`.
 Uploadentwürfe sind zeitlich und mengenmäßig begrenzt. Ein verspäteter Upload darf
 einen geschlossenen oder wieder geöffneten Dialog nicht verändern.
+
+## Was ist neu?
+
+Angemeldete Benutzer finden die Release-Notizen zwischen **Startseite** und
+**Benachrichtigungen**. Der neueste veröffentlichte Stand steht oben. Frühere
+Ausgaben lassen sich einzeln aufklappen. Die Notizen folgen der gewählten
+Portalsprache.
 
 ## Benachrichtigungen
 

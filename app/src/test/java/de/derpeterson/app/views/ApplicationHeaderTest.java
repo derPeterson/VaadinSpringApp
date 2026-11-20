@@ -334,6 +334,15 @@ class ApplicationHeaderTest {
             .findFirst()
             .orElseThrow();
 
+    PageNavigationComponent portalNavigation =
+        home.getParent().map(PageNavigationComponent.class::cast).orElseThrow();
+    List<SideNavItem> portalEntries = portalNavigation.getItems();
+    assertEquals(3, portalEntries.size());
+    assertSame(home, portalEntries.getFirst());
+    assertEquals(messageProperties.getPortalNewsTitle(), portalEntries.get(1).getLabel());
+    assertEquals("account-nav-news", portalEntries.get(1).getId().orElseThrow());
+    assertSame(inbox, portalEntries.getLast());
+
     assertEquals(
         page.equals("home"), home.getElement().getClassList().contains("cosmos-nav-item--active"));
     assertEquals(

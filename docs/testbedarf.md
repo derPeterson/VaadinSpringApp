@@ -5,6 +5,15 @@
 Oberflächenprüfungen in DE und EN auf Desktop und schmaler Ansicht ausführen,
 sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter.
 
+- **Portalneuigkeiten — offen.**
+  In DE und EN am Desktop sowie bei 320 px prüfen. „Was ist neu?“ steht zwischen
+  Startseite und Benachrichtigungen und erscheint mobil im Menü. Ohne Anmeldung
+  führt der Direktaufruf zur Anmeldung. Nach dem Sprachwechsel bleiben Version,
+  Metadaten und die sichtbaren Release-Notizen konsistent. Neuesten sichtbaren
+  Release, ältere aufklappbare Ausgaben und die Darstellung eines optionalen
+  Bildes mit Beispieldaten prüfen. Unreleased und der aktuelle Kandidat bleiben
+  ausgeblendet.
+
 - **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
   Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis
   zum letzten Eintrag prüfen. Lange Titel, Badges, linke Markierung und lückenlose

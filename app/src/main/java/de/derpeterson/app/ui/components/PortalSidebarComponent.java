@@ -19,6 +19,7 @@ import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.views.AccountView;
 import de.derpeterson.app.views.HomeView;
 import de.derpeterson.app.views.UserNotificationsView;
+import de.derpeterson.app.views.WhatsNewView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -86,6 +87,12 @@ public class PortalSidebarComponent extends Div {
     localizedTextRefreshActions.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
     portalNavigation.registerAction(home, () -> UI.getCurrent().navigate(HomeView.class));
     PageNavigationComponent.setItemActive(home, selectedRoute == AppRoute.HOME);
+    SideNavItem news =
+        new SideNavItem("", AppRoute.NEWS.getSecurityRoute(), AppIcon.FILE_DIFF.create());
+    news.setId("account-nav-news");
+    localizedTextRefreshActions.add(() -> news.setLabel(messageProperties.getPortalNewsTitle()));
+    portalNavigation.registerAction(news, () -> UI.getCurrent().navigate(WhatsNewView.class));
+    PageNavigationComponent.setItemActive(news, selectedRoute == AppRoute.NEWS);
     SideNavItem notifications =
         new SideNavItem("", AppRoute.NOTIFICATIONS.getSecurityRoute(), AppIcon.BELL.create());
     notifications.setId("account-nav-notifications");
@@ -98,7 +105,7 @@ public class PortalSidebarComponent extends Div {
     unreadNotificationCountBadge.setVisible(false);
     unreadNotificationCountBadge.getElement().setAttribute("aria-hidden", "true");
     notifications.setSuffixComponent(unreadNotificationCountBadge);
-    portalNavigation.addItem(home, notifications);
+    portalNavigation.addItem(home, news, notifications);
 
     Span accountGroupSpan = createLocalizedLabelSpan(messageProperties::getAccountSettingsOverview);
     accountGroupSpan.addClassName("account-nav-group");

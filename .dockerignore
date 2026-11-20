@@ -1,6 +1,7 @@
 # Only build inputs enter the context; local settings and data stay on the host.
 **
 !pom.xml
+!CHANGELOG.md
 !mvnw
 !.mvn/
 !.mvn/wrapper/

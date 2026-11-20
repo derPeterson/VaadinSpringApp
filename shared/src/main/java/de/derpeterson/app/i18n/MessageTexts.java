@@ -3667,6 +3667,31 @@ public class MessageTexts {
     return getTranslation("account.avatar.error.output");
   }
 
+  // Neuigkeiten im Portal
+  public String getPortalNewsTitle() {
+    return getTranslation("portal.news.title");
+  }
+
+  public String getPortalNewsDescription() {
+    return getTranslation("portal.news.description");
+  }
+
+  public String getPortalNewsEarlierVersions() {
+    return getTranslation("portal.news.earlierVersions");
+  }
+
+  public String getPortalNewsReleaseVersion(String version) {
+    return getFormattedTranslation("portal.news.releaseVersion", version);
+  }
+
+  public String getPortalNewsEmpty() {
+    return getTranslation("portal.news.empty");
+  }
+
+  public String getPortalNewsUnavailable() {
+    return getTranslation("portal.news.unavailable");
+  }
+
   // Persönliche Mitteilungen
   public String getNotificationsTitle() {
     return getTranslation("notifications.title");

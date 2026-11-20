@@ -527,7 +527,8 @@ behalten ihre freigegebenen Farben, einschließlich roter Löschwarnungen.
 
 ### Übernahme des angemeldeten Benutzerportals
 
-`HomeView`, `UserNotificationsView` und `AccountView` nutzen `cosmos-reference-portal`.
+`HomeView`, `WhatsNewView`, `UserNotificationsView` und `AccountView` nutzen
+`cosmos-reference-portal`.
 `PageFrameComponent` stellt den Servicekopf, `PageContentLayout` Überschrift und Inhalt
 bereit. Der Kopf bleibt oben; übriger Inhalt und Copyright scrollen im Dokument.
 `PortalSidebarPageLayout` ergänzt Identitätskarte und Kontonavigation.
@@ -592,6 +593,7 @@ Der manuelle Breadcrumb-Modus berücksichtigt die vorhandenen Queryparameter.
 | --- | --- | --- |
 | Besucherseiten einschließlich öffentlicher Startseite, Anmeldung, Registrierung und Reset | `PORTAL` | Aktueller Seitentitel |
 | Angemeldete Startseite | `PORTAL` | Startseite |
+| Release-Notizen | `PORTAL` | Was ist neu? |
 | Persönliche Daten, Sicherheit, Geräte & Sitzungen | `PORTAL / MEIN KONTO` | Jeweiliger Seitentitel |
 | Eigene Benachrichtigungen | `PORTAL` | Benachrichtigungen |
 | Admin-Dashboard, Benutzerverwaltung, Tickets und Benachrichtigungen | `ADMINISTRATION` | Jeweiliger Seitentitel |

@@ -17,6 +17,11 @@ public enum AppRoute {
       AppRouteConstants.HOME_SECURITY_ROUTE,
       AppRouteConstants.HOME_PAGE_TITLE,
       null),
+  NEWS(
+      AppRouteConstants.NEWS_ROUTE,
+      AppRouteConstants.NEWS_SECURITY_ROUTE,
+      AppRouteConstants.NEWS_PAGE_TITLE,
+      null),
   NOTIFICATIONS(
       AppRouteConstants.NOTIFICATIONS_ROUTE,
       AppRouteConstants.NOTIFICATIONS_SECURITY_ROUTE,

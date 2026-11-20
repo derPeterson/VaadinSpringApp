@@ -22,27 +22,21 @@ werden.
 
 ## Eine Quelle, keine doppelte HTML-Pflege
 
-Die bestehende `CHANGELOG.md` aus dem [Release-Ablauf](../releases.md) enthält sowohl
-die Entwicklerübersicht als auch die DE-/EN-Inhalte. Den Runtime-Import beim Build
-als dedizierte Classpath-Ressource einrichten. Im gepackten JAR ausschließlich
-Streams verwenden, niemals `src/`- oder lokale `docs/`-Pfade zur Laufzeit lesen.
+Die bestehende `CHANGELOG.md` aus dem [Release-Ablauf](../releases.md) enthält beide
+Sprachfassungen. Der Maven-Build übernimmt sie als dedizierte Classpath-Ressource.
+`PortalReleaseNotes` liest sie über einen Stream.
 
 Version, Datum sowie DE-/EN-Abschnitte haben bereits ein festgelegtes Quellformat.
 Titel, Einstieg, die beiden Inhaltsabschnitte und optionale Bildverweise werden
 in den jeweiligen Sprachabschnitten der `CHANGELOG.md` gepflegt.
-Ein kleiner Loader trennt Metadaten und ausgewählten Sprachinhalt. Der noch
-unveröffentlichte Bereich bleibt in der Benutzeroberfläche unsichtbar.
-Der Release-Helfer prüft bereits doppelte
-Versionen, fehlende Sprache, ungültige Datumsangaben und leere Releaseabschnitte.
-Der spätere Runtime-Import muss dieses Format übernehmen; kein zweites Format einführen.
+Der Loader trennt die Metadaten vom Sprachinhalt. Die Ausgabe des aktuellen
+Kandidaten wird ab dem nach dem Tag gebauten Folge-Snapshot sichtbar. So können
+der endgültige Release und das vor dem Tag geprüfte JAR identisch bleiben.
+Der [Release-Ablauf](../releases.md#notizen-und-artefakt) beschreibt die Grenze.
 
-Vaadin bietet einen nativen Flow-`Markdown`-Baustein für Formatierung und Listen.
-Die offizielle Dokumentation zeigt die Java-API und interne HTML-Bereinigung.
-Vor der späteren Umsetzung die tatsächlich verwendete Vaadin-Version und ihr
-Artefakt nochmals prüfen. Damit lassen sich die Notizen in native Cosmos-Cards
-einbetten, ohne unabhängig gestaltete HTML-Seiten zu erzeugen. Metadaten und
-Navigation bleiben normale Flow-Komponenten. Kein Markdown-Editor, keine
-Benutzereingaben und keine Erweiterung zu einem allgemeinen CMS.
+Der native Flow-`Markdown`-Baustein stellt die Notizen in einer Cosmos-Card
+dar und bereinigt das gerenderte HTML. Metadaten und Navigation verwenden
+die vorhandenen Flow-Komponenten des Portals.
 
 Eine zusätzlich generierte statische HTML-Fassung wäre später für ein externes
 Release-Portal denkbar. Für unsere derzeitige Anwendung bietet sie keinen klaren
@@ -68,16 +62,9 @@ dieser ersten Planung.
 
 ## Offene Umsetzungspakete
 
-- [ ] Bestehendes Changelog-Format übernehmen und genau eine Runtime-Ressource in
-  den JAR-Build einbinden. Nur bewusst freigegebene Releaseabschnitte anzeigen.
-- [ ] Loader und native Markdown-/Cosmos-Darstellung umsetzen, Formatfehler mit
-  sinnvollen Helpertests absichern.
-- [ ] Zugriff bei direktem Aufruf ohne Anmeldung, sichtbare Inhalte, DE/EN,
-  Sprachwechsel sowie Desktop/Smartphone gezielt isoliert prüfen. Manuelle
-  Abnahme der tatsächlichen Texte danach erhalten.
-
-Die technische Planung wird vor einer späteren Umsetzung mit dem dann aktuellen
-Projektstand abgeglichen. Sie ist keine Freigabe zum Einbau der Oberfläche.
+- [ ] Sprachwechsel, Archiv mit mehreren Ausgaben und schmale Ansichten im Portal
+  prüfen. Die automatisierten Browserprüfungen stehen im
+  [Testbedarf](../testbedarf.md#browser-tests).
 
 Grundlagen: [Vaadin Markdown](https://vaadin.com/docs/latest/components/markdown),
 [redaktionelle Changelogs](https://keepachangelog.com/en/2.0.0/).

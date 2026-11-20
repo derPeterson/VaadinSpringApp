@@ -14,10 +14,22 @@ public class CosmosSectionHeaderComponent extends Div {
       ParentPath parentPath,
       Span sectionTitleSpan,
       Span sectionDescriptionSpan) {
+    this(
+        messageProperties,
+        parentPath,
+        sectionTitleSpan,
+        decorativeAccentDot(),
+        sectionDescriptionSpan);
+  }
+
+  public CosmosSectionHeaderComponent(
+      MessageProperties messageProperties,
+      ParentPath parentPath,
+      Span sectionTitleSpan,
+      Span headingAccentSpan,
+      Span sectionDescriptionSpan) {
     H1 sectionTitleHeading = new H1();
-    Span headingAccentSpan = new Span(".");
     headingAccentSpan.addClassName("cosmos-dashboard-accent");
-    headingAccentSpan.getElement().setAttribute("aria-hidden", "true");
     sectionTitleHeading.add(sectionTitleSpan, headingAccentSpan);
 
     addClassNames("cosmos-section-header", "cosmos-dashboard-introduction");
@@ -29,6 +41,12 @@ public class CosmosSectionHeaderComponent extends Div {
     sectionDescriptionSpan.addClassName("cosmos-dashboard-description");
 
     add(parentBreadcrumbsComponent, sectionTitleHeading, sectionDescriptionSpan);
+  }
+
+  private static Span decorativeAccentDot() {
+    Span headingAccentSpan = new Span(".");
+    headingAccentSpan.getElement().setAttribute("aria-hidden", "true");
+    return headingAccentSpan;
   }
 
   public CosmosSectionHeaderComponent(H1 sectionTitleHeading, Span sectionDescriptionSpan) {

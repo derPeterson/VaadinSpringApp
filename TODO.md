@@ -2,8 +2,7 @@
 
 ## Laufende Planung
 
-- [ ] [Was ist neu?](docs/planung/neuigkeiten.md) im Portal umsetzen. Zugang,
-  Navigation und Aufbau sind abgestimmt. Die Umsetzung wartet auf Freigabe.
+- [ ] [Was ist neu?](docs/planung/neuigkeiten.md) im Portal gemeinsam abnehmen.
 
 ## Zurückgestellte Planungen
 
