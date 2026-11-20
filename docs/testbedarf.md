@@ -62,7 +62,7 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Glockenvorschau, Nachrichtendialog, Empfänger-Popover, Meldungen, Feldhilfen,
   Benutzerverwaltung und Konto-, 2FA-, Anbieter- und Bestätigungsdialogen prüfen.
   Fehlende Maus- und Tastaturpfade abdecken, insbesondere den Schließen-Button
-  im Empfänger-Popover und die Tastaturbedienung der Meldungen.
+  im Empfänger-Popover und die Tastaturbedienung weiterer Meldungsvarianten.
 
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
   Die gedämpfte Farbe und unveränderte Zentrierung nach dem Leeren bei
@@ -196,13 +196,10 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   der Jahresspalte prüfen. Auf dem Smartphone Jahres- und Datumswechsel
   in der nativen Auswahl ohne Überlauf prüfen.
 
-- **Globale Notifications – Position beim Größenwechsel — offen.**
-  Bei geöffnetem Toast die Fensterbreite über die 768-px-Grenze in beide
-  Richtungen ändern. Inhalt, Dauer und Schließen bleiben erhalten. Rechts 24 px
-  Abstand mit und ohne Scrollleiste prüfen, auf schmaler Ansicht unten
-  mittig ohne oberen Leerraum. Lange Meldung bei geringer Höhe,
-  nativen Innenabstand, gelbes Warndreieck, rotes Kreis-X, gemeinsame
-  Titel ohne Ausrufezeichen und lesbare Links abdecken.
+- **Globale Notifications – Platzbedarf und Inhalt — offen.**
+  Rechts 24 px Abstand mit und ohne vertikale Scrollleiste vergleichen.
+  Lange Meldung bei geringer Höhe, nativen Innenabstand, gelbes Warndreieck,
+  rotes Kreis-X, gemeinsame Titel ohne Ausrufezeichen und lesbare Links prüfen.
 
 - **Link-Statusseiten und Sicherheitshinweise – weitere Iconvarianten — offen.**
   Abgelaufene und ungültige Links sowie technische Fehler für

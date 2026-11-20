@@ -7,6 +7,8 @@ import static de.derpeterson.browsertests.BrowserRoutes.path;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.ViewportSize;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -38,7 +40,13 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
     account.save();
     account.assertMessage(uiTexts.getBaseValidationRequiredMessage());
     NotificationAppearanceChecks.capture(browserPage, "Fehler-dauerhaft", "error", -1);
-    NotificationAppearanceChecks.close(browserPage);
+    assertErrorNotificationSurvivesViewportChanges();
+    Locator closeButton =
+        browserPage.locator("vaadin-notification-card:not([closing])").getByRole(AriaRole.BUTTON);
+    closeButton.focus();
+    assertThat(closeButton).isFocused();
+    closeButton.press("Enter");
+    assertThat(browserPage.locator("vaadin-notification-card")).hasCount(0);
     account.input("account-first-name").fill(firstName);
     account.save();
     account.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
@@ -55,6 +63,41 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
         .hasCount(0);
     NotificationAppearanceChecks.capture(browserPage, "Nur-Titel", "success", 3000);
     NotificationAppearanceChecks.close(browserPage);
+  }
+
+  private void assertErrorNotificationSurvivesViewportChanges() {
+    ViewportSize initialViewport = browserPage.viewportSize();
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+    Locator noticeTitle = notice.locator(".cosmos-toast-title");
+    Locator noticeMessage = notice.locator(".cosmos-notification-message");
+    String originalTitle = noticeTitle.innerText();
+    String originalMessage = noticeMessage.innerText();
+    try {
+      for (int viewportWidth : new int[] {780, 750, 780}) {
+        browserPage.setViewportSize(viewportWidth, 600);
+        NotificationAppearanceChecks.assertPositionAndDuration(browserPage, -1);
+        assertThat(notice).hasCount(1);
+        assertThat(noticeTitle).hasText(originalTitle);
+        assertThat(noticeMessage).hasText(originalMessage);
+        assertThat(notice.getByRole(AriaRole.BUTTON)).isVisible();
+        browserPage.waitForCondition(() -> notificationFitsViewport(notice, viewportWidth));
+      }
+    } finally {
+      browserPage.setViewportSize(initialViewport.width, initialViewport.height);
+    }
+  }
+
+  private boolean notificationFitsViewport(Locator notice, int viewportWidth) {
+    BoundingBox overlayBounds = notice.locator("[part=overlay]").boundingBox();
+    if (overlayBounds == null) {
+      return false;
+    }
+    if (viewportWidth >= 768) {
+      return Math.abs(viewportWidth - overlayBounds.x - overlayBounds.width - 24) < 2;
+    }
+    return Math.abs(overlayBounds.x + overlayBounds.width / 2 - viewportWidth / 2.0) < 2
+        && overlayBounds.y + overlayBounds.height > 550
+        && overlayBounds.y + overlayBounds.height <= 600;
   }
 
   @ParameterizedTest
@@ -129,7 +172,14 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
         configuration.open(AdminConfigGroup.SMTP);
         configuration.enter(uiTexts.getAdminConfigEntryMailHost(), previousHost);
         configuration.enter(uiTexts.getAdminConfigEntryMailPort(), previousPort);
-        configuration.save();
+        configuration.submit();
+        assertThat(
+                browserPage
+                    .locator("vaadin-notification-card:not([closing])")
+                    .filter(
+                        new Locator.FilterOptions()
+                            .setHasText(uiTexts.getAdminConfigSaveSuccess())))
+            .isVisible();
       }
     }
   }
