@@ -19,6 +19,7 @@ import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Feature;
 import org.junit.jupiter.api.Tag;
@@ -136,9 +137,8 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
     String previousPort = configuration.value(uiTexts.getAdminConfigEntryMailPort());
     try (AmbiguousSmtpServer smtp = new AmbiguousSmtpServer()) {
       try {
-        configuration.enter(uiTexts.getAdminConfigEntryMailHost(), "host.docker.internal");
-        configuration.enter(uiTexts.getAdminConfigEntryMailPort(), Integer.toString(smtp.port()));
-        configuration.save();
+        saveAndVerifySmtpEndpoint(
+            configuration, "host.docker.internal", Integer.toString(smtp.port()));
         configuration.open(AdminConfigGroup.QUEUE);
         browserPage
             .locator("#admin-queue-tabs")
@@ -170,18 +170,23 @@ public class NotificationVariantsBrowserTest extends BrowserFixture {
       } finally {
         smtp.releaseHeldResponses();
         configuration.open(AdminConfigGroup.SMTP);
-        configuration.enter(uiTexts.getAdminConfigEntryMailHost(), previousHost);
-        configuration.enter(uiTexts.getAdminConfigEntryMailPort(), previousPort);
-        configuration.submit();
-        assertThat(
-                browserPage
-                    .locator("vaadin-notification-card:not([closing])")
-                    .filter(
-                        new Locator.FilterOptions()
-                            .setHasText(uiTexts.getAdminConfigSaveSuccess())))
-            .isVisible();
+        saveAndVerifySmtpEndpoint(configuration, previousHost, previousPort);
       }
     }
+  }
+
+  private void saveAndVerifySmtpEndpoint(
+      AdminConfigurationPage configuration, String host, String port) {
+    String hostLabel = uiTexts.getAdminConfigEntryMailHost();
+    String portLabel = uiTexts.getAdminConfigEntryMailPort();
+    configuration.enter(hostLabel, host);
+    configuration.enter(portLabel, port);
+    UiActions.complete(browserPage, configuration::submit);
+    browserPage.reload();
+    configuration.open(AdminConfigGroup.SMTP);
+
+    assertThat(configuration.input(hostLabel)).hasValue(host);
+    assertThat(configuration.input(portLabel)).hasValue(port);
   }
 
   private void signIn(int width) {
