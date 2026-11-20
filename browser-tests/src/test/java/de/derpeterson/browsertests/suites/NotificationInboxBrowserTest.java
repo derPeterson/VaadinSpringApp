@@ -111,9 +111,22 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.openPreview();
 
       assertThat(inbox.rows(inbox.preview())).hasCount(3);
+      Locator previewClose = inbox.button(inbox.preview(), uiTexts.getNotificationsClose());
+      CosmosFollowUpChecks.assertCloseCircle(previewClose, uiTexts.getNotificationsClose());
       inbox.assertRowLayout(inbox.preview(), true);
+      inbox.assertPreviewReadLine(inbox.row(inbox.preview(), subject), true);
+      assertLongTitleWrapsOnMobile(inbox.row(inbox.preview(), subject), width);
       assertPreviewDeleteCanBeCancelled(browserActor.browserPage, inbox, subject);
       inbox.openDetail(inbox.preview(), subject, body, true);
+      assertDetailCardSpacing(inbox.dialog(), true);
+      Locator detailClose =
+          inbox
+              .button(inbox.dialog(), uiTexts.getNotificationsClose())
+              .and(inbox.dialog().locator(".cosmos-overlay-close"));
+      CosmosFollowUpChecks.assertCloseCircle(detailClose, uiTexts.getNotificationsClose());
+      detailClose.hover();
+      assertThat(browserActor.browserPage.getByRole(AriaRole.TOOLTIP))
+          .hasText(uiTexts.getNotificationsClose());
       inbox.closeDetail();
       inbox.filter(inbox.preview(), uiTexts.getNotificationsRead());
 
@@ -126,11 +139,19 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       assertThat(inbox.inbox()).isVisible();
       assertThat(inbox.preview()).not().isVisible();
       inbox.assertRowLayout(inbox.inbox(), false);
+      assertLongTitleWrapsOnMobile(inbox.row(inbox.inbox(), subject), width);
       inbox.openDetail(inbox.inbox(), subject, body, false);
 
       assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
           .hasText("3");
       markReadFromDetailAndVerifyItStaysRead(inbox, subject);
+      inbox.openPreview();
+      inbox.filter(inbox.preview(), uiTexts.getNotificationsAll());
+      inbox.assertPreviewReadLine(inbox.row(inbox.preview(), subject), false);
+      previewClose.focus();
+      assertThat(previewClose).isFocused();
+      previewClose.press("Enter");
+      assertThat(inbox.preview()).not().isVisible();
 
       assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
           .hasText("2");
@@ -190,6 +211,45 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
   }
 
+  private void assertLongTitleWrapsOnMobile(Locator row, int width) {
+    if (width > 390) {
+      return;
+    }
+    Locator titleLabel = row.locator(".cosmos-notification-title [part=label]");
+    assertTrue(
+        (boolean)
+            titleLabel.evaluate(
+                "label => label.offsetHeight > parseFloat(getComputedStyle(label).lineHeight)"),
+        "Der lange Titel bricht neben den Werkzeugen um.");
+  }
+
+  private void assertDetailCardSpacing(Locator detail, boolean unread) {
+    Locator overlay = detail.locator("vaadin-dialog-overlay[opened]");
+    assertThat(overlay.locator("[part=overlay]")).isVisible();
+    assertThat(overlay).not().hasAttribute("opening", "");
+    Locator card = detail.locator(".cosmos-notification-detail-message");
+    Locator title = card.locator(".cosmos-notification-detail-title");
+    Locator body = card.locator(".cosmos-notification-detail-body");
+    Locator metadata = card.locator(".cosmos-notification-detail-meta");
+    assertThat(card).hasCSS("padding", "16px");
+    assertThat(title).hasCSS("margin", "0px");
+    BoundingBox titleBounds = title.boundingBox();
+    BoundingBox bodyBounds = body.boundingBox();
+    BoundingBox metadataBounds = metadata.boundingBox();
+    BoundingBox cardBounds = card.boundingBox();
+    assertEquals(titleBounds.x, bodyBounds.x, 1);
+    assertEquals(titleBounds.x, metadataBounds.x, 1);
+    assertEquals(8, bodyBounds.y - titleBounds.y - titleBounds.height, 1);
+    assertEquals(12, metadataBounds.y - bodyBounds.y - bodyBounds.height, 1);
+    assertTrue(
+        (boolean) body.evaluate("body => body.scrollWidth <= body.clientWidth + 1"),
+        "Auch lange Nachrichtentexte bleiben im Detailkartenrand.");
+    if (!unread) {
+      assertEquals(
+          17, cardBounds.y + cardBounds.height - metadataBounds.y - metadataBounds.height, 1);
+    }
+  }
+
   private void assertPreviewDeleteCanBeCancelled(
       Page recipientPage, NotificationInboxPage inbox, String subject) {
     Locator deleteButton =
@@ -222,6 +282,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
 
   private void markReadFromDetailAndVerifyItStaysRead(NotificationInboxPage inbox, String subject) {
     Locator detail = inbox.dialog();
+    assertDetailCardSpacing(detail, true);
     Locator messageCard = detail.locator(".cosmos-notification-detail-message");
     Locator markReadButton = messageCard.locator(".cosmos-notification-detail-mark-read");
     assertThat(markReadButton).hasCSS("background-color", "rgb(0, 119, 182)");
@@ -240,6 +301,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     assertThat(detail.locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsRead());
     assertThat(markReadButton).isHidden();
+    assertDetailCardSpacing(detail, false);
     inbox.closeDetail();
   }
 
@@ -331,6 +393,12 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
 
       assertThat(inbox.rows(inbox.inbox())).hasCount(11);
     }
+    Locator pageSize = recipientBrowserPage.locator("#notifications-inbox-page-size");
+    pageSize.locator("[part~=toggle-button]").click();
+    CosmosFollowUpChecks.assertSingleChoiceSpacing(recipientBrowserPage);
+    assertThat(recipientBrowserPage.locator("vaadin-combo-box-item:visible").last())
+        .hasAttribute("selected", "");
+    pageSize.locator("input").press("Escape");
     inbox.search(prefix + " item 10");
 
     assertThat(inbox.rows(inbox.inbox())).hasCount(1);
@@ -375,6 +443,10 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
   private void capturePagination(
       Page page, Locator paginationLocator, String context, int viewportWidth) {
     paginationLocator.scrollIntoViewIfNeeded();
+    Locator pageSize = paginationLocator.locator("vaadin-combo-box");
+    pageSize.locator("[part~=toggle-button]").click();
+    CosmosFollowUpChecks.assertSingleChoiceSpacing(page);
+    pageSize.locator("input").press("Escape");
     String evidenceName = "Pagination-" + context + "-" + viewportWidth;
     Allure.attachment(
         evidenceName,

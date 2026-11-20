@@ -210,6 +210,12 @@ final class BrowserSuites {
       case "aura-fields" ->
           List.of(CosmosComponentsBrowserTest.class, UserFiltersBrowserTest.class);
       case "login-layout" -> List.of(LoginLayoutBrowserTest.class);
+      case "switch-style" ->
+          List.of(
+              LoginLayoutBrowserTest.class,
+              CosmosComponentsBrowserTest.class,
+              FormLayoutsBrowserTest.class,
+              TwoFactorBrowserTest.class);
       case "login-checks" ->
           List.of(
               LoginLayoutBrowserTest.class,

@@ -587,18 +587,22 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         "Profil mit Erfolgsmeldung " + browserPage.viewportSize().width, browserPage);
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName("ACCOUNT-02: Pflichtfelder und Geburtsdatum verhindern ungültiges Speichern")
   @Description(
       """
       1. Eigenes Konto öffnen und Namen leeren; speichern: rote Felder und Pflichtfeldmeldung.
       2. Namen korrigieren, heutigen und zukünftigen Geburtstag einzeln speichern.
       3. Jeweils rote Datumsmarkierung und Vergangenheitsregel prüfen; Seite neu laden.
+      4. Sprache leeren, vor und nach dem Speichern die Markierung prüfen, Sprache neu wählen.
       **Erwartet:** Keine ungültigen Änderungen gespeichert; vorherige Werte bleiben erhalten.
+      Die leere Sprache wird erst beim Speichern markiert; eine gültige Auswahl hebt dies auf.
       """)
   @Tag("profile-form")
-  void invalidProfileNeverPersists() {
+  void invalidProfileNeverPersists(int viewportWidth) {
     account();
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     AccountPage form = new AccountPage(browserPage);
     form.open();
     String original = form.input("account-first-name").inputValue();
@@ -636,6 +640,21 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     assertThat(form.input("account-first-name")).hasValue(original);
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1990-01-01");
+
+    Locator languageComboBox = form.host("account-language");
+    Locator languageInput = form.input("account-language");
+    languageInput.fill("");
+    languageInput.press("Tab");
+    assertThat(languageComboBox).hasJSProperty("value", "");
+    assertThat(languageComboBox).not().hasAttribute("invalid", "");
+
+    form.save();
+    form.assertMessage(uiTexts.getBaseValidationRequiredMessage());
+    assertThat(languageComboBox).hasAttribute("invalid", "");
+    form.closeNotification();
+
+    form.language(uiTexts.language());
+    assertThat(languageComboBox).not().hasAttribute("invalid", "");
   }
 
   @Test

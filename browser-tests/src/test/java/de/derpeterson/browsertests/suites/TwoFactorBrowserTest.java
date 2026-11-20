@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.browsertests.pages.DialogTabAssertions.assertDialogTabSurfaces;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -573,6 +574,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("otp-behavior")
+  @Tag("switch-style")
   @DisplayName("MFA-21: Alle sechsstelligen OTP-Ansichten fokussieren und bestätigen automatisch")
   void otpFocusAndAutomaticConfirmationCoverSetupLoginReplacementAndRecovery(int width) {
     LoginPage administrator = new LoginPage(browserPage);
@@ -591,21 +593,28 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       new UserMenu(actor.browserPage).selectTestLanguage();
       actor.browserPage.navigate("/account?section=security&tab=portal");
       assertTwoFactorAccountActions(actor.browserPage, 1);
+      actor.browserPage.locator("#account-password-edit-security").click();
+      Locator passwordDialog =
+          actor.browserPage.locator("vaadin-dialog.account-password-dialog[opened]");
+      assertThat(passwordDialog.locator("#account-password-current")).isVisible();
+      assertThat(passwordDialog.locator(".two-factor-code-tabs:visible")).hasCount(0);
+      passwordDialog.locator("#account-password-cancel").click();
       actor.browserPage.locator("#account-two-factor-setup").click();
-      actor
-          .browserPage
-          .locator("#two-factor-password input")
-          .fill(BrowserTestAccounts.USER_PASSWORD);
+      Locator setupPassword = actor.browserPage.locator("#two-factor-password");
+      CosmosFollowUpChecks.assertNativeRequiredIndicator(setupPassword);
+      setupPassword.locator("input").fill(BrowserTestAccounts.USER_PASSWORD);
       actor.browserPage.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.browserPage, email, false);
 
       assertTwoFactorAccountActions(actor.browserPage, 3);
+      verifyPortalPasswordCodeTabs(actor.browserPage, email);
       actor.browserPage.locator("#account-two-factor-replace").click();
       AccountFormAppearanceChecks.assertEqualDialogActions(
           actor.browserPage,
           actor.browserPage.locator("#two-factor-action-dialog[opened]"),
           uiTexts.getAdminUsersCancel(),
           uiTexts.getTwoFactorConfirm());
+      assertActionDialogCodeMethods(actor.browserPage);
       TwoFactorPage.enterActionCode(
           actor.browserPage, TwoFactorPage.nextCode(actor.browserPage, email));
       actor.browserPage.locator("#two-factor-action-confirm").click();
@@ -620,14 +629,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           actor.browserPage.locator(".two-factor-footer > .cosmos-dialog-actions"),
           2,
           width <= 480);
-      Locator headerTabs =
-          actor.browserPage.locator("#two-factor-panel > [slot=header] > .two-factor-code-tabs");
-
-      assertThat(headerTabs).hasCSS("background-color", "rgba(0, 0, 0, 0)");
-      Locator recoveryCodeTab = headerTabs.locator("#two-factor-recovery-tab");
-      recoveryCodeTab.click();
-      assertSelectedCodeTabStyle(recoveryCodeTab);
-      actor.browserPage.locator("#two-factor-authenticator-tab").click();
+      assertLoginCodeMethods(actor.browserPage, false);
       checkOtpInputAndConfirm(actor.browserPage, email, "two-factor-code", false);
       actor.browserPage.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
       signOutToLogin(actor.browserPage);
@@ -640,6 +642,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       Locator recoveryInput = actor.browserPage.locator("vaadin-text-field#two-factor-code input");
 
       assertThat(recoveryInput).isVisible();
+      assertThat(
+              actor.browserPage.locator(
+                  "#two-factor-panel > [slot=header] .two-factor-code-tabs:visible"))
+          .hasCount(0);
       recoveryInput.fill(TwoFactorPage.nextCode(actor.browserPage, email));
       actor.browserPage.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.browserPage, email, true);
@@ -656,10 +662,123 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.browserPage.navigate("/two-factor?administration");
       assertOtpFocus(actor.browserPage, "two-factor-code");
       TwoFactorPage.selectTestLanguageIfNeeded(actor.browserPage);
+      assertLoginCodeMethods(actor.browserPage, true);
       checkOtpInputAndConfirm(actor.browserPage, adminEmail, "two-factor-code", true);
       actor.browserPage.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
       signOutToLogin(actor.browserPage);
     }
+  }
+
+  private void verifyPortalPasswordCodeTabs(Page actor, String email) {
+    actor.locator("#account-password-edit-security").click();
+    Locator confirmation = actor.locator("#external-identity-dialog[opened]");
+    Locator overlay = confirmation.locator("vaadin-dialog-overlay[opened]");
+    Locator content = overlay.locator("[part=content]");
+    assertThat(content).isVisible();
+    assertThat(overlay).not().hasAttribute("opening", "");
+    CosmosFollowUpChecks.assertCloseCircle(
+        confirmation.locator(".cosmos-overlay-close"), uiTexts.getAdminUsersCloseDialog());
+    Locator tabs = confirmation.locator(".two-factor-code-tabs");
+    Locator appTab = tabs.locator("#external-proof-app-code-tab");
+    Locator recoveryTab = tabs.locator("#external-proof-recovery-code-tab");
+    Locator panel = confirmation.locator("#external-proof-code-input");
+    Locator appInput = panel.locator("#external-confirm-factor input");
+    Locator recoveryInput = panel.locator("#external-confirm-recovery-code input");
+
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    assertDialogTabSurfaces(actor, tabs, appTab, content);
+    appInput.pressSequentially("123");
+    assertThat(appInput).hasValue("123");
+    selectCodeTabWithKeyboard(actor, appTab, recoveryTab, "ArrowRight");
+    assertActiveCodeTab(tabs, panel, recoveryTab, recoveryInput);
+    assertThat(appInput).not().isVisible();
+    recoveryInput.focus();
+    assertDialogTabSurfaces(actor, tabs, recoveryTab, content);
+
+    selectCodeTabWithKeyboard(actor, recoveryTab, appTab, "ArrowLeft");
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    assertThat(recoveryInput).not().isVisible();
+    assertThat(appInput).hasValue("");
+    appInput.focus();
+    assertDialogTabSurfaces(actor, tabs, appTab, content);
+
+    appInput.fill(TwoFactorPage.totp(actor, email));
+    confirmation.locator("#external-confirm-local").click();
+    Locator passwordDialog = actor.locator("vaadin-dialog.account-password-dialog[opened]");
+    assertThat(passwordDialog.locator("#account-password-new")).isVisible();
+    assertThat(passwordDialog.locator("#account-password-current")).isHidden();
+    assertThat(passwordDialog.locator(".two-factor-code-tabs:visible")).hasCount(0);
+    Locator closePasswordDialog = passwordDialog.locator("#account-password-close");
+    CosmosFollowUpChecks.assertCloseCircle(closePasswordDialog, uiTexts.getAdminUsersCloseDialog());
+    closePasswordDialog.focus();
+    assertThat(closePasswordDialog).isFocused();
+    closePasswordDialog.press("Enter");
+    assertThat(passwordDialog).hasCount(0);
+  }
+
+  private void assertActionDialogCodeMethods(Page actor) {
+    Locator dialog = actor.locator("#two-factor-action-dialog[opened]");
+    CosmosFollowUpChecks.assertCloseCircle(
+        dialog.locator(".cosmos-overlay-close"), uiTexts.getNotificationsClose());
+    Locator tabs = dialog.locator(".two-factor-code-tabs");
+    Locator appTab = tabs.locator("#two-factor-action-app-code-tab");
+    Locator recoveryTab = tabs.locator("#two-factor-action-recovery-code-tab");
+    Locator panel = dialog.locator("#two-factor-action-code-input");
+    Locator appInput = panel.locator("#two-factor-action-factor input");
+    Locator recoveryInput = panel.locator("#two-factor-action-recovery-code input");
+
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    selectCodeTabWithKeyboard(actor, appTab, recoveryTab, "ArrowRight");
+    assertActiveCodeTab(tabs, panel, recoveryTab, recoveryInput);
+    assertThat(appInput).not().isVisible();
+    selectCodeTabWithKeyboard(actor, recoveryTab, appTab, "ArrowLeft");
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    assertThat(recoveryInput).not().isVisible();
+  }
+
+  private void assertLoginCodeMethods(Page actor, boolean administrative) {
+    Locator header = actor.locator("#two-factor-panel > [slot=header]");
+    Locator tabs = header.locator(".two-factor-code-tabs");
+    Locator appTab = tabs.locator("#two-factor-authenticator-tab");
+    Locator recoveryTab = tabs.locator("#two-factor-recovery-tab");
+    Locator panel = actor.locator("#two-factor-confirmation-input");
+    Locator appInput = panel.locator("fc-otp-field#two-factor-code input");
+    Locator recoveryInput = panel.locator("vaadin-text-field#two-factor-code input");
+    assertThat(tabs).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    selectCodeTabWithKeyboard(actor, appTab, recoveryTab, "ArrowRight");
+    assertActiveCodeTab(tabs, panel, recoveryTab, recoveryInput);
+    assertThat(appInput).not().isVisible();
+    if (administrative) {
+      assertThat(recoveryTab).hasCSS("border-top-width", "2px");
+      BoundingBox headerBounds = header.boundingBox();
+      BoundingBox tabBounds = recoveryTab.boundingBox();
+      assertEquals(headerBounds.y + headerBounds.height, tabBounds.y + tabBounds.height, 1);
+    }
+    selectCodeTabWithKeyboard(actor, recoveryTab, appTab, "ArrowLeft");
+    assertActiveCodeTab(tabs, panel, appTab, appInput);
+    assertThat(recoveryInput).not().isVisible();
+  }
+
+  private void assertActiveCodeTab(
+      Locator tabs, Locator panel, Locator selectedTab, Locator input) {
+    assertThat(tabs).hasAttribute("role", "tablist");
+    assertThat(tabs.getByRole(AriaRole.TAB)).hasCount(2);
+    assertThat(panel).hasAttribute("role", "tabpanel");
+    for (Locator tab : tabs.getByRole(AriaRole.TAB).all()) {
+      assertThat(tab).hasAttribute("aria-controls", panel.getAttribute("id"));
+    }
+    assertThat(selectedTab).hasAttribute("aria-selected", "true");
+    assertThat(panel).hasAttribute("aria-labelledby", selectedTab.getAttribute("id"));
+    assertSelectedCodeTabStyle(selectedTab);
+    assertThat(input).isVisible();
+  }
+
+  private void selectCodeTabWithKeyboard(Page actor, Locator from, Locator to, String direction) {
+    from.focus();
+    from.press(direction);
+    assertThat(to).isFocused();
+    UiActions.complete(actor, () -> to.press("Enter"));
   }
 
   private void assertTwoFactorAccountActions(Page actor, int actionCount) {
@@ -690,7 +809,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         actor.locator(".two-factor-footer > .cosmos-dialog-actions"),
         1,
         actor.viewportSize().width <= 480);
-    actor.locator("#two-factor-codes-saved input").setChecked(true);
+    Locator codesSaved = actor.locator("#two-factor-codes-saved");
+    CosmosFollowUpChecks.assertSwitchAppearance(codesSaved);
+    codesSaved.getByRole(AriaRole.SWITCH).setChecked(true);
+    CosmosFollowUpChecks.assertSwitchAppearance(codesSaved);
     actor.locator("#two-factor-submit").click();
     actor.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
   }
@@ -764,6 +886,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("ticket-layout")
+  @Tag("switch-style")
   @Tag("follow-up-regression")
   @Tag("ticket-browser-detail")
   @DisplayName("MFA-20: Ticketzähler und Glocke folgen Zuständigkeit, Beobachtung und Abschluss")
@@ -816,7 +939,6 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertNotificationCount(admin, 1);
       NotificationInboxPage inbox = new NotificationInboxPage(browserPage);
       verifyClaimNotification(admin, inbox, number, previousNotifications);
-      inbox.closeDetail();
       browserPage.navigate("/admin?section=support");
 
       assertThat(ticketCard(browserPage, number).locator(".support-ticket-unread")).hasCount(0);
@@ -1010,11 +1132,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#support-active-filter-count")).hasText("1");
     assertThat(ticketCard(browserPage, number)).isHidden();
     inbox.openPreview();
-    inbox
-        .row(inbox.preview(), uiTexts.getSupportRecoverySubject())
-        .locator(".cosmos-notification-row-open")
-        .first()
-        .click();
+    Locator ticketPreviewRow =
+        inbox.row(inbox.preview(), uiTexts.getSupportRecoverySubject()).first();
+    inbox.assertPreviewReadLine(ticketPreviewRow, true);
+    String notificationId = ticketPreviewRow.getAttribute("data-notification-id");
+    ticketPreviewRow.locator(".cosmos-notification-row-open").click();
 
     assertThat(inbox.dialog().locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsUnread());
@@ -1067,6 +1189,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertNotificationCount(browserPage, previousNotifications);
     AllurePlaywright.attachScreenshot(
         "Übernommener Hinweis im geöffneten Glockendialog", browserPage);
+    inbox.closeDetail();
+    inbox.openPreview();
+    inbox.filter(inbox.preview(), uiTexts.getNotificationsAll());
+    Locator assignedPreviewRow =
+        inbox.preview().locator("[data-notification-id='" + notificationId + "']");
+    assertThat(assignedPreviewRow.locator("[data-relevance=TICKET_ASSIGNED]"))
+        .hasText(uiTexts.getNotificationsTicketAssigned());
+    inbox.assertPreviewReadLine(assignedPreviewRow, false);
   }
 
   private void verifyClosureNotification(
@@ -1425,6 +1555,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     } else {
       assertThat(control).not().hasAttribute("checked", "");
     }
+    CosmosFollowUpChecks.assertSwitchAppearance(control);
   }
 
   @Test
@@ -1448,6 +1579,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       providerTabStyles.put(width, selectedTabStyle(providerTab));
     }
     browserPage.navigate("/recovery-help");
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(browserPage.locator("#support-reply"));
     browserPage
         .locator("#support-reply textarea")
         .fill("Synthetische erste Anfrage für die Layoutprüfung.");
@@ -1549,8 +1681,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
       assertThat(unassignedCard.locator(".support-ticket-unassigned"))
           .hasCSS("font-style", "italic");
-      assertThat(unassignedCard.locator(".support-admin-ticket-metadata .support-ticket-status"))
-          .isVisible();
+      CosmosFollowUpChecks.assertReadableBadge(
+          unassignedCard.locator(".support-admin-ticket-metadata .support-ticket-status"), 22);
       assertThat(unassignedCard.locator(":scope > .support-ticket-title")).isVisible();
       assertThat(unassignedCard.locator(".support-admin-ticket-footer .support-ticket-updated"))
           .isVisible();
@@ -1656,6 +1788,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .containsText(uiTexts.getSupportOpen());
     assertThat(ticketPanel.locator(".support-history-event[data-event=STATUS_CHANGED]"))
         .containsText(uiTexts.getSupportInProgress());
+    Locator historyBadges =
+        ticketPanel.locator(".support-history-event vaadin-badge.support-ticket-status");
+    assertThat(historyBadges.first()).isVisible();
     assertThat(ticketPanel.locator(".support-section-header vaadin-badge"))
         .hasText(uiTexts.getSupportMessageCount(1));
     String createdTime =
@@ -1663,18 +1798,22 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator editor = ticketPanel.locator(".support-admin-editor");
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 1000);
+      for (Locator historyBadge : historyBadges.all()) {
+        CosmosFollowUpChecks.assertReadableBadge(historyBadge, 22);
+      }
 
       assertThat(editor.locator("#support-public-reply")).hasAttribute("selected", "");
-      assertThat(ticketPanel.locator("#support-reply"))
-          .hasJSProperty("label", uiTexts.getSupportReply());
+      Locator replyField = ticketPanel.locator("#support-reply");
+      assertThat(replyField).hasJSProperty("label", uiTexts.getSupportReply());
+      CosmosFollowUpChecks.assertNativeRequiredIndicator(replyField);
       UiActions.complete(browserPage, () -> editor.locator("#support-internal-note").click());
 
       assertThat(editor).hasAttribute("data-internal", "true");
       assertThat(editor.locator(".cosmos-security-warning"))
           .containsText(uiTexts.getSupportInternalSecurityNotice());
       assertThat(editor.locator(".support-help-notice")).hasCount(0);
-      assertThat(ticketPanel.locator("#support-reply"))
-          .hasJSProperty("label", uiTexts.getSupportInternal());
+      assertThat(replyField).hasJSProperty("label", uiTexts.getSupportInternal());
+      CosmosFollowUpChecks.assertNativeRequiredIndicator(replyField);
       assertThat(ticketPanel.locator("#support-add-reply"))
           .hasText(uiTexts.getSupportSaveInternal());
       assertThat(ticketPanel.locator("#support-reply textarea"))
@@ -1728,6 +1867,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(uiTexts.getSupportInProgress());
+    CosmosFollowUpChecks.assertReadableBadge(
+        ticketPanel.locator(".support-admin-ticket-metadata > .support-ticket-status"), 22);
     assertThat(tools.locator("#support-instructions")).isVisible();
     assertThat(footer.locator("#support-add-reply")).isVisible();
     assertThat(footer.locator("#support-close")).isVisible();

@@ -163,7 +163,8 @@ public final class LoginPage {
         .isVisible();
   }
 
-  private void assertLoginInputsUnmarked() {
+  @Step("Beide Anmeldefelder bleiben ohne Fehlermarkierung")
+  public void assertLoginInputsUnmarked() {
     assertThat(
             browserPage.locator(
                 ".public-panel :is(vaadin-email-field, vaadin-password-field)[invalid]"))

@@ -16,6 +16,7 @@ import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ReducedMotion;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
@@ -32,6 +33,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Feature("Responsiver Login")
 public class LoginLayoutBrowserTest extends BrowserFixture {
   @ParameterizedTest(name = "{0}: Login bei {1}×{2} ohne horizontales Abschneiden")
+  @Tag("switch-style")
   @CsvSource({
     "UI-03A,320,568",
     "UI-03B,390,844",
@@ -92,13 +94,18 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
             new Page.GetByRoleOptions()
                 .setName(uiTexts.getLoginRememberMeCheckbox())
                 .setExact(true));
+    Locator rememberControl = browserPage.locator(".cosmos-remember vaadin-switch");
+    CosmosFollowUpChecks.assertSwitchAppearance(rememberControl);
     remember.check();
 
     assertThat(remember).isChecked();
+    CosmosFollowUpChecks.assertSwitchAppearance(rememberControl);
     remember.uncheck();
 
     assertThat(remember).not().isChecked();
-    remember.focus();
+    remember.press("Shift+Tab");
+    browserPage.keyboard().press("Tab");
+    CosmosFollowUpChecks.assertSwitchFocus(rememberControl);
     remember.press("Space");
 
     assertThat(remember).isChecked();

@@ -9,6 +9,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import com.microsoft.playwright.options.ViewportSize;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import java.io.ByteArrayInputStream;
@@ -91,6 +92,9 @@ public final class ConfirmationAppearanceChecks {
     assertThat(overlayLocator).isVisible();
     assertThat(confirmationDialogLocator.locator("vaadin-confirm-dialog-overlay[opening]"))
         .hasCount(0);
+    CosmosFollowUpChecks.assertCloseCircle(
+        confirmationDialogLocator.locator(".cosmos-overlay-close"),
+        UiTexts.selected().getAdminUsersCloseDialog());
     browserPage.evaluate("() => document.fonts.ready");
 
     ViewportSize viewportSize = browserPage.viewportSize();

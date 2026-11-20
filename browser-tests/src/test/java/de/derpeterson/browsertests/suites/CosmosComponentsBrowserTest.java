@@ -21,6 +21,7 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.ActionGridChecks;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
@@ -261,7 +262,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @Tag("component-follow-up")
   @DisplayName("COMPONENT-10: Integrierte Zeiteinheit bleibt mittig innerhalb der Zahlenfläche")
   @Description(
-      "Ganzzahliges und präzises Zeitfeld auf Desktop und Smartphone vergleichen: Einheit bleibt mittig, Minus/X/Plus haben gleiche Größen und Abstände. Schrittaktion, Leeren und erneute Eingabe prüfen, ohne Einstellungen zu speichern.")
+      """
+      1. Ganzzahliges und präzises Zeitfeld auf Desktop und Smartphone vergleichen.
+      2. Schrittaktion, Leeren und erneute Eingabe prüfen. Auch das Sitzungslimit leeren.
+      **Erwartet:** Einheit, Feldaktionen und Eingabemitte bleiben ausgerichtet. Der leere Wert
+      zeigt einen gedämpften Platzhalter, das Löschkreuz verschwindet. Keine Speicherung.
+      """)
   void durationUnitIsCenteredInsideNumericField() {
     signIn();
     AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
@@ -271,6 +277,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       configurationPage.open(AdminConfigGroup.SECURITY);
       checkDurationFieldGeometryAndActions(
           configurationPage, uiTexts.getAdminConfigEntryRememberMeDuration(), viewportWidth);
+      Locator sessionLimitInput =
+          configurationPage.input(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
+      assertClearedNumberKeepsCenteredPlaceholder(
+          sessionLimitInput,
+          sessionLimitInput.locator("xpath=..").locator("[part~=clear-button]"),
+          sessionLimitInput.inputValue());
 
       configurationPage.open(AdminConfigGroup.QUEUE);
       checkDurationFieldGeometryAndActions(
@@ -283,6 +295,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   private void checkDurationFieldGeometryAndActions(
       AdminConfigurationPage configurationPage, String fieldLabelText, int viewportWidth) {
     Locator durationFieldLocator = configurationPage.duration(fieldLabelText);
+    Locator amountField =
+        durationFieldLocator.locator(
+            "vaadin-integer-field:visible, vaadin-big-decimal-field:visible");
+    assertThat(amountField.locator("input")).hasCSS("font-size", "14px");
+    assertThat(amountField.locator("[part=input-field]:not([theme~=cosmos-duration-unit])"))
+        .hasCSS("height", "40px");
     assertDurationUnitCentered(durationFieldLocator, fieldLabelText, viewportWidth);
     assertDurationActionGeometry(durationFieldLocator, fieldLabelText, viewportWidth);
     assertDurationStepAndClear(configurationPage, fieldLabelText);
@@ -412,11 +430,32 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertThat(amountInputLocator).hasValue(increasedAmountText);
 
     Locator clearButtonLocator = durationFieldLocator.locator("[part~=clear-button]");
+    assertClearedNumberKeepsCenteredPlaceholder(
+        amountInputLocator, clearButtonLocator, originalAmountText);
+  }
+
+  private void assertClearedNumberKeepsCenteredPlaceholder(
+      Locator amountInputLocator, Locator clearButtonLocator, String originalAmountText) {
+    assertThat(amountInputLocator).hasCSS("text-align", "center");
+    BoundingBox filledInputBounds = amountInputLocator.boundingBox();
     clearButtonLocator.click();
+
     assertThat(amountInputLocator).hasValue("");
     assertThat(clearButtonLocator).not().isVisible();
+    assertThat(amountInputLocator.and(browserPage.locator("input:placeholder-shown"))).isVisible();
+    assertThat(amountInputLocator).hasCSS("text-align", "center");
+    assertEquals(
+        "rgb(124, 138, 160)",
+        amountInputLocator.evaluate("input => getComputedStyle(input, '::placeholder').color"));
+    BoundingBox emptyInputBounds = amountInputLocator.boundingBox();
+    assertEquals(
+        filledInputBounds.x + filledInputBounds.width / 2,
+        emptyInputBounds.x + emptyInputBounds.width / 2,
+        1);
+
     amountInputLocator.fill(originalAmountText);
     amountInputLocator.press("Tab");
+    assertThat(amountInputLocator).hasValue(originalAmountText);
     assertThat(clearButtonLocator).isVisible();
   }
 
@@ -836,13 +875,19 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     String testUserEmail = "role-search-" + UUID.randomUUID() + "@example.test";
     adminUsersPage.createActiveUser(testUserEmail, BrowserTestAccounts.USER_PASSWORD);
+    String recipientPrefix = "overlay-recipient-" + UUID.randomUUID();
+    for (int recipientIndex = 0; recipientIndex < 12; recipientIndex++) {
+      adminUsersPage.createActiveUser(
+          recipientPrefix + "-" + recipientIndex + "@example.test",
+          BrowserTestAccounts.USER_PASSWORD);
+    }
 
     for (int viewportWidth : new int[] {1280, 390}) {
       browserPage.setViewportSize(viewportWidth, 900);
       adminUsersPage.open();
       assertRoleSearchPreservesSelection(adminUsersPage.openCreate());
       assertRoleSearchPreservesSelection(adminUsersPage.openEdit(testUserEmail));
-      assertRecipientSelectionFramesAndSpacing(viewportWidth);
+      assertRecipientSelectionFramesAndSpacing(viewportWidth, recipientPrefix + "-0@example.test");
     }
   }
 
@@ -889,11 +934,20 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     adminUserDialog.cancel();
   }
 
-  private void assertRecipientSelectionFramesAndSpacing(int viewportWidth) {
+  private void assertRecipientSelectionFramesAndSpacing(int viewportWidth, String matchingEmail) {
     NotificationComposePage notificationComposePage = new NotificationComposePage(browserPage);
     notificationComposePage.open();
     Locator recipientSearchInputLocator = notificationComposePage.recipients().locator("input");
+    browserPage.setViewportSize(viewportWidth, 560);
     recipientSearchInputLocator.click();
+    Locator scroller = CosmosFollowUpChecks.assertChoiceScrollerPadding(browserPage, true);
+    assertWheelScrolling(scroller);
+    scroller.evaluate("scroller => scroller.scrollTop = 0");
+    recipientSearchInputLocator.fill(matchingEmail);
+    Locator filteredOption = browserPage.locator("vaadin-multi-select-combo-box-item:visible");
+    assertThat(filteredOption).hasCount(1);
+    assertThat(filteredOption).containsText(matchingEmail);
+    recipientSearchInputLocator.fill("");
     Locator recipientOptionsLocator =
         browserPage.locator("vaadin-multi-select-combo-box-item:visible");
     assertThat(recipientOptionsLocator.nth(1)).isVisible();
@@ -908,11 +962,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot(
         "Vollständige Empfängerrahmen bei " + viewportWidth + " px", browserPage);
     recipientSearchInputLocator.press("Escape");
+    browserPage.setViewportSize(viewportWidth, 900);
   }
 
   private void assertSelectedOptionFramesAndSpacing(
       Locator firstSelectedOptionLocator, Locator secondSelectedOptionLocator) {
-    assertThat(browserPage.locator("vaadin-multi-select-combo-box-overlay[opening]")).hasCount(0);
+    CosmosFollowUpChecks.assertChoiceScrollerPadding(browserPage, true);
     BoundingBox firstOptionBounds = firstSelectedOptionLocator.boundingBox();
     BoundingBox secondOptionBounds = secondSelectedOptionLocator.boundingBox();
     double paintedBottomOffset =
@@ -927,6 +982,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             .doubleValue();
     for (Locator selectedOptionLocator :
         List.of(firstSelectedOptionLocator, secondSelectedOptionLocator)) {
+      assertThat(selectedOptionLocator.locator("[part=checkmark]")).isVisible();
       assertTrue(
           (Boolean)
               selectedOptionLocator.evaluate(
@@ -968,11 +1024,28 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
       assertChoiceHoverUsesSharedColor(adminUsersPage.openCreate(), viewportWidth);
 
+      new AccountPage(browserPage).open();
+      for (String profileChoiceId : List.of("account-gender", "account-language")) {
+        assertSingleChoiceOverlay(browserPage.locator("#" + profileChoiceId));
+      }
+
+      browserPage.navigate(path(ADMIN_ROUTE));
+      configurationPage.open(AdminConfigGroup.TWO_FACTOR);
+      Locator factorRule =
+          browserPage.locator("vaadin-combo-box[id^=two-factor-rule-]:visible").first();
+      assertSingleChoiceOverlay(factorRule);
+
       configurationPage.open(AdminConfigGroup.NOTIFICATIONS);
       assertFixedDaySuffixesRemainInsideFields(configurationPage);
       AllurePlaywright.attachScreenshot(
           "Feste Tage im nativen Zahlenfeld bei " + viewportWidth + " px", browserPage);
     }
+  }
+
+  private void assertSingleChoiceOverlay(Locator choice) {
+    choice.locator("[part~=toggle-button]").click();
+    CosmosFollowUpChecks.assertSingleChoiceSpacing(browserPage);
+    choice.locator("input").press("Escape");
   }
 
   private void assertActionAndGridHoverColors(AdminUsersPage adminUsersPage) {
@@ -1001,11 +1074,14 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertPaginationOverlayContainsSelection(int viewportWidth) {
     Locator pageSizeComboBoxLocator = browserPage.locator(".portal-pagination-size");
+    assertThat(pageSizeComboBoxLocator.locator("[part=input-field]")).hasCSS("height", "32px");
     pageSizeComboBoxLocator.locator("[part~=toggle-button]").click();
+    CosmosFollowUpChecks.assertSingleChoiceSpacing(browserPage);
     Locator selectedPageSizeRowLocator =
         browserPage.locator(
             "vaadin-combo-box-item.portal-pagination-option[selected] .cosmos-reference-option-row");
     assertThat(selectedPageSizeRowLocator).isVisible();
+    assertThat(selectedPageSizeRowLocator).hasCSS("height", "32px");
     BoundingBox overlayBounds = pageSizeComboBoxLocator.locator("[part=overlay]").boundingBox();
     BoundingBox selectionBounds = selectedPageSizeRowLocator.boundingBox();
     assertTrue(overlayBounds.width >= 88);
@@ -1020,6 +1096,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       AdminUserDialog adminUserDialog, int viewportWidth) {
     Locator genderComboBoxLocator = adminUserDialog.root().locator("vaadin-combo-box").first();
     genderComboBoxLocator.locator("[part~=toggle-button]").click();
+    CosmosFollowUpChecks.assertSingleChoiceSpacing(browserPage);
     Locator hoveredChoiceRowLocator =
         browserPage
             .locator(
@@ -1027,6 +1104,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             .first();
     hoveredChoiceRowLocator.hover();
     assertThat(hoveredChoiceRowLocator).hasCSS("background-color", "rgb(21, 34, 56)");
+    assertThat(hoveredChoiceRowLocator).hasCSS("height", "42px");
     Locator hoveredChoiceItemLocator = hoveredChoiceRowLocator.locator("..");
     assertThat(hoveredChoiceItemLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
     assertThat(hoveredChoiceItemLocator).hasCSS("outline-style", "none");
@@ -1166,6 +1244,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   }
 
   @Test
+  @Tag("switch-style")
   @DisplayName(
       "COMPONENT-02: Konfigurationsswitches bleiben links beschriftet und rechts bedienbar")
   @Description(
@@ -1201,6 +1280,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               trackBounds.y + trackBounds.height / 2,
               info.boundingBox().y + info.boundingBox().height / 2,
               1);
+          CosmosFollowUpChecks.assertSwitchAppearance(toggle);
           boolean original = input.isChecked();
           label.click();
 
@@ -1208,9 +1288,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               .isChecked(
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
                       .setChecked(!original));
-          if (!original) {
-            assertSwitchMarker(track);
-          }
+          CosmosFollowUpChecks.assertSwitchAppearance(toggle);
           BoundingBox clickTarget = track.boundingBox();
           browserPage
               .mouse()
@@ -1220,29 +1298,46 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               .isChecked(
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
                       .setChecked(original));
-          if (original) {
-            assertSwitchMarker(track);
-          }
+          CosmosFollowUpChecks.assertSwitchAppearance(toggle);
           checkedFields++;
         }
       }
       assertEquals(5, checkedFields);
+      assertReadonlySwitchUsesAuraColors();
       AllurePlaywright.attachScreenshot("Switchzeilen bei " + width + "px", browserPage);
     }
   }
 
-  private void assertSwitchMarker(Locator track) {
-    Locator marker = track.locator("[part=marker]");
-
-    assertThat(track).hasCSS("width", "34px");
-    assertThat(track).hasCSS("height", "20px");
-    assertThat(marker).hasCSS("width", "14px");
-    assertThat(marker).hasCSS("height", "14px");
-    BoundingBox area = track.boundingBox();
-    BoundingBox thumb = marker.boundingBox();
-
-    assertEquals(area.y + area.height / 2, thumb.y + thumb.height / 2, 1);
-    assertTrue(thumb.x >= area.x && thumb.x + thumb.width <= area.x + area.width);
+  private void assertReadonlySwitchUsesAuraColors() {
+    browserPage.evaluate(
+        """
+        label => {
+          const control = document.createElement('vaadin-switch');
+          control.id = 'browser-readonly-switch';
+          control.label = label;
+          control.readonly = true;
+          control.checked = true;
+          document.body.append(control);
+        }
+        """,
+        uiTexts.getLoginRememberMeCheckbox());
+    Locator control = browserPage.locator("#browser-readonly-switch");
+    try {
+      Locator input = control.locator("input[slot=input]");
+      Locator track = control.locator("[part=switch]");
+      Locator marker = control.locator("[part=marker]");
+      assertThat(control).hasAttribute("readonly", "");
+      assertThat(track).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+      assertThat(marker)
+          .hasCSS("background-color", resolveFixtureColor(marker, "--vaadin-text-color-secondary"));
+      control.locator("[part=label]").click();
+      assertThat(input).isChecked();
+      control.evaluate("control => control.checked = false");
+      assertThat(marker)
+          .hasCSS("background-color", resolveFixtureColor(marker, "--vaadin-text-color-disabled"));
+    } finally {
+      control.evaluate("control => control.remove()");
+    }
   }
 
   @Test
@@ -1623,6 +1718,8 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("AURA-01: Native Felder teilen Deaktiviert-Zustand und kleine Fehlertexte")
+  @Description(
+      "Native Feldzustände auf Desktop und Smartphone prüfen. Leere Zahlenfelder behalten einen gedämpften Platzhalter auch ohne Löschaktion, bei Disabled und bei Read-only.")
   @Tag("aura-fields")
   void nativeFieldsShareDisabledColorsAndErrorPresentation(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
@@ -1649,6 +1746,16 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             field.value = tag === 'vaadin-date-picker' ? '2026-01-01'
               : tag === 'vaadin-time-picker' ? '07:30'
               : tag.includes('integer') || tag.includes('decimal') ? '12' : 'Sample';
+            fixture.append(field);
+          }
+          for (const state of ['disabled', 'readonly', 'without-clear']) {
+            const field = document.createElement('vaadin-integer-field');
+            field.label = state;
+            field.placeholder = '12';
+            field.clearButtonVisible = state !== 'without-clear';
+            field.disabled = state === 'disabled';
+            field.readonly = state === 'readonly';
+            field.setAttribute('data-numeric-state', state);
             fixture.append(field);
           }
           const invalid = document.createElement('vaadin-text-field');
@@ -1689,7 +1796,12 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             disabledColor,
             inputLocator.evaluate("element => getComputedStyle(element, '::placeholder').color"));
       }
-      Locator errorLocator = fixtureLocator.locator("#aura-invalid-field [part=error-message]");
+      assertEmptyNumericFieldStates(fixtureLocator, disabledColor);
+      Locator invalidField = fixtureLocator.locator("#aura-invalid-field");
+      assertThat(invalidField.locator("[part=input-field]"))
+          .hasCSS("border-top-color", "rgb(248, 113, 113)");
+      assertThat(invalidField.locator("[part=required-indicator]")).not().isVisible();
+      Locator errorLocator = invalidField.locator("[part=error-message]");
       assertThat(errorLocator).hasCSS("font-size", "13px");
       assertEquals(
           "none",
@@ -1725,6 +1837,150 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     } finally {
       browserPage.evaluate("document.querySelector('#aura-field-fixture')?.remove()");
     }
+  }
+
+  private void assertEmptyNumericFieldStates(Locator fixtureLocator, String disabledColor) {
+    String placeholderColor =
+        resolveFixtureColor(fixtureLocator, "--cosmos-input-placeholder-color");
+    for (String state : List.of("disabled", "readonly", "without-clear")) {
+      Locator numberField = fixtureLocator.locator("[data-numeric-state='" + state + "']");
+      Locator numberInput = numberField.locator("input:placeholder-shown");
+      assertThat(numberInput).hasValue("");
+      assertThat(numberField.locator("[part~=clear-button]")).not().isVisible();
+      assertEquals(
+          state.equals("disabled") ? disabledColor : placeholderColor,
+          numberInput.evaluate("input => getComputedStyle(input, '::placeholder').color"));
+    }
+    assertThat(fixtureLocator.locator("[data-numeric-state='disabled'] input")).isDisabled();
+    assertThat(fixtureLocator.locator("[data-numeric-state='readonly'] input"))
+        .hasAttribute("readonly", "");
+    assertThat(fixtureLocator.locator("[data-numeric-state='without-clear']"))
+        .not()
+        .hasAttribute("clear-button-visible", "");
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("aura-fields")
+  @DisplayName("AURA-03: Native Checkboxen zeigen weiße Haken und Teilauswahlstriche")
+  @Description(
+      """
+      1. Einzelcheckbox per Tastatur wählen, Fokus und Hover auf der nativen Fläche prüfen.
+      2. Gruppenoption per Label wählen. Gesamtauswahl des nativen Grid-Headers prüfen.
+      3. Voll- und Teilauswahl sowie die Darstellung bei Disabled und Read-only vergleichen.
+      **Erwartet:** Haken und Strich sind weiß. Gesperrte Zustände bleiben erkennbar.
+      """)
+  void nativeCheckboxesKeepWhiteSelectionMarks(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    signIn();
+    addCheckboxAppearanceFixture();
+    Locator fixtureLocator = browserPage.locator("#aura-checkbox-fixture");
+    try {
+      Locator singleCheckbox = fixtureLocator.locator("#aura-single-checkbox");
+      Locator singleInput = singleCheckbox.getByRole(AriaRole.CHECKBOX);
+      fixtureLocator.locator("button").focus();
+      browserPage.keyboard().press("Tab");
+      assertThat(singleInput).isFocused();
+      assertThat(checkboxMark(singleCheckbox)).hasCSS("outline-style", "solid");
+      singleInput.press("Space");
+      assertThat(singleInput).isChecked();
+      assertWhiteCheckboxMark(singleCheckbox);
+      singleCheckbox.hover();
+      browserPage.waitForCondition(() ->
+          "0.04"
+              .equals(
+                  checkboxMark(singleCheckbox)
+                      .evaluate("mark => getComputedStyle(mark, '::before').opacity")));
+
+      Locator groupCheckbox = fixtureLocator.locator("vaadin-checkbox-group vaadin-checkbox");
+      groupCheckbox.locator("label[slot=label]").click();
+      assertThat(groupCheckbox.getByRole(AriaRole.CHECKBOX)).isChecked();
+      assertWhiteCheckboxMark(groupCheckbox);
+
+      Locator selectAllCheckbox =
+          fixtureLocator.locator("vaadin-grid .vaadin-grid-select-all-checkbox");
+      assertThat(selectAllCheckbox).hasAttribute("checked", "");
+      assertWhiteCheckboxMark(selectAllCheckbox);
+      String fullMark = checkboxMarkMask(selectAllCheckbox);
+      // In dieser reinen Darstellungsfixture kommt der Zwischenzustand ohne Serverauswahl aus.
+      selectAllCheckbox.evaluate(
+          "checkbox => { checkbox.checked = false; checkbox.indeterminate = true; }");
+      assertThat(selectAllCheckbox).hasAttribute("indeterminate", "");
+      assertThat(selectAllCheckbox.getByRole(AriaRole.CHECKBOX))
+          .hasJSProperty("indeterminate", true);
+      assertWhiteCheckboxMark(selectAllCheckbox);
+      assertNotEquals(fullMark, checkboxMarkMask(selectAllCheckbox));
+
+      Locator disabledCheckbox = fixtureLocator.locator("#aura-disabled-checkbox");
+      assertThat(disabledCheckbox.getByRole(AriaRole.CHECKBOX)).isDisabled();
+      assertThat(checkboxMark(disabledCheckbox)).not().hasCSS("color", "rgb(255, 255, 255)");
+      Locator readonlyCheckbox = fixtureLocator.locator("#aura-readonly-checkbox");
+      readonlyCheckbox.locator("label[slot=label]").click();
+      assertThat(readonlyCheckbox.getByRole(AriaRole.CHECKBOX)).isChecked();
+      assertThat(checkboxMark(readonlyCheckbox)).hasCSS("border-top-style", "dashed");
+      AllurePlaywright.attachScreenshot("Native Checkboxen " + viewportWidth, browserPage);
+    } finally {
+      fixtureLocator.evaluate("fixture => fixture.remove()");
+    }
+  }
+
+  private void addCheckboxAppearanceFixture() {
+    browserPage.evaluate(
+        """
+        () => {
+          const fixture = document.createElement('section');
+          fixture.id = 'aura-checkbox-fixture';
+          fixture.className = 'cosmos-theme cosmos-reference-portal';
+          fixture.style.cssText = 'position:fixed;inset:80px 16px 16px;z-index:1000;overflow:auto;background:#091120;padding:16px;display:grid;gap:12px;align-content:start';
+          const anchor = document.createElement('button');
+          anchor.textContent = 'Start';
+          fixture.append(anchor);
+          for (const state of ['single', 'disabled', 'readonly']) {
+            const checkbox = document.createElement('vaadin-checkbox');
+            checkbox.id = `aura-${state}-checkbox`;
+            checkbox.label = state;
+            checkbox.checked = state !== 'single';
+            checkbox.disabled = state === 'disabled';
+            checkbox.readonly = state === 'readonly';
+            fixture.append(checkbox);
+          }
+          const group = document.createElement('vaadin-checkbox-group');
+          const choice = document.createElement('vaadin-checkbox');
+          choice.label = 'Group option';
+          choice.value = 'option';
+          group.append(choice);
+          fixture.append(group);
+
+          const grid = document.createElement('vaadin-grid');
+          grid.style.height = '160px';
+          grid.items = [{name: 'First'}, {name: 'Second'}];
+          const selection = document.createElement('vaadin-grid-flow-selection-column');
+          selection.selectAll = true;
+          const column = document.createElement('vaadin-grid-column');
+          column.path = 'name';
+          grid.append(selection, column);
+          fixture.append(grid);
+          document.body.append(fixture);
+        }
+        """);
+  }
+
+  private Locator checkboxMark(Locator checkboxLocator) {
+    return checkboxLocator.locator("[part=checkbox]");
+  }
+
+  private void assertWhiteCheckboxMark(Locator checkboxLocator) {
+    Locator markLocator = checkboxMark(checkboxLocator);
+    assertThat(markLocator).isVisible();
+    assertEquals(
+        "rgb(255, 255, 255)",
+        markLocator.evaluate("mark => getComputedStyle(mark, '::after').backgroundColor"));
+  }
+
+  private String checkboxMarkMask(Locator checkboxLocator) {
+    return (String)
+        checkboxMark(checkboxLocator)
+            .evaluate("mark => getComputedStyle(mark, '::after').maskImage");
   }
 
   private String resolveFixtureColor(Locator fixtureLocator, String colorToken) {

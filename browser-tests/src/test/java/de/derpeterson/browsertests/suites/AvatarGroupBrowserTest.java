@@ -15,6 +15,7 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -100,7 +101,13 @@ public class AvatarGroupBrowserTest extends BrowserFixture {
       if (recipientCount == 9) {
         overflowAvatarLocator.click();
         verifyRecipientPopover(recipientEmails.getFirst(), width);
-        closeRecipientPopoverAndAssertSendEnabled(composePage, recipientAvatarGroupLocator);
+        Locator closeButton =
+            browserPage.locator("#admin-notifications-preview-recipients .cosmos-overlay-close");
+        CosmosFollowUpChecks.assertCloseCircle(closeButton, uiTexts.getNotificationsClose());
+        closeButton.focus();
+        assertThat(closeButton).isFocused();
+        closeButton.press("Enter");
+        assertRecipientPopoverClosed(composePage, recipientAvatarGroupLocator);
       }
     }
     assertThat(browserPage.locator(".cosmos-notification-sent-row"))

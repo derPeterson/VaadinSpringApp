@@ -103,9 +103,9 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |
-| `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
-| `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
-| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 38 |
+| `authentication` | Admin-/Benutzerlogin, Fehler einschließlich Weiterleitungen, Gastzugriff und Logout | 8 |
+| `login-attempts` | Drei Sperr-/Resetfälle plus acht Anmelde- und vier Remember-me-Regressionsfälle | 15 |
+| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 39 |
 | `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 60 |
 | `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, Anmeldewege, optionale Adminprofilfelder, Kontobestätigung per Ersatzcode, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 33 |
 | `external-login-settings` | Bestehende Anbieterfälle gezielt: Superadmin-Einrichtung mit 2FA, verschlüsselte Zugangsdaten nach Speichern/Neustart und Kontozugriff bei deaktivierten Anbietern, jeweils Desktop/Smartphone | 6 |
@@ -130,10 +130,10 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen; Anfragekarte mit Aufnahmen, Messwerten und Fokusfolge bei 1280/390 px | 9 |
 | `public-panels` | Standardpanels einschließlich Anbieterkarten, Verifikation, Reset, E-Mail-Änderung, Reaktivierung und Wartung mit Aufnahmen/Messwerten bei 1280/390 px | 14 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
-| `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
+| `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 52 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau, abgelaufene Sitzung mit gespeichertem Zugang und eingeschränkter Login | 7 |
 | `sign-in-session-layout` | Anmeldeinformationen im Benutzerformular, Sitzungsgruppen, Anmeldewege und Abmeldebestätigungen im Konto und am Sitzungslimit, Desktop und Smartphone | 4 |
-| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder, kompakte Geburtstage, Status am Kontobild, Formularschutz und eigene Kontodeaktivierung/Reaktivierung/Löschung auf Desktop und Smartphone | 21 |
+| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder, kompakte Geburtstage, Status am Kontobild, Formularschutz und eigene Kontodeaktivierung/Reaktivierung/Löschung auf Desktop und Smartphone | 23 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
@@ -145,9 +145,9 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `form-layouts` | Allgemeine Konfiguration für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest, Benachrichtigungen, Kontodialoge, öffentliche Formulare und Superadmin-Zusatzfelder: Maße und Vergleichsaufnahmen auf Desktop/Smartphone | 12 |
 | `native-cards` | Konto, Sicherheitsreiter, Sitzungen, Inbox und administrative Karten einschließlich Mailqueue-Assistent: Vergleichsaufnahmen und Layoutmesswerte auf Desktop/Smartphone | 2 |
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
-| `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 6 |
+| `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 7 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
-| `aura-fields` | Gezielt deaktivierte native Feldtypen, Fehlertexte, Kalenderstil und erneut geöffnete Zeitauswahl bei 1280/390 px | 4 |
+| `aura-fields` | Deaktivierte native Feldtypen, Fehlertexte, Zahlenplatzhalter, Checkbox-Markierungen, Kalenderstil und erneut geöffnete Zeitauswahl bei 1280/390 px | 6 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
 | `blocked-links` | Alte Verifikations-/Resetbuttons nach Adminänderung; neutrale Anfrage gesperrter Adresse | 5 |
@@ -166,7 +166,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 27 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
-| `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
+| `switch-style` | Gezielte Prüfung nativer Schalter bei Login, Konfiguration, Anbietern, 2FA, Benutzerformular, Ersatzcodes, Ticketbeobachtung und Empfängerauswahl | 14 |
+| `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 23 |
 | `segmented-selection` | Profilbild, Inbox/Glockenvorschau und Benutzer-/Ticketfilter: native Tabs, Tastatur, Auswahl und Screenshots bei 1280/390/320 px | 3 |
 | `component-follow-up` | Gezielte Nachtests für Zeitfelder, Details-Schalter, Kontoaktionen/-typ, Sperre/Selbstdeaktivierung, Verifikations-/Reaktivierungsdarstellung und E-Mail-Linkrahmen; kanonische Mailvorlagen werden ergänzend separat von tatsächlichen Mailpit-Journeys dargestellt | 4 |
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |

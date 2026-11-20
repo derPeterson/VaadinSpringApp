@@ -51,6 +51,7 @@ class BrowserExecutionPlanTest {
         "mobile-confirmation-footers",
         "account-action-cards",
         "configuration-footers",
+        "switch-style",
         "profile-notification",
         "notification-variants",
         "duration-custom-field",
@@ -161,6 +162,7 @@ class BrowserExecutionPlanTest {
           case "aura-fields" ->
               Set.of(
                   "nativeFieldsShareDisabledColorsAndErrorPresentation",
+                  "nativeCheckboxesKeepWhiteSelectionMarks",
                   "calendarAndTimePickerKeepTheirCosmosPresentation");
           case "avatar-group" -> Set.of("recipientAvatarGroupOpensSearchablePreviewWithoutSending");
           case "duration-custom-field" ->
@@ -259,6 +261,14 @@ class BrowserExecutionPlanTest {
           case "two-factor-ticket-layout" ->
               Set.of(
                   "administrativeTicketLayoutKeepsTabsAndCardsUnclipped",
+                  "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
+          case "switch-style" ->
+              Set.of(
+                  "loginRemainsUsable",
+                  "configurationSwitchGeometryAndBothClickTargets",
+                  "providerAndRoleFormsKeepTheirArrangement",
+                  "mailAndSuperadminFormsKeepTheirArrangement",
+                  "otpFocusAndAutomaticConfirmationCoverSetupLoginReplacementAndRecovery",
                   "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
           default ->
               Set.of(

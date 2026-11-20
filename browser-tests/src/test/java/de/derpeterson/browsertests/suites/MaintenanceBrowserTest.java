@@ -264,11 +264,12 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       } else {
         assertThat(browserActor.browserPage.locator("vaadin-notification-card:not([closing])"))
             .containsText(uiTexts.getMaintenanceLoginMessage());
+        LoginPage login = new LoginPage(browserActor.browserPage);
+        login.assertLoginInputsUnmarked();
         assertFalse(
             browserActor.browserContext.cookies().stream()
                 .anyMatch(c -> c.name.equals("remember-me")));
         mode(false);
-        LoginPage login = new LoginPage(browserActor.browserPage);
         login.dismissFailure();
         login.signIn(account, BrowserTestAccounts.USER_PASSWORD);
 
@@ -414,8 +415,9 @@ public class MaintenanceBrowserTest extends BrowserFixture {
         new PersistentBrowserActor(playwrightRuntime, profile, LOGIN_ROUTE)) {
       assertThat(resumed.browserPage.locator("vaadin-notification-card:not([closing])"))
           .containsText(uiTexts.getMaintenanceLoginMessage());
-      mode(false);
       LoginPage login = new LoginPage(resumed.browserPage);
+      login.assertLoginInputsUnmarked();
+      mode(false);
       login.dismissFailure();
       login.signIn(account, BrowserTestAccounts.USER_PASSWORD);
 

@@ -5,6 +5,7 @@ import static de.derpeterson.app.config.AppConstants.USER_ICON_ALT;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
@@ -20,7 +21,10 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -108,6 +112,36 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     assertThat(loginPanel.locator("vaadin-email-field[invalid]")).hasCount(1);
     assertThat(loginPanel.locator("vaadin-password-field[invalid]")).hasCount(0);
     assertThat(notice).containsText(uiTexts.getBaseValidationEmailInvalidMessage());
+  }
+
+  @Test
+  @DisplayName("AUTH-01F: Rückmeldungen nach Weiterleitungen markieren keine Anmeldefelder")
+  @Description(
+      """
+      1. Auf Desktop und Smartphone das Anmeldeziel mit den regulären Fehlercodes öffnen.
+      2. Wartung, Drosselung, Sitzungslimit, technische Störung und neutralen Anmeldefehler prüfen.
+      **Erwartet:** Der lokalisierte Fehler erscheint im Standardtoast. Beide Eingaben bleiben unmarkiert.
+      """)
+  void loginRedirectMessagesKeepInputsUnmarked() {
+    Map<String, String> loginMessages =
+        Map.of(
+            "maintenance", uiTexts.getMaintenanceLoginMessage(),
+            "throttled", uiTexts.getLoginThrottledMessage(),
+            "sessions", uiTexts.getLoginSessionLimitMessage(),
+            "unavailable", uiTexts.getLoginUnavailableMessage(),
+            "invalid", uiTexts.getLoginFailedMessage());
+    LoginPage login = new LoginPage(browserPage);
+    for (int width : new int[] {1280, 390}) {
+      browserPage.setViewportSize(width, 900);
+      for (Entry<String, String> feedback : loginMessages.entrySet()) {
+        browserPage.navigate(path(LOGIN_ROUTE) + "?error=" + feedback.getKey());
+        login.assertFormVisible();
+        Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+        assertThat(notice).hasAttribute("theme", Pattern.compile(".*cosmos-reference-error.*"));
+        assertThat(notice.locator(".cosmos-notification-message")).hasText(feedback.getValue());
+        login.assertLoginInputsUnmarked();
+      }
+    }
   }
 
   @Tag("fast")

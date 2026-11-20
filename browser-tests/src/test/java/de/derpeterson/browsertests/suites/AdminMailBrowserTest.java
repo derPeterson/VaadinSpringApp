@@ -15,6 +15,7 @@ import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -225,7 +226,13 @@ public class AdminMailBrowserTest extends BrowserFixture {
     assertThat(help.locator(".admin-help-description")).hasText(hint);
     assertThat(help.locator(".admin-help-rules h4")).hasText(uiTexts.getAdminConfigInputRules());
     assertThat(help.locator(".admin-help-rules li")).hasText(rule);
-    help.locator("[slot=footer] vaadin-button").click();
+    Locator closeButton = help.locator(".cosmos-overlay-close");
+    CosmosFollowUpChecks.assertCloseCircle(closeButton, uiTexts.getNotificationsClose());
+    closeButton.hover();
+    assertThat(browserPage.getByRole(AriaRole.TOOLTIP)).hasText(uiTexts.getNotificationsClose());
+    closeButton.focus();
+    assertThat(closeButton).isFocused();
+    closeButton.press("Enter");
     assertThat(help).hasCount(0);
   }
 

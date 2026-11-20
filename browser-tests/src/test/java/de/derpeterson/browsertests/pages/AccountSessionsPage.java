@@ -59,6 +59,16 @@ public final class AccountSessionsPage {
     Locator sessionHeadingLocator = browserPage.locator(".account-session-heading");
 
     assertThat(sessionHeadingLocator.locator(".account-session-summary")).hasCSS("row-gap", "6px");
+    CosmosFollowUpChecks.assertReadableBadge(
+        sessionHeadingLocator.locator(".account-session-count"), 30);
+    CosmosFollowUpChecks.assertReadableBadge(
+        sessionHeadingLocator.locator("#account-sessions-limit"), 24);
+    Locator deviceStates =
+        browserPage.locator("#account-session-entries vaadin-badge.account-session-state");
+    assertThat(deviceStates.first()).isVisible();
+    for (Locator deviceState : deviceStates.all()) {
+      CosmosFollowUpChecks.assertReadableBadge(deviceState, 22);
+    }
     assertTrue(
         (Boolean)
             sessionHeadingLocator.evaluate(

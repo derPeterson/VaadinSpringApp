@@ -5,25 +5,6 @@
 Oberflächenprüfungen in DE und EN auf Desktop und schmaler Ansicht ausführen,
 sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter.
 
-- **OTP-Methodenreiter — offen.**
-  Tastaturwechsel und ARIA-Zuordnung der aktiven Eingabe in Anmelde- und
-  Adminbestätigung sowie in Aktionsdialogen prüfen. In der Adminbestätigung
-  zusätzlich die blaue Oberkante und den Anschluss an den Kopf prüfen.
-  Beim Portalpasswortdialog die Pixelkante unter beiden Reitern, die seitlichen
-  Linienanschlüsse und oberen Rundungen beim Öffnen und nach beiden
-  Wechselrichtungen prüfen. Beim Zurückwechseln ist der angefangene App-Code
-  leer. Bei Passwortnachweis, bereits bestätigter Identität und beim
-  Wiederherstellungsschritt gezielt prüfen, dass der Kopf ohne Reiter bleibt.
-
-- **Badge- und Formularmaße — offen.**
-  Quellen-, Lesestatus- und Ticketrelevanz-Badges der Glockenvorschau,
-  Ticketstatus in Liste, Kopf und Verlauf sowie Gerätestatus mit 22 px
-  prüfen, Sitzungszähler mit 30 px und Sitzungslimit mit 24 px.
-  Lange Beschriftungen auf Umbruch und Lesbarkeit prüfen. Bei einzeiligen
-  Feldern und Feldhilfeknöpfen 40 px Höhe, Eingabetext mit 13 px und normale
-  Buttonschrift mit 12 px stichprobenartig prüfen. Kompakte Seitengrößenauswahl
-  und Dauerfelder mit den jeweiligen Größenvarianten vergleichen.
-
 - **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
   Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis
   zum letzten Eintrag prüfen. Lange Titel, Badges, linke Markierung und lückenlose
@@ -33,36 +14,12 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Auswahl erhalten. Sprachwechsel mit ausgewähltem Ticket prüfen. Die einfachen
   Trennlinien des Admin-Grids mit denen der Karten vergleichen.
 
-- **Einheitliche Schließen-Icons — offen.**
-  Kreis-X mit 18 × 18 px im 36-px-Button, Zentrierung, Fokus und Tooltip in
-  Glockenvorschau, Nachrichtendialog, Empfänger-Popover, Meldungen, Feldhilfen,
-  Benutzerverwaltung und Konto-, 2FA-, Anbieter- und Bestätigungsdialogen prüfen.
-  Fehlende Maus- und Tastaturpfade abdecken, insbesondere die Tastaturbedienung
-  weiterer Meldungsvarianten.
-
-- **Dauerfeld-Platzhalter nach Leeren — offen.**
-  Die gedämpfte Farbe und unveränderte Zentrierung nach dem Leeren bei
-  ganzzahligen Dauerwerten und Zahlenfeldern prüfen. Deaktivierte,
-  schreibgeschützte Felder und Felder ohne Löschaktion einbeziehen.
-
-- **Switch-Grundstyling — offen.**
-  „Login speichern“, Benutzerformular, Anbieter/2FA, Ersatzcodes,
-  Ticketbeobachtung und „Alle Benutzer“ mit den geprüften Sicherheits- und
-  SMTP-Switches vergleichen. Bahn, runden Griff, Ein-/Aus- und
-  Disabled-/Readonly-Farben, Fokus, Klickfläche, Beschriftung, Untertext,
-  Umbruch und Abstände prüfen. Bei Benutzerformularen zusätzlich volle
-  Zeilenbreite und oben/unten S bei Schaltern prüfen.
-
-- **Mitteilungskarten – Dichte und Lesestatuslinie — offen.**
-  Übersicht und Detail mit L-Innenabstand, Vorschau mit M prüfen. Abstände
-  Titel–Nachricht und Nachricht–Metadaten in Übersicht und Detail S/M, in der
-  Vorschau XS/S. Zusätzliche Leerzeilen und Abstände nach den Detailmetadaten
-  ausschließen. Hohe Werkzeuge rechts oben dürfen den Textabstand nicht
-  beeinflussen. Bei langen Titeln Umbruch, bei Titeln ohne Icon den bündigen
-  Beginn prüfen. Im Detail bleiben Aktion und lange Texte im Kartenrand.
-  In der Vorschau linke Linie für ungelesen (blau) und gelesen (grau) prüfen.
-  Statuswechsel und der getrennte Ticketrelevanz-Badge dürfen die Ausrichtung
-  nicht verschieben.
+- **Schließen-Icons – zusätzliche Tooltips — wartend.**
+  Feldhilfe und Nachrichtendetail haben geprüfte Tooltips. In Glockenvorschau,
+  Empfänger-Popover, Meldungen, Benutzereditor sowie Konto-, 2FA-, Anbieter- und
+  Bestätigungsdialogen tragen die Schließen-Buttons einen lokalisierten
+  zugänglichen Namen. Sobald für diese Buttons zusätzliche sichtbare Tooltips
+  vorgesehen sind, Anzeige per Maus und Tastatur prüfen.
 
 - **Empfängervorschau – vollständige Popover-Liste — offen.**
   Öffnen per Klick in den Zwischenraum zwischen Avataren und die
@@ -116,7 +73,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   der Passwortregeln und Sprachwechsel bei offener Meldung prüfen.
   Rollen auf Desktop nur links, auf schmaler Ansicht alle Zeilen einspaltig.
   Tastaturfokus der Schalter und Änderungen nur am Entwurf prüfen.
-  Gemeinsam genutzte Schaltermaße stehen beim Switch-Nachtest.
 
 - **Native Löschkreuze — offen.**
   In Benutzereditor, externem Registrierungsabschluss, Kontodialogen,
@@ -129,44 +85,13 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   schreibgeschützt. Escape zuerst am gefüllten Feld prüfen, über den bereits
   geprüften E-Mail-Dialog hinaus.
 
-- **Persönliche Daten – Pflichtsprache — offen.**
-  Bei fehlender Sprache bleibt das Feld bis zum Speichern unmarkiert.
-  Speichern meldet das Pflichtfeld. Eine gültige Auswahl hebt die
-  Markierung auf.
+- **Globale Notifications – lesbare Links — wartend.**
+  Sobald eine globale Meldung mit Link vorgesehen ist, dessen Lesbarkeit prüfen.
+  Die aktuellen Meldungen erzeugen Text, Listen und Texthervorhebungen.
 
-- **Pflichtfeldindikatoren — offen.**
-  Rotes natives Sternchen direkt hinter der Beschriftung in Benutzereditor,
-  Konfiguration, 2FA und in weiteren Modi des Ticketeditors prüfen.
-  Optionale Felder bleiben ohne Indikator. Interne Vermerke verwenden
-  keine separate violette Markierung.
-  Disabled, Readonly und Fehlermarkierung bleiben optisch unterscheidbar.
-
-- **Login – Markierungen bei Rückmeldungen zur Anmeldung — offen.**
-  Wartung, Drosselung, Sitzungslimit, technische Fehler und Rückmeldungen nach
-  Weiterleitungen prüfen. Die Eingabefelder bleiben dabei unmarkiert.
-
-- **ComboBox-Overlays – Außen- und Eintragsabstände — offen.**
-  Außen 8 px Scrollerabstand und zwischen Auswahlflächen 2 px prüfen,
-  insbesondere unter der letzten ausgewählten Zeile. Geschlecht/Sprache,
-  Benutzer- und Konfigurationsfelder, Rollen- und Empfänger-Mehrfachauswahl
-  sowie Seitengrößenauswahl in Benutzerverwaltung, Inbox und Versandhistorie
-  einbeziehen. Filterung, Scrollen, Tastaturauswahl und Auswahlhaken prüfen,
-  soweit die Varianten diese Funktionen anbieten.
-
-- **Checkboxen – weiße Auswahlmarkierung — offen.**
-  Weiße Haken und Teilauswahlstriche in Einzelcheckboxen, Gruppen und
-  Tabellen-Gesamtauswahl prüfen. Auswahlfläche, Fokus und Hover sowie
-  native Unterscheidbarkeit bei Disabled und Readonly prüfen.
-
-- **DatePicker-Overlay – Aktionen und Jahresspalte — offen.**
-  Hover von „Heute“ und „Abbrechen“ sowie die native seitliche Markierung
-  der Jahresspalte prüfen. Auf dem Smartphone Jahres- und Datumswechsel
-  in der nativen Auswahl ohne Überlauf prüfen.
-
-- **Globale Notifications – Platzbedarf und Inhalt — offen.**
-  Rechts 24 px Abstand mit und ohne vertikale Scrollleiste vergleichen.
-  Lange Meldung bei geringer Höhe, nativen Innenabstand, gelbes Warndreieck,
-  rotes Kreis-X, gemeinsame Titel ohne Ausrufezeichen und lesbare Links prüfen.
+- **ComboBox-Overlays – sichtbare Auswahlhaken — offen.**
+  Die verschärfte Prüfung in `form-details` und `inbox-pagination` in DE und EN
+  ausführen. Jede sichtbare ausgewählte Option zeigt ihren Auswahlhaken.
 
 - **Link-Statusseiten und Sicherheitshinweise – weitere Iconvarianten — offen.**
   Abgelaufene und ungültige Links sowie technische Fehler für

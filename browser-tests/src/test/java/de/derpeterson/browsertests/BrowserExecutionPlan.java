@@ -105,6 +105,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("profile-notification"));
     } else if (suiteName.equals("configuration-footers")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-footers"));
+    } else if (suiteName.equals("switch-style")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("switch-style"));
     } else if (suiteName.equals("mobile-confirmation-footers")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("mobile-confirmation-footers"));
     } else if (suiteName.equals("queue-cleanup-appearance")) {

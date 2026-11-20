@@ -20,6 +20,9 @@ import io.qameta.allure.playwright.AllurePlaywright;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.TextStyle;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -345,12 +348,19 @@ public class UserFiltersBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("AURA-02: Kalenderstil und erneut geöffnete Zeitauswahl bleiben konsistent")
+  @Description(
+      """
+      1. Filterkalender öffnen und Tagesflächen, Aktionshover und seitliche Jahresmarkierung prüfen.
+      2. Mobil über die Jahresspalte einen Tag im Vorjahr wählen. Kalender und Spalte passen ins Fenster.
+      3. Die Zeitauswahl erneut öffnen. Ausgewählte und benachbarte Zeiten bleiben sichtbar.
+      """)
   @Tag("aura-fields")
   void calendarAndTimePickerKeepTheirCosmosPresentation(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     AdminUsersPage usersPage = login();
     usersPage.open();
-    usersPage.activeSince(LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1));
+    LocalDate filterDate = LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1);
+    usersPage.activeSince(filterDate);
     usersPage.openFilters();
     Locator datePickerLocator =
         browserPage.locator(".admin-user-activity-filter vaadin-date-picker");
@@ -376,12 +386,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         todayLocator.first().evaluate("element => getComputedStyle(element, '::before').content"));
     assertThat(browserPage.locator("vaadin-date-picker-year [part=year-number]").first())
         .hasCSS("font-size", "11px");
-    for (Locator buttonLocator :
-        browserPage.locator("vaadin-date-picker-overlay-content > vaadin-button").all()) {
-      assertThat(buttonLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
-    }
-    AllurePlaywright.attachScreenshot("Aura-Kalender " + viewportWidth, browserPage);
-    browserPage.keyboard().press("Escape");
+    assertCalendarActionsAndYearNavigation(datePickerLocator, filterDate, viewportWidth);
 
     for (LocalTime selectedTime : new LocalTime[] {LocalTime.of(7, 30), LocalTime.of(7, 37)}) {
       usersPage.activityTime(selectedTime);
@@ -412,6 +417,63 @@ public class UserFiltersBrowserTest extends BrowserFixture {
       browserPage.keyboard().press("Escape");
       assertThat(usersPage.activityTime()).hasValue(uiTexts.timeInput(selectedTime));
     }
+  }
+
+  private void assertCalendarActionsAndYearNavigation(
+      Locator datePickerLocator, LocalDate filterDate, int viewportWidth) {
+    Locator calendarContent = browserPage.locator("vaadin-date-picker-overlay-content:visible");
+    Locator todayButton = calendarContent.locator("vaadin-button[slot=today-button]");
+    Locator cancelButton = calendarContent.locator("vaadin-button[slot=cancel-button]");
+    for (Locator actionButton : List.of(todayButton, cancelButton)) {
+      assertThat(actionButton).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+      assertThat(actionButton).hasCSS("color", "rgb(56, 189, 248)");
+      actionButton.hover();
+      assertThat(actionButton).hasCSS("background-color", "rgb(21, 34, 56)");
+    }
+
+    Locator yearToggle = calendarContent.locator("[part=years-toggle-button]");
+    boolean mobileCalendar = viewportWidth < 768;
+    if (yearToggle.isVisible()) {
+      yearToggle.click();
+    }
+    Locator yearScroller = calendarContent.locator("vaadin-date-picker-year-scroller");
+    assertThat(yearScroller).isVisible();
+    assertThat(yearScroller).hasCSS("border-inline-start-width", "1px");
+    assertEquals(
+        "45deg",
+        yearScroller.evaluate("scroller => getComputedStyle(scroller, '::before').rotate"));
+    assertEquals(
+        "12px", yearScroller.evaluate("scroller => getComputedStyle(scroller, '::before').width"));
+    BoundingBox yearScrollerBounds = yearScroller.boundingBox();
+    assertTrue(
+        yearScrollerBounds.x >= 0
+            && yearScrollerBounds.x + yearScrollerBounds.width <= viewportWidth + 1);
+    AllurePlaywright.attachScreenshot("Aura-Kalender " + viewportWidth, browserPage);
+
+    if (mobileCalendar) {
+      LocalDate replacementDate = LocalDate.of(filterDate.getYear() - 1, 1, 15);
+      yearScroller
+          .getByText(
+              Integer.toString(replacementDate.getYear()),
+              new Locator.GetByTextOptions().setExact(true))
+          .click();
+      String monthName =
+          replacementDate
+              .getMonth()
+              .getDisplayName(TextStyle.FULL, Locale.forLanguageTag(uiTexts.language()));
+      String dayLabelPrefix =
+          "%d %s %d,"
+              .formatted(replacementDate.getDayOfMonth(), monthName, replacementDate.getYear());
+      Locator replacementDay =
+          calendarContent.locator("[part~=date][aria-label^='" + dayLabelPrefix + "']");
+      assertThat(replacementDay).isInViewport();
+      replacementDay.click();
+      assertThat(datePickerLocator).hasJSProperty("value", replacementDate.toString());
+    } else {
+      cancelButton.click();
+      assertThat(datePickerLocator).hasJSProperty("value", filterDate.toString());
+    }
+    assertThat(calendarContent).not().isVisible();
   }
 
   private String unique(String purpose) {
