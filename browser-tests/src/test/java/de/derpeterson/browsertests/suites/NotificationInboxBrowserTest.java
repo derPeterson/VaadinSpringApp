@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -111,6 +112,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
 
       assertThat(inbox.rows(inbox.preview())).hasCount(3);
       inbox.assertRowLayout(inbox.preview(), true);
+      assertPreviewDeleteCanBeCancelled(browserActor.browserPage, inbox, subject);
       inbox.openDetail(inbox.preview(), subject, body, true);
       inbox.closeDetail();
       inbox.filter(inbox.preview(), uiTexts.getNotificationsRead());
@@ -125,12 +127,10 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       assertThat(inbox.preview()).not().isVisible();
       inbox.assertRowLayout(inbox.inbox(), false);
       inbox.openDetail(inbox.inbox(), subject, body, false);
-      inbox.closeDetail();
 
       assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
           .hasText("3");
-      inbox.row(inbox.inbox(), subject).locator(".cosmos-notification-inbox-mark-read").click();
-      inbox.confirm();
+      markReadFromDetailAndVerifyItStaysRead(inbox, subject);
 
       assertThat(browserActor.browserPage.locator("#notifications-inbox-unread-total"))
           .hasText("2");
@@ -188,6 +188,57 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
         .click();
 
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+  }
+
+  private void assertPreviewDeleteCanBeCancelled(
+      Page recipientPage, NotificationInboxPage inbox, String subject) {
+    Locator deleteButton =
+        inbox.row(inbox.preview(), subject).locator(".cosmos-notification-preview-dismiss");
+    Locator deleteIcon = deleteButton.locator("vaadin-icon");
+    assertThat(deleteIcon).isVisible();
+    assertThat(deleteIcon).hasCSS("color", "rgb(248, 113, 113)");
+    BoundingBox buttonBox = deleteButton.boundingBox();
+    BoundingBox iconBox = deleteIcon.boundingBox();
+    assertTrue(iconBox.width > 0 && iconBox.width < buttonBox.width);
+    assertTrue(iconBox.height > 0 && iconBox.height < buttonBox.height);
+    assertEquals(buttonBox.x + buttonBox.width / 2, iconBox.x + iconBox.width / 2, 1);
+    assertEquals(buttonBox.y + buttonBox.height / 2, iconBox.y + iconBox.height / 2, 1);
+
+    deleteButton.hover();
+    assertThat(recipientPage.getByRole(AriaRole.TOOLTIP))
+        .hasText(uiTexts.getNotificationsDismiss());
+    recipientPage.mouse().move(0, 0);
+    deleteButton.focus();
+    assertThat(deleteButton).isFocused();
+    deleteButton.press("Enter");
+    Locator confirmation = recipientPage.locator(".portal-confirmation-dialog[opened]");
+    assertThat(confirmation.locator("[part~=overlay]").first()).isVisible();
+    recipientPage.keyboard().press("Escape");
+    assertThat(confirmation).hasCount(0);
+    assertThat(inbox.row(inbox.preview(), subject)).isVisible();
+  }
+
+  private void markReadFromDetailAndVerifyItStaysRead(NotificationInboxPage inbox, String subject) {
+    Locator detail = inbox.dialog();
+    Locator messageCard = detail.locator(".cosmos-notification-detail-message");
+    Locator markReadButton = messageCard.locator(".cosmos-notification-detail-mark-read");
+    assertThat(markReadButton).hasCSS("background-color", "rgb(0, 119, 182)");
+    assertThat(markReadButton).hasCSS("font-size", "12px");
+    assertThat(markReadButton).hasCSS("height", "36px");
+    BoundingBox messageBox = messageCard.boundingBox();
+    BoundingBox buttonBox = markReadButton.boundingBox();
+    assertTrue(buttonBox.x >= messageBox.x + 16);
+    assertTrue(buttonBox.x + buttonBox.width <= messageBox.x + messageBox.width - 16);
+    markReadButton.click();
+    inbox.confirm();
+    assertThat(markReadButton).isHidden();
+    inbox.closeDetail();
+
+    inbox.row(inbox.inbox(), subject).locator(".cosmos-notification-row-open").click();
+    assertThat(detail.locator(".cosmos-notification-detail-state"))
+        .hasText(uiTexts.getNotificationsRead());
+    assertThat(markReadButton).isHidden();
+    inbox.closeDetail();
   }
 
   @ParameterizedTest

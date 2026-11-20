@@ -96,11 +96,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Statuswechsel und der getrennte Ticketrelevanz-Badge dürfen die Ausrichtung
   nicht verschieben.
 
-- **Nachrichtendialog – Gestaltung der Leseaktion — offen.**
-  „Als gelesen markieren“ auf blaue Fläche, Standardschrift, Standardhöhe
-  und Abstand zum Kartenrand prüfen. Nach der Bestätigung und nach erneutem
-  Öffnen soll die Aktion ausgeblendet sein.
-
 - **Empfängervorschau – vollständige Popover-Liste — offen.**
   Bei 1/2/5/6/7/200 Empfängern Öffnen per Klick auf den ersten Avatar oder
   den Zwischenraum sowie per Leertaste prüfen. Namen-Tooltips, Suche nach Namen, Leeren
@@ -239,11 +234,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   ist zusätzlich das Icon für technische Fehler offen. Das Warndreieck
   und seine Farbe in Hinweisen bei Kontoaktionen, Reaktivierung,
   Benutzereditor, Neustarthilfe, Wiederherstellung und Tickets prüfen.
-
-- **Glockenvorschau – Löschsymbol — offen.**
-  Das rote Symbol muss vollständig und mittig im Button sichtbar bleiben.
-  Hover, Tastaturfokus und Abbrechen der Löschbestätigung in der
-  Glockenvorschau prüfen.
 
 ## JUnit-Tests
 
