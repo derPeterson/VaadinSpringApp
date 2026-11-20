@@ -63,7 +63,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("ticket-browser-detail")
   @DisplayName("MFA-23: Vorgangsseiten erhalten Details und Entwurf bei 10, 20 und 50 Einträgen")
   @Description(
-      "Am Desktop bleibt das Detail beim Blättern offen. Auf dem Smartphone ist die Pagination nach der Rückkehr aus dem Detail erreichbar und der Entwurf erscheint beim Wiederöffnen. Live-Übernahmen leeren die letzte gefilterte Seite und beide Ansichten wechseln auf die vorige Seite.")
+      """
+      Am Desktop bleibt das Detail beim Blättern offen. Auf dem Smartphone ist die Pagination
+      nach der Rückkehr erreichbar. Bei 320 px bleiben auch auf der zweiten gefilterten Seite
+      die Listenposition, der Filter und beim Wiederöffnen der Entwurf erhalten.
+      Live-Übernahmen leeren die letzte gefilterte Seite und beide Ansichten wechseln zurück.
+      """)
   void ticketPagesPreserveDetailsAndDrafts() {
     LoginPage login = new LoginPage(browserPage);
     login.open();
@@ -119,9 +124,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertTrue((Boolean) scroll.evaluate("area => area.scrollHeight > area.clientHeight"));
       if (mobile) {
         assertThat(browserPage.locator("#support-master-detail")).hasAttribute("overlay", "");
+      } else {
+        verifyTicketReplyFieldOnDesktop();
       }
       String replyDraft = "This unsent reply survives changing ticket pages.";
       input.fill(replyDraft);
+      assertThat(browserPage.locator("#support-reply[invalid]")).hasCount(0);
       if (mobile) {
         returnToTicketList(browserPage);
         assertTicketLocation("all", null);
@@ -180,6 +188,79 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       input.clear();
     }
     verifyLivePaginationAndFilteredDraft(newestTicket);
+    verifyFilteredTicketDetailAt320Pixels();
+  }
+
+  private void verifyTicketReplyFieldOnDesktop() {
+    Locator field = browserPage.locator("#support-reply");
+    CosmosFollowUpChecks.assertNativeRequiredIndicator(field);
+    UiActions.resizeTextArea(browserPage, field, 122, "2px");
+    BoundingBox fieldBounds = field.boundingBox();
+    BoundingBox inputBounds = field.locator("[part~='input-field']").boundingBox();
+    assertEquals(3, inputBounds.x - fieldBounds.x, 0.5);
+    assertEquals(3, fieldBounds.x + fieldBounds.width - inputBounds.x - inputBounds.width, 0.5);
+    AllurePlaywright.attachScreenshot("Äußerer Fokusrahmen der Ticketnachricht", browserPage);
+    assertThat(field).not().hasAttribute("invalid", "");
+    browserPage.locator("#support-add-reply").click();
+    assertThat(field).hasAttribute("invalid", "");
+    assertThat(field.locator("[part=error-message]:visible")).hasCount(0);
+    Locator notice =
+        browserPage
+            .locator("vaadin-notification-card:not([closing])")
+            .filter(new Locator.FilterOptions().setHasText(uiTexts.getSupportReplyRequired()));
+    assertThat(notice).isVisible();
+    notice.getByRole(AriaRole.BUTTON).click();
+  }
+
+  private void verifyFilteredTicketDetailAt320Pixels() {
+    try (Page narrowView = browserContext.newPage()) {
+      narrowView.setViewportSize(320, 760);
+      narrowView.navigate("/admin?section=support");
+
+      Locator filter = narrowView.locator("#support-filter-panel");
+      Locator statusFilter = filter.locator("#support-filter-status");
+      narrowView.locator("#support-filter").click();
+      for (String status : List.of(uiTexts.getSupportOpen(), uiTexts.getSupportInProgress())) {
+        statusFilter.getByText(status, new Locator.GetByTextOptions().setExact(true)).click();
+      }
+      UiActions.complete(narrowView, () -> filter.locator("#support-filter-apply").click());
+      Locator filterCount = narrowView.locator("#support-active-filter-count");
+      assertThat(filterCount).hasText("1");
+
+      Locator pagination = narrowView.locator("#support-pagination");
+      Locator previous = pagination.locator(".cosmos-pagination-previous");
+      Locator next = pagination.locator(".cosmos-pagination-next");
+      Locator range = pagination.locator(".admin-user-pagination-total");
+      assertThat(previous).isDisabled();
+      String firstPage = range.innerText();
+      UiActions.complete(narrowView, next::click);
+      assertThat(range).not().hasText(firstPage);
+      String secondPage = range.innerText();
+
+      Locator numbers =
+          narrowView
+              .locator("#support-ticket-grid .support-admin-ticket-card:visible")
+              .getByText(Pattern.compile("^#[0-9]+$"));
+      assertThat(numbers.first()).isVisible();
+      String ticketNumber = numbers.first().innerText();
+      Locator ticket = ticketCard(narrowView, ticketNumber);
+      UiActions.complete(narrowView, ticket::click);
+      Locator claim = narrowView.locator("#support-claim");
+      if (claim.isVisible()) {
+        UiActions.complete(narrowView, claim::click);
+      }
+
+      Locator replyInput = narrowView.locator("#support-reply textarea");
+      String draft = "Draft for a ticket on the second filtered page at 320 px.";
+      replyInput.fill(draft);
+      returnToTicketList(narrowView);
+      assertThat(range).hasText(secondPage);
+      assertThat(previous).isEnabled();
+      assertThat(filterCount).hasText("1");
+      UiActions.complete(narrowView, ticket::click);
+      assertThat(replyInput).hasValue(draft);
+      replyInput.clear();
+    }
   }
 
   private void verifyLivePaginationAndFilteredDraft(String assigned) {

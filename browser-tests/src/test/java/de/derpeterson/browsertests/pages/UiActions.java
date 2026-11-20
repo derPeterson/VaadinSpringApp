@@ -104,6 +104,11 @@ public final class UiActions {
 
   /** Prüft den echten CSS-Ziehgriff, ohne Höhen oder Feldwerte per JavaScript zu setzen. */
   public static void resizeTextArea(Page browserPage, Locator field, int inputMinHeight) {
+    resizeTextArea(browserPage, field, inputMinHeight, "-2px");
+  }
+
+  public static void resizeTextArea(
+      Page browserPage, Locator field, int inputMinHeight, String outlineOffset) {
     com.microsoft.playwright.options.ViewportSize viewport = browserPage.viewportSize();
     // Für den Ziehweg mehr Höhe bereitstellen; die tatsächlich geprüfte Breite bleibt gleich.
     browserPage.setViewportSize(viewport.width, 1800);
@@ -115,7 +120,7 @@ public final class UiActions {
       assertThat(inputSurfaceLocator).hasCSS("min-height", inputMinHeight + "px");
       textInputLocator.focus();
       assertThat(inputSurfaceLocator).hasCSS("outline-style", "solid");
-      assertThat(inputSurfaceLocator).hasCSS("outline-offset", "-2px");
+      assertThat(inputSurfaceLocator).hasCSS("outline-offset", outlineOffset);
 
       BoundingBox original = field.boundingBox();
       dragCorner(browserPage, original, 260);

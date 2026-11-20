@@ -18,11 +18,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   In `FormLayoutsBrowserTest` bei 390 und 320 px prüfen, dass „Vorschau prüfen“
   und „Benachrichtigung senden“ die Innenbreite ihrer Footer füllen und lesbar bleiben.
 
-- **Admin-Vorgangsliste bei 320 px — offen.**
-  Ein Ticket bei aktivem Filter auf einer Folgeseite öffnen und zur Liste
-  zurückkehren. Listenseite und Filter bleiben erhalten. Beim Wiederöffnen
-  steht der Entwurf weiterhin im Antwortfeld.
-
 - **OTP-Methodenreiter — offen.**
   Tastaturwechsel und ARIA-Zuordnung der aktiven Eingabe in Anmelde- und
   Adminbestätigung sowie in Aktionsdialogen prüfen. In der Adminbestätigung
@@ -50,12 +45,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   der Antwortentwurf, nach Nachladen oder Live-Update bleibt eine bewusst leere
   Auswahl erhalten. Sprachwechsel mit ausgewähltem Ticket prüfen. Die einfachen
   Trennlinien des Admin-Grids mit denen der Karten vergleichen.
-
-- **Ticketnachricht – TextArea-Fokusrahmen und Größenänderung — offen.**
-  Die Eingabefläche beginnt bei 122 px. Auf Desktop mit dem nativen Griff
-  vergrößern, längeren Text eingeben, scrollen, leeren und erneut die Größe
-  ändern. Erwartet sind eine stabile Ziehhöhe und ein sichtbarer äußerer
-  Fokusrahmen. Leere und zu lange Inhalte beim Absenden prüfen.
 
 - **Einheitliche Schließen-Icons — offen.**
   Kreis-X mit 18 × 18 px im 36-px-Button, Zentrierung, Fokus und Tooltip in
@@ -108,8 +97,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   eine leere Auswahl die Meldung für fehlende Empfänger erhält.
 
 - **Ticketsystem – Validierung und erneuter Anleitungsversand — offen.**
-  Neue Anfrage, öffentliche Antwort und internen Vermerk leer oder zu lang
-  absenden. Ohne Absenden keine Markierung, danach konkrete Meldung ohne
+  Neue Anfrage und internen Vermerk leer absenden, öffentliche Antwort auf
+  schmaler Ansicht leer absenden. Die Längengrenze bei allen drei Eingaben
+  prüfen. Ohne Absenden keine Markierung, danach konkrete Meldung ohne
   Inline-Text oder Feldnamenzeile. Änderungen löschen die alte Markierung.
   Rechte-, Status- und Versionskonflikte beim Absenden sowie den Zeilenumbruch
   im Hinweis für interne Vermerke prüfen.
@@ -165,8 +155,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
 
 - **Pflichtfeldindikatoren — offen.**
   Rotes natives Sternchen direkt hinter der Beschriftung in Benutzereditor,
-  Konfiguration und 2FA/Tickets prüfen. Optionale Felder bleiben ohne
-  Indikator. Interne Vermerke verwenden keine separate violette Markierung.
+  Konfiguration, 2FA und in weiteren Modi des Ticketeditors prüfen.
+  Optionale Felder bleiben ohne Indikator. Interne Vermerke verwenden
+  keine separate violette Markierung.
   Disabled, Readonly und Fehlermarkierung bleiben optisch unterscheidbar.
 
 - **Login – Markierungen bei Rückmeldungen zur Anmeldung — offen.**

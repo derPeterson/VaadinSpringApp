@@ -227,6 +227,8 @@ Im Mail-Test und Mitteilungsentwurf sitzt der native Ziehgriff auf `vaadin-text-
 Vaadin berechnet die Höhe von `::part(input-field)` selbst und setzt die vom Browser
 dort gespeicherte Ziehhöhe zurück. Der blaue Fokusrahmen liegt bei diesen beiden
 Feldern innerhalb der Eingabefläche, damit ihn der Host nicht abschneidet.
+Bei Ticketnachrichten trägt der Host ebenfalls den Ziehgriff. Das Feld reserviert
+in `cosmos-mfa.css` Platz für den äußeren Fokusrahmen um die Eingabefläche.
 
 Bearbeitbare `TextField`-, `EmailField`-, `PasswordField`- und `TextArea`-Eingaben
 aktivieren das native Löschkreuz mit `setClearButtonVisible(true)`. Das gilt auch

@@ -470,11 +470,16 @@
 }
 
 .cosmos-theme vaadin-text-area.support-message-input {
+    /* Der Host behält die Ziehhöhe. Drei Pixel Platz halten den äußeren Fokusrahmen sichtbar. */
+    box-sizing: content-box;
     min-height: 144px;
+    margin: -3px;
+    padding: 3px;
+    resize: vertical;
+    overflow: hidden;
 }
 
 .cosmos-theme vaadin-text-area.support-message-input::part(input-field) {
-    resize: vertical;
     box-sizing: border-box;
     min-height: var(--cosmos-textarea-min-height-compact);
     padding: 10px 14px;
