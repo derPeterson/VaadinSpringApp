@@ -175,7 +175,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("NOTIFY-03: Die Vorschau verwendet nur aktuell erreichbare Empfänger")
+  @DisplayName("NOTIFY-06: Die Vorschau verwendet nur aktuell erreichbare Empfänger")
   @Description(
       """
       Die Vorschau für alle schließt gesperrte, selbst deaktivierte und unbestätigte Konten aus.
