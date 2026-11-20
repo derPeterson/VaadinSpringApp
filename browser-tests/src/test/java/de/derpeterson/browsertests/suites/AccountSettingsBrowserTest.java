@@ -46,10 +46,12 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -532,6 +534,22 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     assertThat(form.input("account-birth-date")).hasValue("");
     assertThat(form.input("account-gender")).hasValue("");
+    verifyProfileNavigationHasNoClientErrors(form);
+  }
+
+  private void verifyProfileNavigationHasNoClientErrors(AccountPage account) {
+    List<String> clientErrors = new ArrayList<>();
+    Consumer<String> collectError = clientErrors::add;
+    browserPage.onPageError(collectError);
+    try {
+      account.section("account-nav-notifications");
+      assertThat(browserPage.locator("#notifications-inbox")).isVisible();
+    } finally {
+      browserPage.offPageError(collectError);
+    }
+    assertTrue(
+        clientErrors.isEmpty(),
+        () -> "JavaScript-Fehler beim Verlassen des Profils: " + clientErrors);
   }
 
   private void captureProfileSaveNotification() {

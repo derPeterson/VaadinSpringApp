@@ -211,7 +211,9 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     setMode(AvatarMode.INITIALS);
     avatarUpload.clearFileList();
     savedAvatarImage.getElement().removeAttribute("src");
-    getElement().callJsFunction("resetDraft");
+    // Flow übergibt beim Ansichtswechsel null, wenn der DOM-Knoten bereits entfernt ist.
+    Element editorElement = getElement();
+    editorElement.executeJs("$0?.resetDraft()", editorElement);
   }
 
   public void clearImage() {
