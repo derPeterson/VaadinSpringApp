@@ -7,10 +7,12 @@ import static de.derpeterson.app.config.AppRouteConstants.PENDING_EMAIL_VERIFICA
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.RegistrationPage;
@@ -91,9 +93,27 @@ public class RegistrationBrowserTest extends BrowserFixture {
     String email = "required-" + UUID.randomUUID() + "@example.test";
     RegistrationPage registration = new RegistrationPage(browserPage);
     registration.open();
+    browserPage.setViewportSize(390, 844);
+    Locator requiredFields =
+        browserPage
+            .locator(".public-panel")
+            .locator("vaadin-text-field, vaadin-email-field, vaadin-password-field");
+    assertThat(requiredFields).hasCount(6);
+    requiredFields.all().forEach(CosmosFollowUpChecks::assertNativeRequiredIndicator);
+    assertThat(browserPage.locator(".public-panel vaadin-date-picker [part=required-indicator]"))
+        .isHidden();
+    assertThat(browserPage.locator(".public-panel vaadin-combo-box [part=required-indicator]"))
+        .isHidden();
+    registration.change(uiTexts.getRegistrationFirstNameField(), "Browser");
+    registration.change(uiTexts.getRegistrationFirstNameField(), "");
+    assertRegistrationHasNoValidationFeedback();
     registration.submit();
     registration.assertRequiredError();
     AllurePlaywright.attachScreenshot("Fehlende Pflichtangaben", browserPage);
+    registration.change(uiTexts.getRegistrationFirstNameField(), "Browser");
+    assertThat(browserPage.locator("vaadin-text-field[invalid]")).hasCount(1);
+    assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(2);
+    assertThat(browserPage.locator("vaadin-password-field[invalid]")).hasCount(2);
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     browserPage.locator("vaadin-combo-box [part~='clear-button']").click();
     browserPage.locator("vaadin-date-picker input").fill("");
@@ -123,16 +143,39 @@ public class RegistrationBrowserTest extends BrowserFixture {
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     registration.setEmails("not-an-email", "not-an-email");
+    browserPage.locator("vaadin-email-field").last().locator("input").press("Tab");
+    assertRegistrationHasNoValidationFeedback();
     registration.submit();
     registration.assertEmailError();
     AllurePlaywright.attachScreenshot("Ungültige E-Mail", browserPage);
+    NotificationAppearanceChecks.close(browserPage);
+    browserPage.setViewportSize(390, 844);
+    registration.change(uiTexts.getPublicEmailField(), email);
+    assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     registration.setEmails(email, email);
     registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, "DifferentPassword1!");
     registration.submit();
     registration.assertPasswordConfirmationError();
     AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", browserPage);
+    NotificationAppearanceChecks.close(browserPage);
     registration.setPasswords(BrowserTestAccounts.USER_PASSWORD, BrowserTestAccounts.USER_PASSWORD);
+
+    registration.change(uiTexts.getRegistrationBirthDateField(), "");
+    assertThat(browserPage.locator("vaadin-date-picker")).hasJSProperty("value", "");
+    registration.change(uiTexts.getRegistrationBirthDateField(), "kein-datum");
+    assertThat(browserPage.locator("vaadin-date-picker")).not().hasAttribute("invalid", "");
+    registration.submit();
+    assertThat(browserPage.locator("vaadin-date-picker")).hasAttribute("invalid", "");
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getBaseValidationBirthDatePastMessage());
+    NotificationAppearanceChecks.close(browserPage);
+    registration.change(uiTexts.getRegistrationBirthDateField(), "");
     registration.submit();
     registration.assertSubmitted(email);
+  }
+
+  private void assertRegistrationHasNoValidationFeedback() {
+    assertThat(browserPage.locator(".public-panel [invalid]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])")).hasCount(0);
   }
 }

@@ -180,22 +180,19 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   sofern sonst nichts verändert wurde.
 
 - **Pflichtfeldindikatoren — offen.**
-  Rotes natives Sternchen direkt hinter der Beschriftung in Registrierung,
-  Login, Benutzereditor, Konfiguration, Benachrichtigungen und 2FA/Tickets
-  prüfen. Optionale Felder bleiben ohne Indikator. Interne Vermerke
-  verwenden keine separate violette Markierung. Disabled, Readonly und
-  Fehlermarkierung bleiben optisch unterscheidbar.
+  Rotes natives Sternchen direkt hinter der Beschriftung in Benutzereditor,
+  Konfiguration und 2FA/Tickets prüfen. Optionale Felder bleiben ohne
+  Indikator. Interne Vermerke verwenden keine separate violette Markierung.
+  Disabled, Readonly und Fehlermarkierung bleiben optisch unterscheidbar.
 
 - **Login – Markierungen bei Rückmeldungen zur Anmeldung — offen.**
   Wartung, Drosselung, Sitzungslimit, technische Fehler und Rückmeldungen nach
   Weiterleitungen prüfen. Die Eingabefelder bleiben dabei unmarkiert.
 
 - **Registrierung – Markierungen vor und nach dem Absenden — offen.**
-  Pflichtfelder und unvollständige E-Mail-Adresse nach Blur und vor
-  Absenden ohne Markierung oder Meldung prüfen. Beim Tippen nur die alte
-  Markierung des bearbeiteten Felds entfernen und beim nächsten Absenden
-  neu prüfen. Unlesbares Datum ohne Modellwert ablehnen. Die vorhandenen
-  Registrierungsfälle für diese Abläufe auch auf schmaler Ansicht absichern.
+  Auf schmaler Ansicht eine unvollständige E-Mail-Adresse nach dem Verlassen
+  ohne Markierung oder Meldung prüfen. Beim Absenden werden die betroffenen
+  E-Mail-Felder markiert.
 
 - **ComboBox-Overlays – Außen- und Eintragsabstände — offen.**
   Außen 8 px Scrollerabstand und zwischen Auswahlflächen 2 px prüfen,
