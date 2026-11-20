@@ -1,10 +1,12 @@
 # Offene Aufgaben
 
+## Laufende Planung
+
+- [ ] [Was ist neu?](docs/planung/neuigkeiten.md) im Portal umsetzen. Zugang,
+  Navigation und Aufbau sind abgestimmt. Die Umsetzung wartet auf Freigabe.
+
 ## Zurückgestellte Planungen
 
-- [ ] [Was ist neu?](docs/planung/neuigkeiten.md) später auf eigenen Auftrag umsetzen.
-  Die Planung ist durchgelesen; die sichtbare Neuigkeiten-Seite gehört nicht
-  automatisch zur jetzt vorbereiteten Versionierung.
 - [ ] [Passkey-Planung](docs/planung/passkeys.md) bei einer späteren Freigabe
   erneut gegen den aktuellen Stand prüfen und umsetzen. Planung durchgelesen,
   Umsetzung zurückgestellt; bestehende 2FA beibehalten.
@@ -13,6 +15,10 @@
   und Datenhaltung vor der Bereitstellung entscheiden.
 
 ## Künftige Anwendungsfunktionen
+
+- [ ] Für „Was ist neu?“ bei Bedarf eine Kennzeichnung administrativer Hinweise
+  im gemeinsamen Changelog und eine darauf basierende Anzeige nach Zielgruppe
+  bewerten. Umfang anhand konkreter Einträge gemeinsam entscheiden.
 
 - [ ] Eine Touch-Bedienung zum Aufheben der Auswahl in Ticket- und Empfängerlisten
   gemeinsam festlegen. Desktop unterstützt dort Strg+Klick auf den ausgewählten

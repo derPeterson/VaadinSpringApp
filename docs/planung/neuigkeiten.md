@@ -1,19 +1,24 @@
 # „Was ist neu?“ im Portal
 
-## Empfehlung
+## Zugang und Gestaltung
 
-Die Planung ist vom Benutzer durchgelesen; ihre Umsetzung ist zurückgestellt.
-Ein kleiner, bewusst erreichbarer Neuigkeitenbereich passt
-zum Portal und kann seine Entwicklung für Benutzer nachvollziehbar machen. Er
-ersetzt weder Startseite noch Dashboard. Ein automatisches Popup bei jeder
-Anmeldung ist nicht Teil des Vorschlags.
+Die Seite ist ausschließlich für angemeldete Benutzer zugänglich. In der
+Navigationsgruppe **Portal** steht ihr eigener Menüeintrag zwischen **Startseite**
+und **Benachrichtigungen**. Die Beschriftung lautet auf Deutsch **Was ist neu?**
+und auf Englisch **What's New?**. Auch Administratoren öffnen die Seite im Portal.
 
-Als erste Oberfläche bietet sich ein Navigationseintrag **Was ist neu?** im Portal
-an. Er öffnet eine Cosmos-Seite mit Version, Datum und wenigen Funktionsnotizen
-pro Release. Der jüngste veröffentlichte Release steht zuerst. Auf der Startseite
-kann später ein unaufdringlicher Link ergänzt werden. Ob der Besucherbereich den
-gleichen Inhalt sehen soll, wird vor der UI-Umsetzung entschieden. Admins nutzen
-dieselbe Quelle; es entsteht keine zweite redaktionelle Verwaltungsoberfläche.
+## Aufbau der Release-Notizen
+
+Die Cosmos-Seite zeigt den jüngsten veröffentlichten Release zuerst. Jede
+Ausgabe hat einen eigenen redaktionellen Titel, Version und Datum sowie einen
+kurzen Einstieg. Unter **Highlights** stehen die wichtigsten Neuerungen.
+**Weitere Verbesserungen** fasst kleinere Änderungen knapp zusammen.
+
+Für die erste Fassung kann ein Release einen Screenshot mit Beispieldaten
+enthalten, wenn er ein Highlight verständlicher macht. Der Screenshot wird
+redaktionell beim Release ausgewählt. Kurze Videos gehören zu einer späteren
+Erweiterung. Auf der Startseite kann später ein unaufdringlicher Link ergänzt
+werden.
 
 ## Eine Quelle, keine doppelte HTML-Pflege
 
@@ -23,6 +28,8 @@ als dedizierte Classpath-Ressource einrichten. Im gepackten JAR ausschließlich
 Streams verwenden, niemals `src/`- oder lokale `docs/`-Pfade zur Laufzeit lesen.
 
 Version, Datum sowie DE-/EN-Abschnitte haben bereits ein festgelegtes Quellformat.
+Titel, Einstieg, die beiden Inhaltsabschnitte und optionale Bildverweise werden
+in den jeweiligen Sprachabschnitten der `CHANGELOG.md` gepflegt.
 Ein kleiner Loader trennt Metadaten und ausgewählten Sprachinhalt. Der noch
 unveröffentlichte Bereich bleibt in der Benutzeroberfläche unsichtbar.
 Der Release-Helfer prüft bereits doppelte
@@ -44,12 +51,13 @@ als Quelle plus native Darstellung vorsehen.
 
 ## Inhalt und Bedienung
 
-Die Notizen erklären, was Benutzer mit einer Neuerung tun können. Technische
-Konfigurationsnamen, interne Findings, sensible Details und kleinteilige
-Designkorrekturen gehören nicht hinein. Administrative Funktionen klar als solche
-bezeichnen. Ob bestimmte Einträge rollenabhängig angezeigt werden müssen, vor
-der Festlegung des Quellformats fachlich entscheiden; reine DOM-Ausblendung
-wäre kein Zugriffsschutz für vertrauliche Inhalte.
+Alle angemeldeten Benutzer sehen in der ersten Fassung dieselben Release-Notizen.
+Allgemein lesbare Hinweise zu Admin-Funktionen gehören ebenfalls in das gemeinsame
+Changelog. Die Notizen erklären, was Benutzer mit einer Neuerung tun können.
+Technische Konfigurationsnamen, interne Findings, sensible Details und kleinteilige
+Designkorrekturen gehören nicht hinein. Eine Kennzeichnung nach Zielgruppe ist
+als mögliche Erweiterung im [TODO](../../TODO.md#künftige-anwendungsfunktionen)
+festgehalten.
 
 Vorhandenen Seitenpfad, Header, Cards, Typografie und mobile Abstände übernehmen.
 Keine ungefragte Änderung bestehender Seiten oder automatische Gelesen-Zähler
@@ -60,14 +68,13 @@ dieser ersten Planung.
 
 ## Offene Umsetzungspakete
 
-- [ ] Position in der Navigation, Besucherzugang und erste Darstellung gemeinsam
-  anhand einer kleinen Skizze abnehmen.
 - [ ] Bestehendes Changelog-Format übernehmen und genau eine Runtime-Ressource in
   den JAR-Build einbinden. Nur bewusst freigegebene Releaseabschnitte anzeigen.
 - [ ] Loader und native Markdown-/Cosmos-Darstellung umsetzen, Formatfehler mit
   sinnvollen Helpertests absichern.
-- [ ] Sichtbare Inhalte, DE/EN, Sprachwechsel sowie Desktop/Smartphone gezielt
-  isoliert prüfen. Manuelle Abnahme der tatsächlichen Texte danach erhalten.
+- [ ] Zugriff bei direktem Aufruf ohne Anmeldung, sichtbare Inhalte, DE/EN,
+  Sprachwechsel sowie Desktop/Smartphone gezielt isoliert prüfen. Manuelle
+  Abnahme der tatsächlichen Texte danach erhalten.
 
 Die technische Planung wird vor einer späteren Umsetzung mit dem dann aktuellen
 Projektstand abgeglichen. Sie ist keine Freigabe zum Einbau der Oberfläche.
