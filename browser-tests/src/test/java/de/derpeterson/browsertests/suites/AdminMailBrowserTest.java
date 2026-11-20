@@ -169,10 +169,13 @@ public class AdminMailBrowserTest extends BrowserFixture {
         new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(browserPage).selectLanguage(other.language());
+      Locator localizedBody = mail.input(other.getAdminMailBody());
 
       assertThat(mail.input(other.getAdminMailRecipient())).hasValue(email);
       assertThat(mail.input(other.getAdminMailSubject())).hasValue(subject);
-      assertThat(mail.input(other.getAdminMailBody())).hasValue(body);
+      assertThat(localizedBody).hasValue(body);
+      // Der Sprachwechsel gibt den Fokus an den Menübutton mit eigenem Tooltip zurück.
+      localizedBody.focus();
       Locator help = openFieldHelp(other.getAdminMailBody());
 
       assertThat(help.locator(".admin-help-description")).hasText(other.getAdminMailBodyHint());
@@ -183,8 +186,8 @@ public class AdminMailBrowserTest extends BrowserFixture {
 
       assertThat(help).hasCount(0);
       mail.input(other.getAdminMailSubject()).clear();
-      mail.input(other.getAdminMailBody()).clear();
-      mail.input(other.getAdminMailBody()).press("Tab");
+      localizedBody.clear();
+      localizedBody.press("Tab");
     } finally {
       new UserMenu(browserPage).selectTestLanguage();
     }
