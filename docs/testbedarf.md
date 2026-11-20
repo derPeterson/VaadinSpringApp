@@ -64,11 +64,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Fehlende Maus- und Tastaturpfade abdecken, insbesondere den Schließen-Button
   im Empfänger-Popover und die Tastaturbedienung der Meldungen.
 
-- **Benutzermenü – Innenabstand der Footer-Aktionen — offen.**
-  Bei „Startseite“ und „Abmelden“ beidseitig M-Innenabstand trotz Icon-Präfix
-  prüfen. Hover darf die Klickfläche optisch nicht erweitern. „Startseite“
-  per Klick und beide Aktionen per Tastatur auslösen.
-
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
   Die gedämpfte Farbe und unveränderte Zentrierung nach dem Leeren bei
   ganzzahligen Dauerwerten und Zahlenfeldern prüfen. Deaktivierte,
@@ -197,10 +192,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   native Unterscheidbarkeit bei Disabled und Readonly prüfen.
 
 - **DatePicker-Overlay – Aktionen und Jahresspalte — offen.**
-  „Heute“ und „Abbrechen“ auf fehlenden Rahmen, Akzenttext, Fokus und
-  Hover prüfen. Für die Jahresspalte dunklere Fläche, feine Trennlinie
-  und seitliche Auswahlmarkierung prüfen. Auf dem Smartphone die native
-  Jahresauswahl öffnen und Jahres- und Datumswechsel ohne Überlauf prüfen.
+  Hover von „Heute“ und „Abbrechen“ sowie die native seitliche Markierung
+  der Jahresspalte prüfen. Auf dem Smartphone Jahres- und Datumswechsel
+  in der nativen Auswahl ohne Überlauf prüfen.
 
 - **Globale Notifications – Position beim Größenwechsel — offen.**
   Bei geöffnetem Toast die Fensterbreite über die 768-px-Grenze in beide

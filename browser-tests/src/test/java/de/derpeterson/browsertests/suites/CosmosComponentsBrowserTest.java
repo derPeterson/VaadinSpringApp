@@ -1082,12 +1082,52 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         browserPage.getByRole(
             AriaRole.DIALOG,
             new Page.GetByRoleOptions().setName(uiTexts.getDatePickerCalendar()).setExact(true));
-    calendarDialogLocator
-        .getByRole(
-            AriaRole.BUTTON,
-            new Locator.GetByRoleOptions().setName(uiTexts.getDatePickerCancel()).setExact(true))
-        .click();
+    Locator cancelButton = calendarButton(calendarDialogLocator, uiTexts.getDatePickerCancel());
+    assertCalendarActions(calendarDialogLocator, cancelButton);
+    assertCalendarYearColumn(calendarDialogLocator);
+    cancelButton.click();
     assertThat(calendarDialogLocator).not().isVisible();
+  }
+
+  private Locator calendarButton(Locator calendarDialog, String label) {
+    return calendarDialog.getByRole(
+        AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(label).setExact(true));
+  }
+
+  private void assertCalendarActions(Locator calendarDialog, Locator cancelButton) {
+    Locator todayButton = calendarButton(calendarDialog, uiTexts.getDatePickerToday());
+    for (Locator button : List.of(todayButton, cancelButton)) {
+      assertThat(button).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+      assertThat(button).hasCSS("border-top-color", "rgba(0, 0, 0, 0)");
+      assertThat(button).hasCSS("color", "rgb(56, 189, 248)");
+      button.focus();
+      assertThat(button).isFocused();
+    }
+  }
+
+  private void assertCalendarYearColumn(Locator calendarDialog) {
+    Locator yearToggle = calendarDialog.locator("[part=years-toggle-button]");
+    if (yearToggle.isVisible()) {
+      yearToggle.click();
+    }
+    Locator yearScroller = calendarDialog.locator("vaadin-date-picker-year-scroller");
+    Locator currentSelection = yearScroller.locator("vaadin-date-picker-year[selected]");
+    assertThat(currentSelection).hasText("2020");
+    assertThat(currentSelection.locator("[part=year-number]")).hasCSS("color", "rgb(56, 189, 248)");
+    assertEquals(
+        "none", currentSelection.evaluate("year => getComputedStyle(year, '::after').content"));
+    assertTrue(
+        (boolean)
+            yearScroller.evaluate(
+                """
+                scroller => {
+                  const bounds = scroller.getBoundingClientRect();
+                  const style = getComputedStyle(scroller);
+                  return bounds.left >= 0 && bounds.right <= innerWidth + 1
+                    && parseFloat(style.borderInlineStartWidth) > 0
+                    && style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+                }
+                """));
   }
 
   private void assertFixedDaySuffixesRemainInsideFields(AdminConfigurationPage configurationPage) {
@@ -1387,9 +1427,14 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
         assertTrue(bounds.y >= 0 && bounds.y + bounds.height <= 901);
         BoundingBox footer = body.locator(".portal-menu-footer").boundingBox();
-        BoundingBox logout = body.locator(".portal-menu-logout").boundingBox();
+        Locator logoutButton = body.locator(".portal-menu-logout");
+        BoundingBox logout = logoutButton.boundingBox();
 
         assertEquals(footer.x + footer.width - 8, logout.x + logout.width, 1);
+        assertUserMenuFooterButtonSpacing(logoutButton);
+        if (!route.equals(HOME_ROUTE)) {
+          assertUserMenuFooterButtonSpacing(home);
+        }
         AllurePlaywright.attachScreenshot(
             "Benutzermenü " + route + " bei " + width + "px", browserPage);
         userMenu.close();
@@ -1406,8 +1451,45 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         assertThat(browserPage.locator("#account-panel-profile")).isVisible();
         assertThat(browserPage.locator("vaadin-popover-overlay[opened]")).hasCount(0);
       }
+      verifyUserMenuFooterNavigation(userMenu);
+      browserPage.navigate(path(ACCOUNT_ROUTE));
       assertPreferredLanguageLabels(userMenu);
     }
+  }
+
+  private void assertUserMenuFooterButtonSpacing(Locator footerButton) {
+    assertThat(footerButton).hasCSS("padding-left", "12px");
+    assertThat(footerButton).hasCSS("padding-right", "12px");
+    BoundingBox initialBounds = footerButton.boundingBox();
+    footerButton.hover();
+    BoundingBox hoverBounds = footerButton.boundingBox();
+    assertEquals(initialBounds.x, hoverBounds.x, 1);
+    assertEquals(initialBounds.width, hoverBounds.width, 1);
+  }
+
+  private void verifyUserMenuFooterNavigation(UserMenu userMenu) {
+    Locator footer = browserPage.locator(".portal-menu-footer:visible");
+    Locator homeButton =
+        footer.getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getBaseHomeButton()).setExact(true));
+    userMenu.open();
+    homeButton.click();
+    browserPage.waitForURL("**" + path(HOME_ROUTE));
+
+    browserPage.navigate(path(ADMIN_ROUTE));
+    userMenu.open();
+    homeButton.focus();
+    homeButton.press("Enter");
+    browserPage.waitForURL("**" + path(HOME_ROUTE));
+
+    userMenu.open();
+    Locator logoutButton = footer.locator(".portal-menu-logout");
+    logoutButton.focus();
+    UiActions.complete(browserPage, () -> logoutButton.press("Enter"));
+    browserPage.navigate(path(ACCOUNT_ROUTE));
+    new LoginPage(browserPage).assertFormVisible();
+    signIn();
   }
 
   private void assertPreferredLanguageLabels(UserMenu userMenu) {
