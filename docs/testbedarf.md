@@ -19,10 +19,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   und „Benachrichtigung senden“ die Innenbreite ihrer Footer füllen und lesbar bleiben.
 
 - **Admin-Vorgangsliste bei 320 px — offen.**
-  Direktlink und Auswahl öffnen das scrollbare Detail-Overlay. Button und Escape
-  geben den Fokus an den Kategorienreiter zurück und entfernen nur die Ticketnummer
-  aus der URL. Beim Wiederöffnen bleiben Listenseite, Filter und Entwurf
-  erhalten. Die Aktionen bleiben erreichbar.
+  Ein Ticket bei aktivem Filter auf einer Folgeseite öffnen und zur Liste
+  zurückkehren. Listenseite und Filter bleiben erhalten. Beim Wiederöffnen
+  steht der Entwurf weiterhin im Antwortfeld.
 
 - **Rechte Feldhilfe im Mail-Test — offen.**
   In MAIL-02 Empfänger-, Betreff- und Texthilfe nach der TextArea-Prüfung per

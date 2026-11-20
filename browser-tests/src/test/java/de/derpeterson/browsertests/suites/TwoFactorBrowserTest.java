@@ -1503,30 +1503,53 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   }
 
   private void verifyMobileTicketDetailReturn(Locator ticketPanel, String ticketNumber) {
-    browserPage.setViewportSize(390, 900);
     Locator ticketLayout = browserPage.locator("#support-master-detail");
     Locator replyInput = ticketPanel.locator("#support-reply textarea");
     Locator returnButton = ticketPanel.locator("#support-return-to-list");
     String previousDraft = replyInput.inputValue();
-    String draft = "Unsaved mobile reply";
 
+    for (int viewportWidth : new int[] {390, 320}) {
+      browserPage.setViewportSize(viewportWidth, viewportWidth == 320 ? 568 : 900);
+      assertThat(ticketLayout).hasAttribute("overlay", "");
+      assertThat(ticketLayout.locator("[part=detail]")).hasCSS("overflow-y", "auto");
+      assertThat(returnButton).hasAttribute("aria-label", uiTexts.getSupportReturnToTicketList());
+      assertThat(ticketPanel.locator("#support-focus-toggle")).not().isVisible();
+      Locator replyButton = ticketPanel.locator("#support-add-reply");
+      replyButton.scrollIntoViewIfNeeded();
+      assertThat(replyButton).isInViewport();
+
+      String draft = "Unsaved mobile reply " + viewportWidth;
+      replyInput.fill(draft);
+      returnButton.focus();
+      UiActions.complete(browserPage, () -> returnButton.press("Escape"));
+      assertTicketListAfterMobileReturn(ticketPanel);
+      UiActions.complete(browserPage, () -> ticketCard(browserPage, "#" + ticketNumber).click());
+      assertTicketLocation("all", ticketNumber);
+      assertThat(replyInput).hasValue(draft);
+
+      UiActions.complete(browserPage, returnButton::click);
+      assertTicketListAfterMobileReturn(ticketPanel);
+      UiActions.complete(browserPage, () -> ticketCard(browserPage, "#" + ticketNumber).click());
+      assertTicketLocation("all", ticketNumber);
+      assertThat(replyInput).hasValue(draft);
+      AllurePlaywright.attachScreenshot(
+          "Vorgangsdetail als Overlay bei " + viewportWidth + " px", browserPage);
+    }
+
+    String ticketUrl = browserPage.url();
+    browserPage.navigate(ticketUrl);
+    assertTicketLocation("all", ticketNumber);
     assertThat(ticketLayout).hasAttribute("overlay", "");
-    assertThat(returnButton).hasAttribute("aria-label", uiTexts.getSupportReturnToTicketList());
-    assertThat(ticketPanel.locator("#support-focus-toggle")).not().isVisible();
-    replyInput.fill(draft);
-    returnButton.focus();
-    UiActions.complete(browserPage, () -> returnButton.press("Escape"));
-    assertTicketLocation("all", null);
+    assertThat(returnButton).isVisible();
+    browserPage.setViewportSize(390, 900);
+    replyInput.fill(previousDraft);
+  }
 
+  private void assertTicketListAfterMobileReturn(Locator ticketPanel) {
+    assertTicketLocation("all", null);
     assertThat(ticketPanel).hasCount(0);
     assertThat(browserPage.locator("#support-ticket-categories vaadin-tab[selected]")).isFocused();
     assertThat(browserPage.locator("#support-select-ticket")).not().isVisible();
-    UiActions.complete(browserPage, () -> ticketCard(browserPage, "#" + ticketNumber).click());
-    assertTicketLocation("all", ticketNumber);
-
-    assertThat(replyInput).hasValue(draft);
-    AllurePlaywright.attachScreenshot("Vorgangsdetail als Overlay bei 390 px", browserPage);
-    replyInput.fill(previousDraft);
   }
 
   private Object selectedTabStyle(Locator tab) {
