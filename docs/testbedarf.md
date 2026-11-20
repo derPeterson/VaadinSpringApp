@@ -173,11 +173,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Wartung, Drosselung, Sitzungslimit, technische Fehler und Rückmeldungen nach
   Weiterleitungen prüfen. Die Eingabefelder bleiben dabei unmarkiert.
 
-- **Registrierung – Markierungen vor und nach dem Absenden — offen.**
-  Auf schmaler Ansicht eine unvollständige E-Mail-Adresse nach dem Verlassen
-  ohne Markierung oder Meldung prüfen. Beim Absenden werden die betroffenen
-  E-Mail-Felder markiert.
-
 - **ComboBox-Overlays – Außen- und Eintragsabstände — offen.**
   Außen 8 px Scrollerabstand und zwischen Auswahlflächen 2 px prüfen,
   insbesondere unter der letzten ausgewählten Zeile. Geschlecht/Sprache,

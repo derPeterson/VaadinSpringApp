@@ -123,12 +123,14 @@ public class RegistrationBrowserTest extends BrowserFixture {
 
   @Tag("account-forms")
   @Tag("fast")
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName("REG-02B: Ungültige E-Mail und abweichende Passwortbestätigung sind korrigierbar")
   @Story("Eingabehinweise und Korrektur")
   @Description(
       """
-      1. Alle Pflichtfelder füllen, aber in beiden E-Mail-Feldern eine ungültige Adresse verwenden.
+      1. Auf Desktop und schmaler Ansicht alle Pflichtfelder füllen, aber in beiden
+         E-Mail-Feldern eine ungültige Adresse verwenden.
       2. Absenden; verständlichen E-Mail-Hinweis und Feldmarkierungen prüfen.
       3. E-Mail korrigieren, abweichende Passwortbestätigung eingeben und erneut absenden.
       4. Passwort-Hinweis und Markierungen prüfen; Bestätigung korrigieren und absenden.
@@ -137,8 +139,9 @@ public class RegistrationBrowserTest extends BrowserFixture {
       Erst der korrigierte Versuch zeigt eine Registrierungsbestätigung.
       Weitere Passwort-, E-Mail-Bestätigungs- und Dublettenvarianten bleiben offen.
       """)
-  void emailAndPasswordConfirmationCanBeCorrected() {
+  void emailAndPasswordConfirmationCanBeCorrected(int viewportWidth) {
     String email = "correction-" + UUID.randomUUID() + "@example.test";
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     RegistrationPage registration = new RegistrationPage(browserPage);
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
@@ -149,7 +152,6 @@ public class RegistrationBrowserTest extends BrowserFixture {
     registration.assertEmailError();
     AllurePlaywright.attachScreenshot("Ungültige E-Mail", browserPage);
     NotificationAppearanceChecks.close(browserPage);
-    browserPage.setViewportSize(390, 844);
     registration.change(uiTexts.getPublicEmailField(), email);
     assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     registration.setEmails(email, email);
