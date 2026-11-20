@@ -61,8 +61,12 @@ public final class NotificationComposePage {
     assertThat(title()).isVisible();
   }
 
-  @Step("Bestimmten aktiven Empfänger im nativen Mehrfachauswahlmenü wählen")
   public void select(String email) {
+    select(email, 1);
+  }
+
+  @Step("Bestimmten aktiven Empfänger im nativen Mehrfachauswahlmenü wählen")
+  public void select(String email, int recipientCount) {
     recipients().locator("input").fill(email);
     Locator recipientOptionLocator =
         browserPage
@@ -74,7 +78,7 @@ public final class NotificationComposePage {
     recipients().locator("input").press("Escape");
 
     assertThat(root().locator(".cosmos-notification-compose-recipient-summary"))
-        .hasText(uiTexts.getNotificationsSelectedUsers(1));
+        .hasText(uiTexts.getNotificationsSelectedUsers(recipientCount));
   }
 
   @Step("Leere Felder erst bei der Vorschau markieren und den ersten Fehler melden")

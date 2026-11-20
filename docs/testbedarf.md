@@ -50,8 +50,8 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   Kreis-X mit 18 × 18 px im 36-px-Button, Zentrierung, Fokus und Tooltip in
   Glockenvorschau, Nachrichtendialog, Empfänger-Popover, Meldungen, Feldhilfen,
   Benutzerverwaltung und Konto-, 2FA-, Anbieter- und Bestätigungsdialogen prüfen.
-  Fehlende Maus- und Tastaturpfade abdecken, insbesondere den Schließen-Button
-  im Empfänger-Popover und die Tastaturbedienung weiterer Meldungsvarianten.
+  Fehlende Maus- und Tastaturpfade abdecken, insbesondere die Tastaturbedienung
+  weiterer Meldungsvarianten.
 
 - **Dauerfeld-Platzhalter nach Leeren — offen.**
   Die gedämpfte Farbe und unveränderte Zentrierung nach dem Leeren bei
@@ -89,12 +89,6 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   vollflächige Auswahl samt Akzentlinie, Hover/Fokus,
   einfache Zeilentrenner und Scrollleisten in Chromium und Firefox prüfen.
   Eine zusätzliche Touch-Geste zum Abwählen wartet auf die Entscheidung im TODO.
-
-- **Benachrichtigungsentwurf – Vorschauvalidierung — offen.**
-  Beim Wechsel zu „Alle Benutzer“ gesperrte, deaktivierte und unbestätigte
-  Konten aus der Vorschau ausschließen. Einen zuvor gewählten Empfänger
-  nachträglich sperren. Die Vorschau nennt die geänderte Auswahl, während
-  eine leere Auswahl die Meldung für fehlende Empfänger erhält.
 
 - **Ticketsystem – Validierung und erneuter Anleitungsversand — offen.**
   Neue Anfrage und internen Vermerk leer absenden, öffentliche Antwort auf

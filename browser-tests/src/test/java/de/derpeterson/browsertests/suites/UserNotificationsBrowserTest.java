@@ -2,8 +2,10 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.NOTIFICATIONS_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,17 +17,21 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -147,20 +153,118 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     assertThat(recipientAvatars).isFocused();
     recipientAvatars.press("Space");
     assertThat(recipientPopover).hasAttribute("opened", "");
-    recipientPopover
-        .locator("#admin-notifications-recipient-search input")
-        .fill(BrowserTestAccounts.SUPERADMIN_EMAIL);
-    assertThat(recipientPopover.locator(".cosmos-recipient-button:visible")).hasCount(1);
-    assertThat(recipientPopover.locator(".cosmos-recipient-button:visible"))
-        .containsText(BrowserTestAccounts.SUPERADMIN_EMAIL);
-    recipientPopover
-        .getByRole(
-            AriaRole.BUTTON,
-            new Locator.GetByRoleOptions().setName(uiTexts.getNotificationsClose()).setExact(true))
-        .click();
+    Locator recipients =
+        searchPreviewRecipients(recipientPopover, BrowserTestAccounts.SUPERADMIN_EMAIL);
+    assertThat(recipients).hasCount(1);
+    assertThat(recipients).containsText(BrowserTestAccounts.SUPERADMIN_EMAIL);
+    recipientPopoverCloseButton(recipientPopover).click();
     assertThat(recipientPopover).not().hasAttribute("opened", "");
     assertThat(recipientAvatars).isFocused();
     assertThat(compose.send()).isEnabled();
+  }
+
+  private Locator searchPreviewRecipients(Locator recipientPopover, String email) {
+    recipientPopover.locator("#admin-notifications-recipient-search input").fill(email);
+    return recipientPopover.locator(".cosmos-recipient-button:visible");
+  }
+
+  private Locator recipientPopoverCloseButton(Locator recipientPopover) {
+    return recipientPopover.getByRole(
+        AriaRole.BUTTON,
+        new Locator.GetByRoleOptions().setName(uiTexts.getNotificationsClose()).setExact(true));
+  }
+
+  @Test
+  @DisplayName("NOTIFY-03: Die Vorschau verwendet nur aktuell erreichbare Empfänger")
+  @Description(
+      """
+      Die Vorschau für alle schließt gesperrte, selbst deaktivierte und unbestätigte Konten aus.
+      Die manuelle Auswahl unterscheidet eine leere Eingabe von einer Auswahl, in der
+      eines von zwei Konten inzwischen gesperrt ist. Die Prüfung versendet keine Mitteilung.
+      """)
+  void previewsRejectIneligibleAndStaleRecipients() {
+    AdminUsersPage users = admin();
+    UUID fixtureId = UUID.randomUUID();
+    String eligibleEmail = "preview-eligible-" + fixtureId + "@example.test";
+    String blockedEmail = "preview-blocked-" + fixtureId + "@example.test";
+    String deactivatedEmail = "preview-deactivated-" + fixtureId + "@example.test";
+    String unverifiedEmail = "preview-unverified-" + fixtureId + "@example.test";
+    users.createActiveUser(eligibleEmail, BrowserTestAccounts.USER_PASSWORD);
+    users.createActiveUser(deactivatedEmail, BrowserTestAccounts.USER_PASSWORD);
+    users.createActiveUser(blockedEmail, BrowserTestAccounts.USER_PASSWORD);
+    AdminUserDialog blockedAccount = users.openEdit(blockedEmail);
+    blockedAccount.setEnabled(false);
+    blockedAccount.save();
+    deactivatePreviewAccount(deactivatedEmail);
+    try (BrowserActor visitor = new BrowserActor(testBrowser)) {
+      RegistrationPage registration = new RegistrationPage(visitor.browserPage);
+      registration.open();
+      registration.fillValid(unverifiedEmail, BrowserTestAccounts.USER_PASSWORD);
+      registration.submit();
+      registration.assertSubmitted(unverifiedEmail);
+    }
+
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
+    compose.open();
+    compose.everyone().setChecked(true);
+    compose.draft("Recipient eligibility", "A draft for examining the preview.");
+    Locator avatars = browserPage.locator("#admin-notifications-recipient-avatars");
+    Locator popover = browserPage.locator("#admin-notifications-preview-recipients");
+    for (int width : new int[] {1280, 390}) {
+      browserPage.setViewportSize(width, 900);
+      avatars.click();
+      assertThat(popover).hasAttribute("opened", "");
+      Locator eligibleResult = searchPreviewRecipients(popover, eligibleEmail);
+      assertThat(eligibleResult).hasCount(1);
+      assertThat(eligibleResult).containsText(eligibleEmail);
+      for (String excludedEmail : List.of(blockedEmail, deactivatedEmail, unverifiedEmail)) {
+        assertThat(searchPreviewRecipients(popover, excludedEmail)).hasCount(0);
+        assertThat(popover.getByText(uiTexts.getNotificationsRecipientSearchEmpty())).isVisible();
+      }
+      Locator closeButton = recipientPopoverCloseButton(popover);
+      closeButton.focus();
+      closeButton.press("Enter");
+      assertThat(popover).not().hasAttribute("opened", "");
+      assertThat(avatars).isFocused();
+    }
+
+    compose.everyone().setChecked(false);
+    compose.review().click();
+    compose.notice(uiTexts.getBaseFailedTitle(), uiTexts.getNotificationsNoRecipients());
+    assertThat(compose.send()).isDisabled();
+    compose.select(eligibleEmail);
+    compose.select(BrowserTestAccounts.SUPERADMIN_EMAIL, 2);
+    compose.review().click();
+    assertThat(compose.send()).isEnabled();
+
+    try (Page editor = browserContext.newPage()) {
+      editor.navigate(path(ADMIN_ROUTE));
+      AdminUserDialog selectedAccount = new AdminUsersPage(editor).openEdit(eligibleEmail);
+      selectedAccount.setEnabled(false);
+      selectedAccount.save();
+    }
+    compose.review().click();
+    compose.notice(uiTexts.getBaseFailedTitle(), uiTexts.getNotificationsRecipientsChanged());
+    assertThat(compose.recipients()).hasAttribute("invalid", "");
+    assertThat(compose.send()).isDisabled();
+  }
+
+  private void deactivatePreviewAccount(String email) {
+    try (BrowserActor requester = new BrowserActor(testBrowser)) {
+      requester.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(requester.browserPage).selectTestLanguage();
+      AccountPage account = new AccountPage(requester.browserPage);
+      account.open();
+      account.section("account-tab-security");
+      requester.browserPage.locator("#account-security-tab-lifecycle").click();
+      requester.browserPage.locator("#account-deactivate").click();
+      requester
+          .browserPage
+          .locator("#account-lifecycle-password input")
+          .fill(BrowserTestAccounts.USER_PASSWORD);
+      requester.browserPage.locator("#account-lifecycle-submit").click();
+      assertThat(requester.browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    }
   }
 
   private void assertReviewedPreviewLayout(NotificationComposePage compose, int width) {
