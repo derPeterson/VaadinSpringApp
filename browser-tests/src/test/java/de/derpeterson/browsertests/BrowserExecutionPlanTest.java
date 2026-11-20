@@ -299,7 +299,7 @@ class BrowserExecutionPlanTest {
       testCaseCount +=
           valueSource == null ? 1 : valueSource.ints().length + valueSource.booleans().length;
     }
-    assertEquals(5, testCaseCount);
+    assertEquals(6, testCaseCount);
     assertTrue(BrowserSuites.select("all").contains(NotificationInboxBrowserTest.class));
     assertEquals(2, BrowserSuites.select("notifications").size());
     assertFalse(BrowserExecutionPlan.classes("fast").contains(NotificationInboxBrowserTest.class));
