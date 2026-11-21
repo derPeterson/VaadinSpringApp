@@ -34,8 +34,9 @@ sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter
   über die Kartenbreite, der Button hat denselben seitlichen Innenabstand wie
   der Text. Nach Sprachwechsel Dateiname, Version und UTF-8-Inhalt prüfen.
   Ohne Anmeldung liefert die Download-Adresse keine Datei.
-  Optionales Bild mit Beispieldaten prüfen. Im normalen Build bleiben
-  Unreleased und der aktuelle Kandidat ausgeblendet.
+  Optionales Bild mit Beispieldaten prüfen. Die datierten Notizen der eigenen
+  Version erscheinen im Release-Build und bleiben im gleichnamigen Snapshot
+  ausgeblendet. `Unreleased` und höhere Versionen bleiben in beiden verborgen.
 
 - **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
   Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis

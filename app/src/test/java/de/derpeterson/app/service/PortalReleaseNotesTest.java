@@ -72,10 +72,17 @@ class PortalReleaseNotesTest {
       """;
 
   @Test
-  void draftAndCurrentCandidateAreHiddenInCandidateAndSnapshotBuilds() {
+  void releaseBuildShowsItsOwnNotesAndHidesLaterVersions() {
     assertThat(PortalReleaseNotes.parse(CHANGELOG, "0.2.0"))
         .extracting(Release::version)
+        .containsExactly("0.2.0", "0.1.0");
+    assertThat(PortalReleaseNotes.parse(CHANGELOG, "0.1.0"))
+        .extracting(Release::version)
         .containsExactly("0.1.0");
+  }
+
+  @Test
+  void snapshotBuildHidesItsOwnDatedCandidate() {
     assertThat(PortalReleaseNotes.parse(CHANGELOG, "0.2.0-SNAPSHOT"))
         .extracting(Release::version)
         .containsExactly("0.1.0");

@@ -51,10 +51,10 @@ Screenshot mit Beispieldaten liegt unter `app/src/main/resources/META-INF/resour
 Die beiden Sprachabschnitte können dieselbe Bilddatei mit passendem Alternativtext
 über `/images/release-notes/` referenzieren.
 
-Das Portal zeigt datierte Ausgaben mit einer kleineren Projektversion als die
-des Builds. Im regulären Ablauf hebt `next` diese Grenze erst nach dem Release-Tag
-an. Die Notizen zum gerade getaggten Release erscheinen damit ab dem Build des
-Folge-Snapshots. Das geprüfte Release-Artefakt bleibt unverändert.
+Release-Builds zeigen datierte Ausgaben bis einschließlich ihrer eigenen Version.
+Dadurch erscheinen die Notizen bereits im Kandidaten-JAR, das vor dem Tag geprüft
+und anschließend unverändert aufbewahrt wird. Snapshot-Builds zeigen nur kleinere
+Versionen. `Unreleased` bleibt in beiden Fällen ausgeblendet.
 
 Jede sichtbare Ausgabe lässt sich in der eingestellten Portalsprache als
 Markdown-Datei herunterladen. Bei der aktuellen Version steht der Button rechts

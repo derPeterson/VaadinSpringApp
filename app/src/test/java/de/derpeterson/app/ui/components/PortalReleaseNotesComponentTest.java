@@ -66,14 +66,14 @@ class PortalReleaseNotesComponentTest {
 
   @Test
   void archiveIsHiddenWhenOnlyTheFirstReleaseIsVisible() {
-    notes.showReleases(new PortalReleaseNotes("0.2.0").getReleases(), language);
+    notes.showReleases(new PortalReleaseNotes("0.2.0-SNAPSHOT").getReleases(), language);
 
     assertThat(notes.getChildren().filter(Details.class::isInstance)).isEmpty();
   }
 
   @Test
-  void releasesShowSeparatedMetadataAndArchiveStartsCollapsed() {
-    notes.showReleases(new PortalReleaseNotes("0.2.1-SNAPSHOT").getReleases(), language);
+  void releaseBuildShowsItsOwnCardAndStartsTheArchiveCollapsed() {
+    notes.showReleases(new PortalReleaseNotes("0.2.0").getReleases(), language);
 
     CosmosCardComponent latestCard =
         (CosmosCardComponent) notes.getChildren().findFirst().orElseThrow();

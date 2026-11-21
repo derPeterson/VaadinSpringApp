@@ -6,11 +6,13 @@
 
 - Unter „Was ist neu?“ im Portal die neuesten Release-Notizen lesen, frühere
   Ausgaben aufklappen und jede Version in der eingestellten Sprache als Markdown herunterladen.
+  Die Notizen zur eigenen Version sind direkt im jeweiligen Release verfügbar.
 
 ### EN
 
 - Open “What's New?” in the portal to read the latest release notes, expand earlier
   releases, and download each version as Markdown in your selected language.
+  Each release shows its own notes as soon as you open the page.
 
 ## [0.2.0] - 2026-11-20
 

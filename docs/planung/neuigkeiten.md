@@ -31,10 +31,10 @@ Sprachfassungen. Der Maven-Build übernimmt sie als dedizierte Classpath-Ressour
 Version, Datum sowie DE-/EN-Abschnitte haben bereits ein festgelegtes Quellformat.
 Titel, Einstieg, die beiden Inhaltsabschnitte und optionale Bildverweise werden
 in den jeweiligen Sprachabschnitten der `CHANGELOG.md` gepflegt.
-Der Loader trennt die Metadaten vom Sprachinhalt. Die Ausgabe des aktuellen
-Kandidaten wird ab dem nach dem Tag gebauten Folge-Snapshot sichtbar. So können
-der endgültige Release und das vor dem Tag geprüfte JAR identisch bleiben.
-Der [Release-Ablauf](../releases.md#notizen-und-artefakt) beschreibt die Grenze.
+Der Loader trennt die Metadaten vom Sprachinhalt. Ein Release-Build zeigt die
+eigene Ausgabe bereits im vor dem Tag geprüften JAR. Ein Snapshot zeigt die
+früheren datierten Ausgaben. Der [Release-Ablauf](../releases.md#notizen-und-artefakt)
+beschreibt die Sichtbarkeitsgrenze.
 
 Der native Flow-`Markdown`-Baustein stellt die Notizen in einer Cosmos-Card
 dar und bereinigt das gerenderte HTML. Metadaten und Navigation verwenden

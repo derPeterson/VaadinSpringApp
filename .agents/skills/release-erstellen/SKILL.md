@@ -27,7 +27,12 @@ keine fachliche Abnahme und erlaubt nicht automatisch die große Browserrunde.
    Projektversionen aller fünf POMs gemeinsam auf diesen Snapshot setzen, prüfen
    und separat committen. Keine Bibliotheksversionen ändern; danach erneut die
    Vorschau prüfen. `prepare` erhöht die Basis nicht selbst.
-3. Bei passendem sauberen Snapshotstand `prepare --version X.Y.Z` ausführen.
+3. Vor `prepare` die DE-/EN-Notizen unter `Unreleased` prüfen. Vorgesehene
+   Highlight-Karten müssen in beiden Sprachen dieselben Neuerungen beschreiben
+   und dem [Format der Notizen](../../../docs/releases.md#notizen-und-artefakt) folgen.
+   Für jede vorgesehene Icon-Zuordnung die `nav-icon`-Namen in beiden Sprachen
+   mit dem `AppIcon` der betroffenen Seitennavigation oder Ansicht abgleichen.
+   Danach bei passendem sauberen Snapshotstand `prepare --version X.Y.Z` ausführen.
    Der Helfer aktualisiert alle Projekt-POMs und DE-/EN-Notizen; er committet nicht.
    Den tatsächlichen Diff reviewen und den Kandidaten lokal committen.
 

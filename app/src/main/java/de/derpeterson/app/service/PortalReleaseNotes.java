@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class PortalReleaseNotes {
+  private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
   private static final Pattern RELEASE_START = Pattern.compile("(?m)(?=^## \\[)");
   // Nur die datierten Versionsüberschriften des Release-Helfers beginnen eine Ausgabe.
   private static final Pattern RELEASE_HEADING =
@@ -73,8 +74,13 @@ public class PortalReleaseNotes {
   }
 
   static List<Release> parse(String changelog, String buildVersion) {
-    Version applicationVersion = Version.parse(buildVersion.replaceFirst("-SNAPSHOT$", ""));
-    List<Release> publishedReleases = new ArrayList<>();
+    boolean snapshotBuild = buildVersion.endsWith(SNAPSHOT_SUFFIX);
+    String versionText =
+        snapshotBuild
+            ? buildVersion.substring(0, buildVersion.length() - SNAPSHOT_SUFFIX.length())
+            : buildVersion;
+    Version applicationVersion = Version.parse(versionText);
+    List<Release> visibleReleases = new ArrayList<>();
     Set<Version> includedVersions = new HashSet<>();
 
     for (String releaseSection : RELEASE_START.split(changelog)) {
@@ -88,9 +94,9 @@ public class PortalReleaseNotes {
       }
 
       Version releaseVersion = Version.parse(releaseHeadingMatcher.group(1));
-      // prepare legt den datierten Eintrag vor dem Tag an. next erhöht die Build-Version erst
-      // danach.
-      if (releaseVersion.compareTo(applicationVersion) >= 0) {
+      // Der geprüfte Release-Build zeigt seine eigene Ausgabe bereits vor dem Tag.
+      int versionComparison = releaseVersion.compareTo(applicationVersion);
+      if (versionComparison > 0 || (snapshotBuild && versionComparison == 0)) {
         continue;
       }
       if (!includedVersions.add(releaseVersion)) {
@@ -99,14 +105,14 @@ public class PortalReleaseNotes {
 
       LocalDate releasedOn = LocalDate.parse(releaseHeadingMatcher.group(2));
       String releaseBody = releaseSection.substring(releaseHeadingMatcher.end());
-      publishedReleases.add(parseRelease(releaseVersion, releasedOn, releaseBody));
+      visibleReleases.add(parseRelease(releaseVersion, releasedOn, releaseBody));
     }
 
-    publishedReleases.sort(
+    visibleReleases.sort(
         Comparator.comparing(Release::releasedOn)
             .thenComparing(release -> Version.parse(release.version()))
             .reversed());
-    return List.copyOf(publishedReleases);
+    return List.copyOf(visibleReleases);
   }
 
   private static Release parseRelease(Version version, LocalDate releasedOn, String releaseBody) {
