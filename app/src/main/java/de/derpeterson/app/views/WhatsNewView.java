@@ -69,7 +69,7 @@ public class WhatsNewView extends IsAuthenticatedBaseView implements HasDynamicT
             newsTitleAccentSpan,
             newsDescriptionSpan);
 
-    releaseNotesComponent = new PortalReleaseNotesComponent(messageProperties);
+    releaseNotesComponent = new PortalReleaseNotesComponent(messageProperties, securityService);
     newsPageLayout =
         new PortalSidebarPageLayout(
             messageProperties,

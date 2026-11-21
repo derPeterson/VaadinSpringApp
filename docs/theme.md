@@ -792,6 +792,9 @@ zugängliche Namen und gegebenenfalls Tooltips.
 
 - Lucide ist das reguläre Set; Tabler ergänzt gewählte Motive wie Cloud-Lock,
   Formularschutz, Schrittnummern und Ticket-/Terminalsymbole.
+- Die gerahmten Tabler-Ziffern 0 bis 9 stehen als `AppIcon.NUMBER_ZERO` bis
+  `AppIcon.NUMBER_NINE` zur Verfügung. Die Portalneuigkeiten setzen mehrstellige
+  Listenpositionen aus diesen Ziffernicons zusammen.
 - SVGs und Lizenzen liegen unter `icons/lucide/` und `icons/tabler/`; kein CDN oder zusätzliches Icon-JavaScript.
 - Native Komponentenicons bleiben grundsätzlich erhalten. Der Dauerbaustein hat
   eigene freigegebene Lucide-Masken für Löschen und Schrittaktionen.

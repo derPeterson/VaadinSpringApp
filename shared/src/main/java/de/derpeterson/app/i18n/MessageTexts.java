@@ -3684,6 +3684,10 @@ public class MessageTexts {
     return getFormattedTranslation("portal.news.releaseVersion", version);
   }
 
+  public String getPortalNewsDownloadMarkdown() {
+    return getTranslation("portal.news.downloadMarkdown");
+  }
+
   public String getPortalNewsEmpty() {
     return getTranslation("portal.news.empty");
   }

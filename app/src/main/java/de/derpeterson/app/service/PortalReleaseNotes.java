@@ -35,11 +35,16 @@ public class PortalReleaseNotes {
   private static final Pattern HIGHLIGHTS_HEADING = Pattern.compile("(?m)^##### (Highlights)\\h*$");
   private static final Pattern IMPROVEMENTS_HEADING =
       Pattern.compile("(?m)^##### (Weitere Verbesserungen|Further improvements)\\h*$");
-  // Nur ein Bindestrich mit folgendem Leerraum am Zeilenanfang beginnt eine Karte.
-  private static final Pattern HIGHLIGHT_ITEM = Pattern.compile("(?m)^-\\h+");
-  // Ein fett gesetzter Titel auf einer eigenen Zeile wird zur Kartenüberschrift.
+  // Ein Bindestrich mit folgendem Leerraum am Zeilenanfang eröffnet einen Listenpunkt.
+  private static final Pattern BULLET_ITEM = Pattern.compile("(?m)^-\\h+");
+  // Die Zuordnung im Kommentar ist der Name einer AppIcon-Konstante.
+  private static final String NAV_ICON_COMMENT = "<!-- nav-icon: ([A-Z][A-Z_0-9]*) -->";
+  // Die fett gesetzte Kartenüberschrift kann das SideNav-Icon als Markdown-Kommentar angeben.
   private static final Pattern HIGHLIGHT_TITLE =
-      Pattern.compile("^\\*\\*([^\\r\\n]+?)\\*\\*\\h*\\R");
+      Pattern.compile("^\\*\\*([^\\r\\n]+?)\\*\\*(?:\\h+" + NAV_ICON_COMMENT + ")?\\h*\\R");
+  // Im Download bleibt der Listentitel erhalten, der Kommentar zur Icon-Zuordnung entfällt.
+  private static final Pattern HIGHLIGHT_ICON_COMMENT =
+      Pattern.compile("(?m)^(-\\h+\\*\\*[^\\r\\n]+?\\*\\*)\\h+" + NAV_ICON_COMMENT + "\\h*$");
 
   private final Optional<List<Release>> releases;
 
@@ -156,7 +161,7 @@ public class PortalReleaseNotes {
             .substring(highlightsHeadingMatcher.end(), improvementsHeadingMatcher.start())
             .strip();
     String improvementsMarkdown = markdown.substring(improvementsHeadingMatcher.end()).strip();
-    String[] highlightItems = HIGHLIGHT_ITEM.split(highlightsMarkdown, -1);
+    String[] highlightItems = BULLET_ITEM.split(highlightsMarkdown, -1);
     if (highlightItems.length < 2
         || !highlightItems[0].isEmpty()
         || improvementsMarkdown.isEmpty()) {
@@ -175,9 +180,11 @@ public class PortalReleaseNotes {
       if (titleMatcher.lookingAt()) {
         highlights.add(
             new Highlight(
-                titleMatcher.group(1).strip(), itemMarkdown.substring(titleMatcher.end()).strip()));
+                titleMatcher.group(1).strip(),
+                itemMarkdown.substring(titleMatcher.end()).strip(),
+                Optional.ofNullable(titleMatcher.group(2))));
       } else {
-        highlights.add(new Highlight("", itemMarkdown));
+        highlights.add(new Highlight("", itemMarkdown, Optional.empty()));
       }
     }
 
@@ -193,9 +200,27 @@ public class PortalReleaseNotes {
   public record Release(
       String version, LocalDate releasedOn, ReleaseText german, ReleaseText english) {
     public ReleaseText textFor(Locale locale) {
-      return Locale.GERMAN.getLanguage().equals(locale.getLanguage()) ? german : english;
+      return isGerman(locale) ? german : english;
+    }
+
+    public MarkdownDownload markdownDownload(Locale locale) {
+      ReleaseText releaseText = textFor(locale);
+      String fileName = "release-notes-%s-%s.md".formatted(version, isGerman(locale) ? "de" : "en");
+      String versionLabel = "Version " + version;
+      String heading =
+          releaseText.title().isBlank()
+              ? "# " + versionLabel + "\n\n" + releasedOn
+              : "# " + releaseText.title() + "\n\n" + versionLabel + " · " + releasedOn;
+      String markdown = HIGHLIGHT_ICON_COMMENT.matcher(releaseText.markdown()).replaceAll("$1");
+      return new MarkdownDownload(fileName, heading + "\n\n" + markdown + "\n");
+    }
+
+    private static boolean isGerman(Locale locale) {
+      return Locale.GERMAN.getLanguage().equals(locale.getLanguage());
     }
   }
+
+  public record MarkdownDownload(String fileName, String markdown) {}
 
   public record ReleaseText(String title, String markdown, Optional<FeaturedRelease> featured) {}
 
@@ -204,9 +229,31 @@ public class PortalReleaseNotes {
       String highlightsHeading,
       List<Highlight> highlights,
       String improvementsHeading,
-      String improvementsMarkdown) {}
+      String improvementsMarkdown) {
+    public List<String> improvementItems() {
+      String[] bulletItems = BULLET_ITEM.split(improvementsMarkdown, -1);
+      if (bulletItems.length < 2 || !bulletItems[0].isEmpty()) {
+        return List.of();
+      }
 
-  public record Highlight(String title, String markdown) {}
+      List<String> improvementItems = new ArrayList<>();
+      for (int itemIndex = 1; itemIndex < bulletItems.length; itemIndex++) {
+        String itemMarkdown = bulletItems[itemIndex];
+        // Nicht zur Liste gehörende Blöcke bleiben im vollständigen Markdown-Abschnitt.
+        if (itemMarkdown.isBlank()
+            || itemMarkdown
+                .lines()
+                .skip(1)
+                .anyMatch(line -> !line.isBlank() && !line.startsWith("  "))) {
+          return List.of();
+        }
+        improvementItems.add(itemMarkdown.indent(-2).strip());
+      }
+      return List.copyOf(improvementItems);
+    }
+  }
+
+  public record Highlight(String title, String markdown, Optional<String> navigationIconName) {}
 
   private record Version(int major, int minor, int patch) implements Comparable<Version> {
     private static final Comparator<Version> ORDER =

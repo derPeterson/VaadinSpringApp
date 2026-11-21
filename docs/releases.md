@@ -39,7 +39,14 @@ wie `Highlights` und `Weitere Verbesserungen` beziehungsweise
 `Further improvements` verwenden `##### `. Bei einer Ausgabe mit beiden Abschnitten
 ergibt jeder mit `- ` begonnene Aufzählungspunkt unter Highlights eine Karte.
 Für einen Kartentitel den Punkt mit einem fett formatierten Titel auf einer eigenen
-Zeile beginnen. Fortsetzungszeilen um zwei Leerzeichen einrücken. Ein optionaler
+Zeile beginnen. Dahinter in beiden Sprachen denselben `nav-icon`-Kommentar
+ergänzen. Er verwendet das Icon des SideNav-Eintrags oder das vorhandene
+Seitensymbol des Bereichs, etwa
+`- **Empfänger schneller finden** <!-- nav-icon: BELL -->`.
+Der Name stammt aus `AppIcon`. Fehlt die Zuordnung, erscheint die Karte ohne Icon.
+Weitere Verbesserungen ebenfalls mit `- ` beginnen. Das Portal nummeriert diese
+Punkte. Fortsetzungszeilen um zwei Leerzeichen einrücken. Kurze Sätze im
+Changelog bleiben in beiden Darstellungen gut lesbar. Ein optionaler
 Screenshot mit Beispieldaten liegt unter `app/src/main/resources/META-INF/resources/images/release-notes/`.
 Die beiden Sprachabschnitte können dieselbe Bilddatei mit passendem Alternativtext
 über `/images/release-notes/` referenzieren.
@@ -48,6 +55,11 @@ Das Portal zeigt datierte Ausgaben mit einer kleineren Projektversion als die
 des Builds. Im regulären Ablauf hebt `next` diese Grenze erst nach dem Release-Tag
 an. Die Notizen zum gerade getaggten Release erscheinen damit ab dem Build des
 Folge-Snapshots. Das geprüfte Release-Artefakt bleibt unverändert.
+
+Jede sichtbare Ausgabe lässt sich in der eingestellten Portalsprache als
+Markdown-Datei herunterladen. Bei der aktuellen Version steht der Button rechts
+im Kopf, bei älteren Ausgaben rechts unter den Notizen im aufgeklappten Eintrag.
+Die Datei enthält Titel, Version, Datum und die Notizen der gewählten Ausgabe.
 
 Das ausführbare JAR liegt versionsunabhängig unter `app/target/app.jar`.
 `META-INF/build-info.properties` im gepackten Spring-Boot-JAR enthält Projektversion,

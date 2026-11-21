@@ -64,8 +64,8 @@ dieser ersten Planung.
 
 ## Offene Umsetzungspakete
 
-- [ ] Sprachwechsel, Archiv mit mehreren Ausgaben und schmale Ansichten im Portal
-  prüfen. Die automatisierten Browserprüfungen stehen im
+- [ ] Sprachwechsel, Markdown-Downloads pro Version, Archiv mit mehreren Ausgaben
+  und schmale Ansichten im Portal prüfen. Die automatisierten Browserprüfungen stehen im
   [Testbedarf](../testbedarf.md#browser-tests).
 
 Grundlagen: [Vaadin Markdown](https://vaadin.com/docs/latest/components/markdown),

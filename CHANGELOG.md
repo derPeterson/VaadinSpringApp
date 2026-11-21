@@ -4,11 +4,13 @@
 
 ### DE
 
-- Unter „Was ist neu?“ im Portal die neuesten Release-Notizen lesen und frühere Ausgaben aufklappen.
+- Unter „Was ist neu?“ im Portal die neuesten Release-Notizen lesen, frühere
+  Ausgaben aufklappen und jede Version in der eingestellten Sprache als Markdown herunterladen.
 
 ### EN
 
-- Open “What's New?” in the portal to read the latest release notes and expand earlier releases.
+- Open “What's New?” in the portal to read the latest release notes, expand earlier
+  releases, and download each version as Markdown in your selected language.
 
 ## [0.2.0] - 2026-11-20
 
@@ -20,13 +22,13 @@ Häufige Aufgaben im Portal und in der Verwaltung sind jetzt leichter zu erledig
 
 ##### Highlights
 
-- **Wiederherstellungsanfragen**
+- **Wiederherstellungsanfragen** <!-- nav-icon: LOCK_QUESTION -->
   Eigene Anfragen in einer scrollbaren Liste mit höchstens fünf sichtbaren
   Einträgen durchsuchen. Strg+Klick hebt die Ticketauswahl auf und erhält Antwortentwürfe.
-- **Empfänger schneller finden**
+- **Empfänger schneller finden** <!-- nav-icon: BELL -->
   Die Avatarvorschau einer Mitteilung öffnet eine vollständige Empfängerliste mit
   Suche nach Name und E-Mail-Adresse, auch ohne „+N“-Überlauf.
-- **Tickets auf kleinen Bildschirmen**
+- **Tickets auf kleinen Bildschirmen** <!-- nav-icon: MESSAGES -->
   Im Admin-Ticketsystem öffnet das Vorgangsdetail bei wenig Platz über der Liste.
   Beim Zurückkehren zur Liste bleiben ungesendete Antwortentwürfe erhalten.
 
@@ -34,8 +36,8 @@ Häufige Aufgaben im Portal und in der Verwaltung sind jetzt leichter zu erledig
 
 - Konfiguration, Mail-Test, Tickets und Mitteilungsentwürfe erklären Eingabefehler
   konkret beim Speichern, Senden oder Öffnen der Vorschau.
-- Wiederherstellungsanleitungen im Ticket nach 60 Sekunden erneut anfordern;
-  offene zugehörige Mailaufträge verhindern Doppelversand. Entwicklerkonten
+- Wiederherstellungsanleitungen lassen sich im Ticket nach 60 Sekunden erneut anfordern.
+  Offene zugehörige Mailaufträge verhindern Doppelversand. Entwicklerkonten
   erhalten die Anleitung ausschließlich im Ticketverlauf.
 - In der Zwei-Faktor-Bestätigung stehen App-Code und Ersatzcode im Kopf der
   Seite oder des Dialogs. Beim Methodenwechsel werden angefangene Eingaben geleert.
@@ -50,13 +52,13 @@ Common tasks in the portal and admin area are now easier to complete.
 
 ##### Highlights
 
-- **Recovery requests**
+- **Recovery requests** <!-- nav-icon: LOCK_QUESTION -->
   Browse personal recovery requests in a scrollable list with up to five visible
   entries. Ctrl-click clears the selected ticket while preserving reply drafts.
-- **Find recipients faster**
+- **Find recipients faster** <!-- nav-icon: BELL -->
   The avatar preview of an announcement opens the complete recipient list with
   search by name and email address, even without a “+N” overflow.
-- **Tickets on narrow screens**
+- **Tickets on narrow screens** <!-- nav-icon: MESSAGES -->
   In the admin ticket system, ticket details open over the list on narrow screens.
   Returning to the list preserves unsent reply drafts.
 
@@ -64,8 +66,8 @@ Common tasks in the portal and admin area are now easier to complete.
 
 - Configuration, mail tests, tickets and announcement drafts explain invalid input
   when saving, sending or opening the preview.
-- Request recovery instructions again after 60 seconds within a support ticket;
-  pending associated emails prevent duplicate delivery. Development accounts
+- You can request recovery instructions again after 60 seconds within a support ticket.
+  Pending associated emails prevent duplicate delivery. Development accounts
   receive the instructions only in the ticket conversation.
 - Two-factor verification shows the app code and recovery code tabs in the page
   or dialog header. Switching methods clears partial entries.

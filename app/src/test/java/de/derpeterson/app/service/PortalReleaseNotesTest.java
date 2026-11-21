@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 import de.derpeterson.app.service.PortalReleaseNotes.FeaturedRelease;
 import de.derpeterson.app.service.PortalReleaseNotes.Highlight;
+import de.derpeterson.app.service.PortalReleaseNotes.MarkdownDownload;
 import de.derpeterson.app.service.PortalReleaseNotes.Release;
 import java.io.IOException;
 import java.util.List;
@@ -41,7 +42,7 @@ class PortalReleaseNotesTest {
 
       ##### Highlights
 
-      - **Empfänger finden**
+      - **Empfänger finden** <!-- nav-icon: BELL -->
         Übersichtliche [Empfängerliste](/notifications)
         ![Empfängersuche](/images/release-notes/0.2.0/recipients.png)
 
@@ -52,6 +53,9 @@ class PortalReleaseNotesTest {
       ##### Weitere Verbesserungen
 
       - Neue Sortierung
+      - Übersichtliche [Liste](/notifications)
+
+        - Mit Details
 
       ### EN
       #### Portal updates
@@ -100,6 +104,8 @@ class PortalReleaseNotesTest {
     assertThat(germanRelease.highlights())
         .extracting(Highlight::title)
         .containsExactly("Empfänger finden", "");
+    assertThat(germanRelease.highlights().getFirst().navigationIconName()).contains("BELL");
+    assertThat(germanRelease.highlights().getLast().navigationIconName()).isEmpty();
     assertThat(germanRelease.highlights().getFirst().markdown())
         .isEqualTo(
             """
@@ -110,7 +116,9 @@ class PortalReleaseNotesTest {
               - Suche nach E-Mail
             """
                 .stripTrailing());
-    assertThat(germanRelease.improvementsMarkdown()).isEqualTo("- Neue Sortierung");
+    assertThat(germanRelease.improvementItems())
+        .containsExactly(
+            "Neue Sortierung", "Übersichtliche [Liste](/notifications)\n\n- Mit Details");
     FeaturedRelease englishRelease = latestRelease.textFor(Locale.ENGLISH).featured().orElseThrow();
     assertThat(englishRelease.improvementsHeading()).isEqualTo("Further improvements");
     assertThat(englishRelease.improvementsMarkdown()).isEqualTo("- New sorting order");
@@ -118,6 +126,30 @@ class PortalReleaseNotesTest {
     assertThat(releases.getLast().textFor(Locale.GERMAN).title()).isEmpty();
     assertThat(releases.getLast().textFor(Locale.GERMAN).markdown()).isEqualTo("- Erstes Portal");
     assertThat(releases.getLast().textFor(Locale.GERMAN).featured()).isEmpty();
+  }
+
+  @Test
+  void downloadsContainOnlyTheSelectedPublishedReleaseAndLanguage() {
+    List<Release> releases = PortalReleaseNotes.parse(CHANGELOG, "0.2.1-SNAPSHOT");
+
+    MarkdownDownload germanDownload = releases.getFirst().markdownDownload(Locale.GERMANY);
+    assertThat(germanDownload.fileName()).isEqualTo("release-notes-0.2.0-de.md");
+    assertThat(germanDownload.markdown())
+        .startsWith("# Neues im Portal\n\nVersion 0.2.0 · 2026-11-20\n\nDer kurze Einstieg.")
+        .contains("- **Empfänger finden**\n  Übersichtliche [Empfängerliste](/notifications)")
+        .doesNotContain("nav-icon", "Portal updates", "Erstes Portal", "Entwurf");
+
+    MarkdownDownload englishDownload = releases.getFirst().markdownDownload(Locale.US);
+    assertThat(englishDownload.fileName()).isEqualTo("release-notes-0.2.0-en.md");
+    assertThat(englishDownload.markdown())
+        .startsWith("# Portal updates\n\nVersion 0.2.0 · 2026-11-20\n\nA short introduction.")
+        .contains("- New sorting order")
+        .doesNotContain("Erstes Portal", "First portal release", "Draft", "Neues im Portal");
+
+    MarkdownDownload earlierDownload = releases.getLast().markdownDownload(Locale.ENGLISH);
+    assertThat(earlierDownload.fileName()).isEqualTo("release-notes-0.1.0-en.md");
+    assertThat(earlierDownload.markdown())
+        .isEqualTo("# Version 0.1.0\n\n2026-11-18\n\n- First portal release\n");
   }
 
   @Test

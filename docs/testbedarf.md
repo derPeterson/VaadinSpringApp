@@ -6,14 +6,36 @@ Oberflächenprüfungen in DE und EN auf Desktop und schmaler Ansicht ausführen,
 sofern das Szenario keine andere Breite vorgibt. Manuelle Abnahmen gelten weiter.
 
 - **Portalneuigkeiten — offen.**
-  In DE und EN am Desktop sowie bei 320 px prüfen. „Was ist neu?“ steht zwischen
-  Startseite und Benachrichtigungen und erscheint mobil im Menü. Ohne Anmeldung
-  führt der Direktaufruf zur Anmeldung. Nach dem Sprachwechsel bleiben Version,
-  Metadaten und die sichtbaren Release-Notizen konsistent. Neuesten sichtbaren
-  Release mit Highlight-Karten und Liste darunter prüfen. Ab zwei sichtbaren
-  Ausgaben erscheinen frühere Versionen zunächst eingeklappt, mit Titel, Datum
-  und Version. Optionales Bild mit Beispieldaten prüfen. Im normalen Build
-  bleiben Unreleased und der aktuelle Kandidat ausgeblendet.
+  In DE und EN am Desktop sowie bei 320 px prüfen. „Was ist neu?“ steht mit der
+  Tabler-Glühbirne zwischen Startseite und Benachrichtigungen und erscheint mobil
+  im Menü. Ohne Anmeldung führt der Direktaufruf zur Anmeldung. Nach dem
+  Sprachwechsel bleiben Version, Metadaten und sichtbare Release-Notizen
+  konsistent. Das Versionsbadge
+  entspricht den Cosmos-Badges für Kopfmetadaten. Zwischen Versionsbadge und Datum
+  steht ein mittiger Punkt. Beim neuesten sichtbaren Release „HIGHLIGHTS“ mit
+  dem Lucide-Icon `sparkles` und „WEITERE VERBESSERUNGEN“ in Großbuchstaben
+  prüfen. Release-Titel und Kartentitel sind halbfett. Einleitung,
+  Kartentexte und Verbesserungen haben reguläres Schriftgewicht. Bei rund 875 px
+  Rasterbreite passt „Wiederherstellungsanfragen“ bei 14 px in eine Zeile. Lange
+  Kartentitel bleiben bei schmaler Breite lesbar. Karten zeigen die Icons ihrer
+  Bereiche.
+  Verbesserungen sind mit Tabler-Icons nummeriert. Mehrstellige Zahlen setzen
+  sich aus einzelnen Ziffernicons zusammen. Die Texte bleiben bündig. Der Abstand
+  nach der Überschrift ist XL, zwischen den Zeilen L. Ab zwei sichtbaren Ausgaben
+  erscheint „FRÜHERE VERSIONEN“ in Primärfarbe mit dem Tabler-Konturicon.
+  Archiveinträge starten eingeklappt mit primärfarbenem 16-px-Aufklapppfeil,
+  halbfettem Titel, Versionsbadge in Größe S und Datum. Die Metadaten sind durch
+  mittige Punkte getrennt, die bei Umbrüchen bei ihrem Text bleiben. Im geöffneten
+  Archiv sind die Teilüberschriften halbfett mit Icon und Großbuchstaben.
+  Einleitung und Listentexte sind regulär gesetzt. Die Highlight-Zwischenüberschriften sind etwas größer
+  und halbfett und enden mit einem Doppelpunkt. Beide Listen starten bei 1.
+  Markdown für aktuelle und ältere Ausgaben herunterladen. Der Archiv-Button
+  erscheint erst beim Aufklappen rechts unter den Notizen. Die Trennlinie reicht
+  über die Kartenbreite, der Button hat denselben seitlichen Innenabstand wie
+  der Text. Nach Sprachwechsel Dateiname, Version und UTF-8-Inhalt prüfen.
+  Ohne Anmeldung liefert die Download-Adresse keine Datei.
+  Optionales Bild mit Beispieldaten prüfen. Im normalen Build bleiben
+  Unreleased und der aktuelle Kandidat ausgeblendet.
 
 - **Eigene Wiederherstellungsanfragen als VirtualList — offen.**
   Mit 1/2/5/6/20 Tickets Listenhöhe, Begrenzung auf fünf Zeilen und Scrollen bis

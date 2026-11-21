@@ -87,8 +87,7 @@ public class PortalSidebarComponent extends Div {
     localizedTextRefreshActions.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
     portalNavigation.registerAction(home, () -> UI.getCurrent().navigate(HomeView.class));
     PageNavigationComponent.setItemActive(home, selectedRoute == AppRoute.HOME);
-    SideNavItem news =
-        new SideNavItem("", AppRoute.NEWS.getSecurityRoute(), AppIcon.FILE_DIFF.create());
+    SideNavItem news = new SideNavItem("", AppRoute.NEWS.getSecurityRoute(), AppIcon.BULB.create());
     news.setId("account-nav-news");
     localizedTextRefreshActions.add(() -> news.setLabel(messageProperties.getPortalNewsTitle()));
     portalNavigation.registerAction(news, () -> UI.getCurrent().navigate(WhatsNewView.class));
