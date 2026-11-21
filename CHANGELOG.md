@@ -4,15 +4,37 @@
 
 ### DE
 
-- Unter „Was ist neu?“ im Portal die neuesten Release-Notizen lesen, frühere
-  Ausgaben aufklappen und jede Version in der eingestellten Sprache als Markdown herunterladen.
-  Die Notizen zur eigenen Version sind direkt im jeweiligen Release verfügbar.
+#### Release-Notizen direkt im Portal
+
+Die neue Seite bündelt die Neuerungen der aktuellen Version und früherer Ausgaben.
+
+##### Highlights
+
+- **Aktuelle Ausgabe auf einen Blick** <!-- nav-icon: BULB -->
+  Öffne „Was ist neu?“ in der Seitennavigation, um die Notizen zur installierten
+  Version in deiner Portalsprache zu lesen.
+
+##### Weitere Verbesserungen
+
+- Frühere Ausgaben lassen sich einzeln aufklappen.
+- Die Notizen jeder Ausgabe stehen in der eingestellten Sprache als Markdown-Download bereit.
 
 ### EN
 
-- Open “What's New?” in the portal to read the latest release notes, expand earlier
-  releases, and download each version as Markdown in your selected language.
-  Each release shows its own notes as soon as you open the page.
+#### Release notes in the portal
+
+The new page brings together changes from the current release and earlier versions.
+
+##### Highlights
+
+- **Current release at a glance** <!-- nav-icon: BULB -->
+  Open “What's New?” in the sidebar to read the notes for the installed version
+  in your portal language.
+
+##### Further improvements
+
+- Earlier releases can be expanded individually.
+- Download the notes for each release as Markdown in your selected language.
 
 ## [0.2.0] - 2026-11-20
 
