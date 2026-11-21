@@ -4,6 +4,12 @@
 
 ### DE
 
+### EN
+
+## [0.2.1] - 2026-11-21
+
+### DE
+
 #### Release-Notizen direkt im Portal
 
 Die neue Seite bündelt die Neuerungen der aktuellen Version und früherer Ausgaben.
